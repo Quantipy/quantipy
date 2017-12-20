@@ -1273,7 +1273,7 @@ class DataSet(object):
         """
         Get a list of codes that exist in data.
         """
-        if self._is_delimited_set(name):
+        if self.is_delimited_set(name):
             if not self._data[name].dropna().empty:
                 data_codes = self._data[name].str.get_dummies(';').columns.tolist()
                 data_codes = [int(c) for c in data_codes]
@@ -3379,7 +3379,7 @@ class DataSet(object):
         -------
         None
         """
-        append = self._is_delimited_set(name)
+        append = self.is_delimited_set(name)
         if exclusive: append = False
         for old_code, new_code in code_map.items():
             self.recode(name, {new_code: {name: [old_code]}},
@@ -3674,7 +3674,7 @@ class DataSet(object):
 
         if any(self.is_array(v) for v in i_variables):
             raise TypeError('Cannot interlock within array-typed variables!')
-        if any(self._is_delimited_set(v) for v in i_variables):
+        if any(self.is_delimited_set(v) for v in i_variables):
             qtype = 'delimited set'
         else:
             qtype = 'single'

@@ -5,6 +5,7 @@ import pandas as pd
 import quantipy as qp
 from quantipy.core.tools.qp_decorators import *
 
+from difflib import SequenceMatcher
 from collections import OrderedDict
 import json
 import copy
@@ -410,6 +411,75 @@ class Audit(object):
 		else:
 			print 'No varied types detected in included DataSets.'
 
+	# ------------------------------------------------------------------------
+	# labels
+	# ------------------------------------------------------------------------
+
+	def _get_tks_for_checking(self, var, obj):
+		tks = {}
+		for name in self.ds_names:
+			ds = self[name]
+			if ds.var_exists(var):
+				if ds.is_array(var):
+					if obj == 'label':
+						t_obj = ds._meta['masks'][var]['text']
+					elif obj == 'values':
+						t_obj = ds._meta['lib']['values'][var][0]['text']
+				elif ds._is_array_item(var):
+					if obj == 'label':
+						t_obj = ds._meta['columns'][var]['text']
+					elif obj == 'values':
+						return []
+				else:
+					if obj == 'label':
+						t_obj = ds._meta['columns'][var]['text']
+					elif obj == 'values':
+						t_obj = ds._meta['columns'][var]['values'][0]['text']
+				ds_tks = []
+				for tk, val in t_obj.items():
+					if not tk in ['x edits', 'y edits']:
+						ds_tks.append(tk)
+					else:
+						for etk in value.keys():
+							ds_tk.append('{}_{}'.format(tk, etk))
+				tks[name] = ds_tks
+
+
+
+
+	def report_label_diffs(self, strict=0.95):
+		"""
+		Reports variables that have different labels for the same text_key.
+
+		Parameters
+		----------
+		strict: float, default 0.9
+			Requested similarity of the labels.
+
+		Returns
+		-------
+		label_diff: pd.DataFrame
+			The values of the DataFrame include the text_keys whose texts
+			differ.
+		"""
+		all_df = []
+		for v in self.all_incl_vars:
+			header = OrderedDict()
+
+
+
+	# ------------------------------------------------------------------------
+	# categoricals
+	# ------------------------------------------------------------------------
+
+	def report_cat_diffs(self):
+		"""
+		Reports variables that are not included in all DataSets.
+
+		Returns
+		-------
+		unpaired: pd.DataFrame
+		"""
 
 	# ------------------------------------------------------------------------
 	# missing array items
@@ -420,13 +490,13 @@ class Audit(object):
 		Check if included arrays have the same items.
 		"""
 		arrays = [a for a in self.all_incl_vars
-				  if any(d.var_exists(a) and d._is_array(a)
+				  if any(d.var_exists(a) and d.is_array(a)
 				         for d in self.datasets)]
 		arrays = []
 		total_ais = OrderedDict()
 		for v in self.all_incl_vars:
 			for d in self.datasets:
-				if d.var_exists(v) and d._is_array(v):
+				if d.var_exists(v) and d.is_array(v):
 					if not v in arrays: arrays.append(v)
 					total_ais[v] = []
 					for source in d.sources(v):
