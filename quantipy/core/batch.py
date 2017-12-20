@@ -31,7 +31,7 @@ def meta_editor(self, dataset_func):
         ds_clone = self.clone()
         var_edits = []
         for n in name:
-            is_array = self._is_array(n)
+            is_array = self.is_array(n)
             is_array_item = self._is_array_item(n)
             has_edits = n in self.meta_edits
             parent = self._maskname_from_item(n) if is_array_item else None
@@ -44,7 +44,7 @@ def meta_editor(self, dataset_func):
         for var, edits in var_edits:
             if edits:
                 copied_meta = org_copy.deepcopy(self.meta_edits[var])
-                if not self._is_array(var):
+                if not self.is_array(var):
                     ds_clone._meta['columns'][var] = copied_meta
                 else:
                     ds_clone._meta['masks'][var] = copied_meta
@@ -55,7 +55,7 @@ def meta_editor(self, dataset_func):
         dataset_func(ds_clone, *args, **kwargs)
         # grab edited meta data and collect via Batch.meta_edits attribute
         for n in name:
-            if not self._is_array(n):
+            if not self.is_array(n):
                 meta = ds_clone._meta['columns'][n]
                 text_edits = ['set_col_text_edit', 'set_val_text_edit']
                 if dataset_func.func_name in text_edits and is_array_item:
@@ -726,7 +726,7 @@ class Batch(qp.DataSet):
                 if not new_filter.keys()[0] in self.filter_names:
                     self.filter_names.append(new_filter.keys()[0])
                 self.extended_filters_per_x.update({v: new_filter})
-                if self._is_array(v):
+                if self.is_array(v):
                     for s in self.sources(v):
                         new_filter = self._combine_filters({s: logic})
                         if not new_filter.keys()[0] in self.filter_names:
