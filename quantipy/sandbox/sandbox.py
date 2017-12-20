@@ -2539,12 +2539,6 @@ class Chain(object):
                     text = self._transl[text_keys[axis][0]][value]
                     if value == 'All':
                         text = self._specify_base(i, None)
-                    # OLD BASE PAINTING CODE
-                    # -----------------------
-                    # if self.double_base and value == 'All':
-                    #     unwgtb =  'Unweighted base'
-                    #     if not unwgtb in level_1_text:
-                    #         text = unwgtb
                     level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
