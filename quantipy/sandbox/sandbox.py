@@ -2497,16 +2497,18 @@ class Chain(object):
     def _is_multibase(views, basetype):
         return len([v for v in views if v.split('|')[-1] == basetype]) > 1
 
-    def _specify_base(self, view_idx, text_key):
+    def _specify_base(self, view_idx, tk):
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
         weighted = base_vk.split('|')[-2]
         is_multibase = self._is_multibase(self._views.keys(), basetype)
         if basetype == 'cbase_gross':
             if weighted or (not weighted and not is_multibase):
-                base_value = 'Gross base'
+                # base_value = 'Gross base'
+                base_value = self._transl[tk]['gross All']
             else:
-                base_value = 'Unweighted gross base'
+               # base_value = 'Unweighted gross base'
+                base_value = self._transl[tk]['no_w_gross_All']
         elif basetype == 'ebase':
             if weighted or (not weighted and not is_multibase):
                 base_value = 'Effective base'
@@ -2514,9 +2516,11 @@ class Chain(object):
                 base_value = 'Unweighted effective base'
         else:
             if weighted or (not weighted and not is_multibase):
-                base_value = 'Base'
+                # base_value = 'Base'
+                base_value = self._transl[tk]['All']
             else:
-                base_value = 'Unweighted base'
+                # base_value = 'Unweighted base'
+                base_value = self._transl[tk]['no_w_All']
         return base_value
 
 
@@ -2536,9 +2540,10 @@ class Chain(object):
                 if value in self._text_map.keys() and value not in translate:
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
-                    text = self._transl[text_keys[axis][0]][value]
                     if value == 'All':
-                        text = self._specify_base(i, None)
+                        text = self._specify_base(i, text_keys[axis][0])
+                    else:
+                        text = self._transl[text_keys[axis][0]][value]
                     level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
