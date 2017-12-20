@@ -1609,14 +1609,14 @@ class Chain(object):
                     if self._is_c_pct(parts):
                         colpcts.extend([v]*self.views[v])
                     else:
-                        if ci == 'c_colpct' and self.grouping:
+                        if ci == 'counts_colpct' and self.grouping:
                             if not self._is_counts(parts) or self._is_c_base(parts):
                                 colpcts.append(None)
                         else:
                             colpcts.extend([v]*self.views[v])
                 dims = self._frame.shape
                 for row in range(0, dims[0]):
-                    if ci == 'c_colpct' and self.grouping:
+                    if ci == 'counts_colpct' and self.grouping:
                         if row % 2 == 0:
                             vc = counts
                         else:
@@ -2465,7 +2465,7 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
-        
+
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
         #     return new_index.droplevel(0)
