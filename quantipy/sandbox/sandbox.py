@@ -2343,7 +2343,7 @@ class Chain(object):
             Text
         view_level : bool, default False
             Text
-        transform_tests : {False, 'full', 'cells'}, default cells
+        transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
         totalize : bool, default False
             Text
@@ -2493,6 +2493,33 @@ class Chain(object):
             level_0_text = ['Total'] + level_0_text[1:]
         return map(unicode, level_0_text)
 
+    @staticmethod
+    def _is_multibase(views, basetype):
+        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
+
+    def _specify_base(self, view_idx, text_key):
+        base_vk = self._valid_views()[view_idx]
+        basetype = base_vk.split('|')[-1]
+        weighted = base_vk.split('|')[-2]
+        is_multibase = self._is_multibase(self._views.keys(), basetype)
+        if basetype == 'cbase_gross':
+            if weighted or (not weighted and not is_multibase):
+                base_value = 'Gross base'
+            else:
+                base_value = 'Unweighted gross base'
+        elif basetype == 'ebase':
+            if weighted or (not weighted and not is_multibase):
+                base_value = 'Effective base'
+            else:
+                base_value = 'Unweighted effective base'
+        else:
+            if weighted or (not weighted and not is_multibase):
+                base_value = 'Base'
+            else:
+                base_value = 'Unweighted base'
+        return base_value
+
+
     def _get_level_1(self, levels, text_keys, display, axis):
         """
         """
@@ -2510,10 +2537,14 @@ class Chain(object):
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     text = self._transl[text_keys[axis][0]][value]
-                    if self.double_base and value == 'All':
-                        unwgtb =  'Unweighted base'
-                        if not unwgtb in level_1_text:
-                            text = unwgtb
+                    if value == 'All':
+                        text = self._specify_base(i, None)
+                    # OLD BASE PAINTING CODE
+                    # -----------------------
+                    # if self.double_base and value == 'All':
+                    #     unwgtb =  'Unweighted base'
+                    #     if not unwgtb in level_1_text:
+                    #         text = unwgtb
                     level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
