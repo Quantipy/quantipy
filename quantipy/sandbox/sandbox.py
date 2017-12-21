@@ -788,9 +788,9 @@ class ChainManager(object):
             return per_folder
         per_folder = OrderedDict()
         chains = mine_mtd(mtd_doc, paint, per_folder)
-
-
-        return chains
+        for name, chain in chains.items():
+            print name, type(chain), len(chain)
+        return self
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
@@ -1472,11 +1472,10 @@ class Chain(object):
             c_colrow_pct = c_colpct and c_rowpct
 
             single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
-
             if single_ci:
                 if c:
                     return 'counts'
-                elif colpct:
+                elif col_pct:
                     return 'colpct'
                 else:
                     return 'rowpct'
