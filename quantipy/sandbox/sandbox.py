@@ -1605,15 +1605,16 @@ class Chain(object):
                         counts.extend([v]*self.views[v])
                     if self._is_r_pct(parts):
                         rowpcts.extend([v]*self.views[v])
-                    if self._is_c_pct(parts) or self._is_c_base(parts): # from below?!
+                    if (self._is_c_pct(parts) or self._is_c_base(parts) or
+                        self._is_stat(parts)):
                         colpcts.extend([v]*self.views[v])
-                    else:
-                        if ci == 'counts_colpct' and self.grouping:
-                            if not self._is_counts(parts):
-                            # ...or self._is_c_base(parts):
-                                colpcts.append(None)
-                        else:
-                            colpcts.extend([v] * self.views[v])
+                    # else:
+                    #     if ci == 'counts_colpct' and self.grouping:
+                    #         if not self._is_counts(parts):
+                    #         # ...or self._is_c_base(parts):
+                    #             colpcts.append(None)
+                    #     else:
+                    #         colpcts.extend([v] * self.views[v])
                 dims = self._frame.shape
                 for row in range(0, dims[0]):
                     if ci == 'counts_colpct' and self.grouping:
@@ -1624,7 +1625,6 @@ class Chain(object):
                     else:
                         vc = counts if ci == 'c' else colpcts
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
-
         return metrics
 
     def _valid_views(self):
