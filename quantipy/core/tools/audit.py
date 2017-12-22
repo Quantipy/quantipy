@@ -3,6 +3,7 @@
 
 import pandas as pd
 import quantipy as qp
+import numpy  as np
 from quantipy.core.tools.qp_decorators import *
 
 from difflib import SequenceMatcher
@@ -407,7 +408,8 @@ class Audit(object):
 				if not header['valid']: header['valid'] = ''
 			 	all_df.append(pd.DataFrame([header], index=[v]))
 		if all_df:
-			return pd.concat(all_df, axis=0)
+			all_df = pd.concat(all_df, axis=0)
+			return all_df.replace(np.NaN, '')
 		else:
 			print 'No varied types detected in included DataSets.'
 
@@ -416,7 +418,7 @@ class Audit(object):
 	# ------------------------------------------------------------------------
 
 	def _get_tks_for_checking(self, var, obj):
-		tks = {}
+		tks = []
 		for name in self.ds_names:
 			ds = self[name]
 			if ds.var_exists(var):
@@ -435,17 +437,29 @@ class Audit(object):
 						t_obj = ds._meta['columns'][var]['text']
 					elif obj == 'values':
 						t_obj = ds._meta['columns'][var]['values'][0]['text']
-				ds_tks = []
 				for tk, val in t_obj.items():
 					if not tk in ['x edits', 'y edits']:
-						ds_tks.append(tk)
+						tks.append(tk)
 					else:
-						for etk in value.keys():
-							ds_tk.append('{}_{}'.format(tk, etk))
-				tks[name] = ds_tks
+						for etk in val.keys():
+							tks.append('{}~{}'.format(etk, tk))
+		check_tk = set([tk for tk in tks if tks.count(tk) > 1])
+		return list(check_tk)
 
-
-
+	@staticmethod
+	def _compare_texts(tks, tobj1, tobj2, strict):
+		diff_tks = []
+		for tk in tks:
+			tkey = tk.split('~')
+			edit = tkey[1] if len(tkey) > 1 else None
+			tkey = tkey[0]
+			t1 = tobj1.get(edit, tobj1).get(tkey, None)
+			t2 = tobj2.get(edit, tobj2).get(tkey, None)
+			if t1 and t2:
+				s = SequenceMatcher(None, t1, t2)
+				if s.ratio() < strict:
+					diff_tks.append(tk)
+		return diff_tks
 
 	def report_label_diffs(self, strict=0.95):
 		"""
@@ -464,9 +478,56 @@ class Audit(object):
 		"""
 		all_df = []
 		for v in self.all_incl_vars:
+			tks = self._get_tks_for_checking(v, 'label')
 			header = OrderedDict()
+			for x, n1 in enumerate(self.ds_names, 1):
+				for n2 in self.ds_names[x:]:
+					if all(self[n].var_exists(v) for n in [n1, n2]):
+						collection = 'masks' if self[n1].is_array(v) else 'columns'
+						tobj1 = self[n1]._meta[collection][v]['text']
+						tobj2 = self[n2]._meta[collection][v]['text']
+						diff_tks = self._compare_texts(tks, tobj1, tobj2, strict)
+						header['{},\n{}'.format(n1, n2)] = diff_tks if diff_tks else ''
+					else:
+						header['{},\n{}'.format(n1, n2)] = ''
+			df = pd.DataFrame([header], index=[v])
+			if not all(tk == '' for tk in df.values.tolist()[0]):
+				all_df.append(df)
+		if all_df:
+			return pd.concat(all_df, axis=0)
+		else:
+			print 'No varied labels detected in included DataSets.'
 
+	@modify(to_list='var')
+	@verify(is_str=['var', 'datasets', 'text_key'])
+	def show_labels(self, var, datasets, text_key):
+		"""
+		Display labels of variables in different DataSets.
 
+		Parameters
+		----------
+		var: str/ list of str
+			Displays label texts for these variable(s).
+		datasets: tuple of str
+			Names of the two DataSets from which the label texts are taken.
+		text_key: str
+			Text key for text-based label information. Can be provided as
+			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
+		"""
+		if not isinstance(datasets, tuple):
+			raise ValueError("'datasets' must be tupel: (str, str)")
+		ds1 = self[datasets[0]]
+		ds2 = self[datasets[1]]
+		text_key = text_key.split('~')
+		etk = text_key[1] if len(text_key) > 1 else None
+		text_key = text_key[0]
+		for v in var:
+			if not all(ds.var_exists(v) for ds in [ds1, ds2]): continue
+			t1 = ds1.text(v, False, text_key, etk)
+			t2 = ds2.text(v, False, text_key, etk)
+			print '{}:\n\t{}\n\t{}'.format(v, t1, t2)
+			print '*'*60
+		return None
 
 	# ------------------------------------------------------------------------
 	# categoricals

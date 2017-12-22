@@ -4960,10 +4960,11 @@ class DataSet(object):
                     if not etk in text_key:
                         text_dict[tk].pop(etk)
 
+    @modify(to_list='text_key')
     @verify(text_keys='text_key')
     def select_text_keys(self, text_key=None):
         """
-        Cycle through all meta ``text`` objects repairing axis edits.
+        Cycle through all meta ``text`` objects keep only selected text_key.
 
         Parameters
         ----------
@@ -4974,7 +4975,7 @@ class DataSet(object):
         -------
         None
         """
-        if text_key is None: text_key = self.valid_tks
+        if not text_key: text_key = self.valid_tks
         text_func = self._select_text_keys
         args = ()
         kwargs = {'text_key': text_key}

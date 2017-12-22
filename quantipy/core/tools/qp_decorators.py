@@ -96,7 +96,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             # get the arguments to modify
             val_index = all_args.index(val)
             v = kwargs.get(val, args[val_index])
-            if not isinstance(v, list): v = [v]
+            if not isinstance(v, (list, tuple)): v = [v]
             if not all(isinstance(text, (str, unicode)) for text in v):
                 raise ValueError('Included value must be str or list of str.')
         return func(*args, **kwargs)
