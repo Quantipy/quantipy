@@ -7,22 +7,25 @@ import re
 import warnings
 
 class ViewManager(object):
-    def __init__(self, stack, basics=True, nets=True, stats=['mean'], tests=None):
+    def __init__(self, stack, weight=None):
         self.stack = stack
-        self.basics = basics
-        self.nets = nets
-        self.stats = stats
-        self.tests = tests
+        self.basics = None
+        self.nets = None
+        self.stats = None
+        self.tests = None
         self.views = None
         self.grouping = None
         self.base_spec = None
-        self.weighted = False
+        self.weighted = weight
         self._base_views = None
         self._grouped_views = None
         return None
 
-    def get_views(self, data_key=None, filter_key=None, cell_items='colpct',
-                  weights=None, bases='auto'):
+
+
+    def get_views(self, data_key=None, filter_key=None, freqs=True, nets=True,
+                  stats=['mean', 'stddev'], tests=None, cell_items='colpct',
+                  bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -32,6 +35,15 @@ class ViewManager(object):
             The data_key name of the ``qp.Stack`` path to be queried.
         filter_key : str, default None
             The filter_key name of the ``qp.Stack`` path to be queried.
+        freqs : bool, default True
+            Text...
+        nets : bool, default True
+            Text...
+        stats : (list of) {'mean', 'stddev', 'min', 'max', ...},
+                default ['mean', 'stddev']
+            Text...
+        tests : (list of) float, default None
+            Text...
         cell_items: {'counts', 'colpct', 'rowpct', 'counts_colpct',
                      'counts_rowpct', 'colpct_rowpct', 'counts_colpct_rowpct'},
                     default 'colpct'
@@ -39,9 +51,6 @@ class ViewManager(object):
             counts, column or row percentages or grouped versions of the
             former, e.g. 'counts_colpct' will show both counts and column
             percentages as a set of cell items.
-        weights : str, default None
-            The name of a weight variable that has been used in the aggregation
-            and should now be queried from the ``qp.Stack``.
         bases : {'auto', 'both', 'weighted', 'unweighted'}
             The base view(s) to include. 'auto' will match the base to the
             ``weights`` parameter. If ``weights`` is provided (i.e. the
@@ -55,6 +64,10 @@ class ViewManager(object):
         -------
         self
         """
+        self.basics = freqs
+        self.nets = nets
+        self.stats = stats
+        self.tests = tests
         cimap = {'c': 'counts', 'p': 'colpct', 'cp': 'counts_colpct'}
         for old, new in cimap.items():
             if cell_items == old:
@@ -69,7 +82,6 @@ class ViewManager(object):
             err = "'bases must be one of {}, not '{}'!".format(valid_bases, bases)
             raise ValueError(err)
         self.base_spec = bases
-        self.weighted = True if weights else False
         if cell_items not in valid_ci:
             err = "'cell_items' must be one of {}, not '{}'!"
             raise ValueError(err.format(valid_ci, cell_items))
@@ -91,7 +103,7 @@ class ViewManager(object):
                 filter_key = stack[data_key].keys()[0]
 
         views = self._request_views(
-            data_key=data_key, filter_key=filter_key, weight=weights,
+            data_key=data_key, filter_key=filter_key, weight=self.weighted,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
             sums='bottom', coltests=True if self.tests else False,
             sig_levels=self.tests if self.tests else [])
@@ -135,6 +147,64 @@ class ViewManager(object):
         self.views = other_views
         return None
 
+    def set_bases(self, weighted=True, unweighted=False, gross=False,
+                  effective=False, order=['base', 'gross', 'effective'],
+                  unwgt_pos='after'):
+        """
+        Set the base (sample size) view presentation.
+
+        Parameters
+        ----------
+        weighted : bool, default True
+            Text
+        unweighted : bool, default False
+            Text
+        gross : [0, 1, 2], default False (0)
+            Text
+        effective : [0, 1, 2] default False (0)
+            Text
+        order : list of elements 'base', 'gross', 'effective',
+                default ['base', 'gross', 'effective']
+            Text
+        unwgt_pos : {'after', 'before'}, default 'after'
+            Text
+
+        Returns
+        -------
+        bases : list
+            The list of base `qp.View` key notations.
+        """
+        # test for reasonable setup
+        if not self.weighted:
+            if gross: gross = 1
+            if effective: effective = 1
+            unweighted = False
+        bases = []
+        # view key definitions
+        base_vk = 'x|f|x:||{}|cbase'
+        gross_vk = 'x|f|x:||{}|cbase_gross'
+        effective_vk = 'x|f|x:||{}|ebase'
+        unw_base_vk = base_vk.format('')
+        unw_gross_vk = gross_vk.format('')
+        unw_effective_vk = effective_vk.format('')
+        if self.weighted:
+            w_base_vk = base_vk.format(self.weighted)
+            w_gross_vk = gross_vk.format(self.weighted)
+            w_effective_vk = effective_vk.format(self.weighted)
+        for base in order:
+            if base == 'base' and weighted:
+                pass
+            if base == 'gross' and gross:
+                if gross == 1:
+                    pass
+                else:
+                    pass
+            if base == 'effective' and effective:
+                if effective == 1:
+                    pass
+                else:
+                    pass
+        return bases
 
     def group(self, style='reduce'):
         """
