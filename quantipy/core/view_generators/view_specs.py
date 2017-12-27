@@ -184,6 +184,10 @@ class ViewManager(object):
             if base: base = 'uw'
             if gross: gross = 'uw'
             if effective: effective = 'uw'
+        valid_order_items = ['base', 'gross', 'effective']
+        if not all(b in valid_order_items for b in order):
+            err = "Items in 'order' must be one of: {}!".format(valid_order_items)
+            raise ValueError(err)
         # view key definitions
         base_vk = 'x|f|x:||{}|cbase'
         gross_vk = 'x|f|x:||{}|cbase_gross'
