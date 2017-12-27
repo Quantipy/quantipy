@@ -147,17 +147,14 @@ class ViewManager(object):
         self.views = other_views
         return None
 
-    def set_bases(self, weighted=True, unweighted=False, gross=False,
-                  effective=False, order=['base', 'gross', 'effective'],
-                  unwgt_pos='after'):
+    def set_bases(self, base=1,  gross=False, effective=False,
+                  order=['base', 'gross', 'effective'], unwgt_pos='after'):
         """
         Set the base (sample size) view presentation.
 
         Parameters
         ----------
-        weighted : bool, default True
-            Text
-        unweighted : bool, default False
+        weighted : [0, 1, 2], default True (1)
             Text
         gross : [0, 1, 2], default False (0)
             Text
@@ -174,11 +171,29 @@ class ViewManager(object):
         bases : list
             The list of base `qp.View` key notations.
         """
+        def append_base(base_list, base_type):
+            if base_type == 'base' and base:
+                if base == 1:
+                    pass
+                else:
+                    pass
+            if base_type == 'gross' and gross:
+                if gross == 1:
+                    pass
+                else:
+                    pass
+            if base_type == 'effective' and effective:
+                if effective == 1:
+                    pass
+                else:
+                    pass
+            return None
+
         # test for reasonable setup
         if not self.weighted:
+            if base: base = 1
             if gross: gross = 1
             if effective: effective = 1
-            unweighted = False
         bases = []
         # view key definitions
         base_vk = 'x|f|x:||{}|cbase'
@@ -191,19 +206,7 @@ class ViewManager(object):
             w_base_vk = base_vk.format(self.weighted)
             w_gross_vk = gross_vk.format(self.weighted)
             w_effective_vk = effective_vk.format(self.weighted)
-        for base in order:
-            if base == 'base' and weighted:
-                pass
-            if base == 'gross' and gross:
-                if gross == 1:
-                    pass
-                else:
-                    pass
-            if base == 'effective' and effective:
-                if effective == 1:
-                    pass
-                else:
-                    pass
+        for base in order: append_base(bases, base)
         return bases
 
     def group(self, style='reduce'):
