@@ -155,22 +155,29 @@ class ViewManager(object):
         Parameters
         ----------
         base : {'w', 'uw', 'both'}, default 'w'
-            Text
+            Show the *weighted* or *unweighted* version of the regular base or
+            *both*.
         gross : {'w', 'uw', 'both'}, default False
-            Text
+            Show the *weighted* or *unweighted* version of the gross base or
+            *both*.
         effective : {'w', 'uw', 'both'}, default False
-            Text
+            Show the *weighted* or *unweighted* version of the effective base
+            or *both*.
         order : list of elements 'base', 'gross', 'effective',
                 default ['base', 'gross', 'effective']
-            Text
+            Set the order in that regular, gross and effective bases should
+            appear.
         uw_pos : {'after', 'before'}, default 'after'
-            Text
+            Define if unweighted bases appear before or after their weighted
+            versions.
 
         Returns
         -------
-        bases : list
-            The list of base `qp.View` key notations.
+        None
         """
+        if not self.views:
+            err = 'Cannot set base views, please run .get_views() before!'
+            raise RuntimeError(err)
         bases = []
         # test for reasonable setup
         if not self.weighted:
@@ -206,7 +213,8 @@ class ViewManager(object):
                         bases.extend([w_vk, uw_vk])
                     else:
                         bases.extend([uw_vk, w_vk])
-        return bases
+        self._base_views = bases
+        return None
 
     def group(self, style='reduce'):
         """
