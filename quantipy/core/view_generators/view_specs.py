@@ -109,6 +109,9 @@ class ViewManager(object):
             sig_levels=self.tests if self.tests else [])
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
+
+        print 'make .get_views() use .set_views() to define the base view layout!'
+
         self._fixate_base_views()
 
         return self
