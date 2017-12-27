@@ -195,6 +195,8 @@ class ViewManager(object):
             w_base_vk = base_vk.format(self.weighted)
             w_gross_vk = gross_vk.format(self.weighted)
             w_effective_vk = effective_vk.format(self.weighted)
+        else:
+            w_base_vk = w_gross_vk = w_effective_vk = None
         base_dict = {'base': [base, uw_base_vk, w_base_vk],
                      'gross': [gross, uw_gross_vk, w_gross_vk],
                      'effective': [effective, uw_effective_vk, w_effective_vk]}
