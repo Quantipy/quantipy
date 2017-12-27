@@ -147,23 +147,23 @@ class ViewManager(object):
         self.views = other_views
         return None
 
-    def set_bases(self, base=1,  gross=False, effective=False,
-                  order=['base', 'gross', 'effective'], unwgt_pos='after'):
+    def set_bases(self, base='w',  gross=False, effective=False,
+                  order=['base', 'gross', 'effective'], uw_pos='after'):
         """
         Set the base (sample size) view presentation.
 
         Parameters
         ----------
-        weighted : [0, 1, 2], default True (1)
+        base : {'w', 'uw', 'both'}, default 'w'
             Text
-        gross : [0, 1, 2], default False (0)
+        gross : {'w', 'uw', 'both'}, default False
             Text
-        effective : [0, 1, 2] default False (0)
+        effective : {'w', 'uw', 'both'}, default False
             Text
         order : list of elements 'base', 'gross', 'effective',
                 default ['base', 'gross', 'effective']
             Text
-        unwgt_pos : {'after', 'before'}, default 'after'
+        uw_pos : {'after', 'before'}, default 'after'
             Text
 
         Returns
@@ -173,17 +173,23 @@ class ViewManager(object):
         """
         def append_base(base_list, base_type):
             if base_type == 'base' and base:
-                if base == 1:
+                if base == 'w':
+                    pass
+                elif base == 'uw':
                     pass
                 else:
                     pass
             if base_type == 'gross' and gross:
-                if gross == 1:
+                if base == 'w':
+                    pass
+                elif base == 'uw':
                     pass
                 else:
                     pass
             if base_type == 'effective' and effective:
-                if effective == 1:
+                if base == 'w':
+                    pass
+                elif base == 'uw':
                     pass
                 else:
                     pass
@@ -191,17 +197,17 @@ class ViewManager(object):
 
         # test for reasonable setup
         if not self.weighted:
-            if base: base = 1
-            if gross: gross = 1
-            if effective: effective = 1
+            if base: base = 'uw'
+            if gross: gross = 'uw'
+            if effective: effective = 'uw'
         bases = []
         # view key definitions
         base_vk = 'x|f|x:||{}|cbase'
         gross_vk = 'x|f|x:||{}|cbase_gross'
         effective_vk = 'x|f|x:||{}|ebase'
-        unw_base_vk = base_vk.format('')
-        unw_gross_vk = gross_vk.format('')
-        unw_effective_vk = effective_vk.format('')
+        uw_base_vk = base_vk.format('')
+        uw_gross_vk = gross_vk.format('')
+        uw_effective_vk = effective_vk.format('')
         if self.weighted:
             w_base_vk = base_vk.format(self.weighted)
             w_gross_vk = gross_vk.format(self.weighted)
