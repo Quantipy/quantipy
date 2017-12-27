@@ -171,36 +171,12 @@ class ViewManager(object):
         bases : list
             The list of base `qp.View` key notations.
         """
-        def append_base(base_list, base_type):
-            if base_type == 'base' and base:
-                if base == 'w':
-                    pass
-                elif base == 'uw':
-                    pass
-                else:
-                    pass
-            if base_type == 'gross' and gross:
-                if base == 'w':
-                    pass
-                elif base == 'uw':
-                    pass
-                else:
-                    pass
-            if base_type == 'effective' and effective:
-                if base == 'w':
-                    pass
-                elif base == 'uw':
-                    pass
-                else:
-                    pass
-            return None
-
+        bases = []
         # test for reasonable setup
         if not self.weighted:
             if base: base = 'uw'
             if gross: gross = 'uw'
             if effective: effective = 'uw'
-        bases = []
         # view key definitions
         base_vk = 'x|f|x:||{}|cbase'
         gross_vk = 'x|f|x:||{}|cbase_gross'
@@ -212,7 +188,24 @@ class ViewManager(object):
             w_base_vk = base_vk.format(self.weighted)
             w_gross_vk = gross_vk.format(self.weighted)
             w_effective_vk = effective_vk.format(self.weighted)
-        for base in order: append_base(bases, base)
+        base_dict = {'base': [base, uw_base_vk, w_base_vk],
+                     'gross': [gross, uw_gross_vk, w_gross_vk],
+                     'effective': [effective, uw_effective_vk, w_effective_vk]}
+        # assembling all base types...
+        for base_type in order:
+            btype = base_dict[base_type][0]
+            uw_vk = base_dict[base_type][1]
+            w_vk = base_dict[base_type][2]
+            if btype:
+                if btype == 'w':
+                    bases.append(w_vk)
+                elif btype == 'uw':
+                    bases.append(uw_vk)
+                else:
+                    if uw_pos == 'after':
+                        bases.extend([w_vk, uw_vk])
+                    else:
+                        bases.extend([uw_vk, w_vk])
         return bases
 
     def group(self, style='reduce'):
