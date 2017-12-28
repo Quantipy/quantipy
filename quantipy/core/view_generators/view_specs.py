@@ -7,7 +7,7 @@ import re
 import warnings
 
 class ViewManager(object):
-    def __init__(self, stack, weight=None):
+    def __init__(self, stack):
         self.stack = stack
         self.basics = None
         self.nets = None
@@ -16,7 +16,7 @@ class ViewManager(object):
         self.views = None
         self.grouping = None
         self.base_spec = None
-        self.weighted = weight
+        self.weighted = None
         self._base_views = None
         self._grouped_views = None
         return None
@@ -27,9 +27,9 @@ class ViewManager(object):
         """
         return len(self._base_views) if self._base_views else None
 
-    def get_views(self, data_key=None, filter_key=None, freqs=True, nets=True,
-                  stats=['mean', 'stddev'], tests=None, cell_items='colpct',
-                  bases='auto'):
+    def get_views(self, data_key=None, filter_key=None, weight=None,
+                  freqs=True, nets=True, stats=['mean', 'stddev'], tests=None,
+                  cell_items='colpct', bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -39,6 +39,8 @@ class ViewManager(object):
             The data_key name of the ``qp.Stack`` path to be queried.
         filter_key : str, default None
             The filter_key name of the ``qp.Stack`` path to be queried.
+        weight : str, default None
+            The name of the weight variable to look for searching aggregations.
         freqs : bool, default True
             Text...
         nets : bool, default True
@@ -72,6 +74,7 @@ class ViewManager(object):
         self.nets = nets
         self.stats = stats
         self.tests = tests
+        self.weighted = weight
         cimap = {'c': 'counts', 'p': 'colpct', 'cp': 'counts_colpct'}
         for old, new in cimap.items():
             if cell_items == old:
