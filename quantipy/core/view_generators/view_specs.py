@@ -22,6 +22,10 @@ class ViewManager(object):
         return None
 
 
+    def _base_len(self):
+        """
+        """
+        return len(self._base_views) if self._base_views else None
 
     def get_views(self, data_key=None, filter_key=None, freqs=True, nets=True,
                   stats=['mean', 'stddev'], tests=None, cell_items='colpct',
@@ -109,46 +113,27 @@ class ViewManager(object):
             sig_levels=self.tests if self.tests else [])
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
-
-        print 'make .get_views() use .set_views() to define the base view layout!'
-
-        self._fixate_base_views()
-
-        return self
-
-
-    def _fixate_base_views(self):
+        # Defining the base view layout vs. all collected views...
+        # See also: .set_bases()
         views = self.views[:]
         if views[1].split('|')[-1] != 'cbase':
-            bases = [views[0]]
+            base_views = [views[0]]
             other_views = views[1:]
         else:
-            bases = views[:2]
+            base_views = views[:2]
             other_views = views[2:]
         has_both_bases = len(bases) == 2
-        if self.base_spec == 'auto':
-            if has_both_bases:
-                if self.weighted:
-                    bases = [bases[1]]
-                else:
-                    bases = [bases[0]]
-            else:
-                pass
-        elif self.base_spec == 'both':
-            pass
-        elif self.base_spec == 'weighted':
-            if has_both_bases:
-                bases = [bases[1]]
-            else:
-                pass
-        elif self.base_spec == 'unweighted':
-            if has_both_bases:
-                 bases = [bases[0]]
-            else:
-                pass
-        self._base_views = bases
-        self.views = other_views
-        return None
+        if bases == 'auto':
+            wparam = 'w' if self.weighted else 'uw'
+        elif bases == 'both':
+            wparam = 'both'
+        elif bases == 'weighted':
+            wparam = 'w'
+        elif bases == 'unweighted':
+            wparam = 'uw'
+        self.set_bases(base=wparam)
+        self.views = self._base_views + other_views
+        return self
 
     def set_bases(self, base='w',  gross=False, effective=False,
                   order=['base', 'gross', 'effective'], uw_pos='after'):
@@ -222,6 +207,8 @@ class ViewManager(object):
                         bases.extend([w_vk, uw_vk])
                     else:
                         bases.extend([uw_vk, w_vk])
+
+        self.views = bases + self.views[self._base_len():]
         self._base_views = bases
         return None
 
