@@ -91,6 +91,7 @@ class TestViewManager(unittest.TestCase):
                                 stats=None, tests=None, weight=None,
                                 bases='auto').group().views
         self.assertEqual(vm_views, E['p_b'])
+
     # --------------------------------------------------------------------
     # cell items: counts + percentages, unweighted
     def test_vm_cp_b(self):
@@ -101,6 +102,7 @@ class TestViewManager(unittest.TestCase):
                                 nets=False, stats=None, tests=None,
                                 weight=None, bases='auto').group().views
         self.assertEqual(vm_views, E['cp_b'])
+
     # --------------------------------------------------------------------
     # cell items: counts, weighted, base 'auto'
     def test_vm_c_b_w_auto(self):
@@ -111,6 +113,7 @@ class TestViewManager(unittest.TestCase):
                                 stats=None, tests=None, weight='weight_a',
                                 bases='auto').group().views
         self.assertEqual(vm_views, E['c_b_w_auto'])
+
     # --------------------------------------------------------------------
     # cell items: percentages, weighted, base 'auto'
     def test_vm_p_b_w_auto(self):
@@ -121,6 +124,7 @@ class TestViewManager(unittest.TestCase):
                                 stats=None, tests=None, weight='weight_a',
                                 bases='auto').group().views
         self.assertEqual(vm_views, E['p_b_w_auto'])
+
     # --------------------------------------------------------------------
     # cell items: counts + percentages, weighted, base 'auto'
     def test_vm_cp_b_w_auto(self):
@@ -131,6 +135,7 @@ class TestViewManager(unittest.TestCase):
                                 nets=False, stats=None, tests=None,
                                 weight='weight_a', bases='auto').group().views
         self.assertEqual(vm_views, E['cp_b_w_auto'])
+
     # --------------------------------------------------------------------
     # cell items: counts, unweighted, base 'both'
     def test_vm_c_b_w_both(self):
@@ -141,6 +146,7 @@ class TestViewManager(unittest.TestCase):
                                 stats=None, tests=None, weight='weight_a',
                                 bases='both').group().views
         self.assertEqual(vm_views, E['c_b_w_both'])
+
     # --------------------------------------------------------------------
     # cell items: percentages, unweighted, base 'both'
     def test_vm_p_b_w_both(self):
@@ -154,6 +160,7 @@ class TestViewManager(unittest.TestCase):
         path_cache = './tests/stack_vm.cache'
         os.remove(path_stack)
         os.remove(path_cache)
+
     # --------------------------------------------------------------------
     # cell items: counts + percentages, unweighted, base 'both'
     def test_vm_cp_b_w_both(self):
@@ -165,51 +172,61 @@ class TestViewManager(unittest.TestCase):
                                 weight='weight_a', bases='both').group().views
         self.assertEqual(vm_views, E['cp_b_w_both'])
 
-    # ############################ test_complex ############################
-    # # --------------------------------------------------------------------
-    # # counts + percentage, freqs, nets, weighted, base both
-    # def test_vm_cp_b_n_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=True, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['cp_b_n_w_both'])
+    ############################ test_complex ############################
+    # --------------------------------------------------------------------
+    # counts + percentage, freqs, nets, weighted, base both
+    def test_vm_cp_b_n_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='counts_colpct', freqs=True,
+                                nets=True, stats=None, tests=None,
+                                weight='weight_a', bases='both').group().views
+        self.assertEqual(vm_views, E['cp_b_n_w_both'])
+    # --------------------------------------------------------------------
+    # percentage, freqs, nets, weighted, base both
+    def test_vm_p_b_n_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='colpct', freqs=True, nets=True,
+                                stats=None, tests=None, weight='weight_a',
+                                bases='both').group().views
+        self.assertEqual(vm_views, E['p_b_n_w_both'])
 
-    # # --------------------------------------------------------------------
-    # # percentage, freqs, nets, weighted, base both
-    # def test_vm_p_b_n_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=True, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['p_b_n_w_both'])
+    # --------------------------------------------------------------------
+    # counts + percentage, freqs, stats, weighted, base both
+    def test_vm_cp_b_s_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='counts_colpct', freqs=True,
+                                nets=False, stats=['mean', 'stddev'],
+                                tests=None, weight='weight_a',
+                                bases='both').group().views
+        self.assertEqual(vm_views, E['cp_b_s_w_both'])
 
-    # # --------------------------------------------------------------------
-    # # counts + percentage, freqs, stats, weighted, base both
-    # def test_vm_cp_b_s_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=['mean', 'stddev'], tests=None)
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['cp_b_s_w_both'])
+    # --------------------------------------------------------------------
+    # percentage, freqs, stats, weighted, base both
+    def test_vm_p_b_s_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='colpct', freqs=True, nets=False,
+                                stats=['mean', 'stddev'], tests=None,
+                                weight='weight_a', bases='both').group().views
+        self.assertEqual(vm_views, E['p_b_s_w_both'])
 
-    # # --------------------------------------------------------------------
-    # # percentage, freqs, stats, weighted, base both
-    # def test_vm_p_b_s_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=['mean', 'stddev'], tests=None)
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['p_b_s_w_both'])
-
-    # # --------------------------------------------------------------------
-    # # counts + percentage, freqs, tests, weighted, base both
-    # def test_vm_cp_b_t_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['cp_b_t_w_both'])
+    # --------------------------------------------------------------------
+    # counts + percentage, freqs, tests, weighted, base both
+    def test_vm_cp_b_t_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='counts_colpct', freqs=True,
+                                nets=False, stats=None, tests=['0.05'],
+                                weight='weight_a', bases='both').group().views
+        self.assertEqual(vm_views, E['cp_b_t_w_both'])
 
     # # --------------------------------------------------------------------
     # # percentage, freqs, tests, weighted, base both
@@ -217,7 +234,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['p_b_t_w_both'])
 
     # # --------------------------------------------------------------------
@@ -226,7 +243,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=True, stats=['mean', 'stddev'], tests=None)
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='counts_colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['cp_b_n_s_w_both'])
 
     # # --------------------------------------------------------------------
@@ -235,7 +252,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=True, stats=['mean', 'stddev'], tests=None)
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['p_b_n_s_w_both'])
 
     # # --------------------------------------------------------------------
@@ -244,7 +261,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=True, stats=None, tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='counts_colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['cp_b_n_t_w_both'])
 
     # # --------------------------------------------------------------------
@@ -253,7 +270,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=True, stats=None, tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['p_b_n_t_w_both'])
 
     # # --------------------------------------------------------------------
@@ -262,7 +279,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=False, stats=['mean', 'stddev'], tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='counts_colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['cp_b_s_t_w_both'])
 
     # # --------------------------------------------------------------------
@@ -271,7 +288,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=False, stats=['mean', 'stddev'], tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['p_b_s_t_w_both'])
 
     # # --------------------------------------------------------------------
@@ -280,7 +297,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=True, stats=['mean', 'stddev'], tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='counts_colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['cp_b_n_s_t_w_both'])
 
     # # --------------------------------------------------------------------
@@ -289,7 +306,7 @@ class TestViewManager(unittest.TestCase):
     #     path_stack = './tests/stack_vm.stack'
     #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
     #     vm = ViewManager(stack, freqs=True, nets=True, stats=['mean', 'stddev'], tests=['0.05'])
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
+    #     vm_views = vm.get_views(cell_items='colpct', weight='weight_a', bases='both').group().views
     #     self.assertEqual(vm_views, E['p_b_n_s_t_w_both'])
 
 
