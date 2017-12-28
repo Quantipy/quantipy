@@ -760,6 +760,13 @@ class ViewManager(object):
                                                 'd.sem', 'd.max', 'd.min', 'd.mean'] or
                     vk.split('|')[1] == 'd.mean' and coltests
                 ]
+
+            requested_views['grouped_views'][key] = [
+                item
+                for item in requested_views['grouped_views'][key]
+                if len(item) > 1
+            ]
+
             if all(not rg for rg in requested_views['grouped_views'][key]):
                 requested_views['grouped_views'][key] = []
         return requested_views
