@@ -242,7 +242,7 @@ class ViewManager(object):
         full_grouped_views = []
         flat_gv = list(chain.from_iterable(grouped_views))
 
-        non_grouped = [v for v in self.views if v not in flat_gv]
+        non_grouped = [v for v in self.views[self._base_len():] if v not in flat_gv]
 
         if non_grouped:
             if not grouped_views:
