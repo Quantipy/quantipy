@@ -139,7 +139,7 @@ class ViewManager(object):
         return self
 
     def set_bases(self, base='w',  gross=False, effective=False,
-                  order=['base', 'gross', 'effective'], uw_pos='after'):
+                  order=['base', 'gross', 'effective'], uw_pos='before'):
         """
         Set the base (sample size) view presentation.
 

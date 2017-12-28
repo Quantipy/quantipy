@@ -111,53 +111,59 @@ class TestViewManager(unittest.TestCase):
                                 stats=None, tests=None, weight='weight_a',
                                 bases='auto').group().views
         self.assertEqual(vm_views, E['c_b_w_auto'])
-    # # --------------------------------------------------------------------
-    # # cell items: percentages, weighted, base 'auto'
-    # def test_vm_p_b_w_auto(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='auto').group().views
-    #     self.assertEqual(vm_views, E['p_b_w_auto'])
-
-    # # --------------------------------------------------------------------
-    # # cell items: counts + percentages, weighted, base 'auto'
-    # def test_vm_cp_b_w_auto(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='auto').group().views
-    #     self.assertEqual(vm_views, E['cp_b_w_auto'])
-    # # --------------------------------------------------------------------
-    # # cell items: counts, unweighted, base 'both'
-    # def test_vm_c_b_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='c', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['c_b_w_both'])
-
-    # # --------------------------------------------------------------------
-    # # cell items: percentages, unweighted, base 'both'
-    # def test_vm_p_b_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='p', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['p_b_w_both'])
-    #     path_cache = './tests/stack_vm.cache'
-    #     os.remove(path_stack)
-    #     os.remove(path_cache)
-
-    # # --------------------------------------------------------------------
-    # # cell items: counts + percentages, unweighted, base 'both'
-    # def test_vm_cp_b_w_both(self):
-    #     path_stack = './tests/stack_vm.stack'
-    #     stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
-    #     vm = ViewManager(stack, freqs=True, nets=False, stats=None, tests=None)
-    #     vm_views = vm.get_views(cell_items='cp', weight='weight_a', bases='both').group().views
-    #     self.assertEqual(vm_views, E['cp_b_w_both'])
-
+    # --------------------------------------------------------------------
+    # cell items: percentages, weighted, base 'auto'
+    def test_vm_p_b_w_auto(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='colpct', freqs=True, nets=False,
+                                stats=None, tests=None, weight='weight_a',
+                                bases='auto').group().views
+        self.assertEqual(vm_views, E['p_b_w_auto'])
+    # --------------------------------------------------------------------
+    # cell items: counts + percentages, weighted, base 'auto'
+    def test_vm_cp_b_w_auto(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='counts_colpct', freqs=True,
+                                nets=False, stats=None, tests=None,
+                                weight='weight_a', bases='auto').group().views
+        self.assertEqual(vm_views, E['cp_b_w_auto'])
+    # --------------------------------------------------------------------
+    # cell items: counts, unweighted, base 'both'
+    def test_vm_c_b_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='counts', freqs=True, nets=False,
+                                stats=None, tests=None, weight='weight_a',
+                                bases='both').group().views
+        self.assertEqual(vm_views, E['c_b_w_both'])
+    # --------------------------------------------------------------------
+    # cell items: percentages, unweighted, base 'both'
+    def test_vm_p_b_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='colpct', freqs=True, nets=False,
+                                stats=None, tests=None, weight='weight_a',
+                                bases='both').group().views
+        self.assertEqual(vm_views, E['p_b_w_both'])
+        path_cache = './tests/stack_vm.cache'
+        os.remove(path_stack)
+        os.remove(path_cache)
+    # --------------------------------------------------------------------
+    # cell items: counts + percentages, unweighted, base 'both'
+    def test_vm_cp_b_w_both(self):
+        path_stack = './tests/stack_vm.stack'
+        stack = qp.Stack('viewmanager').load(path_stack, load_cache=True)
+        vm = ViewManager(stack)
+        vm_views = vm.get_views(cell_items='counts_colpct', freqs=True,
+                                nets=False, stats=None, tests=None,
+                                weight='weight_a', bases='both').group().views
+        self.assertEqual(vm_views, E['cp_b_w_both'])
 
     # ############################ test_complex ############################
     # # --------------------------------------------------------------------
