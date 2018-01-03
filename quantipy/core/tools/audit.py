@@ -519,7 +519,7 @@ class Audit(object):
 		ds1 = self[datasets[0]]
 		ds2 = self[datasets[1]]
 		text_key = text_key.split('~')
-		etk = text_key[1] if len(text_key) > 1 else None
+		etk = text_key[1].split()[0] if len(text_key) > 1 else None
 		text_key = text_key[0]
 		for v in var:
 			if not all(ds.var_exists(v) for ds in [ds1, ds2]): continue
@@ -527,6 +527,48 @@ class Audit(object):
 			t2 = ds2.text(v, False, text_key, etk)
 			print '{}:\n\t{}\n\t{}'.format(v, t1, t2)
 			print '*'*60
+		return None
+
+	@modify(to_list=['datasets', 'var'])
+	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
+	def relabel_by(self, var, text_key, name, datasets=None):
+		"""
+		Take over variable labels of a defined DataSet.
+
+		Parameters
+		----------
+		var: str/ list of str
+			Variables that are relabeled
+		text_key: str
+			Text key for text-based label information. Can be provided as
+			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
+		name: str
+			Name of the master DataSet from which the variables labels are taken.
+		datasets: str/ list of str
+			Name(s) of the DataSet(s) for which the variables should be relabeled.
+			If None, all included DataSets are taken, except of the master
+			DataSet.
+
+		Returns
+		-------
+		None
+		"""
+		m_ds = self[name]
+		if not datasets:
+			datasets = [ds for ds in self.ds_names if not ds == name]
+		else:
+			datasets = [ds for ds in datasets
+						if ds in self.ds_names and not ds == name]
+		text_key = text_key.split('~')
+		etk = text_key[1].split()[0] if len(text_key) > 1 else None
+		text_key = text_key[0]
+		for v in var:
+			if not m_ds.var_exists(v): continue
+			label = m_ds.text(v, False, text_key, etk)
+			for n in datasets:
+				ds = self[n]
+				if ds.var_exists(v):
+					ds.set_variable_text(v, label, text_key, etk)
 		return None
 
 	# ------------------------------------------------------------------------
