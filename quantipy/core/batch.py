@@ -140,6 +140,7 @@ class Batch(qp.DataSet):
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
         self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
         self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
+        self.set_missings = meta_editor(self, qp.DataSet.set_missings.__func__)
         # RENAMED DataSet methods
         self._dsfilter = qp.DataSet.filter.__func__
         # UNALLOWED DataSet methods
