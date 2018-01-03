@@ -1851,7 +1851,14 @@ class Stack(defaultdict):
         # get counts + net views
         count_net_views = ['counts', 'counts_sum', 'counts_cumsum']
         if isinstance(views, ViewMapper) and views.keys() == ['net']:
-            counts_nets = views
+            counts_nets = qp.ViewMapper()
+            counts_nets.make_template('frequency', {'rel_to': [None, 'y']})
+            options = {'logic': views['net']['kwargs']['logic'],
+                       'axis': 'x',
+                       'expand': views['net']['kwargs']['expand'],
+                       'complete': views['net']['kwargs']['complete'],
+                       'calc': views['net']['kwargs']['calc']}
+            counts_nets.add_method('net', kwargs=options)
         else:
             counts_nets = [v for v in views if v in count_net_views]
 
