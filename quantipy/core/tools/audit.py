@@ -159,8 +159,8 @@ class Audit(object):
 
 	@modify(to_list='names')
 	def _get_alias(self, names):
-		alias = [self.ds_alias.get(n, n) for n in names if self[n]]
-		return alias[0] if len(alias) == 1 else alias
+		return [self.ds_alias.get(n, n) for n in names if self[n]]
+		# return alias[0] if len(alias) == 1 else alias
 
 	# ------------------------------------------------------------------------
 	# validate
@@ -695,6 +695,50 @@ class Audit(object):
 		final_df = reduce(lambda x, y: x.join(y), all_df)
 		final_df.index.name = var
 		return final_df
+
+	@modify(to_list=['datasets', 'var'])
+	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
+	def extend_reorder_cats_by(self, var, text_key, name, datasets=None):
+		"""
+		Take over missing categories for a variable of a defined DataSet.
+
+		Parameters
+		----------
+		var: str/ list of str
+			Variables that are relabeled
+		text_key: str
+			Text key for text-based label information. Can be provided as
+			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
+		name: str
+			Name of the master DataSet from which the variable categories are taken.
+		datasets: str/ list of str
+			Name(s) of the DataSet(s) for which the variables should be relabeled.
+			If None, all included DataSets are taken, except of the master
+			DataSet.
+
+		Returns
+		-------
+		None
+		"""
+		name = self._get_alias(name)
+		m_ds = self[name]
+		if not datasets:
+			datasets = [alias for alias in self.ds_alias.values() if not alias == name]
+		else:
+			datasets = [ds for ds in self._get_alias(datasets) if not ds == name]
+		for v in var:
+			if not v in m_ds: continue
+			codes = m_ds.codes(v)
+			values = m_ds.value_texts(v, text_key)
+			for n in datasets:
+				ds = self[n]
+				if ds.var_exists(v):
+					n_values = [(c, val) for c, val in zip(codes, values)
+								if not c in ds.codes(v)]
+					if n_values:
+						ds.extend_values(v, n_values, text_key)
+					ds.reorder_values(v, codes)
+		return None
 
 	# ------------------------------------------------------------------------
 	# missing array items
