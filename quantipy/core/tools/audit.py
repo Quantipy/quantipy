@@ -35,6 +35,7 @@ class Audit(object):
 		self.datasets = []
 		self.path = path
 		self._dimensions_comp = dimensions_comp
+		self._raise_error = False
 		self.ds_names = []
 		self.ds_alias = OrderedDict()
 		self.all_incl_vars = []
@@ -43,7 +44,7 @@ class Audit(object):
 
 	@modify(to_list='ds')
 	def __getitem__(self, ds):
-		if not len(set(ds)) == 1:
+		if not len(set([type(d) for d in ds])) == 1:
 			raise TypeError('All slicer must either be str or int.')
 		if isinstance(ds[0], (str, unicode)):
 			not_incl = [d for d in ds if not d in self.ds_names + self.ds_alias.values()]
@@ -58,6 +59,16 @@ class Audit(object):
 		datasets = [d for x, d in enumerate(self.datasets) if x in ds]
 
 		return datasets[0] if len(datasets) == 1 else datasets
+
+	@modify(to_list='ds')
+	def __contains__(self, ds):
+		for d in ds:
+			if not d in self.ds_alias.keys() or d in self.ds_alias.values():
+				if self._raise_error:
+					raise KeyError('{} is not included.'.format(d))
+				else:
+					return False
+		return True
 
 	# ------------------------------------------------------------------------
 	# file i/o
@@ -97,7 +108,7 @@ class Audit(object):
 				ds = self._load_ds(ds)
 			if not alias:
 				alias = ds.name
-			if not (ds.name in self.ds_names or alias in self.ds_alias):
+			if not any(n in self for n in [ds.name, alias]):
 				self.ds_names.append(ds.name)
 				self.ds_alias[ds.name] = alias
 				self.datasets.append(ds)
@@ -120,9 +131,11 @@ class Audit(object):
 		"""
 		if not names:
 			names = self.ds_names
-		elif not all(n in self.ds_names for n in names):
-			not_incl = [n not in self.ds_names for n in names]
-			raise ValueError('{} is not included.'.format(not_incl))
+		else:
+			self._raise_error = True
+			names in self
+			self._raise_error = False
+
 		path = self.path
 		for n in names:
 			ds = self[n]
@@ -131,17 +144,23 @@ class Audit(object):
 			path_json = '{}/{}{}.json'.format(path, n, suffix)
 			path_csv = '{}/{}{}.csv'.format(path, n, suffix)
 			ds.write_quantipy(path_json, path_csv)
-			print 'Created:\n\t{}\n\t{}'.format(path_json, path_csv)
+			print "Created '{}':\n\t{}\n\t{}".format(self._get_alias(n),
+			                                      path_json, path_csv)
 		return None
 
 	# ------------------------------------------------------------------------
-	# update
+	# helper
 	# ------------------------------------------------------------------------
 
 	def _update(self):
 		self.all_incl_vars = self._all_incl_vars()
 		self.mismatches(verbose=False)
 		return None
+
+	@modify(to_list='names')
+	def _get_alias(self, names):
+		alias = [self.ds_alias.get(n, n) for n in names if self[n]]
+		return alias[0] if len(alias) == 1 else alias
 
 	# ------------------------------------------------------------------------
 	# validate
@@ -164,7 +183,7 @@ class Audit(object):
 		inconsistent = []
 		for ds in self.datasets:
 			if not ds.validate(spss_limits, False) is None:
-				inconsistent.append(ds.name)
+				inconsistent.append(self.ds_alias[ds.name])
 		if not inconsistent:
 			print 'No issues found in the datasets!'
 		return inconsistent
@@ -187,20 +206,21 @@ class Audit(object):
 		for var in self.all_incl_vars:
 			header = OrderedDict()
 			for name in self.ds_names:
-				if var in var_map[var.lower()].get(name, []):
-					header[name] = ''
+				n = self.ds_alias[name]
+				if var in var_map[var.lower()].get(n, []):
+					header[n] = ''
 				else:
-					header[name] = []
+					header[n] = []
 					for v in self.all_incl_vars:
 						if v == var:
 							continue
 						elif var.lower() == v.lower():
-							header[name] = var_map[v.lower()][name]
+							header[n] = var_map[v.lower()][n]
 							break
-						elif var.lower() in v.lower() and name in var_map[v.lower()]:
-							header[name].extend(var_map[v.lower()][name])
-					if not header[name]:
-						header[name] = 'x'
+						elif var.lower() in v.lower() and n in var_map[v.lower()]:
+							header[n].extend(var_map[v.lower()][n])
+					if not header[n]:
+						header[n] = 'x'
 			df = pd.DataFrame([header], index=[var])
 			if not all(v == '' for v in df.values.tolist()[0]):
 				unpaired.append(df)
@@ -217,14 +237,15 @@ class Audit(object):
 	def _misspelling_map(self):
 		name_map = {}
 		for name in self.ds_names:
-			for v in self[name].variables():
+			n = self.ds_alias[name]
+			for v in self[n].variables():
 				low = v.lower()
-				if name_map.get(low, {}).get(name):
-					name_map[low][name].append(v)
+				if name_map.get(low, {}).get(n):
+					name_map[low][n].append(v)
 				elif name_map.get(low):
-					name_map[low].update({name: [v]})
+					name_map[low].update({n: [v]})
 				else:
-					name_map[low] = {name: [v]}
+					name_map[low] = {n: [v]}
 		return name_map
 
 	def _all_incl_vars(self):
@@ -265,12 +286,12 @@ class Audit(object):
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
+		name = self._get_alias(name)
 		m_ds = self[name]
 		if not datasets:
-			datasets = [ds for ds in self.ds_names if not ds == name]
+			datasets = [alias for alias in self.ds_alias.values() if not alias == name]
 		else:
-			datasets = [ds for ds in datasets
-						if ds in self.ds_names and not ds == name]
+			datasets = [ds for ds in  self._get_alias(datasets) if not ds == name]
 		for ds in datasets:
 			for var, incl in self.unpaired_vars[[ds]].iterrows():
 				v = incl.values.tolist()[0]
@@ -312,7 +333,7 @@ class Audit(object):
 
 	@modify(to_list=['datasets', 'ignore'])
 	@verify(is_str=['datasets', 'ignore'])
-	def remove_mismatches(self, datasets, ignore=[]):
+	def remove_mismatches(self, datasets=None, ignore=[]):
 		"""
 		Remove variables that are not included in all DataSets.
 
@@ -372,13 +393,12 @@ class Audit(object):
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
-		for n in name:
+		for n in self._get_alias(names):
 			m_ds = self[n]
 			if not datasets:
-				use_ds = [ds for ds in self.ds_names if not ds == n]
+				use_ds = [ds for ds in self.ds_alias.values() if not ds == n]
 			else:
-				use_ds = [ds for ds in datasets
-						  if ds in self.ds_names and not ds == n]
+				use_ds = [ds for ds in self._get_alias(datasets) if not ds == n]
 
 			use_ig = ignore + _get_missing(n)
 			for ds in use_ds:
@@ -402,7 +422,7 @@ class Audit(object):
 		all_df = []
 		for v in self.all_incl_vars:
 			header = OrderedDict()
-			for name in self.ds_names:
+			for name in self.ds_alias.values():
 				if self[name].var_exists(v):
 					header[name] = self[name]._get_type(v)
 			types = header.values()
@@ -486,8 +506,8 @@ class Audit(object):
 		for v in self.all_incl_vars:
 			tks = self._get_tks_for_checking(v, 'label')
 			header = OrderedDict()
-			for x, n1 in enumerate(self.ds_names, 1):
-				for n2 in self.ds_names[x:]:
+			for x, n1 in enumerate(self.ds_alias.values(), 1):
+				for n2 in self.ds_alias.values()[x:]:
 					if all(self[n].var_exists(v) for n in [n1, n2]):
 						collection = 'masks' if self[n1].is_array(v) else 'columns'
 						tobj1 = self[n1]._meta[collection][v]['text']
@@ -514,24 +534,22 @@ class Audit(object):
 		----------
 		var: str/ list of str
 			Displays label texts for these variable(s).
-		datasets: tuple of str
-			Names of the two DataSets from which the label texts are taken.
+		datasets: list of str
+			Names of the  DataSets from which the label texts are taken.
 		text_key: str
 			Text key for text-based label information. Can be provided as
 			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
 		"""
-		if not isinstance(datasets, tuple):
-			raise ValueError("'datasets' must be tupel: (str, str)")
-		ds1 = self[datasets[0]]
-		ds2 = self[datasets[1]]
+		ds = self[datasets]
 		text_key = text_key.split('~')
 		etk = text_key[1].split()[0] if len(text_key) > 1 else None
 		text_key = text_key[0]
 		for v in var:
-			if not all(ds.var_exists(v) for ds in [ds1, ds2]): continue
-			t1 = ds1.text(v, False, text_key, etk)
-			t2 = ds2.text(v, False, text_key, etk)
-			print '{}:\n\t{}\n\t{}'.format(v, t1, t2)
+			if not all(v in d for d in ds): continue
+			texts = [d.text(v, False, text_key, etk) for d in ds]
+			print '{}:\n'.format(v)
+			for t in texts:
+				print '\t{}'.format(t)
 			print '*'*60
 		return None
 
@@ -559,12 +577,12 @@ class Audit(object):
 		-------
 		None
 		"""
+		name = self._get_alias(name)
 		m_ds = self[name]
 		if not datasets:
-			datasets = [ds for ds in self.ds_names if not ds == name]
+			datasets = [alias for alias in self.ds_alias.values() if not alias == name]
 		else:
-			datasets = [ds for ds in datasets
-						if ds in self.ds_names and not ds == name]
+			datasets = [ds for ds in  self._get_alias(datasets) if not ds == name]
 		text_key = text_key.split('~')
 		etk = text_key[1].split()[0] if len(text_key) > 1 else None
 		text_key = text_key[0]
@@ -576,8 +594,6 @@ class Audit(object):
 				if ds.var_exists(v):
 					ds.set_variable_text(v, label, text_key, etk)
 		return None
-
-
 
 	# ------------------------------------------------------------------------
 	# categoricals
@@ -595,12 +611,11 @@ class Audit(object):
 		"""
 		all_df = []
 		for v in self.all_incl_vars:
-			if any(self[name].var_exists(v) and not
-			       self[name]._has_categorical_data(v) for name in self.ds_names):
+			if any(v in ds and not ds._has_categorical_data(v) for ds in self.datasets):
 				continue
 			header = OrderedDict()
 			cats = []
-			for name in self.ds_names:
+			for name in self.ds_alias.values():
 				if self[name].var_exists(v):
 					codes = self[name].codes(v)
 					header[name] = codes
@@ -671,12 +686,11 @@ class Audit(object):
 		etk = text_key[1].split()[0] if len(text_key) > 1 else None
 		text_key = text_key[0]
 		all_df = []
-		for name in self.ds_names:
-			if self[name].var_exists(var):
+		for name in self.ds_alias.values():
+			if var in self[name]:
 				val = self[name].value_texts(var, text_key, etk)
 				codes = self[name].codes(var)
 				df = pd.DataFrame(val, index=codes, columns=[name])
-				df.index.name
 				all_df.append(df)
 		final_df = reduce(lambda x, y: x.join(y), all_df)
 		final_df.index.name = var
