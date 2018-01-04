@@ -221,7 +221,7 @@ class ViewManager(object):
 
         Parameters
         ----------
-        style : {'reduce', 'repeat'}, default `reduce`
+        style : {'reduce', 'repeat'}, default 'reduce'
             Defines how the grouping will instruct the indexing of concatenated
             ``View`` dataframes in a ``qp.Chain`` object. ``'reduced'`` will
             show each index code a single time, while ``'repeat'`` will show
