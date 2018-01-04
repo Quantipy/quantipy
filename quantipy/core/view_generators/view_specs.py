@@ -42,12 +42,16 @@ class ViewManager(object):
         weight : str, default None
             The name of the weight variable to look for searching aggregations.
         freqs : bool, default True
-            Text...
+            Determines if all regular frequency-types are being pulled
+            from the ``qp.Stack``. This includes counts, percentage and
+            cumulative percentages.
         nets : bool, default True
-            Text...
+            Determines if net-types are being pulled from the ``qp.Stack``.
+            This includes simple, block-like and expanded nets as well as
+            attached calculations.
         stats : (list of) {'mean', 'stddev', 'min', 'max', ...},
                 default ['mean', 'stddev']
-            Text...
+            The descriptive statistics (if any) to get from the ``qp.Stack``.
         tests : (list of) float, default None
             Text...
         cell_items: {'counts', 'colpct', 'rowpct', 'counts_colpct',
