@@ -68,7 +68,7 @@ class ViewManager(object):
             and the 'weighted' base, 'weighted' / 'unweighted' will try to get
             the respective version of the base view. The latter three will
             automatically fall back to the 'auto' behaviour if the passed value
-            would lead to a failure.
+            would lead to a failure or inconsistencies.
 
         Returns
         -------
