@@ -778,7 +778,7 @@ class ChainManager(object):
                                 df = df.drop(base, axis=1, level=colbase_l)
                             chain_dfs.append(to_chain((df, x, y), meta))
                         if not folder:
-                            chain_coll.append(chain_dfs)
+                            chain_coll.extend(chain_dfs)
                         else:
                             folders = [(i, c.keys()[0]) for i, c in
                                        enumerate(chain_coll, 0) if
