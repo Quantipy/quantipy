@@ -371,8 +371,9 @@ class Audit(object):
 
 		Parameters
 		----------
-		name: str
-			Name of the master DataSet from which the variable meta is taken.
+		name: str/ list of str
+			Name(s) of the master DataSet(s) from which the variable meta is
+			taken.
 		datasets: str/ list of str
 			Name(s) of the DataSet(s) for which the variable meta should be
 			included. If None, all included DataSets are taken.
@@ -797,7 +798,7 @@ class Audit(object):
 	# missing array items
 	# ------------------------------------------------------------------------
 
-	def unpaired_array_items(self):
+	def report_item_diffs(self):
 		"""
 		Check if included arrays have the same items.
 		"""
@@ -817,18 +818,15 @@ class Audit(object):
 
 		all_df = []
 		for a in arrays:
-			a_header = OrderedDict()
-			items_df = []
+			v_df = []
+			for name in self.ds_alias.values():
+				if a in self[name]:
+					sources = [np.NaN if s in self[name].sources(a) else 'x'
+							   for s in total_ais[a]]
 			for s in total_ais[a]:
 				i_header = OrderedDict()
-				for name in self.ds_names:
-					if not name in a_header:
-						if not self[name].var_exists(a):
-							a_header[name] = 'x'
-						elif not self[name]._get_type(a) == 'array':
-							a_header[name] = self[name]._get_type(a)
-						else:
-							a_header[name] = ''
+				for name in self.ds_alias.values():
+					ds = self[name]
 					if not any(self[name].var_exists(v) for v in [a, s]):
 						i_header[name] = 'x'
 					elif not s in self[name].sources(a):
@@ -846,3 +844,22 @@ class Audit(object):
 				all_df.append(items)
 		return pd.concat(all_df, axis=0)
 
+		# text_key = text_key.split('~')
+		# etk = text_key[1].split()[0] if len(text_key) > 1 else None
+		# text_key = text_key[0]
+		# df_all_v = []
+		# for v in var:
+		# 	all_df = []
+		# 	for name in self.ds_alias.values():
+		# 		if v in self[name]:
+		# 			val = self[name].value_texts(v, text_key, etk)
+		# 			codes = self[name].codes(v)
+		# 			index = pd.MultiIndex.from_tuples([(v, c) for c in codes])
+		# 			df = pd.DataFrame(val, index=index, columns=[name])
+		# 			all_df.append(df)
+		# 	final_df = reduce(lambda x, y: x.join(y), all_df)
+		# 	df_all_v.append(final_df)
+		# if not all_df:
+		# 	print 'No variables to show.'
+		# else:
+		# 	return pd.concat(df_all_v, axis=0)
