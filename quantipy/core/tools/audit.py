@@ -800,11 +800,8 @@ class Audit(object):
 
 	def report_item_diffs(self):
 		"""
-		Check if included arrays have the same items.
+		Reports arrays that have different items in the DataSets.
 		"""
-		arrays = [a for a in self.all_incl_vars
-				  if any(d.var_exists(a) and d.is_array(a)
-				         for d in self.datasets)]
 		arrays = []
 		total_ais = OrderedDict()
 		for v in self.all_incl_vars:
@@ -823,43 +820,83 @@ class Audit(object):
 				if a in self[name]:
 					sources = [np.NaN if s in self[name].sources(a) else 'x'
 							   for s in total_ais[a]]
-			for s in total_ais[a]:
-				i_header = OrderedDict()
-				for name in self.ds_alias.values():
-					ds = self[name]
-					if not any(self[name].var_exists(v) for v in [a, s]):
-						i_header[name] = 'x'
-					elif not s in self[name].sources(a):
-						i_header[name] = 'x'
-					else:
-						i_header[name] = ''
-				i_df = pd.DataFrame([i_header], index=[s])
-				if not all(v == '' for v in i_df.values.tolist()[0]):
-					items_df.append(i_df)
-			a_df = pd.DataFrame([a_header], index=[a])
-			if not all(v == '' for v in a_df.values.tolist()[0]):
-				all_df.append(a_df)
-			if items_df:
-				items = pd.concat(items_df, axis=0)
-				all_df.append(items)
-		return pd.concat(all_df, axis=0)
+					index = pd.MultiIndex.from_tuples([(a, i) for i in total_ais[a]])
+					df = pd.DataFrame(sources, index=index, columns=[name])
+					v_df.append(df)
+		 	all_df.append(reduce(lambda x, y: x.join(y), v_df))
+		if all_df:
+			all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
+			if len(all_df) == 0:
+				print 'No varied items detected in included DataSets.'
+				return None, []
+			variables = []
+			for v in all_df.index.get_level_values(0).tolist():
+			 	if not v in variables: variables.append(v)
+			return all_df, variables
+		else:
+			print 'No varied items detected in included DataSets.'
+			return None, []
 
-		# text_key = text_key.split('~')
-		# etk = text_key[1].split()[0] if len(text_key) > 1 else None
-		# text_key = text_key[0]
-		# df_all_v = []
-		# for v in var:
-		# 	all_df = []
-		# 	for name in self.ds_alias.values():
-		# 		if v in self[name]:
-		# 			val = self[name].value_texts(v, text_key, etk)
-		# 			codes = self[name].codes(v)
-		# 			index = pd.MultiIndex.from_tuples([(v, c) for c in codes])
-		# 			df = pd.DataFrame(val, index=index, columns=[name])
-		# 			all_df.append(df)
-		# 	final_df = reduce(lambda x, y: x.join(y), all_df)
-		# 	df_all_v.append(final_df)
-		# if not all_df:
-		# 	print 'No variables to show.'
+	def report_item_text_diffs(self, strict=0.9):
+		"""
+		Reports variables that have different item texts in the DataSets.
+
+		Parameters
+		----------
+		strict: float, default 0.9
+			Requested similarity of the labels.
+
+		Returns
+		-------
+		cat_diff: pd.DataFrame
+			The values of the DataFrame include various cats and the text_keys
+			whose texts differ.
+		"""
+		arrays = [a for a in self.all_incl_vars
+				  if any(d.var_exists(a) and d.is_array(a) for d in self.datasets)]
+
+
+		# all_df = []
+		# for var in self.all_incl_vars:
+		# 	if any(var in ds and not ds._has_categorical_data(var) for ds in self.datasets):
+		# 		continue
+		# 	tks = self._get_tks_for_checking(var, 'values')
+		#  	df_var = []
+		#  	for x, n1 in enumerate(self.ds_alias.values(), 1):
+		# 		for n2 in self.ds_alias.values()[x:]:
+		#  			if all(self[n].var_exists(var) for n in [n1, n2]):
+		#  				if self[n1].is_array(var):
+		#  					vobj1 = self[n1]._meta['lib']['values'][var]
+		#  					vobj2 = self[n2]._meta['lib']['values'][var]
+		#  				else:
+		# 	 				vobj1 = self[n1]._meta['columns'][var]['values']
+		# 	 				vobj2 = self[n2]._meta['columns'][var]['values']
+		# 	 			vobj1_dict = {v['value']: v['text'] for v in vobj1}
+		# 	 			vobj2_dict = {v['value']: v['text'] for v in vobj2}
+		# 	 			diff = []
+		# 	 			for c, text in vobj1_dict.items():
+		# 	 				diff.append(self._compare_texts(tks, text,
+		# 	 				            					vobj2_dict[c],
+		# 	 				            					strict) or np.NaN)
+		# 	 			index = pd.MultiIndex.from_tuples([(var, c) for c in vobj1_dict.keys()])
+		# 				df = pd.DataFrame({'{},\n{}'.format(n1, n2): diff}, index=index)
+		# 				df_var.append(df)
+		# 	if len(df_var) == 0:
+		# 		continue
+		# 	elif len(df_var) == 1:
+		# 		all_df.append(df_var[0])
+		# 	else:
+		# 		df_var = reduce(lambda x, y: x.join(y), df_var)
+		# 		all_df.append(df_var)
+		# if all_df:
+		# 	all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
+		# 	if len(all_df) == 0:
+		# 		print 'No varied value labels detected in included DataSets.'
+		# 		return None, []
+		# 	variables = []
+		# 	for v in all_df.index.get_level_values(0).tolist():
+		# 	 	if not v in variables: variables.append(v)
+		# 	return all_df, variables
 		# else:
-		# 	return pd.concat(df_all_v, axis=0)
+		# 	print 'No varied value labels detected in included DataSets.'
+		# 	return None, []
