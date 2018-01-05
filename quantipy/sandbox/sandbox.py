@@ -782,28 +782,22 @@ class ChainManager(object):
                         else:
                             folders = [(i, c.keys()[0]) for i, c in
                                        enumerate(chain_coll, 0) if
-                                       isinstance(c, dict )]
+                                       isinstance(c, dict)]
                             if not folders:
-                                chain_coll.append({name: chain_dfs})
+                                chain_coll.append({folder: chain_dfs})
                             else:
-                                if name in [f[1] for f in folders]:
-                                    pos = [f[0] for f in folders if f[1] == name][0]
-                                    chain_coll[pos].append(chain_dfs)
+                                if folder in [f[1] for f in folders]:
+                                    pos = [f[0] for f in folders
+                                           if f[1] == folder][0]
+                                    chain_coll[pos][folder].append(chain_dfs)
+
                                 else:
-                                    chain_coll.append({name: chain_dfs})
+                                    chain_coll.append({folder: chain_dfs})
                 except:
                     failed.append(name)
             return chain_coll
         chain_coll = []
         chains = mine_mtd(mtd_doc, paint, chain_coll)
-        for chain in chain_coll:
-            if isinstance(chain, dict):
-                print '*' * 60
-                print chain.keys()
-                print chain.values()
-                print
-            else:
-                print chain
         return self
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
