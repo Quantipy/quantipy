@@ -524,8 +524,8 @@ class Audit(object):
 		else:
 			print 'No varied labels detected in included DataSets.'
 
-	@modify(to_list='var')
-	@verify(is_str=['var', 'datasets', 'text_key'])
+	@modify(to_list=['var', 'datasets'])
+	@verify(is_str=['var', 'text_key'])
 	def show_labels(self, var, datasets, text_key):
 		"""
 		Display labels of variables in different DataSets.
@@ -540,18 +540,23 @@ class Audit(object):
 			Text key for text-based label information. Can be provided as
 			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
 		"""
-		ds = self[datasets]
-		text_key = text_key.split('~')
-		etk = text_key[1].split()[0] if len(text_key) > 1 else None
-		text_key = text_key[0]
+		ds = [self[datasets]] if len(datasets)==1 else self[datasets]
+		alias = self._get_alias(datasets)
+		tk = text_key.split('~')
+		etk = tk[1].split()[0] if len(tk) > 1 else None
+		tk = tk[0]
+		all_df = []
 		for v in var:
 			if not all(v in d for d in ds): continue
-			texts = [d.text(v, False, text_key, etk) for d in ds]
-			print '{}:\n'.format(v)
-			for t in texts:
-				print '\t{}'.format(t)
-			print '*'*60
-		return None
+			texts = [d.text(v, False, tk, etk) if v in d else None
+					 for d in ds]
+			index = pd.MultiIndex.from_tuples([(v, a) for a in alias])
+			df = pd.DataFrame({text_key: texts}, index=index)
+			all_df.append(df)
+		if not all_df:
+			print 'No variables to show.'
+		else:
+			return pd.concat(all_df, axis=0)
 
 	@modify(to_list=['datasets', 'var'])
 	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
@@ -601,7 +606,7 @@ class Audit(object):
 
 	def report_cat_diffs(self):
 		"""
-		Reports variables that have different categories in the DataSets.
+		Reports variables that have different categorie codes in the DataSets.
 
 		Returns
 		-------
@@ -632,7 +637,7 @@ class Audit(object):
 
 	def report_cat_text_diffs(self):
 		"""
-		Reports variables that have different categories in the DataSets
+		Reports variables that have different categorie texts in the DataSets.
 
 		Parameters
 		----------
@@ -645,16 +650,19 @@ class Audit(object):
 			The values of the DataFrame include various cats and the text_keys
 			whose texts differ.
 		"""
-		# all_df = []
-		# for v in self.all_incl_vars:
-		# 	tks = self._get_tks_for_checking(v, 'label')
-		# 	header = OrderedDict()
-		# 	for x, n1 in enumerate(self.ds_names, 1):
-		# 		for n2 in self.ds_names[x:]:
-		# 			if all(self[n].var_exists(v) for n in [n1, n2]):
-		# 				collection = 'masks' if self[n1].is_array(v) else 'columns'
-		# 				tobj1 = self[n1]._meta[collection][v]['text']
-		# 				tobj2 = self[n2]._meta[collection][v]['text']
+		all_df = []
+		for v in self.all_incl_vars:
+			tks = self._get_tks_for_checking(v, 'values')
+		 	header = OrderedDict()
+		 	for x, n1 in enumerate(self.ds_names, 1):
+		 		for n2 in self.ds_names[x:]:
+		 			if all(self[n].var_exists(v) for n in [n1, n2]):
+		 				if self[n1].is_array(v):
+		 					vobj1 = self[n1]._meta['lib']['values'][v]
+		 					vobj2 = self[n2]._meta['lib']['values'][v]
+		 				else:
+			 				vobj1 = self[n1]._meta[collection][v]['values']
+			 				vobj2 = self[n2]._meta[collection][v]['values']
 		# 				diff_tks = self._compare_texts(tks, tobj1, tobj2, strict)
 		# 				header['{},\n{}'.format(n1, n2)] = diff_tks if diff_tks else ''
 		# 			else:
@@ -667,6 +675,7 @@ class Audit(object):
 		# else:
 		# 	print 'No varied labels detected in included DataSets.'
 
+	@modify(to_list=['var'])
 	@verify(is_str=['var', 'text_key'])
 	def show_cats(self, var, text_key):
 		"""
@@ -685,20 +694,27 @@ class Audit(object):
 		text_key = text_key.split('~')
 		etk = text_key[1].split()[0] if len(text_key) > 1 else None
 		text_key = text_key[0]
-		all_df = []
-		for name in self.ds_alias.values():
-			if var in self[name]:
-				val = self[name].value_texts(var, text_key, etk)
-				codes = self[name].codes(var)
-				df = pd.DataFrame(val, index=codes, columns=[name])
-				all_df.append(df)
-		final_df = reduce(lambda x, y: x.join(y), all_df)
-		final_df.index.name = var
-		return final_df
+		df_all_v = []
+		for v in var:
+			all_df = []
+			for name in self.ds_alias.values():
+				if v in self[name]:
+					val = self[name].value_texts(v, text_key, etk)
+					codes = self[name].codes(v)
+					index = pd.MultiIndex.from_tuples([(v, c) for c in codes])
+					df = pd.DataFrame(val, index=index, columns=[name])
+					all_df.append(df)
+			final_df = reduce(lambda x, y: x.join(y), all_df)
+			df_all_v.append(final_df)
+		if not all_df:
+			print 'No variables to show.'
+		else:
+			return pd.concat(df_all_v, axis=0)
 
 	@modify(to_list=['datasets', 'var'])
 	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
-	def extend_reorder_cats_by(self, var, text_key, name, datasets=None):
+	def extend_reorder_cats_by(self, var, text_key, name, datasets=None,
+	                           overwrite=False):
 		"""
 		Take over missing categories for a variable of a defined DataSet.
 
@@ -735,6 +751,10 @@ class Audit(object):
 				if ds.var_exists(v):
 					n_values = [(c, val) for c, val in zip(codes, values)
 								if not c in ds.codes(v)]
+					if overwrite:
+						n_texts = {c: val for c, val in zip(codes, values)
+								   if c in ds.codes(v)}
+						ds.set_value_texts(v, n_texts, text_key)
 					if n_values:
 						ds.extend_values(v, n_values, text_key)
 					ds.reorder_values(v, codes)
