@@ -47,7 +47,7 @@ import sys
 from itertools import product, chain
 from collections import OrderedDict
 
-VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR']
+VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR']
 
 class DataSet(object):
     """
