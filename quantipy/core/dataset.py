@@ -3339,12 +3339,12 @@ class DataSet(object):
             for tk, ed in product(self.valid_tks, [None, 'x', 'y']):
                 if (any(self.text(i, True, tk, ed)==self.text(i, False, tk, ed)
                     for i in sources) and self.text(a, text_key=tk, axis_edit=ed)):
-                    rename_items = {self.item_no(i): self.text(i, True, tk, ed)
+                    rename_items = {self.item_no(i): self.text(i, True, tk, ed) or ''
                                     for i in sources}
                     self.set_item_texts(a, rename_items, tk, ed)
                 elif not any(self.text(i, True, tk, ed) in self.text(i, False, tk, ed)
                     for i in sources if self.text(i, False, tk, ed)) and self.text(a, text_key=tk, axis_edit=ed):
-                    rename_items = {self.item_no(i): self.text(i, True, tk, ed)
+                    rename_items = {self.item_no(i): self.text(i, True, tk, ed) or ''
                                     for i in sources}
                     self.set_item_texts(a, rename_items, tk, ed)
         return None
