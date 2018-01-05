@@ -744,13 +744,13 @@ class ChainManager(object):
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
             return new_chain
 
-        def mine_mtd(tab_collection, paint, per_folder, folder=None):
+        def mine_mtd(tab_collection, paint, chain_coll, folder=None):
             failed = []
             unsupported = []
             for name, sub_tab in tab_collection.items():
                 try:
                     if isinstance(sub_tab.values()[0], dict):
-                        mine_mtd(sub_tab, paint, per_folder, name)
+                        mine_mtd(sub_tab, paint, chain_coll, name)
                     else:
                         tabs = split_tab(sub_tab)
                         chain_dfs = []
@@ -778,18 +778,32 @@ class ChainManager(object):
                                 df = df.drop(base, axis=1, level=colbase_l)
                             chain_dfs.append(to_chain((df, x, y), meta))
                         if not folder:
-                            per_folder[name] = chain_dfs
+                            chain_coll.append(chain_dfs)
                         else:
-                            if not folder in per_folder:
-                                per_folder[folder] = []
-                            per_folder[folder].append(chain_dfs)
+                            folders = [(i, c.keys()[0]) for i, c in
+                                       enumerate(chain_coll, 0) if
+                                       isinstance(c, dict )]
+                            if not folders:
+                                chain_coll.append({name: chain_dfs})
+                            else:
+                                if name in [f[1] for f in folders]:
+                                    pos = [f[0] for f in folders if f[1] == name][0]
+                                    chain_coll[pos].append(chain_dfs)
+                                else:
+                                    chain_coll.append({name: chain_dfs})
                 except:
                     failed.append(name)
-            return per_folder
-        per_folder = OrderedDict()
-        chains = mine_mtd(mtd_doc, paint, per_folder)
-        for name, chain in chains.items():
-            print name, type(chain), len(chain)
+            return chain_coll
+        chain_coll = []
+        chains = mine_mtd(mtd_doc, paint, chain_coll)
+        for chain in chain_coll:
+            if isinstance(chain, dict):
+                print '*' * 60
+                print chain.keys()
+                print chain.values()
+                print
+            else:
+                print chain
         return self
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
