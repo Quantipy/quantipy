@@ -365,7 +365,7 @@ class Audit(object):
 
 	@modify(to_list=['name', 'datasets', 'ignore'])
 	@verify(is_str=['name', 'datasets', 'ignore'])
-	def fill_mismatches_by(self, name, datasets=None, ignore=[]):
+	def fill_mismatches_by(self, name=None, datasets=None, ignore=[]):
 		"""
 		Fill mismatches in DataSets by the metadata if a defined DataSet.
 
@@ -384,6 +384,7 @@ class Audit(object):
 		None
 		"""
 		def _get_missing(ds):
+			if self.unpaired_vars is None: return []
 			missing = self.unpaired_vars[ds]
 			missing = missing[missing != ''].index.tolist()
 			return missing
@@ -393,7 +394,8 @@ class Audit(object):
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
-		for n in self._get_alias(names):
+		if not name: name = self.ds_alias.values()
+		for n in self._get_alias(name):
 			m_ds = self[n]
 			if not datasets:
 				use_ds = [ds for ds in self.ds_alias.values() if not ds == n]
@@ -520,9 +522,11 @@ class Audit(object):
 			if not all(tk == '' for tk in df.values.tolist()[0]):
 				all_df.append(df)
 		if all_df:
-			return pd.concat(all_df, axis=0)
+			all_df = pd.concat(all_df, axis=0)
+			return all_df, all_df.index.tolist()
 		else:
 			print 'No varied labels detected in included DataSets.'
+			return None, []
 
 	@modify(to_list=['var', 'datasets'])
 	@verify(is_str=['var', 'text_key'])
@@ -630,12 +634,13 @@ class Audit(object):
 			if not all(cat == cats[0] for cat in cats):
 			 	all_df.append(pd.DataFrame([header], index=[v]))
 		if all_df:
-			all_df = pd.concat(all_df, axis=0)
-			return all_df.replace(np.NaN, '')
+			all_df = pd.concat(all_df, axis=0).replace(np.NaN, '')
+			return all_df, all_df.index.tolist()
 		else:
 			print 'No varied categories detected in included DataSets.'
+			return None, []
 
-	def report_cat_text_diffs(self):
+	def report_cat_text_diffs(self, strict=0.9):
 		"""
 		Reports variables that have different categorie texts in the DataSets.
 
@@ -651,29 +656,49 @@ class Audit(object):
 			whose texts differ.
 		"""
 		all_df = []
-		for v in self.all_incl_vars:
-			tks = self._get_tks_for_checking(v, 'values')
-		 	header = OrderedDict()
-		 	for x, n1 in enumerate(self.ds_names, 1):
-		 		for n2 in self.ds_names[x:]:
-		 			if all(self[n].var_exists(v) for n in [n1, n2]):
-		 				if self[n1].is_array(v):
-		 					vobj1 = self[n1]._meta['lib']['values'][v]
-		 					vobj2 = self[n2]._meta['lib']['values'][v]
+		for var in self.all_incl_vars:
+			if any(var in ds and not ds._has_categorical_data(var) for ds in self.datasets):
+				continue
+			tks = self._get_tks_for_checking(var, 'values')
+		 	df_var = []
+		 	for x, n1 in enumerate(self.ds_alias.values(), 1):
+				for n2 in self.ds_alias.values()[x:]:
+		 			if all(self[n].var_exists(var) for n in [n1, n2]):
+		 				if self[n1].is_array(var):
+		 					vobj1 = self[n1]._meta['lib']['values'][var]
+		 					vobj2 = self[n2]._meta['lib']['values'][var]
 		 				else:
-			 				vobj1 = self[n1]._meta[collection][v]['values']
-			 				vobj2 = self[n2]._meta[collection][v]['values']
-		# 				diff_tks = self._compare_texts(tks, tobj1, tobj2, strict)
-		# 				header['{},\n{}'.format(n1, n2)] = diff_tks if diff_tks else ''
-		# 			else:
-		# 				header['{},\n{}'.format(n1, n2)] = ''
-		# 	df = pd.DataFrame([header], index=[v])
-		# 	if not all(tk == '' for tk in df.values.tolist()[0]):
-		# 		all_df.append(df)
-		# if all_df:
-		# 	return pd.concat(all_df, axis=0)
-		# else:
-		# 	print 'No varied labels detected in included DataSets.'
+			 				vobj1 = self[n1]._meta['columns'][var]['values']
+			 				vobj2 = self[n2]._meta['columns'][var]['values']
+			 			vobj1_dict = {v['value']: v['text'] for v in vobj1}
+			 			vobj2_dict = {v['value']: v['text'] for v in vobj2}
+			 			diff = []
+			 			for c, text in vobj1_dict.items():
+			 				diff.append(self._compare_texts(tks, text,
+			 				            					vobj2_dict[c],
+			 				            					strict) or np.NaN)
+			 			index = pd.MultiIndex.from_tuples([(var, c) for c in vobj1_dict.keys()])
+						df = pd.DataFrame({'{},\n{}'.format(n1, n2): diff}, index=index)
+						df_var.append(df)
+			if len(df_var) == 0:
+				continue
+			elif len(df_var) == 1:
+				all_df.append(df_var[0])
+			else:
+				df_var = reduce(lambda x, y: x.join(y), df_var)
+				all_df.append(df_var)
+		if all_df:
+			all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
+			if len(all_df) == 0:
+				print 'No varied value labels detected in included DataSets.'
+				return None, []
+			variables = []
+			for v in all_df.index.get_level_values(0).tolist():
+			 	if not v in variables: variables.append(v)
+			return all_df, variables
+		else:
+			print 'No varied value labels detected in included DataSets.'
+			return None, []
 
 	@modify(to_list=['var'])
 	@verify(is_str=['var', 'text_key'])
@@ -713,10 +738,10 @@ class Audit(object):
 
 	@modify(to_list=['datasets', 'var'])
 	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
-	def extend_reorder_cats_by(self, var, text_key, name, datasets=None,
-	                           overwrite=False):
+	def align_cats_by(self, var, text_key, name, datasets=None,
+	                  overwrite=False, extend=False, reorder=False):
 		"""
-		Take over missing categories for a variable of a defined DataSet.
+		Take over categories for variable(s) of a defined DataSet.
 
 		Parameters
 		----------
@@ -731,6 +756,12 @@ class Audit(object):
 			Name(s) of the DataSet(s) for which the variables should be relabeled.
 			If None, all included DataSets are taken, except of the master
 			DataSet.
+		overwrite: bool, default False
+			Overwrite value texts.
+		extend: bool, default False
+			Add missing values.
+		reorder: bool, default False
+			Order values by the master DataSet.
 
 		Returns
 		-------
@@ -749,15 +780,17 @@ class Audit(object):
 			for n in datasets:
 				ds = self[n]
 				if ds.var_exists(v):
+					# missing values
 					n_values = [(c, val) for c, val in zip(codes, values)
 								if not c in ds.codes(v)]
+					if extend and n_values:
+						ds.extend_values(v, n_values, text_key)
 					if overwrite:
 						n_texts = {c: val for c, val in zip(codes, values)
 								   if c in ds.codes(v)}
 						ds.set_value_texts(v, n_texts, text_key)
-					if n_values:
-						ds.extend_values(v, n_values, text_key)
-					ds.reorder_values(v, codes)
+					if reorder:
+						ds.reorder_values(v, codes)
 		return None
 
 	# ------------------------------------------------------------------------
