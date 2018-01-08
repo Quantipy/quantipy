@@ -1521,22 +1521,22 @@ class Chain(object):
 
 
     def describe(self):
-        def _describe(cell_defs):
+        def _describe(cell_defs, row_id):
             descr = []
             for r, m in cell_defs.items():
                 descr.append(
                     [k if isinstance(v, bool) else v for k, v in m.items() if v])
-            if any('is_block' in d for d in descr) and self._array_style != 0:
-                blocks = self._describe_block(descr)
+            if any('is_block' in d for d in descr):
+                blocks = self._describe_block(descr, row_id)
                 calc = 'calc' in blocks
                 for d, b in zip(descr, blocks):
                     if b:
                         d.append(b) if not calc else d.extend([b, 'has_calc'])
             return descr
         if self._array_style == 0:
-            description = {k: _describe(v) for k, v in self.contents.items()}
+            description = {k: _describe(v, k) for k, v in self.contents.items()}
         else:
-            description = _describe(self.contents)
+            description = _describe(self.contents, None)
         return description
 
     @lazy_property
@@ -1829,13 +1829,14 @@ class Chain(object):
         else:
             return None
 
-    def _describe_block(self, description):
+    def _describe_block(self, description, row_id):
         if self.painted:
             repaint = True
             self.toggle_labels()
         else:
             repaint = False
         vpr = self._views_per_rows
+        if row_id is not None: vpr = [v[1] for v in vpr[row_id].items()]
         idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
         block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2 or
