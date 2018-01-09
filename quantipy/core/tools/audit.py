@@ -5,6 +5,7 @@ import pandas as pd
 import quantipy as qp
 import numpy  as np
 from quantipy.core.tools.qp_decorators import *
+from quantipy.core.tools.dp.prep import frange
 
 from difflib import SequenceMatcher
 from collections import OrderedDict
@@ -122,7 +123,7 @@ class Audit(object):
 		Define the path attribute.
 		"""
 		self.path = path
-		return None
+		return Nontye
 
 	@modify(to_list='names')
 	def save(self, names=None, suffix='_audit'):
@@ -144,7 +145,7 @@ class Audit(object):
 			path_json = '{}/{}{}.json'.format(path, n, suffix)
 			path_csv = '{}/{}{}.csv'.format(path, n, suffix)
 			ds.write_quantipy(path_json, path_csv)
-			print "Created '{}':\n\t{}\n\t{}".format(self._get_alias(n),
+			print "Created '{}':\n\t{}\n\t{}".format(self._get_alias(n)[0],
 			                                      path_json, path_csv)
 		return None
 
@@ -160,7 +161,37 @@ class Audit(object):
 	@modify(to_list='names')
 	def _get_alias(self, names):
 		return [self.ds_alias.get(n, n) for n in names if self[n]]
-		# return alias[0] if len(alias) == 1 else alias
+
+	@modify(to_list='datasets')
+	def _str_to_instance(self, datasets=None):
+		if not datasets:
+			return self.datasets
+		else:
+			return self[datasets] if len(datasets) > 1 else [self[datasets]]
+
+	def _is_categorical(self, var, datasets=None):
+		use_ds = [ds for ds in self._str_to_instance(datasets) if var in ds]
+		return all(ds._has_categorical_data(var) for ds in use_ds)
+
+	def _is_array(self, var, datasets=None):
+		use_ds = [ds for ds in self._str_to_instance(datasets) if var in ds]
+		return all(ds.is_array(var) for ds in use_ds)
+
+	@modify(to_list='var')
+	def _get_sources(self, var=None, datasets=None):
+		if not datasets: datasets = self.ds_alias.values()
+		if not var:
+			var = [v for v in self.all_incl_vars if self._is_array(v, datasets)]
+		else:
+			var = [v for v in var if self._is_array(v, datasets)]
+		total_ais = OrderedDict()
+		for v in var:
+			for d in datasets:
+				if v in self[d] and not v in total_ais: total_ais[v] = []
+				for source in self[d].sources(v):
+					if not source in total_ais[v]:
+						total_ais[v].append(source)
+		return total_ais
 
 	# ------------------------------------------------------------------------
 	# validate
@@ -621,8 +652,7 @@ class Audit(object):
 		"""
 		all_df = []
 		for v in self.all_incl_vars:
-			if any(v in ds and not ds._has_categorical_data(v) for ds in self.datasets):
-				continue
+			if not self._is_categorical(v): continue
 			header = OrderedDict()
 			cats = []
 			for name in self.ds_alias.values():
@@ -658,8 +688,7 @@ class Audit(object):
 		"""
 		all_df = []
 		for var in self.all_incl_vars:
-			if any(var in ds and not ds._has_categorical_data(var) for ds in self.datasets):
-				continue
+			if not self._is_categorical(var): continue
 			tks = self._get_tks_for_checking(var, 'values')
 		 	df_var = []
 		 	for x, n1 in enumerate(self.ds_alias.values(), 1):
@@ -686,7 +715,7 @@ class Audit(object):
 			elif len(df_var) == 1:
 				all_df.append(df_var[0])
 			else:
-				df_var = reduce(lambda x, y: x.join(y), df_var)
+				df_var = pd.concat(df_var, axis=1)
 				all_df.append(df_var)
 		if all_df:
 			all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
@@ -711,8 +740,6 @@ class Audit(object):
 		----------
 		var: str
 			Displays value texts for this variable.
-		datasets: tuple of str
-			Names of the two DataSets from which the label texts are taken.
 		text_key: str
 			Text key for text-based label information. Can be provided as
 			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
@@ -730,9 +757,9 @@ class Audit(object):
 					index = pd.MultiIndex.from_tuples([(v, c) for c in codes])
 					df = pd.DataFrame(val, index=index, columns=[name])
 					all_df.append(df)
-			final_df = reduce(lambda x, y: x.join(y), all_df)
-			df_all_v.append(final_df)
-		if not all_df:
+			all_df = pd.concat(all_df, axis=1)
+			df_all_v.append(all_df)
+		if not df_all_v:
 			print 'No variables to show.'
 		else:
 			return pd.concat(df_all_v, axis=0)
@@ -781,7 +808,6 @@ class Audit(object):
 			for n in datasets:
 				ds = self[n]
 				if ds.var_exists(v):
-					# missing values
 					n_values = [(c, val) for c, val in zip(codes, values)
 								if not c in ds.codes(v)]
 					if extend and n_values:
@@ -798,23 +824,61 @@ class Audit(object):
 	# missing array items
 	# ------------------------------------------------------------------------
 
+	@modify(to_list=['array'])
+	@verify(is_str=['array'])
+	def show_items(self, array, text_key=None):
+		"""
+		Display items of arrays in different DataSets.
+
+		Parameters
+		----------
+		array: str/ list of str
+			Displays items for these variables.
+		text_key: str
+			Text key for text-based label information. Can be provided as
+			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
+			If None is provided, the item name will be diplayed instead of the
+			the item label.
+		"""
+		if not text_key:
+			label = False
+			etk = None
+		else:
+			label = True
+			text_key = text_key.split('~')
+			etk = text_key[1].split()[0] if len(text_key) > 1 else None
+			text_key = text_key[0]
+		df_all_v = []
+		for a in array:
+			if not self._is_array(a):
+				raise ValueError('{} is not an array.'.format(a))
+			all_df = []
+		 	for name in self.ds_alias.values():
+		 		ds = self[name]
+		 		if a in ds:
+		 			if label:
+		 				val = [ds.text(s, True, text_key, etk) for s in ds.sources(a)]
+		 				ind = ds.sources(a)
+		 			else:
+		 				val = ds.sources(a)
+		 				ind = frange('1-{}'.format(len(val)))
+		 			index = pd.MultiIndex.from_tuples([(a, n) for n in ind])
+		 			df = pd.DataFrame(val, index=index, columns=[name])
+		 			all_df.append(df)
+		 	all_df = pd.concat(all_df, axis=1)
+		 	df_all_v.append(all_df)
+		if not df_all_v:
+			print 'No variables to show.'
+		else:
+			return pd.concat(df_all_v, axis=0)
+
 	def report_item_diffs(self):
 		"""
 		Reports arrays that have different items in the DataSets.
 		"""
-		arrays = []
-		total_ais = OrderedDict()
-		for v in self.all_incl_vars:
-			for d in self.datasets:
-				if d.var_exists(v) and d.is_array(v):
-					if not v in arrays: arrays.append(v)
-					total_ais[v] = []
-					for source in d.sources(v):
-						if not source in total_ais[v]:
-							total_ais[v].append(source)
-
+		total_ais = self._get_sources()
 		all_df = []
-		for a in arrays:
+		for a in total_ais.keys():
 			v_df = []
 			for name in self.ds_alias.values():
 				if a in self[name]:
@@ -823,7 +887,17 @@ class Audit(object):
 					index = pd.MultiIndex.from_tuples([(a, i) for i in total_ais[a]])
 					df = pd.DataFrame(sources, index=index, columns=[name])
 					v_df.append(df)
-		 	all_df.append(reduce(lambda x, y: x.join(y), v_df))
+			v_df = pd.concat(v_df, axis=1)
+			order = self.show_items(a)
+			same_order = all(len([val for val in order.loc[a].T[x].unique().tolist()
+			                 if isinstance(val, (str, unicode))]) < 2
+						  	 for x in order.loc[a].T.columns)
+			if not same_order:
+				index = pd.MultiIndex.from_tuples([(a, 'check order')])
+				df = pd.DataFrame([['x']*len(self.ds_names)], index=index,
+				                  columns = v_df.columns)
+				v_df = df.append(v_df)
+		 	all_df.append(v_df)
 		if all_df:
 			all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
 			if len(all_df) == 0:
@@ -852,51 +926,41 @@ class Audit(object):
 			The values of the DataFrame include various cats and the text_keys
 			whose texts differ.
 		"""
-		arrays = [a for a in self.all_incl_vars
-				  if any(d.var_exists(a) and d.is_array(a) for d in self.datasets)]
+		arrays = self._get_sources()
 
+		all_df = []
+		for a in arrays:
+			for s in arrays[a]:
+				s_df = []
+			 	tks = self._get_tks_for_checking(s, 'label')
+			  	for x, n1 in enumerate(self.ds_alias.values(), 1):
+			 		for n2 in self.ds_alias.values()[x:]:
+			  			if all(self[n].var_exists(s) for n in [n1, n2]):
+		 	 				tobj1 = self[n1]._meta['columns'][s]['text']
+		 	 				tobj2 = self[n2]._meta['columns'][s]['text']
+		 	 				diff = self._compare_texts(tks, tobj1, tobj2, strict) or np.NaN
+		 	 			else:
+		 	 				diff = np.NaN
+			 	 		index = pd.MultiIndex.from_tuples([(a, s)])
+			 	 		df = pd.DataFrame({'{},\n{}'.format(n1, n2): diff}, index=index)
+			 			s_df.append(df)
+			 	if len(s_df) == 0:
+					continue
+				elif len(s_df) == 1:
+					all_df.append(s_df[0])
+				else:
+					s_df = pd.concat(s_df, axis=1)
+					all_df.append(s_df)
 
-		# all_df = []
-		# for var in self.all_incl_vars:
-		# 	if any(var in ds and not ds._has_categorical_data(var) for ds in self.datasets):
-		# 		continue
-		# 	tks = self._get_tks_for_checking(var, 'values')
-		#  	df_var = []
-		#  	for x, n1 in enumerate(self.ds_alias.values(), 1):
-		# 		for n2 in self.ds_alias.values()[x:]:
-		#  			if all(self[n].var_exists(var) for n in [n1, n2]):
-		#  				if self[n1].is_array(var):
-		#  					vobj1 = self[n1]._meta['lib']['values'][var]
-		#  					vobj2 = self[n2]._meta['lib']['values'][var]
-		#  				else:
-		# 	 				vobj1 = self[n1]._meta['columns'][var]['values']
-		# 	 				vobj2 = self[n2]._meta['columns'][var]['values']
-		# 	 			vobj1_dict = {v['value']: v['text'] for v in vobj1}
-		# 	 			vobj2_dict = {v['value']: v['text'] for v in vobj2}
-		# 	 			diff = []
-		# 	 			for c, text in vobj1_dict.items():
-		# 	 				diff.append(self._compare_texts(tks, text,
-		# 	 				            					vobj2_dict[c],
-		# 	 				            					strict) or np.NaN)
-		# 	 			index = pd.MultiIndex.from_tuples([(var, c) for c in vobj1_dict.keys()])
-		# 				df = pd.DataFrame({'{},\n{}'.format(n1, n2): diff}, index=index)
-		# 				df_var.append(df)
-		# 	if len(df_var) == 0:
-		# 		continue
-		# 	elif len(df_var) == 1:
-		# 		all_df.append(df_var[0])
-		# 	else:
-		# 		df_var = reduce(lambda x, y: x.join(y), df_var)
-		# 		all_df.append(df_var)
-		# if all_df:
-		# 	all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
-		# 	if len(all_df) == 0:
-		# 		print 'No varied value labels detected in included DataSets.'
-		# 		return None, []
-		# 	variables = []
-		# 	for v in all_df.index.get_level_values(0).tolist():
-		# 	 	if not v in variables: variables.append(v)
-		# 	return all_df, variables
-		# else:
-		# 	print 'No varied value labels detected in included DataSets.'
-		# 	return None, []
+		if all_df:
+		 	all_df = pd.concat(all_df, axis=0).dropna(how='all').replace(np.NaN, '')
+		 	if len(all_df) == 0:
+		 		print 'No varied item labels detected in included DataSets.'
+		 		return None, []
+		 	variables = []
+		 	for v in all_df.index.get_level_values(0).tolist():
+		 	 	if not v in variables: variables.append(v)
+		 	return all_df, variables
+		else:
+		 	print 'No varied item labels detected in included DataSets.'
+		 	return None, []
