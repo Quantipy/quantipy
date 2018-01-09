@@ -663,6 +663,8 @@ class Box(object):
 
     @lru_cache()
     def _cell(self, value, normalize=False):
+        if self.chain.array_style == 0:
+            return Cell(value, normalize, nan_rep=' ').__repr__()
         return Cell(value, normalize).__repr__()
 
     @staticmethod
@@ -672,14 +674,15 @@ class Box(object):
 
 class Cell(object):
 
-    def __init__(self, data, normalize):
+    def __init__(self, data, normalize, nan_rep=None):
         self.data = data
         self.normalize = normalize
+        self.nan_rep = nan_rep
 
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return _SHEET_DEFAULTS['frequency_0_rep']
+                return self.nan_rep or _SHEET_DEFAULTS['frequency_0_rep']
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
@@ -1052,22 +1055,22 @@ if __name__ == '__main__':
                  'x|d.upper_q|x:||%s|stat' % WEIGHT,
                 )
 
-    VIEW_KEYS = ('x|f|x:|||cbase',
-                 'x|f|x:||%s|cbase' % WEIGHT,
-                 'x|f|:|y|%s|c%%' % WEIGHT,
-                 'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
-                 'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
-                 'x|f.c:f|x[{4,5}-{1,2}]:|y|%s|NPSonly' % WEIGHT,
-                 'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT,
-                 'x|d.mean|x:||%s|stat' % WEIGHT,
-                 'x|d.stddev|x:||%s|stat' % WEIGHT,
-                 'x|d.median|x:||%s|stat' % WEIGHT,
-                 'x|d.var|x:||%s|stat' % WEIGHT,
-                 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
-                 'x|d.sem|x:||%s|stat' % WEIGHT,
-                 'x|d.lower_q|x:||%s|stat' % WEIGHT,
-                 'x|d.upper_q|x:||%s|stat' % WEIGHT,
-                )
+    #VIEW_KEYS = ('x|f|x:|||cbase',
+    #             'x|f|x:||%s|cbase' % WEIGHT,
+    #             'x|f|:|y|%s|c%%' % WEIGHT,
+    #             'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+    #             'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+    #             'x|f.c:f|x[{4,5}-{1,2}]:|y|%s|NPSonly' % WEIGHT,
+    #             'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT,
+    #             'x|d.mean|x:||%s|stat' % WEIGHT,
+    #             'x|d.stddev|x:||%s|stat' % WEIGHT,
+    #             'x|d.median|x:||%s|stat' % WEIGHT,
+    #             'x|d.var|x:||%s|stat' % WEIGHT,
+    #             'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+    #             'x|d.sem|x:||%s|stat' % WEIGHT,
+    #             'x|d.lower_q|x:||%s|stat' % WEIGHT,
+    #             'x|d.upper_q|x:||%s|stat' % WEIGHT,
+    #            )
 
     arr_chains_1 = ChainManager(stack)
 
