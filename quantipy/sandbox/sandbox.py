@@ -1612,7 +1612,7 @@ class Chain(object):
                         counts.extend([v]*self.views[v])
                     if self._is_r_pct(parts):
                         rowpcts.extend([v]*self.views[v])
-                    if (self._is_c_pct(parts) or self._is_c_base(parts) or
+                    if (self._is_c_pct(parts) or self._is_base(parts) or
                         self._is_stat(parts)):
                         colpcts.extend([v]*self.views[v])
                     # else:
@@ -1630,7 +1630,7 @@ class Chain(object):
                         else:
                             vc = colpcts
                     else:
-                        vc = counts if ci == 'c' else colpcts
+                        vc = counts if ci == 'counts' else colpcts
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
@@ -1706,6 +1706,12 @@ class Chain(object):
 
     def _is_c_base_gross(self, parts):
         return parts[-1] == 'cbase_gross'
+
+    def _is_base(self, parts):
+        return (self._is_c_base(parts) or
+                self._is_c_base_gross(parts) or
+                self._is_e_base(parts) or
+                self._is_r_base(parts))
 
     def _is_counts(self, parts):
         return parts[1].startswith('f') and parts[3] == ''
@@ -1836,8 +1842,11 @@ class Chain(object):
         else:
             repaint = False
         vpr = self._views_per_rows
-        if row_id is not None: vpr = [v[1] for v in vpr[row_id].items()]
-        idx = self.dataframe.index.get_level_values(1).tolist()
+        if row_id is not None:
+            vpr = [v[1] for v in vpr[row_id].items()]
+            idx = self.dataframe.columns.get_level_values(1).tolist()
+        else:
+            idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
         block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2 or
                         '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2]]
