@@ -114,6 +114,7 @@ class Excel(Workbook):
         if views_groups:
             views_groups = dict([(k, views_groups[k] if k in views_groups else v)
                                  for k, v in _VIEWS_GROUPS.iteritems()])
+
         self._formats = ExcelFormats(views_groups, **kwargs)
 
     def __repr__(self):
@@ -295,8 +296,8 @@ class Box(object):
 
         def _contents(c, d):
             if 0 in c.values()[0]:
-                for idx, value in enumerate(c.values()):
-                    c[idx] = _contents(value, d[idx]) 
+                for i, value in enumerate(c.values()):
+                    c[i] = _contents(value, d[i]) 
             else:
                 for idx, value in enumerate(c.values()):
                     if value['is_block']:
@@ -441,22 +442,39 @@ class Box(object):
             level_1, values, contents = levels(1).values, self.values, self.contents
 
         row_max = max(contents.keys())
-
         flat = np.c_[level_1.T, values].flat
-
         rel_x, rel_y = flat.coords
-
         bg = use_bg = True
-
         border_from = False
 
         for data in flat:
             if self.chain.array_style == 0:
-                x_contents = contents[rel_x][(rel_y - 1) if rel_y else 0]
-                print x_contents
+                if rel_y == 0:
+                    for idx in sorted(contents[rel_x]):
+                        if not self._is('base', **contents[rel_x][idx]):
+                            x_contents = contents[rel_x][idx]
+                            break
+                #if rel_y > 0:
+                #    if self._is('base', **contents[rel_x][rel_y - 1]):
+                #        if data != data:
+                #            data = ' '
+
+                #print rel_y, rel_y % self.values.shape[1], rel_y % (self.values.shape[1] - 1)
+                #if (rel_y % (self.values.shape[1] - 1)) == 0:
+                #    x_contents = contents[rel_x][0]
+                #    for idx in sorted(contents[rel_x]):
+                #        if not self._is('base', **contents[rel_x][idx]):
+                #            x_contents = contents[rel_x][idx]
+                #            break
+                else:
+                    x_contents = contents[rel_x][rel_y - 1]
+
             else:
                 x_contents = contents[rel_x]
+
             name = self._row_format_name(**x_contents)
+            print name
+
             if rel_y == 0:
                 if data == '':
                     view_border = False
@@ -467,7 +485,7 @@ class Box(object):
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg,
                                      view_border, border_from)
-            cell_data = self._cell(data, normalize=self._is_pct(**x_contents))
+            cell_data = self._cell(data, normalize=self._is('pct', **x_contents))
             self.sheet.write(self.sheet._row + rel_x,
                              self.sheet._column + rel_y,
                              cell_data,
@@ -479,17 +497,12 @@ class Box(object):
         self.sheet._row += rel_x
 
     @lru_cache()
-    def _is_pct(self, **contents):
-        return contents['is_c_pct'] or contents['is_r_pct']
-
-    @lru_cache()
     def _alternate_bg(self, name, bg):
         is_block = name.startswith('block')
-        inc = ('counts', 'pct', 'propstest')
-        exc = ('net', 'sum')
-        if any(_ in name for _ in inc) and all(_ not in name for _ in exc):
-            if not is_block:
-                return not bg, bg
+        is_freq_test = any(_ in name for _ in ('counts', 'pct', 'propstest')) 
+        not_net_or_sum = all((_ not in name) or is_block for _ in ('net', 'sum'))
+        if (is_freq_test and not_net_or_sum) or (self.chain.array_style == 0):
+            return not bg, bg
         return bg, True
 
     @lru_cache()
@@ -759,7 +772,6 @@ if __name__ == '__main__':
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
-
     rel_to = []
     if 'counts' in VIEWS:
         rel_to.append(None)
@@ -958,14 +970,104 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries
+    stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
+    stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
+    
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets_mapper.add_method(name='No', kwargs={'axis':    'x',
+                                              'logic':   [{'No': [1, 2, 3]}],
+                                              'text':    'Net: No',
+                                              'combine': False})
+    stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
+    stack.add_link(x='@', y='q5', views=nets_mapper, weights=weights)
+
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets_mapper.add_method(name='Yes', kwargs={'axis':    'x',
+                                               'logic':   [{'Yes': [4, 5, 97]}],
+                                               'text':    'Net: Yes',
+                                               'combine': False})
+    stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
+    stack.add_link(x='@', y='q5', views=nets_mapper, weights=weights)
+
+    kwargs = {'calc_only': False,
+              'calc': {'text': {u'en-GB': u'Net YES'},
+              'Net agreement': ('Net: Yes', sub, 'Net: No')},
+              'axis': 'x',
+              'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
+                        {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]}
+    nets_mapper.add_method(name='NPS', kwargs=kwargs)
+    kwargs = {'calc_only': True,
+              'calc': {'text': {u'en-GB': u'Net YES'},
+              'Net agreement (only)': ('Net: Yes', sub, 'Net: No')},
+              'axis': 'x',
+              'logic': [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
+                        {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]}
+    nets_mapper.add_method(name='NPSonly', kwargs=kwargs)
+    stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
+    stack.add_link(x='@', y='q5', views=nets_mapper, weights=weights)
+    
+    stats = ['mean', 'stddev', 'median', 'var', 'varcoeff', 'sem', 'lower_q', 'upper_q']
+
+    for stat in stats:
+        options = {'stats': stat,
+                   'source': None,
+                   'rescale': None,
+                   'drop': False,
+                   'exclude': None,
+                   'axis': 'x',
+                   'text': ''}
+        view = qp.ViewMapper()
+        view.make_template('descriptives')
+        view.add_method('stat', kwargs=options)
+        stack.add_link(x='@', y='q5', views=view, weights=weights)
+        stack.add_link(x='q5', y='@', views=view, weights=weights)
+
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
-                  'x|f|:|y|%s|c%%' % WEIGHT)
+                  'x|f|:|y|%s|c%%' % WEIGHT),
+                 ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
+                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT),
+                  #'x|f|x[{1,2,3}]:|x|%s|No' % WEIGHT),
+                 ('x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
+                  'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT),
+                  #'x|f|x[{4,5,97}]:|x|%s|Yes' % WEIGHT),
+                 ('x|f.c:f|x[{4,5}-{1,2}]:||%s|NPSonly' % WEIGHT,
+                  'x|f.c:f|x[{4,5}-{1,2}]:|y|%s|NPSonly' % WEIGHT),
+                  #'x|f.c:f|x[{4,5}-{1,2}]:|x|%s|NPSonly' % WEIGHT),
+                 ('x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|NPS' % WEIGHT,
+                  'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT),
+                  #'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|x|%s|NPS' % WEIGHT),
+                 'x|d.mean|x:||%s|stat' % WEIGHT,
+                 'x|d.stddev|x:||%s|stat' % WEIGHT,
+                 'x|d.median|x:||%s|stat' % WEIGHT,
+                 'x|d.var|x:||%s|stat' % WEIGHT,
+                 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                 'x|d.sem|x:||%s|stat' % WEIGHT,
+                 'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                 'x|d.upper_q|x:||%s|stat' % WEIGHT,
                 )
 
-    stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
-    stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|f|:|y|%s|c%%' % WEIGHT,
+                 'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
+                 'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
+                 'x|f.c:f|x[{4,5}-{1,2}]:|y|%s|NPSonly' % WEIGHT,
+                 'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT,
+                 'x|d.mean|x:||%s|stat' % WEIGHT,
+                 'x|d.stddev|x:||%s|stat' % WEIGHT,
+                 'x|d.median|x:||%s|stat' % WEIGHT,
+                 'x|d.var|x:||%s|stat' % WEIGHT,
+                 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                 'x|d.sem|x:||%s|stat' % WEIGHT,
+                 'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                 'x|d.upper_q|x:||%s|stat' % WEIGHT,
+                )
 
     arr_chains_1 = ChainManager(stack)
 
@@ -988,6 +1090,76 @@ if __name__ == '__main__':
                   )
 
     arr_chains_0.paint_all()
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------ arr. summaries - block nets
+    #nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+    #                                      'kwargs': {'iterators': {'rel_to': rel_to},
+    #                                                 'groups': 'Nets'}})
+    #nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'},
+    #        {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5 (NET)'}, 'expand': 'after'}]
+    #nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
+    #                                             'logic':     nets,
+    #                                             'text':      'Net: ',
+    #                                             'combine':   False,
+    #                                             'complete':  True,
+    #                                             'expand':    'after'}
+    #                                             )
+    #stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
+
+    #VIEW_KEYS = ('x|f|x:|||cbase',
+    #             'x|f|x:||%s|cbase' % WEIGHT,
+    #             ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
+    #              'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
+    #              'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT),
+    #             )
+    #
+    #arr_chains_block_0 = ChainManager(stack)
+
+    #arr_chains_block_0.get(data_key=DATA_KEY,
+    #                       filter_key=FILTER_KEY,
+    #                       x_keys=['q5'],
+    #                       y_keys=['@'],
+    #                       views=VIEW_KEYS,
+    #                      )
+
+    #arr_chains_block_0.paint_all()
+    # ------------------------------------------------------------ 
+
+    # ------------------------------------------------------------ arr. summaries - mean
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 'x|d.mean|x:||%s|stat' % WEIGHT,
+                 'x|d.stddev|x:||%s|stat' % WEIGHT,
+                 'x|d.median|x:||%s|stat' % WEIGHT,
+                 'x|d.var|x:||%s|stat' % WEIGHT,
+                 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                 'x|d.sem|x:||%s|stat' % WEIGHT,
+                 'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                 'x|d.upper_q|x:||%s|stat' % WEIGHT,
+                )
+
+    arr_chains_mean_1 = ChainManager(stack)
+
+    arr_chains_mean_1.get(data_key=DATA_KEY,
+                          filter_key=FILTER_KEY,
+                          x_keys=['@'],
+                          y_keys=['q5'],
+                          views=VIEW_KEYS,
+                         )
+    
+    arr_chains_mean_1.paint_all()
+
+    arr_chains_mean_0 = ChainManager(stack)
+
+    arr_chains_mean_0.get(data_key=DATA_KEY,
+                          filter_key=FILTER_KEY,
+                          x_keys=['q5'],
+                          y_keys=['@'],
+                          views=VIEW_KEYS,
+                         )
+    
+    arr_chains_mean_0.paint_all()
     # ------------------------------------------------------------
 
     # table props - check editability
@@ -1792,12 +1964,14 @@ if __name__ == '__main__':
 
     sheet_properties = dict() 
 
-    #test = 1
-    test = 2
+    test = 1
+    #test = 2
+    #test = 3
 
     if test == 1:
         sheet_properties = dict(dummy_tests=True,
                                 alternate_bg=False,
+                                #alternate_bg=True,
                                 start_row=7,
                                 start_column=2,
                                )
@@ -1817,6 +1991,19 @@ if __name__ == '__main__':
                      #'net_c_pct': 'freq'
                      }
         tp = table_properties_group
+    elif test == 3:
+        sheet_properties = dict(alternate_bg=True)
+        custom_vg = {
+                'block_expanded_counts': 'freq',
+                'block_expanded_c_pct': 'freq',
+                'block_expanded_r_pct': 'freq',
+                'block_expanded_propstest': 'freq',
+                'block_net_counts': 'freq',
+                'block_net_c_pct': 'freq',
+                'block_net_r_pct': 'freq',
+                'block_net_propstest': 'freq',
+                }
+        tp = {'bg_color_freq': 'gray'}
 
 
 
@@ -1858,11 +2045,17 @@ if __name__ == '__main__':
                  **sheet_properties
                 )
 
-    #x.add_chains(arr_chains_1,
-    #             'array summary 1',
-    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #             **sheet_properties
-    #            )
+    x.add_chains(arr_chains_1,
+                 'array summary 1',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
+
+    x.add_chains(arr_chains_mean_1,
+                 'means summary 1',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
 
     x.add_chains(arr_chains_0,
                  'array summary 0',
@@ -1870,11 +2063,23 @@ if __name__ == '__main__':
                  **sheet_properties
                 )
 
-    x.add_chains(open_chain,
-                 'Open_Ends',
+    #x.add_chains(arr_chains_block_0,
+    #             'block summary 0',
+    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #             **sheet_properties
+    #            )
+
+    x.add_chains(arr_chains_mean_0,
+                 'means summary 0',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
+
+    #x.add_chains(open_chain,
+    #             'Open_Ends',
+    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #             **sheet_properties
+    #            )
 
     x.close()
     # -------------

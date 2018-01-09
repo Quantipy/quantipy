@@ -35,11 +35,21 @@ class _ExcelFormats(object):
 
     def __init__(self, views_groups, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, self._view_or_group(name, views_groups, kwargs))
+            value_or_default = kwargs.get(name, self._view_or_group(name, _VIEWS_GROUPS, views_groups, kwargs))
             setattr(self, name, value_or_default)
     
-    def _view_or_group(self, name, views_groups, kwargs):
-        for view, group in views_groups.iteritems():
+    def _view_or_group(self, name, implicit, explicit, kwargs):
+        if self._extract_from(name, explicit, kwargs):
+            return self._extract_from(name, explicit, kwargs)
+
+        if self._extract_from(name, implicit, kwargs):
+            return self._extract_from(name, implicit, kwargs)
+
+        return _DEFAULT_ATTRIBUTES[name]
+
+    @staticmethod
+    def _extract_from(name, source, kwargs):
+        for view, group in source.iteritems():
             pattern = r'(\w+)(%s)(_text|$)' % view
             match = re.match(pattern, name)
             if match:
@@ -47,8 +57,7 @@ class _ExcelFormats(object):
                 attr = groups[0] + group + groups[2]
                 if attr in kwargs:
                     return kwargs[attr]
-        return _DEFAULT_ATTRIBUTES[name]
-
+        return None
 
 class ExcelFormats(_ExcelFormats):
 
