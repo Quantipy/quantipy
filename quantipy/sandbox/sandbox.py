@@ -203,15 +203,28 @@ class ChainManager(object):
         return ref in self._singles_to_idx or ref in self._idx_to_singles()
 
     def _uniquify_names(self):
-        # single Chain
-        names = Counter(self.single_names)
-        for name, occ in names.items():
-            if occ > 1:
-                new_names = ['{}_{}'.format(name, i) for i in range(1, occ + 1)]
-                idx = [single[0] for single in self.singles if single[1] == name]
-                pairs = zip(idx, new_names)
-                for p in pairs:
-                    self.__chains[p[0]].name = p[1]
+        all_names = Counter(self.single_names + self.folder_names)
+        single_name_occ = Counter(self.single_names)
+        folder_name_occ = {folder: Counter([c.name for c in self[folder]])
+                           for folder in self.folder_names}
+        for struct_name in all_names:
+            if struct_name in folder_name_occ:
+                iter_over = folder_name_occ[struct_name]
+                is_folder = struct_name
+            else:
+                iter_over = single_name_occ
+                is_folder = False
+            for name, occ in iter_over.items():
+                if occ > 1:
+                    new_names = ['{}_{}'.format(name, i) for i in range(1, occ + 1)]
+                    idx = [s[0] for s in self.singles if s[1] == name]
+                    pairs = zip(idx, new_names)
+                    if is_folder:
+                        for idx, c in enumerate(self[is_folder]):
+                            c.name = pairs[idx][1]
+                    else:
+                        for p in pairs:
+                            self.__chains[p[0]].name = p[1]
         return None
 
 
