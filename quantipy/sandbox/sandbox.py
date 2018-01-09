@@ -40,7 +40,7 @@ from scipy.stats.stats import _ttest_finish as get_pval
 from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 import gzip
 
 try:
@@ -201,6 +201,19 @@ class ChainManager(object):
 
     def _is_single_ref(self, ref):
         return ref in self._singles_to_idx or ref in self._idx_to_singles()
+
+    def _uniquify_names(self):
+        # single Chain
+        names = Counter(self.single_names)
+        for name, occ in names.items():
+            if occ > 1:
+                new_names = ['{}_{}'.format(name, i) for i in range(1, occ + 1)]
+                idx = [single[0] for single in self.singles if single[1] == name]
+                pairs = zip(idx, new_names)
+                for p in pairs:
+                    self.__chains[p[0]].name = p[1]
+        return None
+
 
     def _set_to_folderitems(self, folder):
         """
