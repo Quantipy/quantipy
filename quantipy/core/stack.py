@@ -2089,7 +2089,7 @@ class Stack(defaultdict):
 
         def _recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose):
             for var in on_vars:
-                if dataset._is_array(var): continue
+                if dataset.is_array(var): continue
                 suffix = '_rc'
                 for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
                     suf = suffix + s
@@ -2275,7 +2275,7 @@ class Stack(defaultdict):
 
         def _recode_from_stat_def(dataset, on_vars, rescale, drop, exclude, verbose):
             for var in on_vars:
-                if dataset._is_array(var): continue
+                if dataset.is_array(var): continue
                 suffix = '_rc'
                 for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
                     suf = suffix + s
