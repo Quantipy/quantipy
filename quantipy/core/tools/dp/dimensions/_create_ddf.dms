@@ -37,7 +37,7 @@ Event(OnJobStart)
 	Set dmgrGlobal.CaseData = CreateObject("ADODB.Stream")
 
 	dmgrGlobal.CaseData.CharSet = "utf-8"
-	dmgrGlobal.CaseData.LineSeparator = adLF
+	dmgrGlobal.CaseData.LineSeparator = adCR
 	dmgrGlobal.CaseData.Open()
 	dmgrGlobal.CaseData.LoadFromFile(MASTER_INPUT+"_datastore.csv")
 	
