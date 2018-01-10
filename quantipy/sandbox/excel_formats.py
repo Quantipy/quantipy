@@ -35,11 +35,21 @@ class _ExcelFormats(object):
 
     def __init__(self, views_groups, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, self._view_or_group(name, views_groups, kwargs))
+            value_or_default = kwargs.get(name, self._view_or_group(name, _VIEWS_GROUPS, views_groups, kwargs))
             setattr(self, name, value_or_default)
     
-    def _view_or_group(self, name, views_groups, kwargs):
-        for view, group in views_groups.iteritems():
+    def _view_or_group(self, name, implicit, explicit, kwargs):
+        if self._extract_from(name, explicit, kwargs):
+            return self._extract_from(name, explicit, kwargs)
+
+        if self._extract_from(name, implicit, kwargs):
+            return self._extract_from(name, implicit, kwargs)
+
+        return _DEFAULT_ATTRIBUTES[name]
+
+    @staticmethod
+    def _extract_from(name, source, kwargs):
+        for view, group in source.iteritems():
             pattern = r'(\w+)(%s)(_text|$)' % view
             match = re.match(pattern, name)
             if match:
@@ -47,17 +57,18 @@ class _ExcelFormats(object):
                 attr = groups[0] + group + groups[2]
                 if attr in kwargs:
                     return kwargs[attr]
-        return _DEFAULT_ATTRIBUTES[name]
-
+        return None
 
 class ExcelFormats(_ExcelFormats):
 
     __slots__ = ('_lazy__base',
+                 '_lazy__block_calc_propstest',
                  '_lazy__block_expanded_propstest',
                  '_lazy__block_net_propstest',
                  '_lazy__block_normal_propstest',
                  '_lazy__bottom',
                  '_lazy__cell_details',
+                 '_lazy__data_header',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__meanstest',
@@ -164,6 +175,19 @@ class ExcelFormats(_ExcelFormats):
         return _Format(**format_)
 
     @lazy_property
+    def _data_header(self):
+        format_ = self._template
+
+        format_.update(dict(left=self.border_style_ext,
+                            top=self.border_style_ext,
+                            right=self.border_style_ext,
+                            bottom=self.border_style_ext,
+                            ))
+        format_.update(self._method('data_header'))
+
+        return _Format(**format_)
+
+    @lazy_property
     def _left(self):
         return dict(left=self.border_style_ext)
 
@@ -191,6 +215,14 @@ class ExcelFormats(_ExcelFormats):
     @lazy_property
     def _net_propstest(self):
         return dict(font_script=self.font_script_net_propstest)
+
+    @lazy_property
+    def _block_calc_net_propstest(self):
+        return dict(font_script=self.font_script_block_calc_net_propstest)
+
+    @lazy_property
+    def _block_calc_propstest(self):
+        return dict(font_script=self.font_script_block_calc_propstest)
 
     @lazy_property
     def _block_expanded_propstest(self):
