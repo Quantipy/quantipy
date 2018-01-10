@@ -31,10 +31,17 @@ End OutputDatasource
 
 Event(OnJobStart)
 
-	Dim fso, months[]
-	Set fso = CreateObject("Scripting.FileSystemObject")
-	Set dmgrGlobal.CaseData = fso.OpenTextFile(MASTER_INPUT+"_datastore.csv")
-	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadLine()
+    'Line separator const.
+    Const adCR = 13, adCRLF = -1, adLF = 10
+    	
+	Set dmgrGlobal.CaseData = CreateObject("ADODB.Stream")
+
+	dmgrGlobal.CaseData.CharSet = "utf-8"
+	dmgrGlobal.CaseData.LineSeparator = adLF
+	dmgrGlobal.CaseData.Open()
+	dmgrGlobal.CaseData.LoadFromFile(MASTER_INPUT+"_datastore.csv")
+	
+	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadText(-2)
 
 End Event
 
@@ -85,7 +92,7 @@ Event(OnNextCase)
 	Dim gSplit, gName, gElement, gField
 	Dim response
 
-	data = dmgrGlobal.CaseData.Readline()
+	data = dmgrGlobal.CaseData.ReadText(-2)
 	data = Split(data, ",")
 	columns = Split(dmgrGlobal.Columns, ",")
 
