@@ -294,6 +294,7 @@ class DataSet(object):
         self._fix_array_meta()
         self._fix_array_item_vals()
         self.repair_text_edits()
+        self.restore_item_texts()
         self._clean_datafile_set()
         return None
 
@@ -3311,6 +3312,34 @@ class DataSet(object):
                         for tk in self.valid_tks:
                             text = self.text(item, True, tk, ed)
                             if text: i['text']['{} edits'.format(ed)][tk] = text
+        return None
+
+    @modify(to_list='arrays')
+    @verify(variables={'arrays': 'masks'})
+    def restore_item_texts(self, arrays=None):
+        """
+        Restore array item texts.
+
+        Parameters
+        ----------
+        arrays : str, list of str, default None
+            Restore texts for items of these arrays. If None, all keys in
+            ``._meta['masks']`` are taken.
+        """
+        if not arrays: arrays = self.masks()
+        for a in arrays:
+            sources = self.sources(a)
+            for tk, ed in product(self.valid_tks, [None, 'x', 'y']):
+                if (any(self.text(i, True, tk, ed)==self.text(i, False, tk, ed)
+                    for i in sources) and self.text(a, text_key=tk, axis_edit=ed)):
+                    rename_items = {self.item_no(i): self.text(i, True, tk, ed)
+                                    for i in sources if self.text(i, True, tk, ed)}
+                    self.set_item_texts(a, rename_items, tk, ed)
+                elif not any(self.text(i, True, tk, ed) in self.text(i, False, tk, ed)
+                    for i in sources if self.text(i, False, tk, ed)) and self.text(a, text_key=tk, axis_edit=ed):
+                    rename_items = {self.item_no(i): self.text(i, True, tk, ed)
+                                    for i in sources if self.text(i, True, tk, ed)}
+                    self.set_item_texts(a, rename_items, tk, ed)
         return None
 
     @modify(to_list=['text_key', 'axis_edit'])
