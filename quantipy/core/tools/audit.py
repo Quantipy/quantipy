@@ -389,7 +389,7 @@ class Audit(object):
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
-		if not datasets: datasets = self.ds_names
+		if not datasets: datasets = self.ds_alias.values()
 		for ds in datasets:
 			for v in self.unpaired_vars.index.tolist():
 				if self[ds].var_exists(v) and not v in ignore:
@@ -915,22 +915,6 @@ class Audit(object):
 			print 'No varied items detected in included DataSets.'
 			return None, []
 
-	def _create_df(self, var, datasets, data_func, index_func):
-		v_df = []
-		for name in datasets:
-			ds = self[name]
-			if var in ds:
-				data = func(var, ds)
-				index = index_func(var)
-				index = pd.MultiIndex.from_tuples(index)
-				df = pd.DataFrame(data, index=index, columns=[name])
-				v_df.append(df)
-		return pd.concat(v_df, axis=1)
-
-
-
-
-
 	def report_item_text_diffs(self, strict=0.9):
 		"""
 		Reports variables that have different item texts in the DataSets.
@@ -985,3 +969,14 @@ class Audit(object):
 		 	print 'No varied item labels detected in included DataSets.'
 		 	return None, []
 
+	# def _create_df(self, var, datasets, data_func, index_func):
+	# 	v_df = []
+	# 	for name in datasets:
+	# 		ds = self[name]
+	# 		if var in ds:
+	# 			data = func(var, ds)
+	# 			index = index_func(var)
+	# 			index = pd.MultiIndex.from_tuples(index)
+	# 			df = pd.DataFrame(data, index=index, columns=[name])
+	# 			v_df.append(df)
+	# 	return pd.concat(v_df, axis=1)
