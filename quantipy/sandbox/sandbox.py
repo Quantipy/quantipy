@@ -23,24 +23,24 @@ from quantipy.core.view import View
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.helpers.functions import emulate_meta
-from quantipy.core.tools.view.logic import (
-    has_any, has_all, has_count,
-    not_any, not_all, not_count,
-    is_lt, is_ne, is_gt,
-    is_le, is_eq, is_ge,
-    union, intersection, get_logic_index)
+from quantipy.core.tools.view.logic import (has_any, has_all, has_count,
+                                            not_any, not_all, not_count,
+                                            is_lt, is_ne, is_gt,
+                                            is_le, is_eq, is_ge,
+                                            union, intersection, get_logic_index)
 from quantipy.core.helpers.functions import (paint_dataframe,
                                              emulate_meta,
                                              get_text,
                                              finish_text_key)
 from quantipy.core.tools.dp.prep import recode
+from quantipy.core.tools.qp_decorators import lazy_property
 
 from operator import add, sub, mul, div
 from scipy.stats.stats import _ttest_finish as get_pval
 from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
 from itertools import combinations, chain, product
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 import gzip
 
 try:
@@ -60,24 +60,6 @@ from quantipy.core.rules import Rules
 _TOTAL = '@'
 _AXES = ['x', 'y']
 
-def lazy_property(func):
-    """ Decorator that makes a property lazy-evaluated, i.e. only set
-    on first access.
-    """
-    attr_name = '_%s' % func.__name__
-    docstring = func.__doc__
-
-    @property
-    def _lazy_property(self):
-        try:
-            return getattr(self, attr_name)
-        except AttributeError:
-            value = func(self)
-            setattr(self, attr_name, value)
-            return value
-
-    return _lazy_property
-
 
 class ChainManager(object):
 
@@ -85,6 +67,7 @@ class ChainManager(object):
         self.stack = stack
         self.__chains = []
         self.source = 'native'
+        self._annotations = {}
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -93,7 +76,10 @@ class ChainManager(object):
         return self.__str__()
 
     def __getitem__(self, value):
-        return self.__chains[value]
+        if isinstance(value, (unicode, str)):
+            return self.__chains[self._idx_from_name(value)].values()[0]
+        else:
+            return self.__chains[value]
 
     def __len__(self):
         """returns the number of cached Chains"""
@@ -111,6 +97,415 @@ class ChainManager(object):
         else:
             raise StopIteration
     next = __next__
+
+    @property
+    def annotations(self):
+        if len(self._annotations) > 1:
+            return self._annotations
+        else:
+            return self._annotations[self._annotations.keys()[0]]
+
+    @property
+    def folders(self):
+        """
+        Folder indices, names and number of stored ``qp.Chain`` items (as tuples).
+        """
+        return [(self.__chains.index(f), f.keys()[0], len(f.values()[0]))
+                for f in self if isinstance(f, dict)]
+
+    @property
+    def singles(self):
+        """
+        The list of all non-folder ``qp.Chain`` indices and names (as tuples).
+        """
+        return zip(self.single_idxs, self.single_names)
+
+    @property
+    def chains(self):
+        """
+        The flattened list of all ``qp.Chain`` items of self.
+        """
+        all_chains = []
+        for c in self:
+            if isinstance(c, dict):
+                all_chains.extend(c.values()[0])
+            else:
+                all_chains.append(c)
+        return all_chains
+
+    @property
+    def folder_idxs(self):
+        """
+        The folders' index positions in self.
+        """
+        return [f[0] for f in self.folders]
+
+    @property
+    def folder_names(self):
+        """
+        The folders' names from self.
+        """
+        return [f[1] for f in self.folders]
+
+    @property
+    def single_idxs(self):
+        """
+        The ``qp.Chain`` instances' index positions in self.
+        """
+        return [self.__chains.index(c) for c in self if isinstance(c, Chain)]
+
+    @property
+    def single_names(self):
+        """
+        The ``qp.Chain`` instances' names.
+        """
+        return [s.name for s in self if isinstance(s, Chain)]
+
+    def _content_structure(self):
+        return ['folder' if isinstance(k, dict) else 'single' for k in self]
+
+    def _singles_to_idx(self):
+        return {name: i for i, name in self._idx_to_singles().items()}
+
+    def _idx_to_singles(self):
+        return dict(self.singles)
+
+    def _idx_fold(self):
+        return dict([(f[0], f[1]) for f in self.folders])
+
+    def _folders_to_idx(self):
+        return {name: i for i, name in self._idx_fold().items()}
+
+    def _names(self, unroll=False):
+        if not unroll:
+            return self.folder_names + self.single_names
+        else:
+            return [c.name for c in self.chains]
+
+    def _idxs_to_names(self):
+        singles = self.singles
+        folders = [(f[0], f[1]) for f in self.folders]
+        return dict(singles + folders)
+
+    def _names_to_idxs(self):
+        return {n: i for i, n in self._idxs_to_names().items()}
+
+    def _name_from_idx(self, name):
+        return self._idxs_to_names()[name]
+
+    def _idx_from_name(self, idx):
+        return self._names_to_idxs()[idx]
+
+    def _is_folder_ref(self, ref):
+        return ref in self._folders_to_idx() or ref in self._idx_fold()
+
+    def _is_single_ref(self, ref):
+        return ref in self._singles_to_idx or ref in self._idx_to_singles()
+
+    def _uniquify_names(self):
+        all_names = Counter(self.single_names + self.folder_names)
+        single_name_occ = Counter(self.single_names)
+        folder_name_occ = {folder: Counter([c.name for c in self[folder]])
+                           for folder in self.folder_names}
+        for struct_name in all_names:
+            if struct_name in folder_name_occ:
+                iter_over = folder_name_occ[struct_name]
+                is_folder = struct_name
+            else:
+                iter_over = single_name_occ
+                is_folder = False
+            for name, occ in iter_over.items():
+                if occ > 1:
+                    new_names = ['{}_{}'.format(name, i) for i in range(1, occ + 1)]
+                    idx = [s[0] for s in self.singles if s[1] == name]
+                    pairs = zip(idx, new_names)
+                    if is_folder:
+                        for idx, c in enumerate(self[is_folder]):
+                            c.name = pairs[idx][1]
+                    else:
+                        for p in pairs:
+                            self.__chains[p[0]].name = p[1]
+        return None
+
+
+    def _set_to_folderitems(self, folder):
+        """
+        Will keep only the ``values()`` ``qp.Chain`` item list from the named
+        folder. Use this for within-folder-operations...
+        """
+        if not folder in self.folder_names:
+            err = "A folder named '{}' does not exist!".format(folder)
+            raise KeyError(err)
+        else:
+            org_chains = self.__chains[:]
+            org_index = self._idx_from_name(folder)
+            self.__chains = self[folder]
+            return org_chains, org_index
+
+    def _rebuild_org_folder(self, folder, items, index):
+        """
+        After a within-folder-operation this method is using the returns
+        of ``_set_to_folderitems`` to rebuild the originating folder.
+        """
+        self.fold(folder)
+        new_folder = self.__chains[:]
+        self.__chains = items
+        self.__chains[index] = new_folder[0]
+        return None
+
+
+    @staticmethod
+    def _dupes_in_chainref(chain_refs):
+        return len(set(chain_refs)) != len(chain_refs)
+
+    def merge(self, folders, new_name=None, drop=True):
+        """
+        Unite the items of two or more folders, optionally providing a new name.
+
+        If duplicated ``qp.Chain`` items are found, the first instance will be
+        kept. The merged folder will take the place of the first folder named
+        in ``folders``.
+
+        Parameters
+        ----------
+        folders : list of int and/or str
+            The folders to merge refernced by their positional index or by name.
+        new_name : str, default None
+            Use this as the merged folder's name. If not provided, the name
+            of the first folder in ``folders`` will be used instead.
+        drop : bool, default True
+            If ``False``, the original folders will be kept alongside the
+            new merged one.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(folders, list):
+            err = "'folders' must be a list of folder references!"
+            raise TypeError(err)
+        if len(folders) == 1:
+            err = "'folders' must contain at least two folder names!"
+            raise ValueError(err)
+        if not all(self._is_folder_ref(f) for f in folders):
+            err = "One or more folder names from 'folders' do not exist!"
+            ValueError(err)
+        folders = [f if isinstance(f, (str, unicode)) else self._name_from_idx(f)
+                  for f in folders]
+        folder_idx = self._idx_from_name(folders[0])
+        if not new_name: new_name = folders[0]
+        merged_items = []
+        seen_names = []
+        for folder in folders:
+            for chain in self[folder]:
+                if not chain.name in seen_names:
+                    merged_items.append(chain)
+                    seen_names.append(chain.name)
+        if drop:
+            self.__chains[folder_idx] = {new_name: merged_items}
+            remove_folders = folders[1:] if new_name != folders[0] else folders
+            for r in remove_folders:
+                self.remove(r)
+        else:
+            start = self.__chains[:folder_idx]
+            end = self.__chains[folder_idx:]
+            self.__chains = start + [{new_name: merged_items}] + end
+        return None
+
+    def fold(self, folder_name=None, chains=None):
+        """
+        Arrange non-``dict`` structured ``qp.Chain`` items in folders.
+
+        All separate ``qp.Chain`` items will be mapped to their ``name``
+        property being the ``key`` in the transformed ``dict`` structure.
+
+        Parameters
+        ----------
+        folder_name : str, default None
+            Collect all items in a folder keyed by the provided name. If the
+            key already exists, the items will be appended to the ``dict``
+            values.
+        chains : (list) of int and/or str, default None
+            Select specific ``qp.Chain`` items by providing their positional
+            indices or ``name`` property value for moving only a subset to the
+            folder.
+
+        Returns
+        -------
+        None
+        """
+        if chains:
+            if not isinstance(chains, list): chains = [chains]
+            if any(self._is_folder_ref(c) for c in chains):
+                err = 'Cannot build folder from other folders!'
+                raise ValueError(err)
+            all_chain_names = []
+            singles = []
+            for c in chains:
+                if isinstance(c, (str, unicode)):
+                    all_chain_names.append(c)
+                elif isinstance(c, int) and c in self._idx_to_singles():
+                    all_chain_names.append(self._idx_to_singles()[c])
+            for c in all_chain_names:
+                singles.append(self[self._singles_to_idx()[c]])
+        else:
+            singles = [s for s in self if isinstance(s, Chain)]
+        if self._dupes_in_chainref(singles):
+            err = "Cannot build folder from duplicate qp.Chain references: {}"
+            raise ValueError(err.format(singles))
+        for s in singles:
+            if folder_name:
+                if folder_name in self.folder_names:
+                    self[folder_name].append(s)
+                else:
+                    self.__chains.append({folder_name: [s]})
+                del self.__chains[self._singles_to_idx()[s.name]]
+            else:
+                self.__chains[self._singles_to_idx()[s.name]] = {s.name: [s]}
+        return None
+
+    def unfold(self, folder):
+        """
+        Remove folder but keep the collected items.
+
+        The items will be added starting at the old index position of the
+        original folder.
+
+        Parameters
+        ----------
+        folder : str
+            The name of the folder to drop and extract items from.
+
+        Returns
+        -------
+        None
+        """
+        if not folder in self.folder_names:
+            err = "A folder named '{}' does not exist!".format(folder)
+            raise KeyError(err)
+        old_pos = self._idx_from_name(folder)
+        items = self[folder]
+        start = self.__chains[: old_pos]
+        end = self.__chains[old_pos + 1: ]
+        self.__chains = start + items + end
+        return None
+
+    def remove(self, chains, folder=None):
+        """
+        Remove (folders of) ``qp.Chain`` items by providing a list of  indices
+        or names.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str
+            ``qp.Chain`` items or folders by provided by their positional
+            indices or ``name`` property.
+        folder : str, default None
+            If a folder name is provided, items will be dropped within that
+            folder only instead of removing all found instances.
+
+        Returns
+        -------
+        None
+        """
+        if folder:
+            org_chains, org_index = self._set_to_folderitems(folder)
+        if not isinstance(chains, list): chains = [chains]
+        remove_idxs= [c if isinstance(c, int) else self._idx_from_name(c)
+                      for c in chains]
+        if self._dupes_in_chainref(remove_idxs):
+            err = "Cannot remove with duplicate chain references: {}"
+            raise ValueError(err.format(remove_idxs))
+        new_items = []
+        for pos, c in enumerate(self):
+            if not pos in remove_idxs: new_items.append(c)
+        self.__chains = new_items
+        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
+        return None
+
+    def reorder(self, order, folder=None):
+        """
+        Reorder (folders of) ``qp.Chain`` items by providing a list of new
+        indices or names.
+
+        Parameters
+        ----------
+        order : list of int and/or str
+            The folder or ``qp.Chain`` references to determine the new order
+            of items. Any items not referenced will be removed from the new
+            order.
+        folder : str, default None
+            If a folder name is provided, items will be sorted within that
+            folder instead of applying the sorting to the general items
+            collection.
+
+        Returns
+        -------
+        None
+        """
+        if folder:
+            org_chains, org_index = self._set_to_folderitems(folder)
+        if not isinstance(order, list):
+            err = "'order' must be a list!"
+            raise ValueError(err)
+        new_idx_order = []
+        for o in order:
+            if isinstance(o, int):
+                new_idx_order.append(o)
+            else:
+                new_idx_order.append(self._idx_from_name(o))
+        if self._dupes_in_chainref(new_idx_order):
+            err = "Cannot reorder from duplicate qp.Chain references: {}"
+            raise ValueError(err.format(new_idx_order))
+        items = [self.__chains[idx] for idx in new_idx_order]
+        self.__chains = items
+        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
+        return None
+
+    def rename(self, names, folder=None):
+        """
+        Rename (folders of) ``qp.Chain`` items by providing a mapping of old
+        to new keys.
+
+        Parameters
+        ----------
+        names : dict
+            Maps existing names to the desired new ones, i.e.
+            {'old name': 'new names'} pairs need to be provided.
+        folder : str, default None
+            If a folder name is provided, new names will only be applied
+            within that folder. This is without effect if all ``qp.Chain.name``
+            properties across the items are unique.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(names, dict):
+            err = "''names' must be a dict of old_name: new_name pairs."
+            raise ValueError(err)
+        if folder and not folder in self.folder_names:
+            err = "A folder named '{}' does not exist!".format(folder)
+            raise KeyError(err)
+        for old, new in names.items():
+            no_folder_name = folder and not old in self._names(False)
+            no_name_across = not folder and not old in self._names(True)
+            if no_folder_name and no_name_across:
+                err = "'{}' is not an existing folder or ``qp.Chain`` name!"
+                raise KeyError(err.format(old))
+            else:
+                within_folder = old not in self._names(False)
+            if not within_folder:
+                idx = self._idx_from_name(old)
+                if not isinstance(self.__chains[idx], dict):
+                    self.__chains[idx].name = new
+                else:
+                    self.__chains[idx] = {new: self[old][:]}
+            else:
+                iter_over = self[folder] if folder else self.chains
+                for c in iter_over:
+                    if c.name == old: c.name = new
+        return None
 
     def _native_stat_names(self, idxvals_list, text_key=None):
         """
@@ -135,7 +530,129 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
-    def from_mtd(self, mtd_doc, ignore=None, labels=True):
+    def set_footer(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['footer']`` is being read during Build exports
+        and can be used to provide extra information on the aggregation results
+        or to provide context and structural information.
+
+        .. note:: A ``footer`` is placed below the ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def set_header(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['header']`` is being read during Build exports
+        and can be used to provide extra information on the aggregation results
+        or to provide context and structural information.
+
+        .. note:: A ``header`` is placed right before the ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def set_note(self):
+        """
+        Add customized text information to a ``qp.Chain.annotations`` of self.
+
+        ``qp.Chain.annotations['note']`` is being read during Build exports and
+        can be used to provide extra information on the aggregation results or
+        to provide context and structural information.
+
+        .. note:: A ``note`` is placed as the first row within the
+            ``Chain.dataframe``!
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+    def describe(self, by_folder=False):
+        """
+        Get a structual summary of all ``qp.Chain`` instances found in self.
+
+        Parameters
+        ----------
+        by_folder : bool, default False
+            If True, only information on ``dict``-structured (folder-like)
+            ``qp.Chain`` items is shown, multiindexed by folder names and item
+            enumerations.
+
+        Returns
+        -------
+        None
+        """
+        folders = []
+        folder_items = []
+        variables = []
+        names = []
+        array_sum = []
+        sources = []
+        item_pos = []
+        for pos, chains in enumerate(self):
+            is_folder = isinstance(chains, dict)
+            if is_folder:
+                folder_name = chains.keys()
+                chains = chains.values()[0]
+                folder_items.extend(list(xrange(0, len(chains))))
+                item_pos.extend([pos] * len(chains))
+            else:
+                chains = [chains]
+                folder_name = [None]
+                folder_items.append(None)
+                item_pos.append(pos)
+            variables.extend([c._x_keys[0] for c in chains])
+            names.extend([c.name for c in chains])
+            folders.extend(folder_name * len(chains))
+            array_sum.extend([True if c.array_style > -1 else False
+                             for c in chains])
+            sources.extend(c.source for c in chains)
+        df_data = [item_pos,
+                   names,
+                   folders,
+                   folder_items,
+                   variables,
+                   sources,
+                   array_sum]
+        df_cols = ['Position',
+                   'Name',
+                   'Folder',
+                   'Item',
+                   'Variable',
+                   'Source',
+                   'Array']
+        df = pd.DataFrame(df_data).T
+        df.columns = df_cols
+        if by_folder:
+            return df.set_index(['Position', 'Folder', 'Item'])
+        else:
+            return df
+
+    def from_mtd(self, mtd_doc, ignore=None, paint=True, flatten=False):
         """
         Convert a Dimensions table document (.mtd) into a collection of
         quantipy.Chain representations.
@@ -150,6 +667,8 @@ class ChainManager(object):
             Text
         labels : bool, default True
             Text
+        flatten : bool, default False
+            Text
 
         Returns
         -------
@@ -157,7 +676,7 @@ class ChainManager(object):
             Will consist of Quantipy representations of the pandas-converted
             .mtd file.
         """
-        def relabel_axes(df, meta, labels=True):
+        def relabel_axes(df, meta, sigtested, labels=True):
             """
             """
             for axis in ['x', 'y']:
@@ -168,22 +687,27 @@ class ChainManager(object):
                 levels = transf_axis.nlevels
                 axis_meta = 'index-emetas' if axis == 'x' else 'columns-emetas'
                 for l in range(0, levels):
-                    org_vals = transf_axis.get_level_values(l).tolist()
-                    org_names = [ov.split('|')[0] for ov in org_vals]
-                    org_labs = [ov.split('|')[1] for ov in org_vals]
-                    new_vals = org_labs if labels else org_names
-                    if l > 0:
-                        for no, axmeta in enumerate(meta[axis_meta]):
-                            if axmeta['Type'] != 'Category':
-                                new_vals[no] = axmeta['Type']
-                        new_vals = self._native_stat_names(new_vals)
-                    rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
-                    if axis == 'x':
-                        df.rename(index=rename_dict, inplace=True)
-                        df.index.names = ['Question', 'Values'] * (levels / 2)
-                    else:
-                        df.rename(columns=rename_dict, inplace=True)
-                        df.columns.names = ['Question', 'Values'] * (levels / 2)
+                    if not (sigtested and axis == 'y' and l == levels -1):
+                        org_vals = transf_axis.get_level_values(l).tolist()
+                        org_names = [ov.split('|')[0] for ov in org_vals]
+                        org_labs = [ov.split('|')[1] for ov in org_vals]
+                        new_vals = org_labs if labels else org_names
+                        if l > 0:
+                            for no, axmeta in enumerate(meta[axis_meta]):
+                                if axmeta['Type'] != 'Category':
+                                    new_vals[no] = axmeta['Type']
+                            new_vals = self._native_stat_names(new_vals)
+                        rename_dict = {old: new for old, new in zip(org_vals, new_vals)}
+                        if axis == 'x':
+                            df.rename(index=rename_dict, inplace=True)
+                            df.index.names = ['Question', 'Values'] * (levels / 2)
+                        else:
+                            df.rename(columns=rename_dict, inplace=True)
+                            if sigtested:
+                                df.columns.names = (['Question', 'Values'] * (levels / 2) +
+                                                    ['Test-IDs'])
+                            else:
+                                df.columns.names = ['Question', 'Values'] * (levels / 2)
             return None
 
         def split_tab(tab):
@@ -248,37 +772,60 @@ class ChainManager(object):
                     new_chain._views[vk] = new_chain._views_per_rows.count(vk)
             return new_chain
 
-        per_folder = OrderedDict()
-        failed = []
-        for name, sub_mtd in mtd_doc.items():
-            try:
-                if isinstance(sub_mtd.values()[0], dict):
-                    warnings.warn("MTD folders not supported... {}".format(name))
-                else:
-                    tabs = split_tab(sub_mtd)
-                    chain_dfs = []
-                    for tab in tabs:
-                        df, meta = tab[0], tab[1]
-                        # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-                        if len(df.columns.levels) > 2:
-                            df.columns = df.columns.droplevel(0)
-                        x, y = _get_axis_vars(df)
-                        df.replace('-', np.NaN, inplace=True)
-                        relabel_axes(df, meta, labels=labels)
-                        df = df.drop('Base', axis=1, level=1)
-                        try:
-                            df = df.applymap(lambda x: float(x.replace(',', '.')
-                                             if isinstance(x, (str, unicode)) else x))
-                        except:
-                            msg = "Could not convert df values to float for table '{}'!"
-                            warnings.warn(msg.format(name))
-                        chain_dfs.append(to_chain((df, x, y), meta))
-                    per_folder[name] = chain_dfs
-            except:
-                failed.append(name)
-        print 'Conversion failed for:\n{}'.format(failed)
-        return per_folder
-        return None
+        def mine_mtd(tab_collection, paint, chain_coll, folder=None):
+            failed = []
+            unsupported = []
+            for name, sub_tab in tab_collection.items():
+                try:
+                    if isinstance(sub_tab.values()[0], dict):
+                        mine_mtd(sub_tab, paint, chain_coll, name)
+                    else:
+                        tabs = split_tab(sub_tab)
+                        chain_dfs = []
+                        for tab in tabs:
+                            df, meta = tab[0], tab[1]
+                            nestex_x = None
+                            nested_y = (df.columns.nlevels % 2 == 0
+                                        and df.columns.nlevels > 2)
+                            sigtested = (df.columns.nlevels % 2 != 0
+                                         and df.columns.nlevels > 2)
+                            if sigtested:
+                                df = df.swaplevel(0, axis=1).swaplevel(0, 1, 1)
+                            else:
+                                invalid = ['-', '*', '**']
+                                df = df.applymap(
+                                    lambda x: float(x.replace(',', '.').replace('%', ''))
+                                              if isinstance(x, (str, unicode)) and not x in invalid
+                                              else x
+                                    )
+                            x, y = _get_axis_vars(df)
+                            df.replace('-', np.NaN, inplace=True)
+                            relabel_axes(df, meta, sigtested, labels=paint)
+                            colbase_l = -2 if sigtested else -1
+                            for base in ['Base', 'UnweightedBase']:
+                                df = df.drop(base, axis=1, level=colbase_l)
+                            chain_dfs.append(to_chain((df, x, y), meta))
+                        if not folder:
+                            chain_coll.extend(chain_dfs)
+                        else:
+                            folders = [(i, c.keys()[0]) for i, c in
+                                       enumerate(chain_coll, 0) if
+                                       isinstance(c, dict)]
+
+                            if folder in [f[1] for f in folders]:
+                                pos = [f[0] for f in folders
+                                       if f[1] == folder][0]
+                                chain_coll[pos][folder].extend(chain_dfs)
+
+                            else:
+                                chain_coll.append({folder: chain_dfs})
+                except:
+                    failed.append(name)
+            return chain_coll
+        chain_coll = []
+        chains = mine_mtd(mtd_doc, paint, chain_coll)
+        self.__chains = chains
+        return self
 
     def from_cmt(self, crunch_tabbook, ignore=None, cell_items='c',
                  array_summaries=True):
@@ -552,8 +1099,45 @@ class ChainManager(object):
 
         return keys
 
+    def add(self, structure, meta_from=None, meta=None, name=None):
+        """ Add a pandas.DataFrame as a Chain.
+
+        Parameters
+        ----------
+        structure : ``pandas.Dataframe``
+            The dataframe to add to the ChainManger
+        meta_from : list, list-like, str, default None
+            The location of the meta in the stack. Either a list-like object with data key and
+            filter key or a str as the data key
+        meta : quantipy meta (dict)
+            External meta used to paint the frame
+        name : ``str``, default None
+            The name to give the resulting chain. If not passed, the name will become
+            the concatenated column names, delimited by a period
+
+        Returns
+        -------
+        appended : ``quantipy.ChainManager``
+        """
+        name = name or '.'.join(structure.columns.tolist())
+
+        chain = Chain(self.stack, name, structure=structure)
+
+        if meta_from:
+            if isinstance(meta_from, (str, unicode)):
+                chain._meta = self.stack[meta_from].meta
+            else:
+                data_key, filter_key = meta_from
+                chain._meta = self.stack[data_key][filter_key].meta
+        elif meta:
+            chain._meta = meta
+
+        self.__chains.append(chain)
+
+        return self
+
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True):
+            rules=True, rules_weight=None, prioritize=True, folder=None):
         """
         TODO: Full doc string
         Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
@@ -565,7 +1149,9 @@ class ChainManager(object):
 
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
-
+        if folder and not isinstance(folder, (str, unicode)):
+            err == "'folder' must be a name provided as string!"
+            raise ValueError(err)
         if orient == 'x':
             it, keys = x_keys, y_keys
         else:
@@ -576,12 +1162,22 @@ class ChainManager(object):
 
             chain = Chain(self.stack, key)
 
-            chain = chain.get(data_key, filter_key, self._force_list(x_key), self._force_list(y_key),
-                              views, rules=rules, prioritize=prioritize, orient=orient)
+            chain = chain.get(data_key, filter_key, self._force_list(x_key),
+                              self._force_list(y_key), views, rules=rules,
+                              prioritize=prioritize, orient=orient)
 
-            self.__chains.append(chain)
-
-        return self
+            folders = self.folder_names
+            if folder in folders:
+                idx = self._idx_from_name(folder)
+                self.__chains[idx][folder].append(chain)
+            else:
+                if folder:
+                    self.__chains.append({folder: [chain]})
+                else:
+                    self.__chains.append(chain)
+            self._annotations[x_key] = ChainAnnotations()
+        return None
+        #return self
 
     def paint_all(self, *args, **kwargs):
         """
@@ -594,7 +1190,7 @@ class ChainManager(object):
         Parameters
         ----------
         text_keys : str, default None
-            The language vversion of any variable metadata applied.
+            The language version of any variable metadata applied.
         display : {'x', 'y', ['x', 'y']}, default None
             Text
         axes : {'x', 'y', ['x', 'y']}, default None
@@ -612,15 +1208,166 @@ class ChainManager(object):
             The ``.dataframe`` is modified inplace.
         """
         for chain in self:
-            chain.paint(*args, **kwargs)
+            if isinstance(chain, dict):
+                for c in chain.values()[0]:
+                    c.paint(*args, **kwargs)
+            else:
+                chain.paint(*args, **kwargs)
         return self
+
+
+HEADERS = ['header-title',
+           'header-left',
+           'header-center',
+           'header-right']
+
+FOOTERS = ['footer-title',
+           'footer-left',
+           'footer-center',
+           'footer-right']
+
+VALID_ANNOT_TYPES = HEADERS + FOOTERS + ['notes']
+
+VALID_ANNOT_CATS = ['header', 'footer', 'notes']
+
+VALID_ANNOT_POS = ['title',
+                   'left',
+                   'center',
+                   'right']
+
+
+class ChainAnnotations(dict):
+
+    def __init__(self):
+        super(ChainAnnotations, self).__init__()
+        self.header_title = []
+        self.header_left = []
+        self.header_center = []
+        self.header_right = []
+        self.footer_title = []
+        self.footer_left = []
+        self.footer_center = []
+        self.footer_right = []
+        self.notes = []
+        for v in VALID_ANNOT_TYPES:
+                self[v] = []
+
+    def __setitem__(self, key, value):
+        self._test_valid_key(key)
+        return super(ChainAnnotations, self).__setitem__(key, value)
+
+    def __getitem__(self, key):
+        self._test_valid_key(key)
+        return super(ChainAnnotations, self).__getitem__(key)
+
+    def __repr__(self):
+        headers = [(h.split('-')[1], self[h]) for h in self.populated if
+                    h.split('-')[0] == 'header']
+        footers = [(f.split('-')[1], self[f]) for f in self.populated if
+                    f.split('-')[0] == 'footer']
+        notes = self['notes'] if self['notes'] else []
+        if notes:
+            ar = 'Notes\n'
+            ar += '-{:>16}\n'.format(str(notes))
+        else:
+            ar = 'Notes: None\n'
+        if headers:
+            ar += 'Headers\n'
+            for pos, text in dict(headers).items():
+                ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
+        else:
+            ar += 'Headers: None\n'
+        if footers:
+            ar += 'Footers\n'
+            for pos, text in dict(footers).items():
+                ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
+        else:
+            ar += 'Footers: None'
+        return ar
+
+    def _test_valid_key(self, key):
+        """
+        """
+        if key not in VALID_ANNOT_TYPES:
+            splitted = key.split('-')
+            if len(splitted) > 1:
+                acat, apos = splitted[0], splitted[1]
+            else:
+                acat, apos = key, None
+            print splitted
+            if apos:
+                if acat == 'notes':
+                    msg = "'{}' annotation type does not support positions!"
+                    msg = msg.format(acat)
+                elif not acat in VALID_ANNOT_CATS and not apos in VALID_ANNOT_POS:
+                    msg = "'{}' is not a valid annotation type!".format(key)
+                elif acat not in VALID_ANNOT_CATS:
+                    msg = "'{}' is not a valid annotation category!".format(acat)
+                elif apos not in VALID_ANNOT_POS:
+                    msg = "'{}' is not a valid annotation position!".format(apos)
+            else:
+                msg = "'{}' is not a valid annotation type!".format(key)
+            raise KeyError(msg)
+
+    @property
+    def header(self):
+        h_dict = {}
+        for h in HEADERS:
+            if self[h]: h_dict[h.split('-')[1]] = self[h]
+        return h_dict
+
+    @property
+    def footer(self):
+        f_dict = {}
+        for f in FOOTERS:
+            if self[f]: f_dict[f.split('-')[1]] = self[f]
+        return f_dict
+
+    @property
+    def populated(self):
+        """
+        The annotation fields that are defined.
+        """
+        return [k for k, v in self.items() if v]
+
+    @staticmethod
+    def _annot_key(a_type, a_pos):
+        if a_pos:
+            return '{}-{}'.format(a_type, a_pos)
+        else:
+            return a_type
+
+    def set_annotation(self, text, category='header', position='title'):
+        """
+        Add annotation texts defined by their category and position.
+
+        Parameters
+        ----------
+        category : {'header', 'footer', 'notes'}, default 'header'
+            Defines if the annotation is treated as a *header*, *footer* or
+            *note*.
+        position : {'title', 'left', 'center', 'right'}, default 'title'
+            Sets the placement of the annotation within its category.
+
+        Returns
+        -------
+        None
+        """
+        if not category: category = 'header'
+        if not position and category != 'notes': position = 'title'
+        if category == 'notes': position = None
+        akey = self._annot_key(category, position)
+        self[akey].append(text)
+        self.__dict__[akey.replace('-', '_')].append(text)
+        return None
 
 
 class Chain(object):
 
-    def __init__(self, stack, name):
+    def __init__(self, stack, name, structure=None):
         self.stack = stack
         self.name = name
+        self.structure = structure
         self.source = 'native'
         self.double_base = False
         self.grouping = None
@@ -642,7 +1389,9 @@ class Chain(object):
         self._has_rules = None
 
     def __str__(self):
-        # TODO: Add checks on x/ y/ view/ orientation
+        if self.structure is not None:
+            return '%s...\n%s' % (self.__class__.__name__, str(self.structure.head()))
+
         str_format = ('%s...'
                       '\nSource:          %s'
                       '\nName:            %s'
@@ -747,20 +1496,41 @@ class Chain(object):
             compl_views = [v for v in self.views if ']*:' in v]
             if not compl_views:
                 c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
             else:
                 c = any(v.split('|')[3] == '' for v in compl_views)
-                pct = any(v.split('|')[3] == 'y' for v in compl_views)
-            pc = c and pct
-            if not pc:
-                return 'c' if c else 'p'
+                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
+                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+            c_colpct = c and col_pct
+            c_rowpct = c and row_pct
+            c_colrow_pct = c_colpct and c_rowpct
+
+            single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
+            if single_ci:
+                if c:
+                    return 'counts'
+                elif col_pct:
+                    return 'colpct'
+                else:
+                    return 'rowpct'
             else:
-                return 'cp'
-        else:
-            return None
+                if c_colrow_pct:
+                    return 'counts_colpct_rowpct'
+                elif c_colpct:
+                    return 'counts_colpct'
+                else:
+                    return 'counts_rowpct'
+
+    @property
+    def ci_count(self):
+        return len(self.cell_items.split('_'))
 
     @property
     def contents(self):
+        if self.structure:
+            return
+
         nested = self._array_style == 0
         if nested:
             dims = self._frame.shape
@@ -779,20 +1549,22 @@ class Chain(object):
 
 
     def describe(self):
-        def _describe(cell_defs):
+        def _describe(cell_defs, row_id):
             descr = []
             for r, m in cell_defs.items():
                 descr.append(
                     [k if isinstance(v, bool) else v for k, v in m.items() if v])
-            if any('is_block' in d for d in descr) and self._array_style != 0:
-                blocks = self._describe_block(descr)
+            if any('is_block' in d for d in descr):
+                blocks = self._describe_block(descr, row_id)
+                calc = 'calc' in blocks
                 for d, b in zip(descr, blocks):
-                    if b: d.append(b)
+                    if b:
+                        d.append(b) if not calc else d.extend([b, 'has_calc'])
             return descr
         if self._array_style == 0:
-            description = {k: _describe(v) for k, v in self.contents.items()}
+            description = {k: _describe(v, k) for k, v in self.contents.items()}
         else:
-            description = _describe(self.contents)
+            description = _describe(self.contents, None)
         return description
 
     @lazy_property
@@ -816,7 +1588,6 @@ class Chain(object):
                 main_vk = pct_vk.format(w if w else '')
             base_vk = base_vk.format(w if w else '')
             metrics = [base_vk] + (len(self.dataframe.index)-1) * [main_vk]
-
         elif self.source == 'Dimensions MTD':
             ci = self._meta['cell_items']
             w = None
@@ -824,6 +1595,8 @@ class Chain(object):
             metrics = []
             for axis_val in axis_vals:
                 if axis_val == 'Base':
+                    metrics.append(base_vk.format(w if w else ''))
+                if axis_val == 'UnweightedBase':
                     metrics.append(base_vk.format(w if w else ''))
                 elif axis_val == 'Category':
                     metrics.append(counts_vk.format(w if w else ''))
@@ -837,26 +1610,27 @@ class Chain(object):
                     metrics.append(variance_vk.format(w if w else ''))
             return metrics
         else:
+            #  Native Chain views
+            # ----------------------------------------------------------------
             if self._array_style != 0:
                 metrics = []
                 if self.orientation == 'x':
-                    for view in self._given_views:
+                    for view in self._valid_views():
                         view = self._force_list(view)
                         initial = view[0]
-                        if initial in self.views:
-                            size = self.views[initial]
-                            metrics.extend(view * size)
+                        size = self.views[initial]
+                        metrics.extend(view * size)
                 else:
                     for view_part in self.views:
-                        for view in self._given_views:
+                        for view in self._valid_views():
                             view = self._force_list(view)
                             initial = view[0]
-                            if initial in view_part:
-                                size = view_part[initial]
-                                metrics.extend(view * size)
+                            size = view_part[initial]
+                            metrics.extend(view * size)
             else:
                 counts = []
-                pcts =  []
+                colpcts =  []
+                rowpcts = []
                 metrics = []
                 ci = self.cell_items
                 for v in self.views.keys():
@@ -864,26 +1638,49 @@ class Chain(object):
                     is_completed = ']*:' in v
                     if not self._is_c_pct(parts):
                         counts.extend([v]*self.views[v])
-                    if self._is_c_pct(parts):
-                        pcts.extend([v]*self.views[v])
-                    else:
-                        if ci == 'cp' and self.grouping:
-                            if not self._is_counts(parts) or self._is_c_base(parts):
-                                pcts.append(None)
-                        else:
-                            pcts.extend([v]*self.views[v])
+                    if self._is_r_pct(parts):
+                        rowpcts.extend([v]*self.views[v])
+                    if (self._is_c_pct(parts) or self._is_base(parts) or
+                        self._is_stat(parts)):
+                        colpcts.extend([v]*self.views[v])
+                    # else:
+                    #     if ci == 'counts_colpct' and self.grouping:
+                    #         if not self._is_counts(parts):
+                    #         # ...or self._is_c_base(parts):
+                    #             colpcts.append(None)
+                    #     else:
+                    #         colpcts.extend([v] * self.views[v])
                 dims = self._frame.shape
                 for row in range(0, dims[0]):
-                    if ci == 'cp' and self.grouping:
+                    if ci == 'counts_colpct' and self.grouping:
                         if row % 2 == 0:
                             vc = counts
                         else:
-                            vc = pcts
+                            vc = colpcts
                     else:
-                        vc = counts if ci == 'c' else pcts
+                        vc = counts if ci == 'counts' else colpcts
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
-
         return metrics
+
+    def _valid_views(self):
+        clean_view_list = []
+        valid = self.views.keys()
+        for v in self._given_views:
+            if isinstance(v, (str, unicode)):
+                if v in valid:
+                    clean_view_list.append(v)
+            else:
+                new_v = []
+                for sub_v in v:
+                    if sub_v in valid:
+                        new_v.append(sub_v)
+                if isinstance(v, tuple):
+                    new_v = tuple(new_v)
+                if new_v:
+                    if len(new_v) == 1: new_v = new_v[0]
+                    clean_view_list.append(new_v)
+        return clean_view_list
+
 
     def _add_contents(self, parts):
         return dict(is_default=self._is_default(parts),
@@ -901,11 +1698,16 @@ class Chain(object):
                     is_c_pct_cumsum=self._is_c_pct_cumsum(parts),
                     is_net=self._is_net(parts),
                     is_block=self._is_block(parts),
+                    is_calc_only = self._is_calc_only(parts),
                     is_mean=self._is_mean(parts),
                     is_stddev=self._is_stddev(parts),
                     is_min=self._is_min(parts),
                     is_max=self._is_max(parts),
                     is_median=self._is_median(parts),
+                    is_variance=self._is_variance(parts),
+                    is_sem=self._is_sem(parts),
+                    is_varcoeff=self._is_varcoeff(parts),
+                    is_percentile=self._is_percentile(parts),
                     is_propstest=self._is_propstest(parts),
                     is_meanstest=self._is_meanstest(parts),
                     is_weighted=self._is_weighted(parts),
@@ -933,6 +1735,12 @@ class Chain(object):
     def _is_c_base_gross(self, parts):
         return parts[-1] == 'cbase_gross'
 
+    def _is_base(self, parts):
+        return (self._is_c_base(parts) or
+                self._is_c_base_gross(parts) or
+                self._is_e_base(parts) or
+                self._is_r_base(parts))
+
     def _is_counts(self, parts):
         return parts[1].startswith('f') and parts[3] == ''
 
@@ -948,6 +1756,14 @@ class Chain(object):
     def _is_net(self, parts):
         return parts[1].startswith(('f', 'f.c:f', 't.props')) and \
                len(parts[2]) > 3 and not parts[2] == 'x++'
+
+    def _is_calc_only(self, parts):
+        if self._is_net(parts) and not self._is_block(parts):
+            return ((self.__has_freq_calc(parts) or
+                     self.__is_calc_only_propstest(parts)) and not
+                    (self._is_counts_sum(parts) or self._is_c_pct_sum(parts)))
+        else:
+            return False
 
     def _is_block(self, parts):
         if self._is_net(parts):
@@ -965,6 +1781,20 @@ class Chain(object):
             return parts[1].split('.')[-1]
         else:
             return None
+
+    # non-meta relevant helpers
+    def __has_operator_expr(self, parts):
+        e = parts[2]
+        for syntax in ['[+{', '}+]', ']*:']:
+            if syntax in e: e.remove(syntax)
+        ops = ['+', '-', '*', '/']
+        return any(len(e.split(op)) > 1 for op in ops)
+
+    def __has_freq_calc(self, parts):
+        return parts[1].startswith('f.c:f')
+
+    def __is_calc_only_propstest(self, parts):
+        return self._is_propstest(parts) and self.__has_operator_expr(parts)
 
     @staticmethod
     def _statname(parts):
@@ -984,6 +1814,18 @@ class Chain(object):
 
     def _is_median(self, parts):
         return self._statname(parts) == 'median'
+
+    def _is_variance(self, parts):
+        return self._statname(parts) == 'var'
+
+    def _is_sem(self, parts):
+        return self._statname(parts) == 'sem'
+
+    def _is_varcoeff(self, parts):
+        return self._statname(parts) == 'varcoeff'
+
+    def _is_percentile(self, parts):
+        return self._statname(parts) in ['upper_q', 'lower_q', 'median']
 
     def _is_counts_sum(self, parts):
         return parts[-1].endswith('counts_sum')
@@ -1021,30 +1863,46 @@ class Chain(object):
         else:
             return None
 
-    def _describe_block(self, description):
-        if self.painted: self.toggle_labels()
+    def _describe_block(self, description, row_id):
+        if self.painted:
+            repaint = True
+            self.toggle_labels()
+        else:
+            repaint = False
         vpr = self._views_per_rows
-        idx = self.dataframe.index.get_level_values(1).tolist()
+        if row_id is not None:
+            vpr = [v[1] for v in vpr[row_id].items()]
+            idx = self.dataframe.columns.get_level_values(1).tolist()
+        else:
+            idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        block_net_vk = list(set([v for v in vpr if '}+' in v or '+{' in v]))[0]
-        expr = block_net_vk.split('|')[2]
-        has_calc = block_net_vk.split('|')[1].startswith('f.c')
-        expanded_codes = map(int, re.findall(r'\d+', expr))
+        block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2 or
+                        '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2]]
+        has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])
+        is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr)
+        if block_net_vk:
+            expr = block_net_vk[0].split('|')[2]
+            expanded_codes = set(map(int, re.findall(r'\d+', expr)))
+        else:
+            expanded_codes = []
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == '':
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
         for idx, row in enumerate(description):
             if not 'is_block' in row:
                 idx_view_map[idx] = None
-        block_len = len([row_e for row_e in idx_view_map if row_e])
+        blocks_len = len(expr.split('],')) * (self.ci_count + is_tested)
+        if has_calc: blocks_len -= (self.ci_count + is_tested)
         block_net_def = []
-        for no, e in enumerate(idx_view_map):
+        described_nets = 0
+        for e in idx_view_map:
             if e:
                 if isinstance(e[0], (str, unicode)):
-                    if no == block_len and has_calc:
+                    if has_calc and described_nets == blocks_len:
                         block_net_def.append('calc')
                     else:
                         block_net_def.append('net')
+                        described_nets += 1
                 else:
                     code = int(e[0])
                     if code in expanded_codes:
@@ -1053,7 +1911,7 @@ class Chain(object):
                         block_net_def.append('normal')
             else:
                 block_net_def.append(e)
-        if self.painted: self.toggle_labels()
+        if repaint: self.toggle_labels()
         return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
@@ -1122,7 +1980,6 @@ class Chain(object):
             self._extract_base_descriptions()
 
         del self.stack
-
 
         return self
 
@@ -1513,7 +2370,7 @@ class Chain(object):
         return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', totalize=False):
+              transform_tests='cells', totalize=False, sep=None, na_rep=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -1531,36 +2388,89 @@ class Chain(object):
             Text
         view_level : bool, default False
             Text
-        transform_tests : {False, 'full', 'cells'}, default cells
+        transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
         totalize : bool, default False
             Text
+        sep : str, default None
+            The seperator used for painting ``pandas.DataFrame`` columns
+        na_rep : str, default None
+            numpy.NaN will be replaced with na_rep if passed
 
         Returns
         -------
         None
             The ``.dataframe`` is modified inplace.
         """
-        self.totalize = totalize
-        if transform_tests: self.transform_tests()
-        # Remove any letter header row from transformed tests...
-        if self.sig_test_letters:
-            self._remove_letter_header()
-        # Paint the "regular" dataframe
-        if text_keys is None:
-            text_keys = finish_text_key(self._meta, {})
-        if display is None:
-            display = _AXES
-        if axes is None:
-            axes = _AXES
-        self._paint(text_keys, display, axes)
-        # Re-build the full column index (labels + letter row)
-        if self.sig_test_letters and transform_tests == 'full':
-            self._frame = self._apply_letter_header(self._frame)
-        if view_level:
-            self._add_view_level()
         self.painted = True
+        if self.structure is not None:
+            self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
+        else:
+            self.totalize = totalize
+            if transform_tests: self.transform_tests()
+            # Remove any letter header row from transformed tests...
+            if self.sig_test_letters:
+                self._remove_letter_header()
+            # Paint the "regular" dataframe
+            if text_keys is None:
+                text_keys = finish_text_key(self._meta, {})
+            if display is None:
+                display = _AXES
+            if axes is None:
+                axes = _AXES
+            self._paint(text_keys, display, axes)
+            # Re-build the full column index (labels + letter row)
+            if self.sig_test_letters and transform_tests == 'full':
+                self._frame = self._apply_letter_header(self._frame)
+            if view_level:
+                self._add_view_level()
         return self
+
+    def _paint_structure(self, text_key, sep=None, na_rep=None):
+        """ Paint the dataframe-type Chain.
+        """
+        str_format = '%%s%s%%s' % sep
+
+        column_mapper = dict()
+
+        na_rep = na_rep or ''
+
+        for column in self.structure.columns:
+
+            meta = self._meta['columns'][column]
+
+            if sep:
+                column_mapper[column] = str_format % (column, meta['text'][text_key])
+            else:
+                column_mapper[column] = meta['text'][text_key]
+
+            if meta.get('values'):
+                values = meta['values']
+                if isinstance(values, (str, unicode)):
+                    pointers = values.split('@')
+                    values = self._meta[pointers.pop(0)]
+                    while pointers:
+                        valules = values[pointers.pop(0)]
+                if meta['type'] == 'delimited set':
+                    value_mapper = {str(item['value']): item['text'][text_key] for item in values}
+                    series = self.structure[column]
+                    series = (series.str.split(';')
+                                    .apply(pd.Series, 1)
+                                    .stack(dropna=False)
+                                    .map(value_mapper.get) #, na_action='ignore')
+                                    .unstack())
+                    first, rest = series[series.columns[0]], [series[c] for c in series.columns[1:]]
+                    self.structure[column] = (first.str.cat(rest, sep=', ', na_rep='')
+                                              .str.slice(0, -2)
+                                              .replace(to_replace=r'\, (?=\W|$)', value='', regex=True)
+                                              .replace(to_replace='', value=na_rep))
+                else:
+                    value_mapper = {item['value']: item['text'][text_key] for item in values}
+                    self.structure[column] = self.structure[column].map(value_mapper.get, na_action='ignore')
+
+            self.structure[column].fillna(na_rep, inplace=True)
+
+        self.structure.rename(columns=column_mapper, inplace=True)
 
     def _paint(self, text_keys, display, axes):
         """ Paint the Chain.dataframe
@@ -1600,6 +2510,7 @@ class Chain(object):
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
                   self._get_level_1(levels, text_keys, display, axis))
+
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
         #     return new_index.droplevel(0)
@@ -1627,6 +2538,37 @@ class Chain(object):
             level_0_text = ['Total'] + level_0_text[1:]
         return map(unicode, level_0_text)
 
+    @staticmethod
+    def _is_multibase(views, basetype):
+        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
+
+    def _specify_base(self, view_idx, tk):
+        base_vk = self._valid_views()[view_idx]
+        basetype = base_vk.split('|')[-1]
+        weighted = base_vk.split('|')[-2]
+        is_multibase = self._is_multibase(self._views.keys(), basetype)
+        if basetype == 'cbase_gross':
+            if weighted or (not weighted and not is_multibase):
+                # base_value = 'Gross base'
+                base_value = self._transl[tk]['gross All']
+            else:
+               # base_value = 'Unweighted gross base'
+                base_value = self._transl[tk]['no_w_gross_All']
+        elif basetype == 'ebase':
+            if weighted or (not weighted and not is_multibase):
+                base_value = 'Effective base'
+            else:
+                base_value = 'Unweighted effective base'
+        else:
+            if weighted or (not weighted and not is_multibase):
+                # base_value = 'Base'
+                base_value = self._transl[tk]['All']
+            else:
+                # base_value = 'Unweighted base'
+                base_value = self._transl[tk]['no_w_All']
+        return base_value
+
+
     def _get_level_1(self, levels, text_keys, display, axis):
         """
         """
@@ -1643,14 +2585,13 @@ class Chain(object):
                 if value in self._text_map.keys() and value not in translate:
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
-                    text = self._transl[text_keys[axis][0]][value]
-                    if self.double_base and value == 'All':
-                        unwgtb =  'Unweighted base'
-                        if not unwgtb in level_1_text:
-                            text = unwgtb
+                    if value == 'All':
+                        text = self._specify_base(i, text_keys[axis][0])
+                    else:
+                        text = self._transl[text_keys[axis][0]][value]
                     level_1_text.append(text)
                 else:
-                    if self.array_style == 0 and axis == 'x':
+                    if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
                         text = self._get_text(value, text_keys[axis])
                         level_1_text.append(text)
                     else:
@@ -1767,7 +2708,7 @@ class Chain(object):
             indexed = []
             val = idx.get_level_values(1).tolist()
             for v in val:
-                if not v in indexed:
+                if not v in indexed or v == 'All':
                     grp_vals.append(v)
                     indexed.append(v)
                 else:
@@ -1798,8 +2739,47 @@ class Chain(object):
         return cls._pad_id
 
 
+# class MTDChain(Chain):
+#     def __init__(self, mtd_doc, name=None):
+#         super(MTDChain, self).__init__(stack=None, name=name, structure=None)
+#         self.mtd_doc = mtd_doc
+#         self.source = 'Dimensions MTD'
+        self.get = self._get
 
 
+#     def _get(self, ignore=None, labels=True):
+#         per_folder = OrderedDict()
+#         failed = []
+#         unsupported = []
+#         for name, tab_def in self.mtd_doc.items():
+#             try:
+#                 if isinstance(tab_def.values()[0], dict):
+#                     unsupported.append(name)
+#                 else:
+#                     tabs = split_tab(tab_def)
+#                     chain_dfs = []
+#                     for tab in tabs:
+#                         df, meta = tab[0], tab[1]
+#                         # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
+#                         if len(df.columns.levels) > 2:
+#                             df.columns = df.columns.droplevel(0)
+#                         x, y = _get_axis_vars(df)
+#                         df.replace('-', np.NaN, inplace=True)
+#                         relabel_axes(df, meta, labels=labels)
+#                         df = df.drop('Base', axis=1, level=1)
+#                         try:
+#                             df = df.applymap(lambda x: float(x.replace(',', '.')
+#                                              if isinstance(x, (str, unicode)) else x))
+#                         except:
+#                             msg = "Could not convert df values to float for table '{}'!"
+#                             # warnings.warn(msg.format(name))
+#                         chain_dfs.append(to_chain((df, x, y), meta))
+#                     per_folder[name] = chain_dfs
+#             except:
+#                 failed.append(name)
+#         print 'Conversion failed for:\n{}\n'.format(failed)
+#         print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
+#         return per_folder
 
 
 
@@ -5121,3 +6101,4 @@ class Stack(defaultdict):
             description = description.pivot_table(values='#', index=index, columns=columns,
                                 aggfunc='count')
         return description
+
