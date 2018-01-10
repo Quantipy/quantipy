@@ -1851,7 +1851,14 @@ class Stack(defaultdict):
         # get counts + net views
         count_net_views = ['counts', 'counts_sum', 'counts_cumsum']
         if isinstance(views, ViewMapper) and views.keys() == ['net']:
-            counts_nets = views
+            counts_nets = qp.ViewMapper()
+            counts_nets.make_template('frequency', {'rel_to': [None, 'y']})
+            options = {'logic': views['net']['kwargs']['logic'],
+                       'axis': 'x',
+                       'expand': views['net']['kwargs']['expand'],
+                       'complete': views['net']['kwargs']['complete'],
+                       'calc': views['net']['kwargs']['calc']}
+            counts_nets.add_method('net', kwargs=options)
         else:
             counts_nets = [v for v in views if v in count_net_views]
 
@@ -1888,9 +1895,12 @@ class Stack(defaultdict):
                         w = list(weight) if weight else None
                         # add bases
                         for ba, weights in new_bases.items():
-                            if weights.get('wgt'):
-                                self.add_link(dk, f, x=x, y=y, views=[ba], weights=w)
-                            if weights.get('unwgt') and not None in w:
+                            ba_w = [b_w for b_w in w if not b_w is None]
+                            if weights.get('wgt') and ba_w:
+                                self.add_link(dk, f, x=x, y=y, views=[ba], weights=ba_w)
+                            elif weights.get('wgt') and not ba_w:
+                                self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
+                            if weights.get('unwgt'):
                                 if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                                     self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
                         # remove existing nets for link if new view is a net

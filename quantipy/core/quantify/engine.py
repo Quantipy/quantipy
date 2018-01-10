@@ -1729,6 +1729,8 @@ class Test(object):
         grps, exp, compl, calc, exclude, rescale = view.get_edit_params()
         if exclude is not None:
             self.Quantity.exclude(exclude)
+        if rescale is not None:
+            self.Quantity.rescale(rescale)
         if self.metric == 'proportions' and self.test_total and view._has_code_expr():
             self.Quantity.group(grps, expand=exp, complete=compl)
         if self.metric == 'means':
