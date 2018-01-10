@@ -126,11 +126,13 @@ class Audit(object):
 		return Nontye
 
 	@modify(to_list='names')
-	def save(self, names=None, suffix='_audit'):
+	def save(self, names='all', suffix='_audit'):
 		"""
 		Save all included DataSet instances.
 		"""
 		if not names:
+			names = []
+		elif names == ['all']:
 			names = self.ds_names
 		else:
 			self._raise_error = True
@@ -293,7 +295,7 @@ class Audit(object):
 
 	@modify(to_list=['datasets', 'ignore'])
 	@verify(is_str=['name', 'datasets', 'ignore'])
-	def rename_by(self, name, datasets=None, ignore=[]):
+	def rename_by(self, name, datasets='all', ignore=[]):
 		"""
 		Take over variable names of a defined DataSet.
 
@@ -305,7 +307,7 @@ class Audit(object):
 		----------
 		name: str
 			Name of the master DataSet from which the variables names are taken.
-		datasets: str/ list of str
+		datasets: str/ list of str, default 'all'
 			Name(s) of the DataSet(s) for which the variables should be renamed.
 			If None, all included DataSets are taken, except of the master
 			DataSet.
@@ -324,6 +326,8 @@ class Audit(object):
 		name = self._get_alias(name)
 		m_ds = self[name]
 		if not datasets:
+			datasets = []
+		elif datasets == ['all']:
 			datasets = [alias for alias in self.ds_alias.values() if not alias == name]
 		else:
 			datasets = [ds for ds in  self._get_alias(datasets) if not ds == name]
@@ -337,15 +341,15 @@ class Audit(object):
 
 	@modify(to_list='datasets')
 	@verify(is_str='datasets')
-	def rename_from_mapper(self, datasets=None, mapper={}):
+	def rename_from_mapper(self, datasets='all', mapper={}):
 		"""
 		Renames variables from mapper for all defined datasets.
 
 		Parameters
 		----------
-		datasets: str/ list of str
+		datasets: str/ list of str, default 'all'
 			Name(s) of the DataSet(s) for which the variables should be renamed.
-			If None, all included DataSets are taken.
+			If 'all', all included DataSets are taken.
 		mapper: dict in form if {str: str}
 			The key is renamed into the value.
 
@@ -358,7 +362,10 @@ class Audit(object):
 		elif not all(isinstance(k, (str, unicode)) and isinstance(v, (str, unicode))
 		             for k, v in mapper.items()):
 			raise ValueError("'mapper' must be a dict: {str: str}")
-		if not datasets: datasets = self.ds_names
+		if not datasets:
+			datasets = []
+		elif datasets == ['all']:
+			datasets = self.ds_names
 		for ds in datasets:
 			for k, v in mapper.items():
 				if self[ds].var_exists(k):
@@ -368,7 +375,7 @@ class Audit(object):
 
 	@modify(to_list=['datasets', 'ignore'])
 	@verify(is_str=['datasets', 'ignore'])
-	def remove_mismatches(self, datasets=None, ignore=[]):
+	def remove_mismatches(self, datasets='all', ignore=[]):
 		"""
 		Remove variables that are not included in all DataSets.
 
@@ -389,7 +396,10 @@ class Audit(object):
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
-		if not datasets: datasets = self.ds_alias.values()
+		if not datasets:
+			datasets = []
+		elif datasets == ['all']:
+			datasets = self.ds_alias.values()
 		for ds in datasets:
 			for v in self.unpaired_vars.index.tolist():
 				if self[ds].var_exists(v) and not v in ignore:
@@ -400,7 +410,7 @@ class Audit(object):
 
 	@modify(to_list=['name', 'datasets', 'ignore'])
 	@verify(is_str=['name', 'datasets', 'ignore'])
-	def fill_mismatches_by(self, name=None, datasets=None, ignore=[]):
+	def fill_mismatches_by(self, name='all', datasets='all', ignore=[]):
 		"""
 		Fill mismatches in DataSets by the metadata if a defined DataSet.
 
@@ -430,10 +440,15 @@ class Audit(object):
 		if self.unpaired_vars is None:
 			print 'No mismatches detected in included DataSets.'
 			return None
-		if not name: name = self.ds_alias.values()
+		if not name:
+			name = []
+		elif name == ['all']:
+			name = self.ds_alias.values()
 		for n in self._get_alias(name):
 			m_ds = self[n]
 			if not datasets:
+				use_ds = []
+			elif datasets == ['all']:
 				use_ds = [ds for ds in self.ds_alias.values() if not ds == n]
 			else:
 				use_ds = [ds for ds in self._get_alias(datasets) if not ds == n]
@@ -580,6 +595,7 @@ class Audit(object):
 			Text key for text-based label information. Can be provided as
 			``'x edits~tk'`` or ``'y edits~tk'``, then the edited text is taken.
 		"""
+		if datasets == ['all']: datasets = self.ds_names
 		ds = [self[datasets]] if len(datasets)==1 else self[datasets]
 		alias = self._get_alias(datasets)
 		tk = text_key.split('~')
@@ -600,7 +616,7 @@ class Audit(object):
 
 	@modify(to_list=['datasets', 'var'])
 	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
-	def relabel_by(self, var, text_key, name, datasets=None):
+	def relabel_by(self, var, text_key, name, datasets='all'):
 		"""
 		Take over variable labels of a defined DataSet.
 
@@ -625,6 +641,8 @@ class Audit(object):
 		name = self._get_alias(name)
 		m_ds = self[name]
 		if not datasets:
+			datasets = []
+		elif datasets == ['all']:
 			datasets = [alias for alias in self.ds_alias.values() if not alias == name]
 		else:
 			datasets = [ds for ds in  self._get_alias(datasets) if not ds == name]
@@ -770,7 +788,7 @@ class Audit(object):
 
 	@modify(to_list=['datasets', 'var'])
 	@verify(is_str=['name', 'datasets', 'var', 'text_key'])
-	def align_cats_by(self, var, text_key, name, datasets=None,
+	def align_cats_by(self, var, text_key, name, datasets='all',
 	                  overwrite=False, extend=False, reorder=False):
 		"""
 		Take over categories for variable(s) of a defined DataSet.
@@ -802,6 +820,8 @@ class Audit(object):
 		name = self._get_alias(name)
 		m_ds = self[name]
 		if not datasets:
+			datasets = []
+		elif datasets == ['all']:
 			datasets = [alias for alias in self.ds_alias.values() if not alias == name]
 		else:
 			datasets = [ds for ds in self._get_alias(datasets) if not ds == name]
