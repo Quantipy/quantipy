@@ -4,6 +4,7 @@ import savReaderWriter as sr
 
 from collections import defaultdict
 from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
+import os
 
 def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None,
                    dates_as_strings=False, text_key="main"):
@@ -31,6 +32,7 @@ dates_as_strings : bool, default=False
                      : The meta is a JSON dictionary
     """
     filepath="{}{}".format(path or '', filename)
+    filepath = os.path.abspath(filepath).decode('cp1252')
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
     meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale,
                                   ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings,
