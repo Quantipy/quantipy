@@ -445,6 +445,7 @@ class Box(object):
         flat = np.c_[level_1.T, values].flat
         rel_x, rel_y = flat.coords
         bg = use_bg = True
+        bg_from = bg_x_contents = None
         border_from = False
 
         for data in flat:
@@ -452,20 +453,9 @@ class Box(object):
                 if rel_y == 0:
                     for idx in sorted(contents[rel_x]):
                         if not self._is('base', **contents[rel_x][idx]):
-                            x_contents = contents[rel_x][idx]
+                            bg_x_contents = x_contents = contents[rel_x][idx]
+                            bg_from = self._row_format_name(**x_contents)
                             break
-                #if rel_y > 0:
-                #    if self._is('base', **contents[rel_x][rel_y - 1]):
-                #        if data != data:
-                #            data = ' '
-
-                #print rel_y, rel_y % self.values.shape[1], rel_y % (self.values.shape[1] - 1)
-                #if (rel_y % (self.values.shape[1] - 1)) == 0:
-                #    x_contents = contents[rel_x][0]
-                #    for idx in sorted(contents[rel_x]):
-                #        if not self._is('base', **contents[rel_x][idx]):
-                #            x_contents = contents[rel_x][idx]
-                #            break
                 else:
                     x_contents = contents[rel_x][rel_y - 1]
 
@@ -473,7 +463,6 @@ class Box(object):
                 x_contents = contents[rel_x]
 
             name = self._row_format_name(**x_contents)
-            print name
 
             if rel_y == 0:
                 if data == '':
@@ -485,7 +474,18 @@ class Box(object):
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg,
                                      view_border, border_from)
-            cell_data = self._cell(data, normalize=self._is('pct', **x_contents))
+            if rel_y and bg_from:
+                bg_format = self._format_x(bg_from, rel_x, rel_y, row_max,
+                                          bg_x_contents.get('dummy'), use_bg,
+                                          view_border, border_from)
+                format_['bg_color'] = bg_format.get('bg_color', '#FFFFFF')
+
+            is_pct = self._is('pct', **x_contents)
+            is_counts = self._is('counts', **x_contents)
+            is_base = self._is('base', **x_contents)
+            cell_data = self._cell(data, 
+                                   normalize=is_pct,
+                                   is_freq=(is_pct or is_counts) and not is_base)
             self.sheet.write(self.sheet._row + rel_x,
                              self.sheet._column + rel_y,
                              cell_data,
@@ -498,12 +498,14 @@ class Box(object):
 
     @lru_cache()
     def _alternate_bg(self, name, bg):
-        is_block = name.startswith('block')
+        freq_view_group = self.sheet.excel.views_groups.get(name, '') == 'freq'
         is_freq_test = any(_ in name for _ in ('counts', 'pct', 'propstest')) 
-        not_net_or_sum = all((_ not in name) or is_block for _ in ('net', 'sum'))
-        if (is_freq_test and not_net_or_sum) or (self.chain.array_style == 0):
+        is_mean = 'mean' in name
+        not_net_sum = all(_ not in name for _ in ('net', 'sum'))
+        if ((is_freq_test and not_net_sum) or freq_view_group) or \
+                (not is_mean and self.chain.array_style == 0):
             return not bg, bg
-        return bg, True
+        return self.sheet.alternate_bg, True
 
     @lru_cache()
     def _row_format_name(self, **contents):
@@ -662,8 +664,8 @@ class Box(object):
         return index, values, contents
 
     @lru_cache()
-    def _cell(self, value, normalize=False):
-        if self.chain.array_style == 0:
+    def _cell(self, value, normalize=False, is_freq=False):
+        if self.chain.array_style == 0 and not is_freq:
             return Cell(value, normalize, nan_rep=' ').__repr__()
         return Cell(value, normalize).__repr__()
 
@@ -1029,6 +1031,21 @@ if __name__ == '__main__':
         stack.add_link(x='@', y='q5', views=view, weights=weights)
         stack.add_link(x='q5', y='@', views=view, weights=weights)
 
+    nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
+                                          'kwargs': {'iterators': {'rel_to': rel_to},
+                                                     'groups': 'Nets'}})
+    nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'},
+            {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5 (NET)'}, 'expand': 'after'}]
+    nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
+                                                 'logic':     nets,
+                                                 'text':      'Net: ',
+                                                 'combine':   False,
+                                                 'complete':  True,
+                                                 'expand':    'after'}
+                                                 )
+    stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
+    stack.add_link(x='@', y='q5', views=nets_mapper, weights=weights)
+
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
                  ('x|f|:||%s|counts' % WEIGHT,
@@ -1053,6 +1070,8 @@ if __name__ == '__main__':
                  'x|d.sem|x:||%s|stat' % WEIGHT,
                  'x|d.lower_q|x:||%s|stat' % WEIGHT,
                  'x|d.upper_q|x:||%s|stat' % WEIGHT,
+                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                 )
 
     #VIEW_KEYS = ('x|f|x:|||cbase',
@@ -1096,37 +1115,42 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries - block nets
-    #nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
-    #                                      'kwargs': {'iterators': {'rel_to': rel_to},
-    #                                                 'groups': 'Nets'}})
-    #nets = [{'N1': [1, 2], 'text': {'en-GB': 'Waves 1 & 2 (NET)'}, 'expand': 'after'},
-    #        {'N2': [4, 5], 'text': {'en-GB': 'Waves 4 & 5 (NET)'}, 'expand': 'after'}]
-    #nets_mapper.add_method(name='BLOCK', kwargs={'axis':      'x',
-    #                                             'logic':     nets,
-    #                                             'text':      'Net: ',
-    #                                             'combine':   False,
-    #                                             'complete':  True,
-    #                                             'expand':    'after'}
-    #                                             )
-    #stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
+    
+    VIEW_KEYS = ('x|f|x:|||cbase',
+                 'x|f|x:||%s|cbase' % WEIGHT,
+                 ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
+                  'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT),
+                 'x|d.mean|x:||%s|stat' % WEIGHT,
+                 'x|d.stddev|x:||%s|stat' % WEIGHT,
+                 'x|d.median|x:||%s|stat' % WEIGHT,
+                 'x|d.var|x:||%s|stat' % WEIGHT,
+                 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                 'x|d.sem|x:||%s|stat' % WEIGHT,
+                 'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                 'x|d.upper_q|x:||%s|stat' % WEIGHT,
+                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
+                 #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
+                 # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
+                )
 
-    #VIEW_KEYS = ('x|f|x:|||cbase',
-    #             'x|f|x:||%s|cbase' % WEIGHT,
-    #             ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
-    #              'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
-    #              'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT),
-    #             )
-    #
-    #arr_chains_block_0 = ChainManager(stack)
+    arr_chains_block_1 = ChainManager(stack)
+    arr_chains_block_1.get(data_key=DATA_KEY,
+                           filter_key=FILTER_KEY,
+                           x_keys=['@'],
+                           y_keys=['q5'],
+                           views=VIEW_KEYS,
+                          )
+    arr_chains_block_1.paint_all()
 
-    #arr_chains_block_0.get(data_key=DATA_KEY,
-    #                       filter_key=FILTER_KEY,
-    #                       x_keys=['q5'],
-    #                       y_keys=['@'],
-    #                       views=VIEW_KEYS,
-    #                      )
-
-    #arr_chains_block_0.paint_all()
+    arr_chains_block_0 = ChainManager(stack)
+    arr_chains_block_0.get(data_key=DATA_KEY,
+                           filter_key=FILTER_KEY,
+                           x_keys=['q5'],
+                           y_keys=['@'],
+                           views=VIEW_KEYS,
+                          )
+    arr_chains_block_0.paint_all()
     # ------------------------------------------------------------ 
 
     # ------------------------------------------------------------ arr. summaries - mean
@@ -2008,28 +2032,6 @@ if __name__ == '__main__':
                 }
         tp = {'bg_color_freq': 'gray'}
 
-
-
-    #cm = ChainManager()
-    #x = Excel()
-
-    #cm.get('Sheet1')
-    #cm.to_excel('Sheet1', x)
-
-    #cm.clear()
-    #cm.get('Sheet2')
-    #cm.get('Sheet2')
-    
-    #cm.to_excel('Sheet2', x)
-
-    #excel = Excel(..)
-    #
-    #chain_manager.to_excel('Sheet5', engine=excel)
-
-    #chain_manager.to_excel(engine=excel)
-
-    #excel.close()
-
     # -------------
     x = Excel('basic_excel.xlsx',
               details='en-GB',
@@ -2047,42 +2049,40 @@ if __name__ == '__main__':
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
-
     x.add_chains(arr_chains_1,
                  'array summary 1',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
-
+    x.add_chains(arr_chains_block_1,
+                 'block summary 1',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
     x.add_chains(arr_chains_mean_1,
                  'means summary 1',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
-
     x.add_chains(arr_chains_0,
                  'array summary 0',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
-
-    #x.add_chains(arr_chains_block_0,
-    #             'block summary 0',
-    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #             **sheet_properties
-    #            )
-
+    x.add_chains(arr_chains_block_0,
+                 'block summary 0',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
     x.add_chains(arr_chains_mean_0,
                  'means summary 0',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                  **sheet_properties
                 )
-
-    #x.add_chains(open_chain,
-    #             'Open_Ends',
-    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #             **sheet_properties
-    #            )
-
+    x.add_chains(open_chain,
+                 'Open_Ends',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                )
     x.close()
     # -------------
