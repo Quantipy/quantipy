@@ -177,6 +177,10 @@ class Audit(object):
 		use_ds = [ds for ds in self._str_to_instance(datasets) if var in ds]
 		return all(ds.is_array(var) for ds in use_ds)
 
+	def _is_array_item(self, var, array, datasets=None):
+		use_ds = [ds for ds in self._str_to_instance(datasets) if var in ds]
+		return all(var in ds.sources(array) for ds in use_ds)
+
 	@modify(to_list='var')
 	def _get_sources(self, var=None, datasets=None):
 		if not datasets: datasets = self.ds_alias.values()
@@ -911,6 +915,22 @@ class Audit(object):
 			print 'No varied items detected in included DataSets.'
 			return None, []
 
+	def _create_df(self, var, datasets, data_func, index_func):
+		v_df = []
+		for name in datasets:
+			ds = self[name]
+			if var in ds:
+				data = func(var, ds)
+				index = index_func(var)
+				index = pd.MultiIndex.from_tuples(index)
+				df = pd.DataFrame(data, index=index, columns=[name])
+				v_df.append(df)
+		return pd.concat(v_df, axis=1)
+
+
+
+
+
 	def report_item_text_diffs(self, strict=0.9):
 		"""
 		Reports variables that have different item texts in the DataSets.
@@ -964,3 +984,4 @@ class Audit(object):
 		else:
 		 	print 'No varied item labels detected in included DataSets.'
 		 	return None, []
+
