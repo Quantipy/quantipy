@@ -1491,6 +1491,22 @@ class Chain(object):
         return self._pad_id
 
     @property
+    def sig_levels(self):
+        sigs = set([v for v in self._valid_views(True)
+                    if v.split('|')[1].startswith('t.')])
+        tests = [t.split('|')[1].split('.')[1] for t in sigs]
+        levels = [t.split('|')[1].split('.')[3] for t in sigs]
+        sig_levels = {}
+        for m in zip(tests, levels):
+            l = '.{}'.format(m[1])
+            t = m[0]
+            if m in sig_levels:
+                sig_levels[t].append(l)
+            else:
+                sig_levels[t] = [l]
+        return sig_levels
+
+    @property
     def cell_items(self):
         if self.views:
             compl_views = [v for v in self.views if ']*:' in v]
@@ -1547,6 +1563,11 @@ class Chain(object):
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
 
+    def cell_details(self):
+        ci = self.cell_items
+        sig_letters = self.sig_test_letters
+        sig_levels = self.sig_levels
+        return ci, sig_letters, sig_levels
 
     def describe(self):
         def _describe(cell_defs, row_id):
@@ -1662,7 +1683,7 @@ class Chain(object):
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
-    def _valid_views(self):
+    def _valid_views(self, flat=False):
         clean_view_list = []
         valid = self.views.keys()
         for v in self._given_views:
@@ -1678,7 +1699,10 @@ class Chain(object):
                     new_v = tuple(new_v)
                 if new_v:
                     if len(new_v) == 1: new_v = new_v[0]
-                    clean_view_list.append(new_v)
+                    if not flat:
+                        clean_view_list.append(new_v)
+                    else:
+                        clean_view_list.extend(new_v)
         return clean_view_list
 
 
@@ -2402,7 +2426,7 @@ class Chain(object):
             Text
         transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
-        add_base_texts : {'all', 'simple'}, default 'simple'
+        add_base_texts : {False, 'all', 'simple'}, default 'simple'
             Whether or not to include existing ``.base_descriptions`` str
             to the label of the appropriate base view. Selecting ``'simple'``
             will inject the base texts to non-array type Chains only.
@@ -2567,7 +2591,10 @@ class Chain(object):
                 bt_by_key = bt[tk]
             else:
                 bt_by_key = bt
-            return '{}: {}'.format(base_val, bt_by_key)
+            if bt_by_key:
+                return '{}: {}'.format(base_val, bt_by_key)
+            else:
+                return base_val
 
     def _specify_base(self, view_idx, tk, bases):
         base_vk = self._valid_views()[view_idx]
