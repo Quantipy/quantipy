@@ -142,7 +142,8 @@ class ViewManager(object):
         return self
 
     def set_bases(self, base='w', gross=False, effective=False,
-                  order=['base', 'gross', 'effective'], uw_pos='before'):
+                  order=['base', 'gross', 'effective'], uw_pos='before',
+                  sticky_gross=False):
         """
         Set the base (sample size) view presentation.
 
@@ -164,6 +165,12 @@ class ViewManager(object):
         uw_pos : {'after', 'before'}, default 'after'
             Define if unweighted bases appear before or after their weighted
             versions.
+        sticky_gross : bool, default False
+            If there are weighted and unweighted versions of both regular and
+            gross bases, this option will alternate between them, taking into
+            account the ``order`` and ``uw_pos`` parameter values. With this
+            option set to ``True``, any *effective* bases, however,  will be
+            placed at the end.
 
         Returns
         -------
@@ -213,7 +220,19 @@ class ViewManager(object):
                         bases.extend([w_vk, uw_vk])
                     else:
                         bases.extend([uw_vk, w_vk])
-
+        # rearrange reg. and gross bases if requested (alternate between them):
+        if sticky_gross and gross == 'both' and base == 'both':
+            sticky_bases = []
+            other_bases = []
+            for base in bases:
+                btype = base.split('|')[-1]
+                if btype in ['cbase_gross', 'cbase']:
+                    sticky_bases.append(base)
+                else:
+                    other_bases.append(base)
+            sticky_bases = sticky_bases[::2] + sticky_bases[1::2]
+            bases = sticky_bases + other_bases
+        # final list of base views:
         self.views = bases + self.views[self._base_len():]
         self._base_views = bases
         return None
