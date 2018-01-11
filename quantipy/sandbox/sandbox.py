@@ -2557,6 +2557,14 @@ class Chain(object):
     def _is_multibase(views, basetype):
         return len([v for v in views if v.split('|')[-1] == basetype]) > 1
 
+    def _add_base_text(self, base_val, tk):
+        bt = self.base_descriptions
+        if isinstance(bt, dict):
+            bt_by_key = bt[tk]
+        else:
+            bt_by_key = bt
+        return '{}: {}'.format(base_val, bt_by_key)
+
     def _specify_base(self, view_idx, tk):
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
@@ -2577,10 +2585,11 @@ class Chain(object):
         else:
             if weighted or (not weighted and not is_multibase):
                 # base_value = 'Base'
-                base_value = self._transl[tk]['All']
+                base_value = self._add_base_text(self._transl[tk]['All'], tk)
             else:
                 # base_value = 'Unweighted base'
-                base_value = self._transl[tk]['no_w_All']
+                base_value = self._add_base_text(self._transl[tk]['no_w_All'], tk)
+
         return base_value
 
 
