@@ -2381,8 +2381,8 @@ class Chain(object):
         return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', totalize=False, sep=None, na_rep=None,
-              add_base_texts=True):
+              transform_tests='cells', add_base_texts='simple', totalize=False,
+              sep=None, na_rep=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -2402,15 +2402,16 @@ class Chain(object):
             Text
         transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
+        add_base_texts : {'all', 'simple'}, default 'simple'
+            Whether or not to include existing ``.base_descriptions`` str
+            to the label of the appropriate base view. Selecting ``'simple'``
+            will inject the base texts to non-array type Chains only.
         totalize : bool, default False
             Text
         sep : str, default None
             The seperator used for painting ``pandas.DataFrame`` columns
         na_rep : str, default None
             numpy.NaN will be replaced with na_rep if passed
-        add_base_texts : bool, default True
-            Whether or not to include existing ``.base_descriptions`` str
-            to the label of the appropriate base view.
 
         Returns
         -------
@@ -2433,7 +2434,7 @@ class Chain(object):
                 display = _AXES
             if axes is None:
                 axes = _AXES
-            self._paint(text_keys, display, axes)
+            self._paint(text_keys, display, axes, add_base_texts)
             # Re-build the full column index (labels + letter row)
             if self.sig_test_letters and transform_tests == 'full':
                 self._frame = self._apply_letter_header(self._frame)
@@ -2487,7 +2488,7 @@ class Chain(object):
 
         self.structure.rename(columns=column_mapper, inplace=True)
 
-    def _paint(self, text_keys, display, axes):
+    def _paint(self, text_keys, display, axes, bases):
         """ Paint the Chain.dataframe
         """
         indexes = []
@@ -2495,12 +2496,12 @@ class Chain(object):
         for axis in _AXES:
             index = self._index_switch(axis)
             if axis in axes:
-                index = self._paint_index(index, text_keys, display, axis)
+                index = self._paint_index(index, text_keys, display, axis, bases)
             indexes.append(index)
 
         self._frame.index, self._frame.columns = indexes
 
-    def _paint_index(self, index, text_keys, display, axis):
+    def _paint_index(self, index, text_keys, display, axis, bases):
         """ Paint the Chain.dataframe.index1        """
         error = "No text keys from {} found in {}"
         level_0_text, level_1_text = [], []
@@ -2524,7 +2525,7 @@ class Chain(object):
         levels = self._lzip(index.values)
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
-                  self._get_level_1(levels, text_keys, display, axis))
+                  self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
@@ -2557,15 +2558,18 @@ class Chain(object):
     def _is_multibase(views, basetype):
         return len([v for v in views if v.split('|')[-1] == basetype]) > 1
 
-    def _add_base_text(self, base_val, tk):
-        bt = self.base_descriptions
-        if isinstance(bt, dict):
-            bt_by_key = bt[tk]
+    def _add_base_text(self, base_val, tk, bases):
+        if self._array_style == 0 and bases != 'all':
+            return base_val
         else:
-            bt_by_key = bt
-        return '{}: {}'.format(base_val, bt_by_key)
+            bt = self.base_descriptions
+            if isinstance(bt, dict):
+                bt_by_key = bt[tk]
+            else:
+                bt_by_key = bt
+            return '{}: {}'.format(base_val, bt_by_key)
 
-    def _specify_base(self, view_idx, tk):
+    def _specify_base(self, view_idx, tk, bases):
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
         weighted = base_vk.split('|')[-2]
@@ -2585,15 +2589,15 @@ class Chain(object):
         else:
             if weighted or (not weighted and not is_multibase):
                 # base_value = 'Base'
-                base_value = self._add_base_text(self._transl[tk]['All'], tk)
+                base_value = self._add_base_text(
+                    self._transl[tk]['All'], tk, bases)
             else:
                 # base_value = 'Unweighted base'
-                base_value = self._add_base_text(self._transl[tk]['no_w_All'], tk)
-
+                base_value = self._add_base_text(
+                    self._transl[tk]['no_w_All'], tk, bases)
         return base_value
 
-
-    def _get_level_1(self, levels, text_keys, display, axis):
+    def _get_level_1(self, levels, text_keys, display, axis, bases):
         """
         """
         level_1_text = []
@@ -2610,7 +2614,7 @@ class Chain(object):
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     if value == 'All':
-                        text = self._specify_base(i, text_keys[axis][0])
+                        text = self._specify_base(i, text_keys[axis][0], bases)
                     else:
                         text = self._transl[text_keys[axis][0]][value]
                     level_1_text.append(text)
