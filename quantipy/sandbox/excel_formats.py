@@ -90,7 +90,7 @@ class ExcelFormats(_ExcelFormats):
     def __getitem__(self, name):
         return self._format_builder(name)
 
-    @lru_cache()
+    #@lru_cache()
     def _format_builder(self, name):
         format_ = self._template
 
