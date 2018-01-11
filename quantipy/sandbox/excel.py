@@ -74,30 +74,36 @@ _SHEET_ATTR = ('str_table',
 
 # Defaults for Sheet.
 _SHEET_DEFAULTS = dict(alternate_bg=True,
-                       arrow_color_high='#2EB08C',
-                       arrow_color_low='#FC8EAC',
-                       column_width_str=10,
-                       df_nan_rep='__NA__',
-                       display_test_level=True,
                        dummy_tests=False,
-                       format_label_row=False,
+                       #column_width_str=10,
+                       #df_nan_rep='__NA__',
+                       #display_test_level=True,
+                       #format_label_row=False,
+                       # -------------------------------------------
+                       #TODO: add edtiable to Cell class
                        frequency_0_rep='-',
-                       img_insert_x=0,
-                       img_insert_y=0,
-                       img_name='qplogo_invert_lg.png',
-                       img_size=[130, 130],
-                       img_url='logo/qplogo_invert_lg.png',
-                       img_x_offset=0,
-                       img_y_offset=0,
-                       no_logo=False,
-                       row_height=12.75,
-                       row_wrap_trigger=44,
+                       arrow_color_high='#2EB08C',
+                       arrow_rep_high=u'\u25B2',
+                       arrow_color_low='#FC8EAC',
+                       arrow_rep_low=u'\u25BC',
+                       # -------------------------------------------
+                       #img_insert_x=0,
+                       #img_insert_y=0,
+                       #img_name='qplogo_invert_lg.png',
+                       #img_size=[130, 130],
+                       #img_url='logo/qplogo_invert_lg.png',
+                       #img_x_offset=0,
+                       #img_y_offset=0,
+                       #no_logo=False,
+                       #row_height=12.75,
+                       #row_wrap_trigger=44,
                        start_column=0,
                        start_row=0,
-                       stat_0_rep=0.00,
-                       test_seperator='.',
-                       y_header_height=33.75,
-                       y_row_height=50)
+                       #stat_0_rep=0.00,
+                       #test_seperator='.',
+                       #y_header_height=33.75,
+                       #y_row_height=50
+                       )
 
 
 class Excel(Workbook):
@@ -193,19 +199,23 @@ class Sheet(Worksheet):
             self._column_edges = []
         return self._column_edges
 
-    def process_args(self, *args):
-        if isinstance(args[-1], dict):
-            return args[:-1] + (self.excel._add_format(args[-1]), )
-        return args
-
     def write(self, *args):
-        super(Sheet, self).write(*self.process_args(*args))
+        if isinstance(args[-1], dict):
+            args = args[:-1] + (self.excel._add_format(args[-1]), )
+        super(Sheet, self).write(*args)
 
-    def write_row(self, *args):
-        super(Sheet, self).write_row(*self.process_args(*args))
+    def write_rich_string(self, *args):
+        args, rich_text = (args[0], ), args[1:]
+        for arg in rich_text:
+            if isinstance(arg, dict):
+                args = args + (self.excel._add_format(arg), )
+            else:
+                args = args + (arg, )
+        super(Sheet, self).write_rich_string(*args)
 
     def merge_range(self, *args):
-        super(Sheet, self).merge_range(*self.process_args(*args))
+        args = args[:-1] + (self.excel._add_format(args[-1]), )
+        super(Sheet, self).merge_range(*args)
 
     def write_chains(self):
         # TODO: docstring
@@ -369,6 +379,7 @@ class Box(object):
             rel_x, rel_y = flat.coords
 
     def _write_columns(self):
+        contents = dict()
         format_ = self.sheet.excel._formats._y
         column = self.sheet._column + 1
         nlevels = self.columns.nlevels
@@ -391,7 +402,7 @@ class Box(object):
                 right = flat.coords[0] - 2
                 if next_ is None:
                     right += 1
-                data = self._cell(data)
+                data = self._cell(data, **contents)
                 if level_id == 0:
                     if left == right:
                         self.single_columns.append(left)
@@ -419,7 +430,7 @@ class Box(object):
                     break
         for cindex in self.single_columns:
             level = -(1 + self.has_tests)
-            data = self._cell(self.columns.get_level_values(level)[cindex])
+            data = self._cell(self.columns.get_level_values(level)[cindex], **contents)
             self.sheet.merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
                                    data, format_)
@@ -447,6 +458,7 @@ class Box(object):
         bg = use_bg = True
         bg_from = bg_x_contents = None
         border_from = False
+        arrow_high_format = arrow_low_format = _None = object()
 
         for data in flat:
             if self.chain.array_style == 0:
@@ -480,16 +492,39 @@ class Box(object):
                                           view_border, border_from)
                 format_['bg_color'] = bg_format.get('bg_color', '#FFFFFF')
 
-            is_pct = self._is('pct', **x_contents)
-            is_counts = self._is('counts', **x_contents)
-            is_base = self._is('base', **x_contents)
-            cell_data = self._cell(data, 
-                                   normalize=is_pct,
-                                   is_freq=(is_pct or is_counts) and not is_base)
-            self.sheet.write(self.sheet._row + rel_x,
-                             self.sheet._column + rel_y,
-                             cell_data,
-                             format_)
+            cell_data = self._cell(data, **x_contents)
+            if any(_ in str(cell_data) for _ in ("'@L'", "'@H'")):
+                low_base = cell_data.endswith('*')
+                if low_base:
+                    cell_data = cell_data[:-1]
+                parts = cell_data.split('.')
+                arrow, cell_data = parts[0], '.'.join(parts[1:])
+                if low_base:
+                    cell_data = cell_data + '*'
+                arrow_color = {"'@L'": self.sheet.arrow_color_high,
+                               "'@H'": self.sheet.arrow_color_low}.get(arrow)
+                arrow_format = {"'@L'": arrow_high_format,
+                                "'@H'": arrow_low_format}.get(arrow)
+                arrow_rep = {"'@L'": self.sheet.arrow_rep_high,
+                             "'@H'": self.sheet.arrow_rep_low}.get(arrow)
+
+                if arrow_format is _None:
+                    arrow_format = self._format_x(name, rel_x, rel_y,
+                                                  row_max, x_contents.get('dummy'),
+                                                  use_bg, view_border,
+                                                  border_from,
+                                                  **{'font_color': arrow_color})
+                self.sheet.write_rich_string(xl_rowcol_to_cell(self.sheet._row + rel_x,
+                                                               self.sheet._column + rel_y),
+                                             arrow_format, arrow_rep,
+                                             format_, cell_data,
+                                             format_)
+            else: 
+                
+                self.sheet.write(self.sheet._row + rel_x,
+                                 self.sheet._column + rel_y,
+                                 cell_data,
+                                 format_)
             nxt_x, nxt_y = flat.coords
             rel_x, rel_y = nxt_x, nxt_y
             if rel_y == 0:
@@ -587,7 +622,9 @@ class Box(object):
         elif contents['is_percentile']:
             return contents['stat']
 
-    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border, border_from):
+    @lru_cache()
+    def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border,
+                  border_from, **kwargs):
         if rel_y == 0:
             format_name = name + '_text'
         else:
@@ -597,7 +634,11 @@ class Box(object):
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
-        return self.sheet.excel._formats[format_name]
+        format_ = self.sheet.excel._formats[format_name]
+        if kwargs:
+            for key, value in kwargs.iteritems():
+                format_[key] = value
+        return format_
 
     def _format_position(self, rel_x, rel_y, row_max):
         position = ''
@@ -664,10 +705,16 @@ class Box(object):
         return index, values, contents
 
     @lru_cache()
-    def _cell(self, value, normalize=False, is_freq=False):
-        if self.chain.array_style == 0 and not is_freq:
-            return Cell(value, normalize, nan_rep=' ').__repr__()
-        return Cell(value, normalize).__repr__()
+    #def _cell(self, value, normalize=False, is_freq=False):
+    def _cell(self, value, **contents):
+        pct = self._is('pct', **contents)
+        counts = self._is('counts', **contents)
+        base = self._is('base', **contents)
+        test = self._is('test', **contents)
+        freq = (pct or counts) and not base
+        if test or (self.chain.array_style == 0 and not freq):
+            return Cell(value, pct, nan_rep=' ').__repr__()
+        return Cell(value, pct, nan_rep=self.sheet.frequency_0_rep).__repr__()
 
     @staticmethod
     @lru_cache()
@@ -676,19 +723,21 @@ class Box(object):
 
 class Cell(object):
 
-    def __init__(self, data, normalize, nan_rep=None):
+    def __init__(self, data, normalize, nan_rep=None, repls=None):
         self.data = data
         self.normalize = normalize
         self.nan_rep = nan_rep
+        self.repls = repls
 
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return self.nan_rep or _SHEET_DEFAULTS['frequency_0_rep']
+                return self.nan_rep 
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
-            return re.sub(r'#pad-\d+', str(), self.data)
+            data = re.sub(r'#pad-\d+', str(), self.data)
+            return data
         if self.normalize:
             return self.data / 100.
         return self.data
@@ -748,15 +797,15 @@ if __name__ == '__main__':
                  'x|f|:||%s|counts' % WEIGHT,
                  'x|f|:|y|%s|c%%' % WEIGHT,
                  'x|f|:|x|%s|r%%' % WEIGHT,
-                 'x|t.props.Dim.80|:||%s|test' % WEIGHT,
+                 'x|t.props.Dim.80+@|:||%s|test' % WEIGHT,
                  'x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                  'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
-                 'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT,
+                 'x|t.props.Dim.80+@|x[{1,2,3}]:||%s|test' % WEIGHT,
                  'x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
                  'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
-                 'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT,
+                 'x|t.props.Dim.80+@|x[{4,5,97}]:||%s|test' % WEIGHT,
                  'x|d.mean|x:||%s|mean' % WEIGHT,
-                 'x|t.means.Dim.80|x:||%s|test' % WEIGHT,
+                 'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT,
                  'x|d.stddev|x:||%s|stddev' % WEIGHT,
                  'x|d.median|x:||%s|median' % WEIGHT,
                  'x|f.c:f|x:||%s|counts_sum' % WEIGHT,
@@ -856,8 +905,8 @@ if __name__ == '__main__':
         view_name = 'test'
         options = {'level': 0.8,
                 'metric': 'props',
-                # 'test_total': True,
-                # 'flag_bases': [30, 100]
+                'test_total': True,
+                'flag_bases': [30, 100]
                 }
         test_view.add_method(view_name, kwargs=options)
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
@@ -880,25 +929,25 @@ if __name__ == '__main__':
                  ('x|f|:||%s|counts' % WEIGHT,
                   'x|f|:|y|%s|c%%' % WEIGHT,
                   'x|f|:|x|%s|r%%' % WEIGHT,
-                  'x|t.props.Dim.80|:||%s|test' % WEIGHT),
+                  'x|t.props.Dim.80+@|:||%s|test' % WEIGHT),
                  ('x|f|x[{1,2,3}]:||%s|No' % WEIGHT,
                   'x|f|x[{1,2,3}]:|y|%s|No' % WEIGHT,
                   'x|f|x[{1,2,3}]:|x|%s|No' % WEIGHT,
-                  'x|t.props.Dim.80|x[{1,2,3}]:||%s|test' % WEIGHT),
+                  'x|t.props.Dim.80+@|x[{1,2,3}]:||%s|test' % WEIGHT),
                  ('x|f|x[{4,5,97}]:||%s|Yes' % WEIGHT,
                   'x|f|x[{4,5,97}]:|y|%s|Yes' % WEIGHT,
                   'x|f|x[{4,5,97}]:|x|%s|Yes' % WEIGHT,
-                  'x|t.props.Dim.80|x[{4,5,97}]:||%s|test' % WEIGHT),
+                  'x|t.props.Dim.80+@|x[{4,5,97}]:||%s|test' % WEIGHT),
                  ('x|f.c:f|x[{4,5}-{1,2}]:||%s|NPSonly' % WEIGHT,
                   'x|f.c:f|x[{4,5}-{1,2}]:|y|%s|NPSonly' % WEIGHT,
                   'x|f.c:f|x[{4,5}-{1,2}]:|x|%s|NPSonly' % WEIGHT,
-                  'x|t.props.Dim.80|x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
+                  'x|t.props.Dim.80+@|x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
                  ('x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|NPS' % WEIGHT,
                   'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|y|%s|NPS' % WEIGHT,
                   'x|f.c:f|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:|x|%s|NPS' % WEIGHT,
-                  'x|t.props.Dim.80|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
+                  'x|t.props.Dim.80+@|x[{1,2}],x[{4,5}],x[{4,5}-{1,2}]:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|stat' % WEIGHT,
-                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                  'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT),
                   'x|d.stddev|x:||%s|stat' % WEIGHT,
                   'x|d.median|x:||%s|stat' % WEIGHT,
                   'x|d.var|x:||%s|stat' % WEIGHT,
@@ -928,9 +977,9 @@ if __name__ == '__main__':
                  ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
                   'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
                   'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
-                  'x|t.props.Dim.80|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
+                  'x|t.props.Dim.80+@|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
                  ('x|d.mean|x:||%s|stat' % WEIGHT,
-                  'x|t.means.Dim.80|x:||%s|test' % WEIGHT),
+                  'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT),
                   'x|d.stddev|x:||%s|stat' % WEIGHT,
                   'x|d.median|x:||%s|stat' % WEIGHT,
                   'x|d.var|x:||%s|stat' % WEIGHT,
@@ -1991,9 +2040,9 @@ if __name__ == '__main__':
 
     sheet_properties = dict() 
 
-    test = 1
+    #test = 1
     #test = 2
-    #test = 3
+    test = 3
 
     if test == 1:
         sheet_properties = dict(dummy_tests=True,
