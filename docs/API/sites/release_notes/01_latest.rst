@@ -3,8 +3,66 @@
 	:includehidden:
 
 ===================
-Upcoming (January)
+Upcoming (February)
 ===================
+
+
+===================
+Latest (12/01/2018)
+===================
+
+**New**: ``Audit``
+
+``Audit`` is a new class which takes ``DataSet`` instances, compares and aligns
+them.
+
+The class compares/ reports/ aligns the following aspects:
+*	datasets are valid (``DataSet.validate()``)
+*	mismatches (variables are not included in all datasets)
+*	different types (variables are in more than one dataset, but have different types)
+*	labels (variables are in more than one dataset, but have different labels for the same text_key)
+*	value codes (variables are in more than one dataset, but have different value codes)
+*	value texts (variables are in more than one dataset, but have different value texts)
+*	array items (arrays are in more than one dataset, but have different items)
+*	item labels (arrays are in more than one dataset, but their items have different labels)
+
+This is the first draft of the class, so it will need some testing and probably
+adjustments.
+
+""""
+
+**New**: ``DataSet.reorder_items(name, new_order)``
+
+The new method reorders the items of the included array. The ints in the
+``new_order`` list match up to the number of the items
+(``DataSet.item_no('item_name')``), not to the position.
+
+""""
+
+**New**: ``DataSet.valid_tks``, Arabic
+
+Arabic (``ar-AR``) is included as default valid text-key.
+
+""""
+
+**New**: ``DataSet.extend_items(name, ext_items, text_key=None)``
+
+The new method extends the items of an existing array.
+
+""""
+
+**Update**: ``DataSet.set_missings()``
+
+The method is now limited to ``DataSet``, ``Batch`` does not inherit it.
+
+""""
+
+**Update**: ``DataSet``
+
+The whole class is reordered and cleaned up. Some new deprecation warnings
+will appear.
+
+""""
 
 **Update**: ``DataSet.add_meta()`` / ``DataSet.derive()``
 
@@ -12,81 +70,3 @@ Both methods will now raise a ``ValueError: Duplicated codes provided. Value cod
 if categorical ``values`` definitions try to apply duplicated codes.
 
 """"
-
-===================
-Latest (18/12/2017)
-===================
-
-""""
-
-**New**: ``Batch.remove_filter()``
-
-Removes all defined (global + extended) filters from a Batch instance.
-
-""""
-
-**Update**: ``Batch.add_filter()``
-
-It's now possible to extend the global filter of a Batch instance. These options
-are possible.
-
-Add first filter::
-
-	>>> batch.filter, batch.filter_names
-	'no_filter', ['no_filter']
-	>>> batch.add_filter('filter1', logic1)
-	>>> batch.filter, batch.filter_names
-	{'filter1': logic1}, ['filter1']
-
-Extend filter::
-
-	>>> batch.filter, batch.filter_names
-	{'filter1': logic}, ['filter1']
-	>>> batch.add_filter('filter2', logic2)
-	>>> batch.filter, batch.filter_names
-	{'filter1' + 'filter2': intersection([logic1, logic2])}, ['filter1' + 'filter2']
-
-Replace filter::
-
-	>>> batch.filter, batch.filter_names
-	{'filter1': logic}, ['filter1']
-	>>> batch.add_filter('filter1', logic2)
-	>>> batch.filter, batch.filter_names
-	{'filter1': logic2}, ['filter1']
-
-""""
-
-**Update**: ``Stack.add_stats(..., recode)``
-
-The new parameter ``recode`` defines if a new numerical variable is created which
-satisfies the stat definitions.
-
-""""
-
-**Update**: ``DataSet.populate()``
-
-A progress tracker is added to this method.
-
-""""
-
-**Bugfix**: ``Batch.add_open_ends()``
-
-``=`` is removed from all responsess in the included variables, as it causes
-errors in the Excel-Painter.
-
-""""
-
-**Bugfix**: ``Batch.extend_x()`` and ``Batch.extend_y()``
-
-Check if included variables exist and unroll included masks.
-
-""""
-
-**Bugfix**: ``Stack.add_nets(..., calc)``
-
-If the operator in calc is ``div``/ ``/``, the calculation is now performed
-correctly.
-
-""""
-
-
