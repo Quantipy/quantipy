@@ -2351,26 +2351,38 @@ class Chain(object):
         if self.source == 'Crunch multitable':
             self.base_descriptions = self._meta['var_meta'].get('notes', None)
         else:
-            if self.array_style != -1:
-                msg = "Could not test base_text property on array Chain!"
-                warnings.warn(msg)
-                return None
             base_texts = OrderedDict()
-            for x in self._x_keys:
-                if 'properties' in self._meta['columns'][x]:
-                    bt = self._meta['columns'][x]['properties'].get('base_text', None)
-                    if bt:
-                        base_texts[x] = bt
-            if base_texts:
-                if self.orientation == 'x':
-                    self.base_descriptions = base_texts.values()[0]
+            if self.array_style != -1:
+                var = self._x_keys[0]
+                masks = self._meta['masks']
+                columns = self._meta['columns']
+                item = masks[var]['items'][0]['source'].split('@')[-1]
+                test_item = columns[item]
+                test_mask = masks[var]
+                if 'properties' in test_mask:
+                    base_text = test_mask['properties'].get('base_text', None)
+                elif 'properties' in test_item:
+                        base_text = test_item['properties'].get('base_text', None)
                 else:
-                    self.base_descriptions = base_texts.values()
+                    base_text = None
+                self.base_descriptions = base_text
+            else:
+                for x in self._x_keys:
+                    if 'properties' in self._meta['columns'][x]:
+                        bt = self._meta['columns'][x]['properties'].get('base_text', None)
+                        if bt:
+                            base_texts[x] = bt
+                if base_texts:
+                    if self.orientation == 'x':
+                        self.base_descriptions = base_texts.values()[0]
+                    else:
+                        self.base_descriptions = base_texts.values()
 
         return None
 
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', totalize=False, sep=None, na_rep=None):
+              transform_tests='cells', totalize=False, sep=None, na_rep=None,
+              add_base_texts=True):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -2396,6 +2408,9 @@ class Chain(object):
             The seperator used for painting ``pandas.DataFrame`` columns
         na_rep : str, default None
             numpy.NaN will be replaced with na_rep if passed
+        add_base_texts : bool, default True
+            Whether or not to include existing ``.base_descriptions`` str
+            to the label of the appropriate base view.
 
         Returns
         -------
