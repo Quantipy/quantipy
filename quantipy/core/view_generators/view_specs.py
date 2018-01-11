@@ -123,13 +123,12 @@ class ViewManager(object):
         # Defining the base view layout vs. all collected views...
         # See also: .set_bases()
         views = self.views[:]
-        if views[1].split('|')[-1] != 'cbase':
-            base_views = [views[0]]
-            other_views = views[1:]
+        if self.weighted:
+            base_views = views[:6]
+            other_views = views[6:]
         else:
-            base_views = views[:2]
-            other_views = views[2:]
-        has_both_bases = len(bases) == 2
+            base_views = views[:3]
+            other_views = views[3:]
         if bases == 'auto':
             wparam = 'w' if self.weighted else 'uw'
         elif bases == 'both':
@@ -143,7 +142,8 @@ class ViewManager(object):
         return self
 
     def set_bases(self, base='w', gross=False, effective=False,
-                  order=['base', 'gross', 'effective'], uw_pos='before'):
+                  order=['base', 'gross', 'effective'], uw_pos='before',
+                  sticky_gross=False):
         """
         Set the base (sample size) view presentation.
 
@@ -165,6 +165,12 @@ class ViewManager(object):
         uw_pos : {'after', 'before'}, default 'after'
             Define if unweighted bases appear before or after their weighted
             versions.
+        sticky_gross : bool, default False
+            If there are weighted and unweighted versions of both regular and
+            gross bases, this option will alternate between them, taking into
+            account the ``order`` and ``uw_pos`` parameter values. With this
+            option set to ``True``, any *effective* bases, however,  will be
+            placed at the end.
 
         Returns
         -------
@@ -214,7 +220,19 @@ class ViewManager(object):
                         bases.extend([w_vk, uw_vk])
                     else:
                         bases.extend([uw_vk, w_vk])
-
+        # rearrange reg. and gross bases if requested (alternate between them):
+        if sticky_gross and gross == 'both' and base == 'both':
+            sticky_bases = []
+            other_bases = []
+            for base in bases:
+                btype = base.split('|')[-1]
+                if btype in ['cbase_gross', 'cbase']:
+                    sticky_bases.append(base)
+                else:
+                    other_bases.append(base)
+            sticky_bases = sticky_bases[::2] + sticky_bases[1::2]
+            bases = sticky_bases + other_bases
+        # final list of base views:
         self.views = bases + self.views[self._base_len():]
         self._base_views = bases
         return None
@@ -293,7 +311,7 @@ class ViewManager(object):
                       sums=None, coltests=True, mimic='Dim',
                       sig_levels=[".05"], x=None, y=None):
         """
-        Get structured, request-ready views from the stack.
+        Get structured, request-ready views from ``self.stack``.
 
         This function uses the given parameters to inspect the view keys in
         a stack and return them in a standard, structured form suitable for
@@ -304,8 +322,6 @@ class ViewManager(object):
 
         Parameters
         ----------
-        stack : quantipy.Stack
-            The stack instance view keys will be drawn from.
         weight : str, default=None
             The name of the weight variable to be used when requesting
             weighted views.
@@ -315,8 +331,9 @@ class ViewManager(object):
             If list-like, the given descriptive statistics will be included,
             (e.g. ["mean", "stddev", "stderr"]. If the list is empty or None
             is given instead, no descriptive statistics will be included.
-        sums : {'bottom'}, default None
-            Get any frequency summing views and place them at the bottom.
+        sums : {'mid', 'bottom'}, deafult None
+            Get any frequency summing views and place them at the bottom or
+            in the middle between nets and descriptives.
         coltests : bool, default=True
             If True, column tests (proportions and means) will be included.
         mimic : str
@@ -395,11 +412,14 @@ class ViewManager(object):
         requested_views = {'get_chain': ci.copy(), 'grouped_views': ci.copy()}
 
         # Base views
-        bases = ['x|f|x:|||cbase']
+        # bases = ['x|f|x:|||cbase']
+        bases = ['x|f|x:|||cbase_gross', 'x|f|x:|||cbase', 'x|f|x:|||ebase']
         if weight is None:
             weight = ''
         else:
+            bases.append('x|f|x:||%s|cbase_gross' % (weight))
             bases.append('x|f|x:||%s|cbase' % (weight))
+            bases.append('x|f|x:||%s|ebase' % (weight))
 
         # Main views
         if frequencies:
@@ -604,6 +624,9 @@ class ViewManager(object):
                 sums_ps_flat = []
                 sums_cps_flat = []
 
+            sum_chains = [sums_cs_flat, sums_ps_flat, sums_cps_flat]
+            sum_gvs = [sums_cs, sums_ps, sums_cps]
+
 
         # Descriptive statistics views
         if descriptives:
@@ -668,6 +691,21 @@ class ViewManager(object):
         requested_views['grouped_views']['colpct_rowpct'] = [bases, psrps, psc]
         requested_views['grouped_views']['counts_colpct_rowpct'] = [bases, cpsrps, psc]
 
+        if sums == 'mid':
+            requested_views['get_chain']['counts'].extend(sums_cs_flat)
+            requested_views['get_chain']['colpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct'].extend(sums_cps_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(sums_cps_flat)
+
+            requested_views['grouped_views']['counts'].extend(sums_cs)
+            requested_views['grouped_views']['colpct'].extend(sums_ps)
+            requested_views['grouped_views']['rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct'].extend(sums_cps)
+            requested_views['grouped_views']['counts_rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(sums_cps)
+
         if nets and net_cs and net_ps and net_cps:
             net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
             net_ps_flat = self._shake_nets([v for item in net_ps for v in item])
@@ -731,7 +769,7 @@ class ViewManager(object):
             requested_views['grouped_views']['colpct_rowpct'].extend(desc)
             requested_views['grouped_views']['counts_colpct_rowpct'].extend(desc)
 
-        if sums:
+        if sums == 'bottom':
             requested_views['get_chain']['counts'].extend(sums_cs_flat)
             requested_views['get_chain']['colpct'].extend(sums_ps_flat)
             requested_views['get_chain']['rowpct'].extend(sums_ps_flat)

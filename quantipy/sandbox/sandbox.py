@@ -488,7 +488,9 @@ class ChainManager(object):
             err = "A folder named '{}' does not exist!".format(folder)
             raise KeyError(err)
         for old, new in names.items():
-            if not old in self._names(True):
+            no_folder_name = folder and not old in self._names(False)
+            no_name_across = not folder and not old in self._names(True)
+            if no_folder_name and no_name_across:
                 err = "'{}' is not an existing folder or ``qp.Chain`` name!"
                 raise KeyError(err.format(old))
             else:
