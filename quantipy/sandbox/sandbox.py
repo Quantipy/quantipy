@@ -258,6 +258,24 @@ class ChainManager(object):
     def _dupes_in_chainref(chain_refs):
         return len(set(chain_refs)) != len(chain_refs)
 
+    def save(self, path, keep_stack=False):
+        """
+        """
+        if not keep_stack: del self.stack
+        f = open(path, 'wb')
+        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
+        f.close()
+        return None
+
+    def load(self, path):
+        """
+        """
+        f = open(path, 'rb')
+        obj = cPickle.load(f)
+        f.close()
+        return obj
+
+
     def merge(self, folders, new_name=None, drop=True):
         """
         Unite the items of two or more folders, optionally providing a new name.
