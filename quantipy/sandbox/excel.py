@@ -109,14 +109,14 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, details=False, views_groups=None,
-                 italicise_level=None, **kwargs):
+    def __init__(self, filename, toc=False, views_groups=None,
+                 italicise_level=None, decimals=None, **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
-        self.details = details
         self.views_groups = views_groups
         self.italicise_level = italicise_level
+        self._decimals = decimals
 
         if views_groups:
             views_groups = dict([(k, views_groups[k] if k in views_groups else v)
@@ -133,12 +133,20 @@ class Excel(Workbook):
     def __del__(self):
         del self
 
+    @lazy_property
+    def decimals(self):
+        if self._decimals is None:
+            return {}
+        elif isinstance(self._decimals, int):
+            return {_: self._decimals for _ in ('N', 'P', 'D')}
+        return self._decimals
+
     def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
         # TODO: docstring
         self._write_chains(chains, sheet_name, annotations, **kwargs)
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
-        worksheet = Sheet(self, chains, sheet_name, self.details, annotations, **kwargs)
+        worksheet = Sheet(self, chains, sheet_name, annotations, **kwargs)
 
         init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
         init_data.update({'name': sheet_name,
@@ -169,7 +177,7 @@ class Excel(Workbook):
 class Sheet(Worksheet):
     # TODO: docstring
 
-    def __init__(self, excel, chains, sheet_name, details, annotations, **kwargs):
+    def __init__(self, excel, chains, sheet_name, annotations, **kwargs):
         super(Sheet, self).__init__()
         self.excel = excel
         self.chains = chains
@@ -268,10 +276,10 @@ class Box(object):
     # TODO: docstring
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
-                 '_columns', '_italic', '_lazy_index', '_lazy_columns',
-                 '_lazy_values', '_lazy_contents', '_lazy_is_weighted',
-                 '_lazy_shape', '_lazy_has_tests', '_lazy_arrow_rep',
-                 '_lazy_arrow_color')
+                 '_columns', '_italic', '_lazy_excel', '_lazy_index',
+                 '_lazy_columns', '_lazy_values', '_lazy_contents',
+                 '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests',
+                 '_lazy_arrow_rep', '_lazy_arrow_color')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
@@ -281,6 +289,10 @@ class Box(object):
 
         self._columns = []
         self._italic = []
+
+    @lazy_property
+    def excel(self):
+        return self.sheet.excel
 
     @property
     def single_columns(self):
@@ -368,7 +380,7 @@ class Box(object):
             self._write_rows()
  
     def _write_data(self):
-        format_ = self.sheet.excel._formats._data_header
+        format_ = self.excel._formats._data_header
         
         for rel_y, column in enumerate(self.chain.structure.columns):
             self.sheet.write(self.sheet._row,
@@ -388,7 +400,7 @@ class Box(object):
             elif rel_x == row_max:
                 name += 'bottom^'
             name += 'data'
-            format_ = self.sheet.excel._formats[name]
+            format_ = self.excel._formats[name]
             self.sheet.write(self.sheet._row + rel_x,
                              self.sheet._column + rel_y,
                              data, format_)
@@ -396,7 +408,7 @@ class Box(object):
 
     def _write_columns(self):
         contents = dict()
-        format_ = self.sheet.excel._formats._y
+        format_ = self.excel._formats._y
         column = self.sheet._column + 1
         nlevels = self.columns.nlevels
         for level_id in xrange(nlevels):
@@ -459,7 +471,7 @@ class Box(object):
 
         self.sheet.write(self.sheet._row, column,
                          levels(0).unique().values[0],
-                         self.sheet.excel._formats['label'])
+                         self.excel._formats['label'])
         self.sheet._row += 1
 
         if self.sheet.dummy_tests and self.has_tests:
@@ -503,11 +515,11 @@ class Box(object):
                                      x_contents.get('dummy'), use_bg,
                                      view_border, border_from)
 
-            if self.sheet.excel.italicise_level:
+            if self.excel.italicise_level:
                 if rel_y and self.chain.array_style == 0:
                     if self._is('base', **x_contents) and not x_contents['is_weighted']:
                         if data == data:
-                            if data <= self.sheet.excel.italicise_level:
+                            if data <= self.excel.italicise_level:
                                 arr_summ_ital = True
                             else:
                                 arr_summ_ital = False
@@ -519,7 +531,7 @@ class Box(object):
                 else:
                     if rel_y not in self._columns:
                         if self._is('base', **x_contents) and not x_contents['is_weighted']:
-                            if data <= self.sheet.excel.italicise_level:
+                            if data <= self.excel.italicise_level:
                                 self._italic.append(rel_y)
                             self._columns.append(rel_y)
                 if rel_y in self._italic:
@@ -568,7 +580,7 @@ class Box(object):
 
     @lru_cache()
     def _alternate_bg(self, name, bg):
-        freq_view_group = self.sheet.excel.views_groups.get(name, '') == 'freq'
+        freq_view_group = self.excel.views_groups.get(name, '') == 'freq'
         is_freq_test = any(_ in name for _ in ('counts', 'pct', 'propstest')) 
         is_mean = 'mean' in name
         not_net_sum = all(_ not in name for _ in ('net', 'sum'))
@@ -669,7 +681,7 @@ class Box(object):
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
-        format_ = self.sheet.excel._formats[format_name]
+        format_ = self.excel._formats[format_name]
         if kwargs:
             for key, value in kwargs.iteritems():
                 format_[key] = value
@@ -740,16 +752,28 @@ class Box(object):
         return index, values, contents
 
     @lru_cache()
-    #def _cell(self, value, normalize=False, is_freq=False):
     def _cell(self, value, **contents):
+        normalize, vtype, nan_rep = self._cell_args(**contents)
+        return Cell(value, normalize, self.excel.decimals.get(vtype), nan_rep).__repr__()
+
+    def _cell_args(self, **contents):
         pct = self._is('pct', **contents)
         counts = self._is('counts', **contents)
         base = self._is('base', **contents)
         test = self._is('test', **contents)
         freq = (pct or counts) and not base
+        stat = contents.get('is_stat')
+        if counts or base:
+            vtype = 'N'
+        elif pct:
+            vtype = 'P'
+        elif stat:
+            vtype = 'D'
+        else:
+            return False, ' ', None 
         if test or (self.chain.array_style == 0 and not freq):
-            return Cell(value, pct, nan_rep=' ').__repr__()
-        return Cell(value, pct, nan_rep=self.sheet.frequency_0_rep).__repr__()
+            return pct, vtype, ' ',
+        return pct, vtype, self.sheet.frequency_0_rep
 
     @staticmethod
     @lru_cache()
@@ -758,11 +782,11 @@ class Box(object):
 
 class Cell(object):
 
-    def __init__(self, data, normalize, nan_rep=None, repls=None):
+    def __init__(self, data, normalize, decimals, nan_rep):
         self.data = data
         self.normalize = normalize
+        self.decimals = decimals
         self.nan_rep = nan_rep
-        self.repls = repls
 
     def __repr__(self):
         try:
@@ -771,10 +795,17 @@ class Cell(object):
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
-            data = re.sub(r'#pad-\d+', str(), self.data)
-            return data
+            return re.sub(r'#pad-\d+', str(), self.data)
         if self.normalize:
+            if self.decimals is not None:
+                if isinstance(self.data, (float, np.float64)):
+                    return round(self.data / 100., self.decimals + 2)
             return self.data / 100.
+        if self.decimals is not None:
+            if isinstance(self.data, (float, np.float64)):
+                return round(self.data, self.decimals)
+            else:
+                print type(self.data), self.data
         return self.data
 
 
@@ -1197,6 +1228,10 @@ if __name__ == '__main__':
                    y_keys=['@'],
                    views=VIEW_KEYS,
                   )
+    #for c in arr_chains_0:
+    #    print c.cell_details
+    #print arr_chains_0.cell_details
+    #raise Exception('.')
 
     arr_chains_0.paint_all()
     # ------------------------------------------------------------
@@ -2121,9 +2156,10 @@ if __name__ == '__main__':
 
     # -------------
     x = Excel('basic_excel.xlsx',
-              details='en-GB',
               views_groups=custom_vg,
               italicise_level=50,
+              decimals=dict(N=0, P=2, D=1),
+              #decimals=2,
               **tp
 
               #------------------------------------
