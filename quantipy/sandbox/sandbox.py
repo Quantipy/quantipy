@@ -2560,7 +2560,7 @@ class Chain(object):
                 tuples = zip(index_0.values, index_1.values)
                 names = (index_0.name, index_1.name)
                 sub = pd.MultiIndex.from_tuples(tuples, names=names)
-                sub = self._paint_index(sub, text_keys, display,axis)
+                sub = self._paint_index(sub, text_keys, display, axis, bases)
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
