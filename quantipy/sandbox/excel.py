@@ -81,7 +81,8 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        #format_label_row=False,
                        # -------------------------------------------
                        #TODO: add edtiable to Cell class
-                       frequency_0_rep='-',
+                       freq_0_rep='-',
+                       stat_0_rep='-',
                        arrow_color_high='#2EB08C',
                        arrow_rep_high=u'\u25B2',
                        arrow_color_low='#FC8EAC',
@@ -764,16 +765,16 @@ class Box(object):
         freq = (pct or counts) and not base
         stat = contents.get('is_stat')
         if counts or base:
-            vtype = 'N'
+            vtype, nan_rep = 'N', self.sheet.freq_0_rep
         elif pct:
-            vtype = 'P'
+            vtype, nan_rep = 'P', self.sheet.freq_0_rep
         elif stat:
-            vtype = 'D'
+            vtype, nan_rep = 'D', self.sheet.stat_0_rep
         else:
             return False, ' ', None 
         if test or (self.chain.array_style == 0 and not freq):
-            return pct, vtype, ' ',
-        return pct, vtype, self.sheet.frequency_0_rep
+            return pct, vtype, ' '
+        return pct, vtype, nan_rep
 
     @staticmethod
     @lru_cache()
@@ -2141,7 +2142,9 @@ if __name__ == '__main__':
                      }
         tp = table_properties_group
     elif test == 3:
-        sheet_properties = dict(alternate_bg=True)
+        sheet_properties = dict(alternate_bg=True,
+                                freq_0_rep=':',
+                                stat_0_rep='#')
         custom_vg = {
                 'block_expanded_counts': 'freq',
                 'block_expanded_c_pct': 'freq',
