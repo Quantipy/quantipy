@@ -15,6 +15,7 @@ from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.utility import xl_rowcol_to_cell
 from itertools import izip, dropwhile, groupby
 from operator import itemgetter
+from PIL import Image
 
 from excel_formats import ExcelFormats
 from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
@@ -111,13 +112,15 @@ class Excel(Workbook):
     # TODO: docstring
 
     def __init__(self, filename, toc=False, views_groups=None,
-                 italicise_level=None, decimals=None, **kwargs):
+                 italicise_level=None, decimals=None, image=None,
+                 **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.views_groups = views_groups
         self.italicise_level = italicise_level
         self._decimals = decimals
+        self.image = image
 
         if views_groups:
             views_groups = dict([(k, views_groups[k] if k in views_groups else v)
@@ -258,6 +261,17 @@ class Sheet(Worksheet):
             self.freeze_panes(*self._freeze_loc)
 
         self.hide_gridlines(2)
+
+        if self.excel.image:
+            image = Image.open(self.excel.image['img_url'])
+            image.thumbnail(self.excel.image['img_size'], Image.ANTIALIAS)
+            image.save(os.path.basename(self.excel.image['img_url']))
+            
+            self.insert_image(self.excel.image['img_insert_x'],
+                              self.excel.image['img_insert_y'],
+                              self.excel.image['img_url'],
+                              dict(x_offset=self.excel.image['img_x_offset'],
+                                   y_offset=self.excel.image['img_y_offset']))
 
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
@@ -2132,6 +2146,7 @@ if __name__ == '__main__':
                 'block_normal_propstest': 'block_normal'}
         #custom_vg = {}
         tp = table_properties
+        image = None
     elif test == 2:
         sheet_properties = dict(dummy_tests=True,
                                 alternate_bg=True,
@@ -2141,6 +2156,7 @@ if __name__ == '__main__':
                      #'net_c_pct': 'freq'
                      }
         tp = table_properties_group
+        image = None
     elif test == 3:
         sheet_properties = dict(alternate_bg=True,
                                 freq_0_rep=':',
@@ -2156,6 +2172,13 @@ if __name__ == '__main__':
                 'block_net_propstest': 'freq',
                 }
         tp = {'bg_color_freq': 'gray'}
+        image = {'img_name': 'logo',
+                 'img_url': './qplogo_invert.png',
+                 'img_size': [110, 120],
+                 'img_insert_x': 4,
+                 'img_insert_y': 0,
+                 'img_x_offset': 3,
+                 'img_y_offset': 6}
 
     # -------------
     x = Excel('basic_excel.xlsx',
@@ -2163,13 +2186,8 @@ if __name__ == '__main__':
               italicise_level=50,
               decimals=dict(N=0, P=2, D=1),
               #decimals=2,
-              **tp
-
-              #------------------------------------
-              #toc=True # not implemented
-              #**{'view_border_counts': None,
-              #   'view_border_net_counts': None}
-             )
+              image=image,
+              **tp)
 
     x.add_chains(chains,
                  'S H E E T',
