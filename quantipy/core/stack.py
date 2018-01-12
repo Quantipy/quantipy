@@ -52,7 +52,6 @@ class Stack(defaultdict):
         self.name = name
         self.key = None
         self.parent = None
-        self.verbose = True
 
         # This is the root of the stack
         # It is used by the get/set methods to determine
@@ -286,8 +285,44 @@ class Stack(defaultdict):
         if filter_key:
             raise NotImplementedError("'filter_key' is not implemented.")
 
-        meta
+        meta = copy.deepcopy(self[data_key].meta)
+        batch = meta['sets']['batches'][batch_name]
+        for name, e_meta in batch['meta_edits']:
+            if name == 'lib':
+                continue
+            elif name in meta['masks']:
+                meta['masks'][name] = e_meta
+                try:
+                    lib = batch['meta_edits']['lib'][name]
+                    meta['lib']['values'][name] = lib
+                except:
+                    pass
+            else:
+                meta['columns'][name] = e_meta
+        meta['lib']['default text'] = batch['language']
+        self[data_key].master_meta = self[data_key].meta
+        self[data_key].meta = meta
+        return None
 
+    def restore_meta(self, data_key, filter_key=None):
+        """
+        Restore the ``.master_meta`` for a defined data_key if it exists.
+
+        Undo self.apply_meta_edits()
+
+        Parameters
+        ----------
+        data_key: str
+            Accessing this metadata: ``self[data_key].meta``
+        filter_key: str, default None
+            Currently not implemented!
+            Accessing this metadata: ``self[data_key][filter_key].meta``
+        """
+        try:
+            self[data_key].meta = self[data_key].master_meta
+        except:
+            pass
+        return None
 
     def get_chain(self, *args, **kwargs):
 
