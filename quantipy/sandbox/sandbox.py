@@ -1563,11 +1563,13 @@ class Chain(object):
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
 
+    @property
     def cell_details(self):
         ci = self.cell_items
         sig_letters = self.sig_test_letters
         sig_levels = self.sig_levels
-        return ci, sig_letters, sig_levels
+        ci_str = 'Cell items: {} - Letters: {} - Levels: {}'
+        return ci_str.format(ci, sig_letters, sig_levels)
 
     def describe(self):
         def _describe(cell_defs, row_id):
