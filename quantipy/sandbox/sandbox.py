@@ -2396,8 +2396,9 @@ class Chain(object):
             self.base_descriptions = self._meta['var_meta'].get('notes', None)
         else:
             base_texts = OrderedDict()
-            if self.array_style != -1:
-                var = self._x_keys[0]
+            arr_style = self.array_style
+            if arr_style != -1:
+                var = self._x_keys[0] if arr_style == 0 else self._y_keys[0]
                 masks = self._meta['masks']
                 columns = self._meta['columns']
                 item = masks[var]['items'][0]['source'].split('@')[-1]
