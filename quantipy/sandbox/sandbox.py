@@ -77,7 +77,12 @@ class ChainManager(object):
 
     def __getitem__(self, value):
         if isinstance(value, (unicode, str)):
-            return self.__chains[self._idx_from_name(value)].values()[0]
+            element = self.__chains[self._idx_from_name(value)]
+            is_folder = isinstance(element, dict)
+            if is_folder:
+                return element.values()[0]
+            else:
+                return element
         else:
             return self.__chains[value]
 
