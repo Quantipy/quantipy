@@ -18,14 +18,14 @@ them.
 
 The class compares/ reports/ aligns the following aspects:
 
-	*	datasets are valid (``DataSet.validate()``)
-	*	mismatches (variables are not included in all datasets)
-	*	different types (variables are in more than one dataset, but have different types)
-	*	labels (variables are in more than one dataset, but have different labels for the same text_key)
-	*	value codes (variables are in more than one dataset, but have different value codes)
-	*	value texts (variables are in more than one dataset, but have different value texts)
-	*	array items (arrays are in more than one dataset, but have different items)
-	*	item labels (arrays are in more than one dataset, but their items have different labels)
+	* datasets are valid (``DataSet.validate()``)
+	* mismatches (variables are not included in all datasets)
+	* different types (variables are in more than one dataset, but have different types)
+	* labels (variables are in more than one dataset, but have different labels for the same text_key)
+	* value codes (variables are in more than one dataset, but have different value codes)
+	* value texts (variables are in more than one dataset, but have different value texts)
+	* array items (arrays are in more than one dataset, but have different items)
+	* item labels (arrays are in more than one dataset, but their items have different labels)
 
 This is the first draft of the class, so it will need some testing and probably
 adjustments.
