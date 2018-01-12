@@ -52,6 +52,7 @@ class Stack(defaultdict):
         self.name = name
         self.key = None
         self.parent = None
+        self.verbose = True
 
         # This is the root of the stack
         # It is used by the get/set methods to determine
@@ -265,6 +266,28 @@ class Stack(defaultdict):
                 return types[only_type]
             else:
                 return types
+
+    def apply_meta_edits(self, batch_name, data_key, filter_key=None):
+        """
+        Take over meta_edits from Batch definitions.
+
+        Parameters
+        ----------
+        batch_name: str
+            Name of the Batch whose meta_edits are taken.
+        data_key: str
+            Accessing this metadata: ``self[data_key].meta``
+            Batch definitions are takes from here and this metadata is modified.
+        filter_key: str, default None
+            Currently not implemented!
+            Accessing this metadata: ``self[data_key][filter_key].meta``
+            Batch definitions are takes from here and this metadata is modified.
+        """
+        if filter_key:
+            raise NotImplementedError("'filter_key' is not implemented.")
+
+        meta
+
 
     def get_chain(self, *args, **kwargs):
 
@@ -489,11 +512,6 @@ class Stack(defaultdict):
                     return chain
 
             return _get_chain(*args, **kwargs)
-
-
-
-
-
 
     def reduce(self, data_keys=None, filters=None, x=None, y=None, variables=None, views=None):
         '''
