@@ -110,12 +110,13 @@ class Excel(Workbook):
     # TODO: docstring
 
     def __init__(self, filename, toc=False, details=False, views_groups=None,
-                 **kwargs):
+                 italicise_level=None, **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.details = details
         self.views_groups = views_groups
+        self.italicise_level = italicise_level
 
         if views_groups:
             views_groups = dict([(k, views_groups[k] if k in views_groups else v)
@@ -205,12 +206,13 @@ class Sheet(Worksheet):
         super(Sheet, self).write(*args)
 
     def write_rich_string(self, *args):
-        args, rich_text = (args[0], ), args[1:]
+        args, rich_text = ((args[0], args[1]), ), args[2:]
         for arg in rich_text:
             if isinstance(arg, dict):
                 args = args + (self.excel._add_format(arg), )
             else:
                 args = args + (arg, )
+        args = (xl_rowcol_to_cell(*args[0]), ) + args[1:]
         super(Sheet, self).write_rich_string(*args)
 
     def merge_range(self, *args):
@@ -266,15 +268,19 @@ class Box(object):
     # TODO: docstring
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
-                 '_lazy_index', '_lazy_columns', '_lazy_values',
-                 '_lazy_contents', '_lazy_is_weighted', '_lazy_shape',
-                 '_lazy_has_tests')
+                 '_columns', '_italic', '_lazy_index', '_lazy_columns',
+                 '_lazy_values', '_lazy_contents', '_lazy_is_weighted',
+                 '_lazy_shape', '_lazy_has_tests', '_lazy_arrow_rep',
+                 '_lazy_arrow_color')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
         self.chain = chain
         self._single_columns = None
         self._column_edges = None
+
+        self._columns = []
+        self._italic = []
 
     @property
     def single_columns(self):
@@ -342,6 +348,16 @@ class Box(object):
     def has_tests(self):
         return self.chain.dataframe.columns.nlevels % 2
 
+    @lazy_property
+    def arrow_rep(self):
+        return {"'@L'": self.sheet.arrow_rep_high,
+                "'@H'": self.sheet.arrow_rep_low}
+
+    @lazy_property
+    def arrow_color(self):
+        return {"'@L'": self.sheet.arrow_color_high,
+                "'@H'": self.sheet.arrow_color_low}
+        
     def to_sheet(self, columns):
         # TODO: Doc string
         if self.chain.structure is not None:
@@ -486,6 +502,29 @@ class Box(object):
             format_ = self._format_x(name, rel_x, rel_y, row_max,
                                      x_contents.get('dummy'), use_bg,
                                      view_border, border_from)
+
+            if self.sheet.excel.italicise_level:
+                if rel_y and self.chain.array_style == 0:
+                    if self._is('base', **x_contents) and not x_contents['is_weighted']:
+                        if data == data:
+                            if data <= self.sheet.excel.italicise_level:
+                                arr_summ_ital = True
+                            else:
+                                arr_summ_ital = False
+                    if arr_summ_ital:
+                        if rel_y not in self._italic:
+                            self._italic.append(rel_y)
+                    elif rel_y in self._italic:
+                        self._italic.remove(rel_y)
+                else:
+                    if rel_y not in self._columns:
+                        if self._is('base', **x_contents) and not x_contents['is_weighted']:
+                            if data <= self.sheet.excel.italicise_level:
+                                self._italic.append(rel_y)
+                            self._columns.append(rel_y)
+                if rel_y in self._italic:
+                    format_['italic'] = True
+
             if rel_y and bg_from:
                 bg_format = self._format_x(bg_from, rel_x, rel_y, row_max,
                                           bg_x_contents.get('dummy'), use_bg,
@@ -501,12 +540,9 @@ class Box(object):
                 arrow, cell_data = parts[0], '.'.join(parts[1:])
                 if low_base:
                     cell_data = cell_data + '*'
-                arrow_color = {"'@L'": self.sheet.arrow_color_high,
-                               "'@H'": self.sheet.arrow_color_low}.get(arrow)
-                arrow_format = {"'@L'": arrow_high_format,
-                                "'@H'": arrow_low_format}.get(arrow)
-                arrow_rep = {"'@L'": self.sheet.arrow_rep_high,
-                             "'@H'": self.sheet.arrow_rep_low}.get(arrow)
+                arrow_rep = self.arrow_rep.get(arrow)
+                arrow_color = self.arrow_color.get(arrow)
+                arrow_format = {"'@L'": arrow_high_format, "'@H'": arrow_low_format}.get(arrow)
 
                 if arrow_format is _None:
                     arrow_format = self._format_x(name, rel_x, rel_y,
@@ -514,13 +550,12 @@ class Box(object):
                                                   use_bg, view_border,
                                                   border_from,
                                                   **{'font_color': arrow_color})
-                self.sheet.write_rich_string(xl_rowcol_to_cell(self.sheet._row + rel_x,
-                                                               self.sheet._column + rel_y),
+                self.sheet.write_rich_string(self.sheet._row + rel_x,
+                                             self.sheet._column + rel_y,
                                              arrow_format, arrow_rep,
                                              format_, cell_data,
                                              format_)
             else: 
-                
                 self.sheet.write(self.sheet._row + rel_x,
                                  self.sheet._column + rel_y,
                                  cell_data,
@@ -823,6 +858,9 @@ if __name__ == '__main__':
     dataset.read_quantipy(PATH_META, PATH_DATA)
     meta, data = dataset.split()
     data = data.head(250)
+    data.loc[30:,'q5_2'] = np.NaN
+    data.loc[30:,'q5_4'] = np.NaN
+
     stack = qp.Stack(NAME_PROJ, add_data={DATA_KEY: {'meta': meta, 'data': data}})
     stack.add_link(x=X_KEYS, y=Y_KEYS, views=VIEWS, weights=weights)
 
@@ -2085,6 +2123,7 @@ if __name__ == '__main__':
     x = Excel('basic_excel.xlsx',
               details='en-GB',
               views_groups=custom_vg,
+              italicise_level=50,
               **tp
 
               #------------------------------------
