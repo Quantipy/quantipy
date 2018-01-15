@@ -284,10 +284,10 @@ class Stack(defaultdict):
         """
         if filter_key:
             raise NotImplementedError("'filter_key' is not implemented.")
-
-        meta = copy.deepcopy(self[data_key].meta)
+        self.freeze_master_meta(data_key)
+        meta = self[data_key].meta
         batch = meta['sets']['batches'][batch_name]
-        for name, e_meta in batch['meta_edits']:
+        for name, e_meta in batch['meta_edits'].items():
             if name == 'lib':
                 continue
             elif name in meta['masks']:
@@ -300,8 +300,23 @@ class Stack(defaultdict):
             else:
                 meta['columns'][name] = e_meta
         meta['lib']['default text'] = batch['language']
-        self[data_key].master_meta = self[data_key].meta
-        self[data_key].meta = meta
+        return None
+
+    def freeze_master_meta(self, data_key, filter_key=None):
+        """
+        Save ``.meta`` in ``.master_meta`` for a defined data_key.
+
+        Parameters
+        ----------
+        data_key: str
+            Using: ``self[data_key]``
+        filter_key: str, default None
+            Currently not implemented!
+            Using: ``self[data_key][filter_key]``
+        """
+        if filter_key:
+            raise NotImplementedError("'filter_key' is not implemented.")
+        self[data_key].master_meta = copy.deepcopy(self[data_key].meta)
         return None
 
     def restore_meta(self, data_key, filter_key=None):
@@ -318,8 +333,10 @@ class Stack(defaultdict):
             Currently not implemented!
             Accessing this metadata: ``self[data_key][filter_key].meta``
         """
+        if filter_key:
+            raise NotImplementedError("'filter_key' is not implemented.")
         try:
-            self[data_key].meta = self[data_key].master_meta
+            self[data_key].meta = copy.deepcopy(self[data_key].master_meta)
         except:
             pass
         return None
