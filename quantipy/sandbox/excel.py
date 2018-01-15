@@ -120,7 +120,7 @@ class Excel(Workbook):
         self.views_groups = views_groups
         self.italicise_level = italicise_level
         self._decimals = decimals
-        self.image = image
+        self._image = image
 
         if views_groups:
             views_groups = dict([(k, views_groups[k] if k in views_groups else v)
@@ -144,6 +144,14 @@ class Excel(Workbook):
         elif isinstance(self._decimals, int):
             return {_: self._decimals for _ in ('N', 'P', 'D')}
         return self._decimals
+
+    @lazy_property
+    def image(self):
+        image = Image.open(self._image['img_url'])
+        image.thumbnail(self._image['img_size'], Image.ANTIALIAS)
+        image.save(os.path.basename(self._image['img_url']))
+
+        return self._image
 
     def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
         # TODO: docstring
@@ -242,7 +250,7 @@ class Sheet(Worksheet):
 
             try:
                 columns = chain.dataframe.columns
-                
+
                 # make y-axis writing availbale to all chains
                 if i == 0:
                     self._set_freeze_loc(columns)
@@ -263,10 +271,7 @@ class Sheet(Worksheet):
         self.hide_gridlines(2)
 
         if self.excel.image:
-            image = Image.open(self.excel.image['img_url'])
-            image.thumbnail(self.excel.image['img_size'], Image.ANTIALIAS)
-            image.save(os.path.basename(self.excel.image['img_url']))
-            
+
             self.insert_image(self.excel.image['img_insert_x'],
                               self.excel.image['img_insert_y'],
                               self.excel.image['img_url'],
@@ -281,7 +286,7 @@ class Sheet(Worksheet):
     def _set_freeze_loc(self, columns):
         if list(columns.labels[0]).count(0) == 1:
             offset = 1
-        else: 
+        else:
             offset = 0
         self._freeze_loc = ((self._row + columns.nlevels),
                             (self._column + offset + 1))
@@ -340,7 +345,7 @@ class Box(object):
         def _contents(c, d):
             if 0 in c.values()[0]:
                 for i, value in enumerate(c.values()):
-                    c[i] = _contents(value, d[i]) 
+                    c[i] = _contents(value, d[i])
             else:
                 for idx, value in enumerate(c.values()):
                     if value['is_block']:
@@ -362,7 +367,7 @@ class Box(object):
     @lazy_property
     def is_weighted(self):
         if self.chain.array_style == 0:
-            return any(y['is_weighted'] 
+            return any(y['is_weighted']
                        for x in self.contents.itervalues()
                        for y in x.itervalues())
         return any(x['is_weighted'] for x in self.contents.itervalues())
@@ -384,7 +389,7 @@ class Box(object):
     def arrow_color(self):
         return {"'@L'": self.sheet.arrow_color_high,
                 "'@H'": self.sheet.arrow_color_low}
-        
+
     def to_sheet(self, columns):
         # TODO: Doc string
         if self.chain.structure is not None:
@@ -393,15 +398,15 @@ class Box(object):
             if columns:
                 self._write_columns()
             self._write_rows()
- 
+
     def _write_data(self):
         format_ = self.excel._formats._data_header
-        
+
         for rel_y, column in enumerate(self.chain.structure.columns):
             self.sheet.write(self.sheet._row,
                              self.sheet._column + rel_y,
-                             column, format_) 
-        
+                             column, format_)
+
         self.sheet._row += 1
 
         row_max = self.chain.structure.shape[0] - 1
@@ -582,7 +587,7 @@ class Box(object):
                                              arrow_format, arrow_rep,
                                              format_, cell_data,
                                              format_)
-            else: 
+            else:
                 self.sheet.write(self.sheet._row + rel_x,
                                  self.sheet._column + rel_y,
                                  cell_data,
@@ -596,7 +601,7 @@ class Box(object):
     @lru_cache()
     def _alternate_bg(self, name, bg):
         freq_view_group = self.excel.views_groups.get(name, '') == 'freq'
-        is_freq_test = any(_ in name for _ in ('counts', 'pct', 'propstest')) 
+        is_freq_test = any(_ in name for _ in ('counts', 'pct', 'propstest'))
         is_mean = 'mean' in name
         not_net_sum = all(_ not in name for _ in ('net', 'sum'))
         if ((is_freq_test and not_net_sum) or freq_view_group) or \
@@ -785,7 +790,7 @@ class Box(object):
         elif stat:
             vtype, nan_rep = 'D', self.sheet.stat_0_rep
         else:
-            return False, ' ', None 
+            return False, ' ', None
         if test or (self.chain.array_style == 0 and not freq):
             return pct, vtype, ' '
         return pct, vtype, nan_rep
@@ -806,7 +811,7 @@ class Cell(object):
     def __repr__(self):
         try:
             if np.isnan(self.data) or np.isinf(self.data) or self.data == 0:
-                return self.nan_rep 
+                return self.nan_rep
         except TypeError:
             pass
         if isinstance(self.data, (str, unicode)):
@@ -1087,17 +1092,17 @@ if __name__ == '__main__':
     # ------------------------------------------------------------ dataframe
     open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
     open_chain = ChainManager(stack)
-    open_chain = open_chain.add(open_ends, 
-                                meta_from=(DATA_KEY, FILTER_KEY), 
+    open_chain = open_chain.add(open_ends,
+                                meta_from=(DATA_KEY, FILTER_KEY),
                                 name='Open Ends')
     #open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='__NA__')
     open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='-')
-            
+
     #open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q2']]
     #open_chain = open_chain.add(open_ends,
-    #                            meta_from=(DATA_KEY, FILTER_KEY), 
+    #                            meta_from=(DATA_KEY, FILTER_KEY),
     #                            )
-    #        
+    #
     #for x in iter(open_chain):
     #    print '\n', x
 
@@ -1110,7 +1115,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------ arr. summaries
     stack.add_link(x='q5', y='@', views=VIEWS, weights=weights)
     stack.add_link(x='@', y='q5', views=VIEWS, weights=weights)
-    
+
     nets_mapper = qp.ViewMapper(template={'method': qp.QuantipyViews().frequency,
                                           'kwargs': {'iterators': {'rel_to': rel_to},
                                                      'groups': 'Nets'}})
@@ -1147,7 +1152,7 @@ if __name__ == '__main__':
     nets_mapper.add_method(name='NPSonly', kwargs=kwargs)
     stack.add_link(x='q5', y='@', views=nets_mapper, weights=weights)
     stack.add_link(x='@', y='q5', views=nets_mapper, weights=weights)
-    
+
     stats = ['mean', 'stddev', 'median', 'var', 'varcoeff', 'sem', 'lower_q', 'upper_q']
 
     for stat in stats:
@@ -1232,7 +1237,7 @@ if __name__ == '__main__':
                    y_keys=['q5'],
                    views=VIEW_KEYS,
                   )
-    
+
     arr_chains_1.paint_all()
 
     arr_chains_0 = ChainManager(stack)
@@ -1252,7 +1257,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries - block nets
-    
+
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
                  ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
@@ -1288,7 +1293,7 @@ if __name__ == '__main__':
                            views=VIEW_KEYS,
                           )
     arr_chains_block_0.paint_all()
-    # ------------------------------------------------------------ 
+    # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries - mean
     VIEW_KEYS = ('x|f|x:|||cbase',
@@ -1311,7 +1316,7 @@ if __name__ == '__main__':
                           y_keys=['q5'],
                           views=VIEW_KEYS,
                          )
-    
+
     arr_chains_mean_1.paint_all()
 
     arr_chains_mean_0 = ChainManager(stack)
@@ -1322,7 +1327,7 @@ if __name__ == '__main__':
                           y_keys=['@'],
                           views=VIEW_KEYS,
                          )
-    
+
     arr_chains_mean_0.paint_all()
     # ------------------------------------------------------------
 
@@ -1642,7 +1647,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_net_counts_text': 1,
                             'text_h_align_block_calc_net_counts_text': 1,
 
-                            ###block_calc_net_counts 
+                            ###block_calc_net_counts
                             'bold_block_calc_net_counts': True,
                             'bg_color_block_calc_net_counts': '#F8C471F',
                             'font_color_block_calc_net_counts': '#839192',
@@ -1662,7 +1667,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_net_c_pct_text': 1,
                             'text_h_align_block_calc_net_c_pct_text': 1,
 
-                            ### block_calc_net_c_pct 
+                            ### block_calc_net_c_pct
                             'bold_block_calc_net_c_pct': True,
                             'bg_color_block_calc_net_c_pct': '#839192',
                             'font_color_block_calc_net_c_pct': '#F8C471F',
@@ -1682,7 +1687,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_net_r_pct_text': 1,
                             'text_h_align_block_calc_net_r_pct_text': 1,
 
-                            ### block_calc_net_r_pct 
+                            ### block_calc_net_r_pct
                             'bold_block_calc_net_r_pct': True,
                             'bg_color_block_calc_net_r_pct': '#F8C471F',
                             'font_color_block_calc_net_r_pct': '#839192',
@@ -1702,7 +1707,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_net_propstest_text': 1,
                             'text_h_align_block_calc_net_propstest_text': 1,
 
-                            ### block_calc_net_propstest 
+                            ### block_calc_net_propstest
                             'bold_block_calc_net_propstest': True,
                             'bg_color_block_calc_net_propstest': '#839192',
                             'font_color_block_calc_net_propstest': '#F8C471F',
@@ -1722,7 +1727,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_counts_text': 1,
                             'text_h_align_block_calc_counts_text': 1,
 
-                            ###block_calc_counts 
+                            ###block_calc_counts
                             'bold_block_calc_counts': True,
                             'bg_color_block_calc_counts': 'red',
                             'font_color_block_calc_counts': 'blue',
@@ -1742,7 +1747,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_c_pct_text': 1,
                             'text_h_align_block_calc_c_pct_text': 1,
 
-                            ### block_calc_c_pct 
+                            ### block_calc_c_pct
                             'bold_block_calc_c_pct': True,
                             'bg_color_block_calc_c_pct': 'blue',
                             'font_color_block_calc_c_pct': 'red',
@@ -1762,7 +1767,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_r_pct_text': 1,
                             'text_h_align_block_calc_r_pct_text': 1,
 
-                            ### block_calc_r_pct 
+                            ### block_calc_r_pct
                             'bold_block_calc_r_pct': True,
                             'bg_color_block_calc_r_pct': 'red',
                             'font_color_block_calc_r_pct': 'blue',
@@ -1782,7 +1787,7 @@ if __name__ == '__main__':
                             'text_v_align_block_calc_propstest_text': 1,
                             'text_h_align_block_calc_propstest_text': 1,
 
-                            ### block_calc_propstest 
+                            ### block_calc_propstest
                             'bold_block_calc_propstest': True,
                             'bg_color_block_calc_propstest': 'blue',
                             'font_color_block_calc_propstest': 'red',
@@ -1922,7 +1927,7 @@ if __name__ == '__main__':
                             'text_v_align_var_text': 3,
                             'text_h_align_var_text': 3,
 
-                            ### var 
+                            ### var
                             'bold_var': True,
                             'bg_color_var': '#FF69B4',
                             'font_color_var': '#00E5EE',
@@ -1942,7 +1947,7 @@ if __name__ == '__main__':
                             'text_v_align_varcoeff_text': 3,
                             'text_h_align_varcoeff_text': 3,
 
-                            ### varcoeff 
+                            ### varcoeff
                             'bold_varcoeff': True,
                             'bg_color_varcoeff': '#FF69B4',
                             'font_color_varcoeff': '#00E5EE',
@@ -1962,7 +1967,7 @@ if __name__ == '__main__':
                             'text_v_align_sem_text': 3,
                             'text_h_align_sem_text': 3,
 
-                            ### sem 
+                            ### sem
                             'bold_sem': True,
                             'bg_color_sem': '#FF69B4',
                             'font_color_sem': '#00E5EE',
@@ -1982,7 +1987,7 @@ if __name__ == '__main__':
                             'text_v_align_lower_q_text': 3,
                             'text_h_align_lower_q_text': 3,
 
-                            ### lower_q 
+                            ### lower_q
                             'bold_lower_q': True,
                             'bg_color_lower_q': '#FF69B4',
                             'font_color_lower_q': '#00E5EE',
@@ -2002,7 +2007,7 @@ if __name__ == '__main__':
                             'text_v_align_upper_q_text': 3,
                             'text_h_align_upper_q_text': 3,
 
-                            ###upper_q 
+                            ###upper_q
                             'bold_upper_q': True,
                             'bg_color_upper_q': '#FF69B4',
                             'font_color_upper_q': '#00E5EE',
@@ -2126,7 +2131,7 @@ if __name__ == '__main__':
                              }
 
 
-    sheet_properties = dict() 
+    sheet_properties = dict()
 
     #test = 1
     #test = 2
