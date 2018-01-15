@@ -103,8 +103,8 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        start_row=0,
                        #stat_0_rep=0.00,
                        #test_seperator='.',
-                       #y_header_height=33.75,
-                       #y_row_height=50
+                       y_header_height=33.75,
+                       y_row_height=50
                        )
 
 
@@ -476,12 +476,20 @@ class Box(object):
                 left = right + 1
                 if next_ is None:
                     break
+
+            if not self.has_tests or ((level_id + 1) != nlevels) and self.has_tests:
+                if (row % 2) == 0:
+                    self.sheet.set_row(row, self.sheet.y_header_height)
+                else:
+                    self.sheet.set_row(row, self.sheet.y_row_height)
+
         for cindex in self.single_columns:
             level = -(1 + self.has_tests)
             data = self._cell(self.columns.get_level_values(level)[cindex], **contents)
             self.sheet.merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
                                    data, format_)
+
         self.sheet._row = row + 1
 
     def _write_rows(self):
@@ -2165,7 +2173,9 @@ if __name__ == '__main__':
     elif test == 3:
         sheet_properties = dict(alternate_bg=True,
                                 freq_0_rep=':',
-                                stat_0_rep='#')
+                                stat_0_rep='#',
+                                y_header_height=20,
+                                y_row_height=40)
         custom_vg = {
                 'block_expanded_counts': 'freq',
                 'block_expanded_c_pct': 'freq',

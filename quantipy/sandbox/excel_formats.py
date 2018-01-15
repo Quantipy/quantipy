@@ -35,9 +35,11 @@ class _ExcelFormats(object):
 
     def __init__(self, views_groups, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, self._view_or_group(name, _VIEWS_GROUPS, views_groups, kwargs))
+            view_or_group = self._view_or_group(name, _VIEWS_GROUPS,
+                                                views_groups, kwargs)
+            value_or_default = kwargs.get(name, view_or_group)
             setattr(self, name, value_or_default)
-    
+
     def _view_or_group(self, name, implicit, explicit, kwargs):
         if self._extract_from(name, explicit, kwargs):
             return self._extract_from(name, explicit, kwargs)
@@ -115,7 +117,7 @@ class ExcelFormats(_ExcelFormats):
                     format_.update(self._method(method))
                 except AttributeError:
                     pass
-                
+
                 if '_lazy__' + method in self.slots:
                     format_.update(getattr(self, '_' + method))
 
@@ -168,8 +170,7 @@ class ExcelFormats(_ExcelFormats):
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
-                            bottom=self.border_style_ext,
-                            ))
+                            bottom=self.border_style_ext))
         format_.update(self._method('y'))
 
         return _Format(**format_)
@@ -181,8 +182,7 @@ class ExcelFormats(_ExcelFormats):
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
-                            bottom=self.border_style_ext,
-                            ))
+                            bottom=self.border_style_ext))
         format_.update(self._method('data_header'))
 
         return _Format(**format_)
