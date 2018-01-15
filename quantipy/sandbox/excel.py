@@ -147,10 +147,10 @@ class Excel(Workbook):
 
     @lazy_property
     def image(self):
-        image = Image.open(self._image['img_url'])
-        image.thumbnail(self._image['img_size'], Image.ANTIALIAS)
-        image.save(os.path.basename(self._image['img_url']))
-
+        if self._image:
+            image = Image.open(self._image['img_url'])
+            image.thumbnail(self._image['img_size'], Image.ANTIALIAS)
+            image.save(os.path.basename(self._image['img_url']))
         return self._image
 
     def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
@@ -402,12 +402,17 @@ class Box(object):
     def _write_data(self):
         format_ = self.excel._formats._data_header
 
-        for rel_y, column in enumerate(self.chain.structure.columns):
-            self.sheet.write(self.sheet._row,
-                             self.sheet._column + rel_y,
-                             column, format_)
+        for rel_y, label in enumerate(self.chain.structure.columns):
+            column = self.sheet._column + rel_y
+            self.sheet.merge_range(self.sheet._row, column,
+                                   self.sheet._row + 1, column,
+                                   label, format_)
+            self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
+            self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
 
-        self.sheet._row += 1
+        self.sheet.freeze_panes(self.sheet._row + 2, self.sheet._column)
+
+        self.sheet._row += 3
 
         row_max = self.chain.structure.shape[0] - 1
 
@@ -2204,41 +2209,41 @@ if __name__ == '__main__':
               image=image,
               **tp)
 
-    x.add_chains(chains,
-                 'S H E E T',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
-    x.add_chains(arr_chains_1,
-                 'array summary 1',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
-    x.add_chains(arr_chains_block_1,
-                 'block summary 1',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
-    x.add_chains(arr_chains_mean_1,
-                 'means summary 1',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
-    x.add_chains(arr_chains_0,
-                 'array summary 0',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
-    x.add_chains(arr_chains_block_0,
-                 'block summary 0',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
-    x.add_chains(arr_chains_mean_0,
-                 'means summary 0',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
+    # x.add_chains(chains,
+    #              'S H E E T',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
+    # x.add_chains(arr_chains_1,
+    #              'array summary 1',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
+    # x.add_chains(arr_chains_block_1,
+    #              'block summary 1',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
+    # x.add_chains(arr_chains_mean_1,
+    #              'means summary 1',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
+    # x.add_chains(arr_chains_0,
+    #              'array summary 0',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
+    # x.add_chains(arr_chains_block_0,
+    #              'block summary 0',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
+    # x.add_chains(arr_chains_mean_0,
+    #              'means summary 0',
+    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #              **sheet_properties
+    #             )
     x.add_chains(open_chain,
                  'Open_Ends',
                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],

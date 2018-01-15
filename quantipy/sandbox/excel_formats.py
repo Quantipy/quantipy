@@ -71,6 +71,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__bottom',
                  '_lazy__cell_details',
                  '_lazy__data_header',
+                 '_lazy__data',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__meanstest',
@@ -186,6 +187,10 @@ class ExcelFormats(_ExcelFormats):
         format_.update(self._method('data_header'))
 
         return _Format(**format_)
+
+    @lazy_property
+    def _data(self):
+        return dict(text_wrap=False)
 
     @lazy_property
     def _left(self):
