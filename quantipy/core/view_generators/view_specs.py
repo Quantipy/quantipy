@@ -300,6 +300,9 @@ class ViewManager(object):
                 if self.sums_pos == 'bottom':
                     view_collection = regulars + stats + sums
                 elif self.sums_pos == 'mid':
+                    print regulars
+                    print sums
+                    print stats
                     view_collection = regulars + sums + stats
         else:
             if switch:
@@ -322,7 +325,14 @@ class ViewManager(object):
     def _switch(views):
         n_views = []
         for v in views:
-            n_views.append(v[1::-1] + v[2:])
+            if not isinstance(v, list):
+                n_views.append(v)
+            elif v[0].split('|')[1].startswith('d.'):
+                n_views.append(v)
+            elif len(v) < 3 and any(view.split('|')[1].startswith('t.') for view in v):
+                n_views.append(v)
+            else:
+                n_views.append(v[1::-1] + v[2:])
         return n_views
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
