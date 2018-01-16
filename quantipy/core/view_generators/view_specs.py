@@ -17,6 +17,7 @@ class ViewManager(object):
         self.grouping = None
         self.base_spec = None
         self.weighted = None
+        self.sums_pos = None
         self._base_views = None
         self._grouped_views = None
         return None
@@ -28,8 +29,9 @@ class ViewManager(object):
         return len(self._base_views) if self._base_views else None
 
     def get_views(self, data_key=None, filter_key=None, weight=None,
-                  freqs=True, nets=True, stats=['mean', 'stddev'], tests=None,
-                  cell_items='colpct', bases='auto'):
+                  freqs=True, nets=True, stats=['mean', 'stddev'],
+                  sums='bottom', tests=None, cell_items='colpct',
+                  bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -52,6 +54,8 @@ class ViewManager(object):
         stats : (list of) {'mean', 'stddev', 'min', 'max', ...},
                 default ['mean', 'stddev']
             The descriptive statistics (if any) to get from the ``qp.Stack``.
+        sums: str {'bottom', 'mid'} or None, default 'bottom'
+            The position of the sums (if any) in the view-list.
         tests : (list of) float, default None
             Text...
         cell_items: {'counts', 'colpct', 'rowpct', 'counts_colpct',
@@ -79,6 +83,7 @@ class ViewManager(object):
         self.stats = stats
         self.tests = tests
         self.weighted = weight
+        self.sums_pos = sums
         cimap = {'c': 'counts', 'p': 'colpct', 'cp': 'counts_colpct'}
         for old, new in cimap.items():
             if cell_items == old:
@@ -116,7 +121,7 @@ class ViewManager(object):
         views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=self.weighted,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
-            sums='bottom', coltests=True if self.tests else False,
+            sums=self.sums_pos, coltests=True if self.tests else False,
             sig_levels=self.tests if self.tests else [])
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
@@ -237,7 +242,7 @@ class ViewManager(object):
         self._base_views = bases
         return None
 
-    def group(self, style='reduce'):
+    def group(self, style='reduce', switch=False):
         """
         Reorder the ``.views`` list to group belonging aggregations together.
 
@@ -256,6 +261,7 @@ class ViewManager(object):
         """
         self.grouping = style
         grouped_views = self._grouped_views
+
         if grouped_views is None:
             msg = 'Grouped views are not defined. Run ``.get_views()`` first.'
             raise ValueError(msg)
@@ -265,7 +271,6 @@ class ViewManager(object):
         flat_gv = list(chain.from_iterable(grouped_views))
 
         non_grouped = [v for v in self.views[self._base_len():] if v not in flat_gv]
-
         if non_grouped:
             if not grouped_views:
                 view_collection = non_grouped
@@ -288,8 +293,17 @@ class ViewManager(object):
                 if not sums and grouped_views[-1][0].split('|')[1].startswith('f.c'):
                     sums = [grouped_views[-1]]
 
-                view_collection = regulars + stats + sums
+                if switch:
+                    regulars = self._switch(regulars)
+                    sums = self._switch(sums)
+
+                if self.sums_pos == 'bottom':
+                    view_collection = regulars + stats + sums
+                elif self.sums_pos == 'mid':
+                    view_collection = regulars + sums + stats
         else:
+            if switch:
+                grouped_views = self._switch(grouped_views)
             view_collection = grouped_views
 
         view_collection = self._base_views + view_collection
@@ -304,7 +318,12 @@ class ViewManager(object):
         self.views = full_grouped_views
         return self
 
-
+    @staticmethod
+    def _switch(views):
+        n_views = []
+        for v in views:
+            n_views.append(v[1::-1] + v[2:])
+        return n_views
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
