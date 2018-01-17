@@ -31,7 +31,7 @@ class ViewManager(object):
     def get_views(self, data_key=None, filter_key=None, weight=None,
                   freqs=True, nets=True, stats=['mean', 'stddev'],
                   sums='bottom', tests=None, cell_items='colpct',
-                  bases='auto'):
+                  ci_order='normal', bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -65,6 +65,9 @@ class ViewManager(object):
             counts, column or row percentages or grouped versions of the
             former, e.g. 'counts_colpct' will show both counts and column
             percentages as a set of cell items.
+        ci_order: {'normal', 'switched'}
+            If more than one cell_item is requested, 'normal' returns pcts in
+            the first place, 'switched' returns counts in the first place.
         bases : {'auto', 'both', 'weighted', 'unweighted'}
             The base view(s) to include. 'auto' will match the base to the
             ``weights`` parameter. If ``weights`` is provided (i.e. the
@@ -144,6 +147,10 @@ class ViewManager(object):
             wparam = 'uw'
         self.set_bases(base=wparam)
         self.views = self._base_views + other_views
+        if ci_order == 'normal':
+            self.group(switch=False)
+        elif ci_order == 'switched':
+            self.group(switch=True)
         return self
 
     def set_bases(self, base='w', gross=False, effective=False,
