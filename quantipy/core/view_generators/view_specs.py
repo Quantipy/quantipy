@@ -275,39 +275,58 @@ class ViewManager(object):
             if not grouped_views:
                 view_collection = non_grouped
             else:
-                if grouped_views[-1][0].split('|')[1].startswith('f.c'):
-                    regulars = grouped_views[:-1]
-                else:
-                    regulars = grouped_views
-
-                # We need to grab all isolated stats (all that are not means with
-                # tests if tests are requested)
-
-                stats = [v for v in non_grouped if v.split('|')[1].startswith('d.')]
-
-                # if not stats and not non_grouped[1].split('|')[1].startswith('f.c') :
-                #     stats =  non_grouped[1:]
-
-                sums = [v for v in non_grouped if v.split('|')[1].startswith('f.c')]
-
-                if not sums and grouped_views[-1][0].split('|')[1].startswith('f.c'):
-                    sums = [grouped_views[-1]]
+                regulars = []
+                stats = []
+                sums = []
+                completes = []
+                nets = []
+                for gv in grouped_views:
+                    if gv[0].split('|')[-1].endswith('_sum'):
+                        sums.append(gv)
+                    elif gv[0].split('|')[1].startswith('d.'):
+                        stats.append(gv)
+                    elif gv[0].split('|')[2].endswith(']*:'):
+                        completes.append(gv)
+                    elif gv[0].split('|')[-1].startswith('net'):
+                        nets.append(gv)
+                    else:
+                        regulars.append(gv)
 
                 if switch:
                     regulars = self._switch(regulars)
+                    completes = self._switch(completes)
                     sums = self._switch(sums)
+                    nets = self._switch(nets)
+
+                stats.extend([v for v in non_grouped if v.split('|')[1].startswith('d.')])
+                sums.extend([v for v in non_grouped if v.split('|')[-1].endswith('_sum')])
+                completes.extend([v for v in non_grouped if v.split('|')[2].endswith(']*:')])
+                nets.extend([v for v in non_grouped if not v in completes and
+                             v.split('|')[-1].startswith('net')])
 
                 if self.sums_pos == 'bottom':
-                    view_collection = regulars + stats + sums
+                    view_collection = regulars + nets + completes + stats + sums
                 elif self.sums_pos == 'mid':
-                    print regulars
-                    print sums
-                    print stats
-                    view_collection = regulars + sums + stats
+                    view_collection = regulars + completes + sums + nets + stats
         else:
             if switch:
                 grouped_views = self._switch(grouped_views)
-            view_collection = grouped_views
+            if self.sums_pos == 'mid':
+                print '*'*60
+                view_collection = []
+                sums = []
+                for gv in grouped_views:
+                    split = gv[0].split('|')
+                    if split[-1].endswith('_sum'):
+                        sums.append(gv)
+                    elif split[-1].startswith('net') and not split[2].endswith(']*:'):
+                        view_collection.extend(sums)
+                        sums = []
+                        view_collection.append(gv)
+                    else:
+                        view_collection.append(gv)
+            else:
+                view_collection = grouped_views
 
         view_collection = self._base_views + view_collection
 
@@ -519,18 +538,6 @@ class ViewManager(object):
                 crps.extend(props_test_views)
                 psrps.extend(props_test_views)
                 cpsrps.extend(props_test_views)
-
-            for level in sig_levels:
-                # Main cumulative test views
-                props_test_views = [
-                    v for v in all_views
-                    if 't.props.{}{}'.format(
-                        mimic,
-                        level
-                    ) in v
-                    and v.split('|')[2]=='x++:'
-                    and v.split('|')[4]==weight
-                ]
                 csc.extend(props_test_views)
                 psc.extend(props_test_views)
                 cpsc.extend(props_test_views)
