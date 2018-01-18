@@ -278,62 +278,23 @@ class ViewManager(object):
         flat_gv = list(chain.from_iterable(grouped_views))
 
         non_grouped = [v for v in self.views[self._base_len():] if v not in flat_gv]
-        if non_grouped:
-            if not grouped_views:
-                view_collection = non_grouped
-            else:
-                regulars = []
-                stats = []
-                sums = []
-                completes = []
-                nets = []
-                for gv in grouped_views:
-                    if gv[0].split('|')[-1].endswith('_sum'):
-                        sums.append(gv)
-                    elif gv[0].split('|')[1].startswith('d.'):
-                        stats.append(gv)
-                    elif gv[0].split('|')[2].endswith(']*:'):
-                        completes.append(gv)
-                    elif gv[0].split('|')[-1].startswith('net'):
-                        nets.append(gv)
-                    else:
-                        regulars.append(gv)
 
-                if switch:
-                    regulars = self._switch(regulars)
-                    completes = self._switch(completes)
-                    sums = self._switch(sums)
-                    nets = self._switch(nets)
-
-                stats.extend([v for v in non_grouped if v.split('|')[1].startswith('d.')])
-                sums.extend([v for v in non_grouped if v.split('|')[-1].endswith('_sum')])
-                completes.extend([v for v in non_grouped if v.split('|')[2].endswith(']*:')])
-                nets.extend([v for v in non_grouped if not v in completes and
-                             v.split('|')[-1].startswith('net')])
-
-                if self.sums_pos == 'bottom':
-                    view_collection = regulars + nets + completes + stats + sums
-                elif self.sums_pos == 'mid':
-                    view_collection = regulars + completes + sums + nets + stats
-        else:
-            if switch:
-                grouped_views = self._switch(grouped_views)
-            if self.sums_pos == 'mid':
-                print '*'*60
-                view_collection = []
-                sums = []
-                for gv in grouped_views:
-                    split = gv[0].split('|')
-                    if split[-1].endswith('_sum'):
-                        sums.append(gv)
-                    elif split[-1].startswith('net') and not split[2].endswith(']*:'):
-                        view_collection.extend(sums)
-                        sums = []
-                        view_collection.append(gv)
-                    else:
-                        view_collection.append(gv)
-            else:
-                view_collection = grouped_views
+        regs, nets, comps, stats, sums = self._get_view_types(grouped_views)
+        if switch:
+            regs = self._switch(regs)
+            comps = self._switch(comps)
+            sums = self._switch(sums)
+            nets = self._switch(nets)
+        regs2, nets2, comps2, stats2, sums2 = self._get_view_types(non_grouped)
+        regs.extend(regs2)
+        nets.extend(nets2)
+        comps.extend(comps2)
+        stats.extend(stats2)
+        sums.extend(sums2)
+        if self.sums_pos == 'bottom':
+            view_collection = regs + comps + nets  + stats + sums
+        elif self.sums_pos == 'mid':
+            view_collection = regs + comps + sums + nets + stats
 
         view_collection = self._base_views + view_collection
 
@@ -346,6 +307,30 @@ class ViewManager(object):
 
         self.views = full_grouped_views
         return self
+
+    @staticmethod
+    def _get_view_types(views):
+        regulars = []
+        nets = []
+        completes = []
+        stats = []
+        sums = []
+        for v in views:
+            if isinstance(v, list):
+                split = v[0].split('|')
+            else:
+                split = v.split('|')
+            if split[-1].endswith('_sum'):
+                sums.append(v)
+            elif split[1].startswith('d.'):
+                stats.append(v)
+            elif split[2].endswith(']*:'):
+                completes.append(v)
+            elif split[-1].startswith('net'):
+                nets.append(v)
+            else:
+                regulars.append(v)
+        return regulars, nets, completes, stats, sums
 
     @staticmethod
     def _switch(views):
@@ -603,7 +588,6 @@ class ViewManager(object):
                             net_cpsrps.append([vc[0], vp[0], vrp[0]])
                             break
 
-
             # Column tests
             if coltests:
                 net_test_views = []
@@ -669,7 +653,6 @@ class ViewManager(object):
 
             sum_chains = [sums_cs_flat, sums_ps_flat, sums_cps_flat]
             sum_gvs = [sums_cs, sums_ps, sums_cps]
-
 
         # Descriptive statistics views
         if descriptives:
