@@ -2154,28 +2154,30 @@ class Stack(defaultdict):
 
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
-            if not _batches: return None
+            only_recode = not _batches and recode
+            if not _batches and not recode: return None
             meta = self[dk].meta
             data = self[dk].data
-            for v in on_vars:
-                if v in meta['sets']:
-                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
-                    on_vars = list(set(on_vars + items))
-            all_batches = copy.deepcopy(meta['sets']['batches'])
-            for n, b in all_batches.items():
-                if not n in _batches: all_batches.pop(n)
-            languages = list(set(b['language'] for n, b in all_batches.items()))
-            netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
-            if calc: calc = _check_and_update_calc(calc, languages)
-            view = qp.ViewMapper()
-            view.make_template('frequency', {'rel_to': [None, 'y']})
-            options = {'logic': netdef,
-                       'axis': 'x',
-                       'expand': expand if expand in ['after', 'before'] else None,
-                       'complete': True if expand else False,
-                       'calc': calc}
-            view.add_method('net', kwargs=options)
-            self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
+            if not only_recode:
+                for v in on_vars:
+                    if v in meta['sets']:
+                        items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                        on_vars = list(set(on_vars + items))
+                all_batches = copy.deepcopy(meta['sets']['batches'])
+                for n, b in all_batches.items():
+                    if not n in _batches: all_batches.pop(n)
+                languages = list(set(b['language'] for n, b in all_batches.items()))
+                netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
+                if calc: calc = _check_and_update_calc(calc, languages)
+                view = qp.ViewMapper()
+                view.make_template('frequency', {'rel_to': [None, 'y']})
+                options = {'logic': netdef,
+                           'axis': 'x',
+                           'expand': expand if expand in ['after', 'before'] else None,
+                           'complete': True if expand else False,
+                           'calc': calc}
+                view.add_method('net', kwargs=options)
+                self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
             if recode and any(rec in recode
                               for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
@@ -2184,7 +2186,7 @@ class Stack(defaultdict):
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
 
-            if checking_cluster is not None:
+            if checking_cluster is not None and not only_recode:
                 c_vars = {v: '{}_net_check'.format(v) for v in on_vars
                           if not v in meta['sets'] and
                           not '{}_net_check'.format(v) in checking_cluster.keys()}
