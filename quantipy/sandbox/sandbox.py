@@ -1,3 +1,4 @@
+#  -*- coding: utf-8 -*-
 
 import numpy as np
 import pandas as pd
@@ -1384,6 +1385,32 @@ class ChainAnnotations(dict):
         self.__dict__[akey.replace('-', '_')].append(text)
         return None
 
+CELL_DETAILS = {'en-GB': {'cc':    'Cell Contents',
+                          'N':     'Counts',
+                          'c%':    'Column Percentages',
+                          'r%':    'Row Percentages',
+                          'str':   'Statistical Test Results',
+                          'cp':    'Column Proportions',
+                          'cm':    'Means',
+                          'stats': 'Statistics',
+                          'mb':    'Minimum Base',
+                          'sb':	   'Small Base',
+                          'up':    ' indicates result is significantly higher than the result in the Total column',
+                          'down':  ' indicates result is significantly lower than the result in the Total column'
+                          },
+                'fr-FR': {'cc':    'Contenu cellule',
+                          'N':     'Total',
+                          'c%':    'Pourcentage de colonne',
+                          'r%':    'Pourcentage de ligne',
+                          'str':   u'Résultats test statistique',
+                          'cp':    'Proportions de colonne',
+                          'cm':    'Moyennes de colonne',
+                          'stats': 'Statistiques',
+                          'mb':    'Base minimum',
+                          'sb':    'Petite base',
+                          'up':    u' indique que le résultat est significativement supérieur au résultat de la colonne Total',
+                          'down':  u' indique que le résultat est significativement inférieur au résultat de la colonne Total'
+                          }}
 
 class Chain(object):
 
@@ -1410,6 +1437,7 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
+        self._flag_bases = None
 
     def __str__(self):
         if self.structure is not None:
@@ -1531,39 +1559,35 @@ class Chain(object):
 
     @property
     def cell_items(self):
+        ci = []
         if self.views:
-            compl_views = [v for v in self.views if ']*:' in v]
-            if not compl_views:
-                c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
-                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
-            else:
-                c = any(v.split('|')[3] == '' for v in compl_views)
-                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
-                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
-            c_colpct = c and col_pct
-            c_rowpct = c and row_pct
-            c_colrow_pct = c_colpct and c_rowpct
-
-            single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
-            if single_ci:
-                if c:
-                    return 'counts'
-                elif col_pct:
-                    return 'colpct'
+            for v in self.views:
+                if ']*:' in v:
+                    if v.split('|')[3] == '':
+                        if 'N' not in ci:
+                            ci.append('N')
+                    if v.split('|')[3] == '':
+                        if 'c%' not in ci:
+                            ci.append('c%')
+                    if v.split('|')[3] == '':
+                        if 'r%' not in ci:
+                            ci.append('r%')
                 else:
-                    return 'rowpct'
-            else:
-                if c_colrow_pct:
-                    return 'counts_colpct_rowpct'
-                elif c_colpct:
-                    return 'counts_colpct'
-                else:
-                    return 'counts_rowpct'
+                    if v.split('|')[-1] == 'counts':
+                        if 'N' not in ci:
+                            ci.append('N')
+                    elif v.split('|')[-1] == 'c%':
+                        if 'c%' not in ci:
+                            ci.append('c%')
+                    elif v.split('|')[-1] == 'r%':
+                        if 'r%' not in ci:
+                            ci.append('r%')
+                    
+            return ci
 
     @property
     def ci_count(self):
-        return len(self.cell_items.split('_'))
+        return len(self.cell_items)
 
     @property
     def contents(self):
@@ -1588,11 +1612,55 @@ class Chain(object):
 
     @property
     def cell_details(self):
+        lang = self._text_key if self._text_key == 'fr-FR' else 'en-GB'
+        lang = 'fr-FR'
+        cd = CELL_DETAILS[lang]
         ci = self.cell_items
-        sig_letters = self.sig_test_letters
-        sig_levels = self.sig_levels
-        ci_str = 'Cell items: {} - Letters: {} - Levels: {}'
-        return ci_str.format(ci, sig_letters, sig_levels)
+        cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self.cell_items]))
+        if self.sig_test_letters:
+            mapped = ''
+            group = None
+            for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-4]):
+                if letter == '@':
+                    continue
+                if group:
+                    if lab == group:
+                        mapped += '/' + letter
+                    else:
+                        group = lab
+                        mapped += ', ' + letter 
+                else:
+                    group = lab
+                    mapped += letter
+
+            test_types = cd['cp']
+            if self.sig_levels.get('means'):
+                test_types += ', ' + cd['cm']
+
+            levels, against_total = [], False
+            for key in ('props', 'means'):
+                for level in self.sig_levels.get(key, iter(())):
+                    l = '%s%%' % int(100. - float(level.split('+@')[0].split('.')[1]))
+                    if l not in levels:
+                        levels.append(l)
+                    if '+@' in level:
+                        against_total = True
+
+            cd_str = cd_str[:-1] + ', ' + cd['str'] +'), '
+            cd_str += '%s (%s, (%s): %s' % (cd['stats'], test_types, ', '.join(levels), mapped)
+            if self._flag_bases:
+                flags = ([], [])
+                [(flags[0].append(min), flags[1].append(small)) for min, small in self._flag_bases]
+                cd_str += ', %s: %s (**), %s: %s (*)' % (cd['mb'], ', '.join(map(str, flags[0])), 
+                                                         cd['sb'], ', '.join(map(str, flags[1])))
+            cd_str += ')'
+
+        cd_str = [cd_str]
+
+        if against_total:
+            cd_str.extend([cd['up'], cd['down']])
+
+        return cd_str
 
     def describe(self):
         def _describe(cell_defs, row_id):
@@ -1971,6 +2039,7 @@ class Chain(object):
         self._given_views = views
         self._x_keys = x_keys
         self._y_keys = y_keys
+        self._text_key = self._meta['lib']['default text']
 
         concat_axis = 0
 
@@ -2240,6 +2309,15 @@ class Chain(object):
                             found[view] = len(frame.index)
                         else:
                             found[view] = len(frame.columns)
+                
+                if link[view]._kwargs.get('flag_bases'):
+                    flag_bases = link[view]._kwargs['flag_bases']
+                    try:
+                        if flag_bases not in self._flag_bases:
+                            self._flag_bases.append(flag_bases)
+                    except TypeError:
+                        self._flag_bases = [flag_bases]
+
             except KeyError:
                 pass
         return found, frames
@@ -6182,4 +6260,3 @@ class Stack(defaultdict):
             description = description.pivot_table(values='#', index=index, columns=columns,
                                 aggfunc='count')
         return description
-

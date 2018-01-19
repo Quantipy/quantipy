@@ -160,8 +160,8 @@ class ExcelFormats(_ExcelFormats):
     def _cell_details(self):
         format_ = self._template
 
-        format_.update(dict(font_name=self.font_name_propstest, text_h_align=1))
-
+        format_.update(dict(text_wrap=False, text_h_align=1))
+        
         return _Format(**format_)
 
     @lazy_property

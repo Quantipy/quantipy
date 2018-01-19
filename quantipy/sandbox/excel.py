@@ -16,8 +16,9 @@ from xlsxwriter.utility import xl_rowcol_to_cell
 from itertools import izip, dropwhile, groupby
 from operator import itemgetter
 from PIL import Image
+from difflib import SequenceMatcher 
 
-from excel_formats import ExcelFormats
+from excel_formats import ExcelFormats, _Format
 from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 
 import cPickle
@@ -112,13 +113,14 @@ class Excel(Workbook):
     # TODO: docstring
 
     def __init__(self, filename, toc=False, views_groups=None,
-                 italicise_level=None, decimals=None, image=None,
-                 **kwargs):
+                 italicise_level=None, details=False, decimals=None,
+                 image=None, **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.views_groups = views_groups
         self.italicise_level = italicise_level
+        self.details = details
         self._decimals = decimals
         self._image = image
 
@@ -269,6 +271,39 @@ class Sheet(Worksheet):
             self.freeze_panes(*self._freeze_loc)
 
         self.hide_gridlines(2)
+
+        if self.excel.details:
+            format_ = self.excel._formats._cell_details
+            cd = None
+            arrow_descriptions = None
+            for chain in self.chains:
+                cds = chain.cell_details
+                if len(cds) == 3 and not arrow_descriptions:
+                    arrow_descriptions = cds[1:] 
+                if cd is None:
+                    cd = cds[0]
+                else:
+                    if cd <> cds[0]:
+                        long = max((cd, cds[0]), key=len)
+                        short = min((cd, cds[0]), key=len)
+                        sm = SequenceMatcher(None, long, short)
+                        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+                            if tag == 'insert':
+                                long = long[:i1] + short[j1:j2] + long[i2:]
+                        cd = long
+
+            self.write(self._row + 1, self._column + 1, cd, format_)
+            if arrow_descriptions:
+                arrow_format = _Format(**{'font_color': self.arrow_color_high})
+                arrow_format = self.excel._add_format(arrow_format)
+                self.write_rich_string(self._row + 2, self._column + 1,
+                                       arrow_format, self.arrow_rep_high,
+                                       format_, cds[1], format_)
+                arrow_format = _Format(**{'font_color': self.arrow_color_low})
+                arrow_format = self.excel._add_format(arrow_format)
+                self.write_rich_string(self._row + 3, self._column + 1,
+                                       arrow_format, self.arrow_rep_low,
+                                       format_, cds[2], format_)
 
         if self.excel.image:
 
@@ -598,8 +633,7 @@ class Box(object):
                 self.sheet.write_rich_string(self.sheet._row + rel_x,
                                              self.sheet._column + rel_y,
                                              arrow_format, arrow_rep,
-                                             format_, cell_data,
-                                             format_)
+                                             format_, ' ' + cell_data, format_)
             else:
                 self.sheet.write(self.sheet._row + rel_x,
                                  self.sheet._column + rel_y,
@@ -921,7 +955,7 @@ if __name__ == '__main__':
     dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
     dataset.read_quantipy(PATH_META, PATH_DATA)
     meta, data = dataset.split()
-    data = data.head(250)
+    #data = data.head(250)
     data.loc[30:,'q5_2'] = np.NaN
     data.loc[30:,'q5_4'] = np.NaN
 
@@ -1016,7 +1050,10 @@ if __name__ == '__main__':
 
         test_view = qp.ViewMapper().make_template('coltests')
         view_name = 'test'
-        options = {'level': 0.8, 'metric': 'means'}
+        options = {'level': 0.8, 'metric': 'means',
+                   'test_total': True,
+                   'flag_bases': [30, 100]
+                  }
         test_view.add_method(view_name, kwargs=options)
         stack.add_link(x=X_KEYS, y=Y_KEYS, views=test_view, weights=weights)
 
@@ -1069,7 +1106,6 @@ if __name__ == '__main__':
                x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
                views=VIEW_KEYS, orient=ORIENT,
                )
-
     VIEW_KEYS = ('x|f|x:|||cbase',
                  'x|f|x:||%s|cbase' % WEIGHT,
                  'x|f|x:|||cbase_gross',
@@ -1080,15 +1116,15 @@ if __name__ == '__main__':
                   'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
                   'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
                   'x|t.props.Dim.80+@|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
-                 ('x|d.mean|x:||%s|stat' % WEIGHT,
-                  'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT),
-                  'x|d.stddev|x:||%s|stat' % WEIGHT,
-                  'x|d.median|x:||%s|stat' % WEIGHT,
-                  'x|d.var|x:||%s|stat' % WEIGHT,
-                  'x|d.varcoeff|x:||%s|stat' % WEIGHT,
-                  'x|d.sem|x:||%s|stat' % WEIGHT,
-                  'x|d.lower_q|x:||%s|stat' % WEIGHT,
-                  'x|d.upper_q|x:||%s|stat' % WEIGHT,
+                 #('x|d.mean|x:||%s|stat' % WEIGHT,
+                 # 'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT),
+                 # 'x|d.stddev|x:||%s|stat' % WEIGHT,
+                 # 'x|d.median|x:||%s|stat' % WEIGHT,
+                 # 'x|d.var|x:||%s|stat' % WEIGHT,
+                 # 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                 # 'x|d.sem|x:||%s|stat' % WEIGHT,
+                 # 'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                 # 'x|d.upper_q|x:||%s|stat' % WEIGHT,
                  ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
                   'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
                  #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
@@ -1101,6 +1137,9 @@ if __name__ == '__main__':
                )
 
     chains.paint_all(transform_tests='full')
+    for c in chains:
+        print c.structure
+
 
     # ------------------------------------------------------------ dataframe
     open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
@@ -1261,11 +1300,6 @@ if __name__ == '__main__':
                    y_keys=['@'],
                    views=VIEW_KEYS,
                   )
-    #for c in arr_chains_0:
-    #    print c.cell_details
-    #print arr_chains_0.cell_details
-    #raise Exception('.')
-
     arr_chains_0.paint_all()
     # ------------------------------------------------------------
 
@@ -2206,14 +2240,15 @@ if __name__ == '__main__':
               italicise_level=50,
               decimals=dict(N=0, P=2, D=1),
               #decimals=2,
+              details=True,
               image=image,
               **tp)
 
-    # x.add_chains(chains,
-    #              'S H E E T',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
+    x.add_chains(chains,
+                  'S H E E T',
+                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                  **sheet_properties
+                 )
     # x.add_chains(arr_chains_1,
     #              'array summary 1',
     #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
@@ -2244,10 +2279,10 @@ if __name__ == '__main__':
     #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
     #              **sheet_properties
     #             )
-    x.add_chains(open_chain,
-                 'Open_Ends',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                )
+    #x.add_chains(open_chain,
+    #             'Open_Ends',
+    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+    #             **sheet_properties
+    #            )
     x.close()
     # -------------
