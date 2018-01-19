@@ -266,7 +266,8 @@ class Stack(defaultdict):
             else:
                 return types
 
-    def apply_meta_edits(self, batch_name, data_key, filter_key=None):
+    def apply_meta_edits(self, batch_name, data_key, filter_key=None,
+                         freeze=False):
         """
         Take over meta_edits from Batch definitions.
 
@@ -284,7 +285,8 @@ class Stack(defaultdict):
         """
         if filter_key:
             raise NotImplementedError("'filter_key' is not implemented.")
-        self.freeze_master_meta(data_key)
+        if freeze:
+            self.freeze_master_meta(data_key)
         meta = self[data_key].meta
         batch = meta['sets']['batches'][batch_name]
         for name, e_meta in batch['meta_edits'].items():
