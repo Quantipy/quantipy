@@ -643,12 +643,22 @@ class ChainManager(object):
                 folder_name = [None]
                 folder_items.append(None)
                 item_pos.append(pos)
-            variables.extend([c._x_keys[0] for c in chains])
-            names.extend([c.name for c in chains])
-            folders.extend(folder_name * len(chains))
-            array_sum.extend([True if c.array_style > -1 else False
-                             for c in chains])
-            sources.extend(c.source for c in chains)
+            if chains[0].structure is None:
+                variables.extend([c._x_keys[0] for c in chains])
+                names.extend([c.name for c in chains])
+                folders.extend(folder_name * len(chains))
+                array_sum.extend([True if c.array_style > -1 else False
+                                 for c in chains])
+                sources.extend(c.source for c in chains)
+
+            else:
+                variables.extend([chains[0].name])#(chains[0].structure.columns.tolist())
+                names.extend([chains[0].name])# for _ in xrange(chains[0].structure.shape[1])])
+                # names.extend(chains[0].structure.columns.tolist())
+                folders.extend(folder_name)
+                array_sum.extend([False])
+                sources.extend(c.source for c in chains)
+
         df_data = [item_pos,
                    names,
                    folders,
@@ -1140,6 +1150,9 @@ class ChainManager(object):
         name = name or '.'.join(structure.columns.tolist())
 
         chain = Chain(self.stack, name, structure=structure)
+        chain._frame = chain.structure
+        chain._index = chain._frame.index
+        chain._columns = chain._frame.columns
 
         if meta_from:
             if isinstance(meta_from, (str, unicode)):
@@ -2463,7 +2476,8 @@ class Chain(object):
         None
             The ``.dataframe`` is modified inplace.
         """
-        self.painted = True
+        # if self.painted:
+        #     self.toggle_labels()
         if self.structure is not None:
             self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
         else:
@@ -2485,11 +2499,14 @@ class Chain(object):
                 self._frame = self._apply_letter_header(self._frame)
             if view_level:
                 self._add_view_level()
+        self.painted = True
         return self
 
-    def _paint_structure(self, text_key, sep=None, na_rep=None):
+    def _paint_structure(self, text_key=None, sep=None, na_rep=None):
         """ Paint the dataframe-type Chain.
         """
+        if not text_key:
+            text_key = self._meta['lib']['default text']
         str_format = '%%s%s%%s' % sep
 
         column_mapper = dict()
@@ -2569,8 +2586,14 @@ class Chain(object):
 
         levels = self._lzip(index.values)
 
-        arrays = (self._get_level_0(levels[0], text_keys, display, axis),
-                  self._get_level_1(levels, text_keys, display, axis, bases))
+        meta = self._meta
+        collection = 'columns' if levels[0][0] in meta['columns'] else 'masks'
+        if meta[collection][levels[0][0]]['type'] in ['single', 'delimited set']:
+            arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+                      self._get_level_1(levels, text_keys, display, axis, bases))
+        else:
+            arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+                      levels[1])
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
@@ -2715,7 +2738,8 @@ class Chain(object):
         try:
             values = self._meta['columns'][column]['values']
         except KeyError:
-            values = self._meta['lib']['values'][column]
+            parent = self._meta['columns'][column]['parent'].keys()[0]
+            values = self._meta['lib']['values'][parent.split('@')[1]]
 
         if isinstance(values, (str, unicode)):
             keys = values.split('@')

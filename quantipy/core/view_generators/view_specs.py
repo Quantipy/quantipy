@@ -657,12 +657,18 @@ class ViewManager(object):
         # Descriptive statistics views
         if descriptives:
             views = {}
+            rel_w = []
             for descriptive in descriptives:
                 views[descriptive] = [
                     [v] for v in all_views
-                    if v.split('|')[1] == 'd.{}'.format(descriptive)
+                    if v.split('|')[1].startswith('d.{}'.format(descriptive))
                     and v.split('|')[4] == weight
                 ]
+                for desv in views[descriptive]:
+                    rel = desv[0].split('|')[2]
+                    w = desv[0].split('|')[4]
+                    if not tuple([rel, w]) in rel_w:
+                        rel_w.append(tuple([rel, w]))
 
                 # Column tests
                 if descriptive=='mean' and coltests:
@@ -678,7 +684,6 @@ class ViewManager(object):
                             and v.split('|')[4]==weight
                         ])
 
-            base_desc =  descriptives[0]
             if 'mean' in descriptives and coltests:
                 for i, vbd in enumerate(views['mean']):
                     for vt in means_test_views:
@@ -687,15 +692,16 @@ class ViewManager(object):
                         if eq_relation and eq_weight:
                             views['mean'][i].append(vt)
 
-            if len(descriptives) > 1:
-                for i, vbd in enumerate(views[base_desc]):
-                    for rem_desc in descriptives[1:]:
-                        for vrd in views[rem_desc]:
-                            eq_relation = vbd[0].split('|')[2]  == vrd[0].split('|')[2]
-                            eq_weight = vbd[0].split('|')[4] == vrd[0].split('|')[4]
-                            if eq_relation and eq_weight:
-                                views[base_desc][i].extend(vrd)
-            desc = views[base_desc]
+            desc = []
+            for rel, w in rel_w:
+                rel_w_v = []
+                for des in descriptives:
+                    for desv in views[des]:
+                        if desv[0].split('|')[2] == rel and desv[0].split('|')[4] == w:
+                            rel_w_v.extend(desv)
+                if rel_w_v:
+                    desc.append(rel_w_v)
+
         else:
             desc = False
 
@@ -906,7 +912,7 @@ class ViewManager(object):
                 mean_found = False
                 tests_done = False
                 for idx in s.index:
-                    if s[idx]=='d.{}'.format(desc):
+                    if s[idx].startswith('d.{}'.format(desc)):
                         slicer.append(idx)
                         if desc=='mean':
                             mean_found = True
