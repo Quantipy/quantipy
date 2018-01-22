@@ -1181,7 +1181,7 @@ class ChainManager(object):
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
         if folder and not isinstance(folder, (str, unicode)):
-            err == "'folder' must be a name provided as string!"
+            err = "'folder' must be a name provided as string!"
             raise ValueError(err)
         if orient == 'x':
             it, keys = x_keys, y_keys
@@ -2464,7 +2464,7 @@ class Chain(object):
             Whether or not to include existing ``.base_descriptions`` str
             to the label of the appropriate base view. Selecting ``'simple'``
             will inject the base texts to non-array type Chains only.
-        totalize : bool, default False
+        totalize : bool, default True
             Text
         sep : str, default None
             The seperator used for painting ``pandas.DataFrame`` columns
@@ -2476,6 +2476,7 @@ class Chain(object):
         None
             The ``.dataframe`` is modified inplace.
         """
+        self.painted = True
         # if self.painted:
         #     self.toggle_labels()
         if self.structure is not None:
@@ -2499,7 +2500,6 @@ class Chain(object):
                 self._frame = self._apply_letter_header(self._frame)
             if view_level:
                 self._add_view_level()
-        self.painted = True
         return self
 
     def _paint_structure(self, text_key=None, sep=None, na_rep=None):
@@ -2586,14 +2586,8 @@ class Chain(object):
 
         levels = self._lzip(index.values)
 
-        meta = self._meta
-        collection = 'columns' if levels[0][0] in meta['columns'] else 'masks'
-        if meta[collection][levels[0][0]]['type'] in ['single', 'delimited set']:
-            arrays = (self._get_level_0(levels[0], text_keys, display, axis),
-                      self._get_level_1(levels, text_keys, display, axis, bases))
-        else:
-            arrays = (self._get_level_0(levels[0], text_keys, display, axis),
-                      levels[1])
+        arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+                  self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
@@ -2695,10 +2689,14 @@ class Chain(object):
                         level_1_text.append(text)
                     else:
                         try:
-                            for item in self._get_values(levels[0][i]):
-                                if int(value) == item['value']:
-                                    text = self._get_text(item, text_keys[axis])
-                                    level_1_text.append(text)
+                            values = self._get_values(levels[0][i])
+                            if not values:
+                                level_1_text.append(value)
+                            else:
+                                for item in self._get_values(levels[0][i]):
+                                    if int(value) == item['value']:
+                                        text = self._get_text(item, text_keys[axis])
+                                        level_1_text.append(text)
                         except ValueError:
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
@@ -2735,11 +2733,10 @@ class Chain(object):
         """ Returns values from self._meta["columns"] or
         self._meta["lib"]["values"][<mask name>] if parent is "array"
         """
-        try:
-            values = self._meta['columns'][column]['values']
-        except KeyError:
-            parent = self._meta['columns'][column]['parent'].keys()[0]
-            values = self._meta['lib']['values'][parent.split('@')[1]]
+        if column in self._meta['columns']:
+            values = self._meta['columns'][column].get('values', [])
+        elif column in self._meta['masks']:
+            values = self._meta['lib']['values'].get(column, [])
 
         if isinstance(values, (str, unicode)):
             keys = values.split('@')
