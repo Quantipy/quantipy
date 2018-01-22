@@ -2130,6 +2130,31 @@ class Stack(defaultdict):
                                             net, k, ['@', k], ('net', ['cbase'], view))
         return None
 
+    @staticmethod
+    def _factor_labs(values, rescale, drop, exclude, axis=['x']):
+        if not rescale: rescale = {}
+        ignore = [v['value'] for v in values if v['value'] in exclude or
+                  (not v['value'] in rescale.keys() and drop)]
+
+        factors_mapped = {}
+        for v in values:
+            if v['value'] in ignore: continue
+            has_xedits  = v['text'].get('x edits', {})
+            has_yedits  = v['text'].get('y edits', {})
+            if not has_xedits:  v['text']['x edits'] = {}
+            if not has_yedits:  v['text']['y edits'] = {}
+
+            factor = rescale[v['value']] if rescale else v['value']
+            for tk, text in v['text'].items():
+                if tk in ['x edits', 'y edits']: continue
+                for ax in axis:
+                    try:
+                        t = v['text']['{} edits'.format(ax)][tk]
+                    except:
+                        t = text
+                    new_lab = '{} [{}]'.format(t, factor)
+                    v['text']['{} edits'.format(ax)][tk] = new_lab
+        return values
 
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
@@ -2175,32 +2200,6 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-
-        def _factor_labs(values, rescale, drop, exclude, axis=['x']):
-            if not rescale: rescale = {}
-            ignore = [v['value'] for v in values if v['value'] in exclude or
-                      (not v['value'] in rescale.keys() and drop)]
-
-            factors_mapped = {}
-            for v in values:
-                if v['value'] in ignore: continue
-                has_xedits  = v['text'].get('x edits', {})
-                has_yedits  = v['text'].get('y edits', {})
-                if not has_xedits:  v['text']['x edits'] = {}
-                if not has_yedits:  v['text']['y edits'] = {}
-
-                factor = rescale[v['value']] if rescale else v['value']
-                for tk, text in v['text'].items():
-                    if tk in ['x edits', 'y edits']: continue
-                    for ax in axis:
-                        try:
-                            t = v['text']['{} edits'.format(ax)][tk]
-                        except:
-                            t = text
-                        new_lab = '{} [{}]'.format(t, factor)
-                        v['text']['{} edits'.format(ax)][tk] = new_lab
-            return values
-
         if other_source and not isinstance(other_source, str):
             raise ValueError("'other_source' must be a str!")
         if not rescale: drop = False
@@ -2262,20 +2261,22 @@ class Stack(defaultdict):
                     elif not isinstance(values, list):
                         p = values.split('@')[-1]
                         values = batch_me['lib'][p]
-                        batch_me['lib'][p] = _factor_labs(values, rescale, drop,
-                                                          exclude, ['x', 'y'])
+                        batch_me['lib'][p] = self._factor_labs(values, rescale,
+                                                               drop, exclude,
+                                                               ['x', 'y'])
                     else:
-                        batch_me[v]['values'] = _factor_labs(values, rescale, drop,
-                                                   exclude, ['x'])
+                        batch_me[v]['values'] = self._factor_labs(values, rescale,
+                                                                  drop, exclude,
+                                                                  ['x'])
                 if globally:
                     values = meta['columns'][v]['values']
                     if not isinstance(values, list):
                         p = values.split('@')[-1]
                         values = meta['lib']['values'][p]
-                        meta['lib']['values'][p] = _factor_labs(values, rescale, drop,
-                                                                    exclude, ['x', 'y'])
+                        meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
+                                                                     exclude, ['x', 'y'])
                     else:
-                        meta['columns'][v]['values'] = _factor_labs(values, rescale,
+                        meta['columns'][v]['values'] = self._factor_labs(values, rescale,
                                                                     drop, exclude, ['x'])
 
         return None
