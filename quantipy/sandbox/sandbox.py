@@ -1566,10 +1566,10 @@ class Chain(object):
                     if v.split('|')[3] == '':
                         if 'N' not in ci:
                             ci.append('N')
-                    if v.split('|')[3] == '':
+                    if v.split('|')[3] == 'y':
                         if 'c%' not in ci:
                             ci.append('c%')
-                    if v.split('|')[3] == '':
+                    if v.split('|')[3] == 'x':
                         if 'r%' not in ci:
                             ci.append('r%')
                 else:
