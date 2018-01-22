@@ -1613,10 +1613,10 @@ class Chain(object):
     @property
     def cell_details(self):
         lang = self._text_key if self._text_key == 'fr-FR' else 'en-GB'
-        lang = 'fr-FR'
         cd = CELL_DETAILS[lang]
         ci = self.cell_items
         cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self.cell_items]))
+        against_total = False
         if self.sig_test_letters:
             mapped = ''
             group = None
@@ -1637,7 +1637,7 @@ class Chain(object):
             if self.sig_levels.get('means'):
                 test_types += ', ' + cd['cm']
 
-            levels, against_total = [], False
+            levels = []
             for key in ('props', 'means'):
                 for level in self.sig_levels.get(key, iter(())):
                     l = '%s%%' % int(100. - float(level.split('+@')[0].split('.')[1]))

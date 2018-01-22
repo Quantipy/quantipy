@@ -30,33 +30,6 @@ except ImportError:
     from functools32 import lru_cache
 
 
-# _TEST_SUFFIX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
-# _TEST_PREFIX = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split()
-
-_CD_TRANSMAP = {'en-GB': {'cc':    'Cell Contents',
-                          'N':     'Counts',
-                          'c%':    'Column Percentages',
-                          'r%':    'Row Percentages',
-                          'str':   'Statistical Test Results',
-                          'cp':    'Column Proportions',
-                          'cm':    'Means',
-                          'stats': 'Statistics',
-                          'mb':    'Minimum Base',
-                          'sb':    'Small Base'},
-                'fr-FR': {'cc':    'Contenu cellule',
-                          'N':     'Total',
-                          'c%':    'Pourcentage de colonne',
-                          'r%':    'Pourcentage de ligne',
-                          'str':   u'Résultats test statistique',
-                          'cp':    'Proportions de colonne',
-                          'cm':    'Moyennes de colonne',
-                          'stats': 'Statistiques',
-                          'mb':    'Base minimum',
-                          'sb':    'Petite base'}}
-
-# TOT_REP = [("'@H'", u'\u25BC'), ("'@L'", u'\u25B2')]
-# ARROW_STYLE = {"'@H'": 'DOWN', "'@L'": 'UP'}
-
 # Initialization data to pass to the worksheet._
 _SHEET_ATTR = ('str_table',
                'worksheet_meta',
@@ -272,7 +245,7 @@ class Sheet(Worksheet):
 
         self.hide_gridlines(2)
 
-        if self.excel.details:
+        if self.excel.details and all(c.structure is None for c in self.chains):
             format_ = self.excel._formats._cell_details
             cd = None
             arrow_descriptions = None
@@ -497,14 +470,14 @@ class Box(object):
                     self.column_edges.append(right + 1)
                 if left not in self.single_columns:
                     if group_sizes and not is_values:
-                        limit = right
-
-                        while right != limit:
-                            self.sheet.merge_range(row, column + left,
-                                                   row, column + right,
+                        r = 0
+                        while r != right:
+                            
+                            self.sheet.merge_range(row, column + group_sizes[0][0],
+                                                   row, column + group_sizes[0][1],
                                                    data, format_)
-                            left, right = group_sizes.pop(0)
-                    if left == right:
+                            _, r = group_sizes.pop(0)
+                    elif left == right:
                         self.sheet.write(row, column + left, data, format_)
                     else:
                         self.sheet.merge_range(row, column + left,
@@ -871,8 +844,6 @@ class Cell(object):
         if self.decimals is not None:
             if isinstance(self.data, (float, np.float64)):
                 return round(self.data, self.decimals)
-            else:
-                print type(self.data), self.data
         return self.data
 
 
@@ -1137,9 +1108,6 @@ if __name__ == '__main__':
                )
 
     chains.paint_all(transform_tests='full')
-    for c in chains:
-        print c.structure
-
 
     # ------------------------------------------------------------ dataframe
     open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
@@ -2245,44 +2213,44 @@ if __name__ == '__main__':
               **tp)
 
     x.add_chains(chains,
-                  'S H E E T',
-                  annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                  **sheet_properties
+                 'S H E E T',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
                  )
-    # x.add_chains(arr_chains_1,
-    #              'array summary 1',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
-    # x.add_chains(arr_chains_block_1,
-    #              'block summary 1',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
-    # x.add_chains(arr_chains_mean_1,
-    #              'means summary 1',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
-    # x.add_chains(arr_chains_0,
-    #              'array summary 0',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
-    # x.add_chains(arr_chains_block_0,
-    #              'block summary 0',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
-    # x.add_chains(arr_chains_mean_0,
-    #              'means summary 0',
-    #              annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #              **sheet_properties
-    #             )
-    #x.add_chains(open_chain,
-    #             'Open_Ends',
-    #             annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-    #             **sheet_properties
-    #            )
+    x.add_chains(arr_chains_1,
+                 'array summary 1',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
+    x.add_chains(arr_chains_block_1,
+                 'block summary 1',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
+    x.add_chains(arr_chains_mean_1,
+                 'means summary 1',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
+    x.add_chains(arr_chains_0,
+                 'array summary 0',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
+    x.add_chains(arr_chains_block_0,
+                 'block summary 0',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
+    x.add_chains(arr_chains_mean_0,
+                 'means summary 0',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
+    x.add_chains(open_chain,
+                 'Open_Ends',
+                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                 **sheet_properties
+                 )
     x.close()
     # -------------
