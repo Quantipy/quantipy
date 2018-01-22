@@ -261,7 +261,9 @@ class ChainManager(object):
     def save(self, path, keep_stack=False):
         """
         """
-        if not keep_stack: del self.stack
+        if not keep_stack:
+            del self.stack
+            self.stack = None
         f = open(path, 'wb')
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         f.close()
