@@ -2130,9 +2130,9 @@ class Stack(defaultdict):
                     cc_keys = checking_cluster.folder_names
                 else:
                     cc_keys = checking_cluster.keys()
-                c_vars = {v: '{}_net_check'.format(v) for v in on_vars
+                c_vars = {v: '{}_net'.format(v) for v in on_vars
                           if not v in meta['sets'] and
-                          not '{}_net_check'.format(v) in cc_keys}
+                          not '{}_net'.format(v) in cc_keys}
                 view['net_check'] = view.pop('net')
                 view['net_check']['kwargs']['iterators'].pop('rel_to')
                 for k, net in c_vars.items():
