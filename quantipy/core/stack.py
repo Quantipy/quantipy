@@ -1992,8 +1992,11 @@ class Stack(defaultdict):
 
     def _add_checking_chain(self, dk, cluster, name, x, y, views):
         key, view, c_view = views
-        c_stack = qp.Stack('checks')
-        c_stack.add_data('checks', data=self[dk].data, meta=self[dk].meta)
+        if isinstance(cluster, ChainManager):
+            c_stack = cluster.stack
+        else:
+            c_stack = qp.Stack('checks')
+            c_stack.add_data('checks', data=self[dk].data, meta=self[dk].meta)
         c_stack.add_link(x=x, y=y, views=view, weights=None)
         c_stack.add_link(x=x, y=y, views=c_view, weights=None)
         c_views = c_stack.describe('view').index.tolist()
@@ -2001,13 +2004,16 @@ class Stack(defaultdict):
         view_keys = ['x|f|x:|||cbase', 'x|f|:|||counts'][0:len_v_keys]
         c_views = view_keys + [v for v in c_views
                    if v.endswith('{}_check'.format(key))]
-        if name == 'stat_check':
-            chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
-            name = [v for v in c_views if v.endswith('{}_check'.format(key))][0]
-            cluster[name] = chain
+        if isinstance(cluster, ChainManager):
+            cluster.get('checks', 'no_filter', x, y, c_views, folder=name)
         else:
-            chain = c_stack.get_chain(name=name, x=x, y=y, views=c_views)
-            cluster.add_chain(chain)
+            if name == 'stat_check':
+                chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
+                name = [v for v in c_views if v.endswith('{}_check'.format(key))][0]
+                cluster[name] = chain
+            else:
+                chain = c_stack.get_chain(name=name, x=x, y=y, views=c_views)
+                cluster.add_chain(chain)
         return cluster
 
     @modify(to_list=['on_vars', '_batches'])
@@ -2120,9 +2126,13 @@ class Stack(defaultdict):
             self.aggregate(view, False, [], _batches, on_vars, verbose)
 
             if checking_cluster is not None:
-                c_vars = {v: '{}_net_check'.format(v) for v in on_vars
+                if isinstance(checking_cluster, ChainManager):
+                    cc_keys = checking_cluster.folder_names
+                else:
+                    cc_keys = checking_cluster.keys()
+                c_vars = {v: '{}_net'.format(v) for v in on_vars
                           if not v in meta['sets'] and
-                          not '{}_net_check'.format(v) in checking_cluster.keys()}
+                          not '{}_net'.format(v) in cc_keys}
                 view['net_check'] = view.pop('net')
                 view['net_check']['kwargs']['iterators'].pop('rel_to')
                 for k, net in c_vars.items():
@@ -2237,7 +2247,51 @@ class Stack(defaultdict):
                 view.add_method('stat', kwargs=options)
                 self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
 
+            if factor_labels:
+                all_batches = meta['sets']['batches'].keys()
+                if not _batches: _batches = all_batches
+                batches = [b for b in all_batches if b in _batches]
+
+                for v in check_on:
+                    globally = False
+                    for b in batches:
+                        batch_me = meta['sets']['batches'][b]['meta_edits']
+                        values = batch_me.get(v, {}).get('values', [])
+                        if not values:
+                            globally = True
+                        elif not isinstance(values, list):
+                            p = values.split('@')[-1]
+                            values = batch_me['lib'][p]
+                            batch_me['lib'][p] = self._factor_labs(values, rescale,
+                                                                   drop, exclude,
+                                                                   ['x', 'y'])
+                        else:
+                            batch_me[v]['values'] = self._factor_labs(values, rescale,
+                                                                      drop, exclude,
+                                                                      ['x'])
+                    if globally:
+                        values = meta['columns'][v]['values']
+                        if not isinstance(values, list):
+                            p = values.split('@')[-1]
+                            values = meta['lib']['values'][p]
+                            meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
+                                                                         exclude, ['x', 'y'])
+                        else:
+                            meta['columns'][v]['values'] = self._factor_labs(values, rescale,
+                                                                        drop, exclude, ['x'])
+                    if isinstance(checking_cluster, ChainManager):
+                        cm_meta = checking_cluster.stack['checks'].meta
+                        values = cm_meta['columns'][v]['values']
+                        if not isinstance(values, list):
+                            p = values.split('@')[-1]
+                            values = cm_meta['lib']['values'][p]
+                            cm_meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
+                                                                            exclude, ['x', 'y'])
+                        else:
+                            cm_meta['columns'][v]['values'] = self._factor_labs(values, rescale,
+                                                                                drop, exclude, ['x'])
             if checking_cluster and 'mean' in stats and check_on:
+
                 options['stats'] = 'mean'
                 c_view = qp.ViewMapper().make_template('descriptives')
                 c_view.add_method('stat_check', kwargs=options)
@@ -2245,39 +2299,6 @@ class Stack(defaultdict):
                 views = ('stat', ['cbase', 'counts'], c_view)
                 checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             'stat_check', check_on, ['@'], views)
-
-            if not factor_labels or other_source: return None
-            all_batches = meta['sets']['batches'].keys()
-            if not _batches: _batches = all_batches
-            batches = [b for b in all_batches if b in _batches]
-
-            for v in check_on:
-                globally = False
-                for b in batches:
-                    batch_me = meta['sets']['batches'][b]['meta_edits']
-                    values = batch_me.get(v, {}).get('values', [])
-                    if not values:
-                        globally = True
-                    elif not isinstance(values, list):
-                        p = values.split('@')[-1]
-                        values = batch_me['lib'][p]
-                        batch_me['lib'][p] = self._factor_labs(values, rescale,
-                                                               drop, exclude,
-                                                               ['x', 'y'])
-                    else:
-                        batch_me[v]['values'] = self._factor_labs(values, rescale,
-                                                                  drop, exclude,
-                                                                  ['x'])
-                if globally:
-                    values = meta['columns'][v]['values']
-                    if not isinstance(values, list):
-                        p = values.split('@')[-1]
-                        values = meta['lib']['values'][p]
-                        meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
-                                                                     exclude, ['x', 'y'])
-                    else:
-                        meta['columns'][v]['values'] = self._factor_labs(values, rescale,
-                                                                    drop, exclude, ['x'])
 
         return None
 
