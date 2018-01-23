@@ -2516,6 +2516,7 @@ class Chain(object):
         na_rep = na_rep or ''
 
         for column in self.structure.columns:
+            if not column in self._meta['columns']: return None
 
             meta = self._meta['columns'][column]
 
