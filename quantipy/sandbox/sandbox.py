@@ -1606,7 +1606,7 @@ class Chain(object):
                     elif v.split('|')[-1] == 'r%':
                         if 'r%' not in ci:
                             ci.append('r%')
-                    
+
             return ci
 
     @property
@@ -1652,7 +1652,7 @@ class Chain(object):
                         mapped += '/' + letter
                     else:
                         group = lab
-                        mapped += ', ' + letter 
+                        mapped += ', ' + letter
                 else:
                     group = lab
                     mapped += letter
@@ -1675,7 +1675,7 @@ class Chain(object):
             if self._flag_bases:
                 flags = ([], [])
                 [(flags[0].append(min), flags[1].append(small)) for min, small in self._flag_bases]
-                cd_str += ', %s: %s (**), %s: %s (*)' % (cd['mb'], ', '.join(map(str, flags[0])), 
+                cd_str += ', %s: %s (**), %s: %s (*)' % (cd['mb'], ', '.join(map(str, flags[0])),
                                                          cd['sb'], ', '.join(map(str, flags[1])))
             cd_str += ')'
 
@@ -2333,7 +2333,7 @@ class Chain(object):
                             found[view] = len(frame.index)
                         else:
                             found[view] = len(frame.columns)
-                
+
                 if link[view]._kwargs.get('flag_bases'):
                     flag_bases = link[view]._kwargs['flag_bases']
                     try:
@@ -2886,16 +2886,15 @@ class Chain(object):
         else:
             self.painted = True
 
-        attrs = ['index', 'columns']
-        if self.structure is not None:
-            attrs.append('frame_values')
-
-        for attr in attrs:
-            if attr.startswith('frame'):
-                attr = attr[5:]
-            frame_val = getattr(self._frame, attr)
+        for attr in ('index', 'columns'):
+            value = getattr(self._frame, attr)
             setattr(self._frame, attr, getattr(self, attr))
-            setattr(self, attr, frame_val)
+            setattr(self, attr, value)
+
+        if self.structure is not None:
+            values = self._frame.values
+            self._frame.loc[:, :] = self.frame_values
+            self.fram_values = values
 
         return self
 
