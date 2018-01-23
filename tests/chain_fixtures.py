@@ -700,6 +700,10 @@ CHAIN_STRUCT_COLUMNS_PAINTED = ['record_number. Record number', 'age. Age',
                                 'gender. What is your gender?',
                                 'q9. For what reasons might you visit a sporting goods store in the future?',
                                 'q9a. Other specify (q9)']
+CHAIN_STRUCT_COLUMNS_REPAINTED = ['record_number* Record number', 'age* Age',
+                                  'gender* What is your gender?',
+                                  'q9* For what reasons might you visit a sporting goods store in the future?',
+                                  'q9a* Other specify (q9)']
 CHAIN_STRUCT_VALUES_PAINTED = [CHAIN_STRUCT_VALUES[0], CHAIN_STRUCT_VALUES[1],
                       ['Male', 'Female', 'Male', 'Male', 'Male', 'Male', 'Male', 'Male', 'Female',
                        'Male', 'Male', 'Female', 'Female', 'Male', 'Female', 'Female', 'Female',

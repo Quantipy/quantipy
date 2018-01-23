@@ -1153,6 +1153,7 @@ class ChainManager(object):
         chain._frame = chain.structure
         chain._index = chain._frame.index
         chain._columns = chain._frame.columns
+        chain._frame_values = chain._frame.values
 
         if meta_from:
             if isinstance(meta_from, (str, unicode)):
@@ -1490,6 +1491,14 @@ class Chain(object):
     @columns.setter
     def columns(self, columns):
         self._columns = columns
+
+    @property
+    def frame_values(self):
+        return self._frame_values
+
+    @frame_values.setter
+    def frame_values(self, frame_values):
+        self._frame_values = frame_values
 
     @property
     def views(self):
@@ -2438,6 +2447,16 @@ class Chain(object):
 
         return None
 
+    def _ensure_indexes(self):
+        if self.painted:
+            self._frame.index, self._frame.columns = self.index, self.columns
+            if self.structure is not None:
+                self._frame.loc[:, :] = self.frame_values
+        else:
+            self.index, self.columns = self._frame.index, self._frame.columns
+            if self.structure is not None:
+                self.frame_values = self._frame.values
+
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', add_base_texts='simple', totalize=False,
               sep=None, na_rep=None):
@@ -2476,9 +2495,7 @@ class Chain(object):
         None
             The ``.dataframe`` is modified inplace.
         """
-        self.painted = True
-        # if self.painted:
-        #     self.toggle_labels()
+        self._ensure_indexes()
         if self.structure is not None:
             self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
         else:
@@ -2500,6 +2517,7 @@ class Chain(object):
                 self._frame = self._apply_letter_header(self._frame)
             if view_level:
                 self._add_view_level()
+        self.painted = True
         return self
 
     def _paint_structure(self, text_key=None, sep=None, na_rep=None):
@@ -2512,6 +2530,8 @@ class Chain(object):
         column_mapper = dict()
 
         na_rep = na_rep or ''
+
+        pattern = r'\, (?=\W|$)'
 
         for column in self.structure.columns:
 
@@ -2530,21 +2550,38 @@ class Chain(object):
                     while pointers:
                         valules = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
-                    value_mapper = {str(item['value']): item['text'][text_key] for item in values}
+                    value_mapper = {
+                        str(item['value']): item['text'][text_key]
+                        for item in values
+                    }
                     series = self.structure[column]
                     series = (series.str.split(';')
                                     .apply(pd.Series, 1)
                                     .stack(dropna=False)
                                     .map(value_mapper.get) #, na_action='ignore')
                                     .unstack())
-                    first, rest = series[series.columns[0]], [series[c] for c in series.columns[1:]]
-                    self.structure[column] = (first.str.cat(rest, sep=', ', na_rep='')
+                    first = series[series.columns[0]]
+                    rest = [series[c] for c in series.columns[1:]]
+                    self.structure[column] = (first
+                                              .str.cat(rest,
+                                                       sep=', ',
+                                                       na_rep='')
                                               .str.slice(0, -2)
-                                              .replace(to_replace=r'\, (?=\W|$)', value='', regex=True)
-                                              .replace(to_replace='', value=na_rep))
+                                              .replace(to_replace=pattern,
+                                                       value='',
+                                                       regex=True)
+                                              .replace(to_replace='',
+                                                       value=na_rep)
+                                             )
                 else:
-                    value_mapper = {item['value']: item['text'][text_key] for item in values}
-                    self.structure[column] = self.structure[column].map(value_mapper.get, na_action='ignore')
+                    value_mapper = {
+                        item['value']: item['text'][text_key]
+                        for item in values
+                    }
+                    self.structure[column] = (self.structure[column]
+                                                  .map(value_mapper.get,
+                                                       na_action='ignore')
+                                             )
 
             self.structure[column].fillna(na_rep, inplace=True)
 
@@ -2762,9 +2799,18 @@ class Chain(object):
             self.painted = False
         else:
             self.painted = True
-        index, columns = self._frame.index, self._frame.columns
-        self._frame.index, self._frame.columns = self.index, self.columns
-        self.index, self.columns = index, columns
+
+        attrs = ['index', 'columns']
+        if self.structure is not None:
+            attrs.append('frame_values')
+
+        for attr in attrs:
+            if attr.startswith('frame'):
+                attr = attr[5:]
+            frame_val = getattr(self._frame, attr)
+            setattr(self._frame, attr, getattr(self, attr))
+            setattr(self, attr, frame_val)
+
         return self
 
     @staticmethod
