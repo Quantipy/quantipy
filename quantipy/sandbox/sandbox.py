@@ -267,7 +267,9 @@ class ChainManager(object):
     def save(self, path, keep_stack=False):
         """
         """
-        if not keep_stack: del self.stack
+        if not keep_stack:
+            del self.stack
+            self.stack = None
         f = open(path, 'wb')
         cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
         f.close()
@@ -649,12 +651,22 @@ class ChainManager(object):
                 folder_name = [None]
                 folder_items.append(None)
                 item_pos.append(pos)
-            variables.extend([c._x_keys[0] for c in chains])
-            names.extend([c.name for c in chains])
-            folders.extend(folder_name * len(chains))
-            array_sum.extend([True if c.array_style > -1 else False
-                             for c in chains])
-            sources.extend(c.source for c in chains)
+            if chains[0].structure is None:
+                variables.extend([c._x_keys[0] for c in chains])
+                names.extend([c.name for c in chains])
+                folders.extend(folder_name * len(chains))
+                array_sum.extend([True if c.array_style > -1 else False
+                                 for c in chains])
+                sources.extend(c.source for c in chains)
+
+            else:
+                variables.extend([chains[0].name])#(chains[0].structure.columns.tolist())
+                names.extend([chains[0].name])# for _ in xrange(chains[0].structure.shape[1])])
+                # names.extend(chains[0].structure.columns.tolist())
+                folders.extend(folder_name)
+                array_sum.extend([False])
+                sources.extend(c.source for c in chains)
+
         df_data = [item_pos,
                    names,
                    folders,
@@ -1146,6 +1158,10 @@ class ChainManager(object):
         name = name or '.'.join(structure.columns.tolist())
 
         chain = Chain(self.stack, name, structure=structure)
+        chain._frame = chain.structure
+        chain._index = chain._frame.index
+        chain._columns = chain._frame.columns
+        chain._frame_values = chain._frame.values
 
         if meta_from:
             if isinstance(meta_from, (str, unicode)):
@@ -1174,7 +1190,7 @@ class ChainManager(object):
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
         if folder and not isinstance(folder, (str, unicode)):
-            err == "'folder' must be a name provided as string!"
+            err = "'folder' must be a name provided as string!"
             raise ValueError(err)
         if orient == 'x':
             it, keys = x_keys, y_keys
@@ -1510,6 +1526,14 @@ class Chain(object):
     @columns.setter
     def columns(self, columns):
         self._columns = columns
+
+    @property
+    def frame_values(self):
+        return self._frame_values
+
+    @frame_values.setter
+    def frame_values(self, frame_values):
+        self._frame_values = frame_values
 
     @property
     def views(self):
@@ -2508,6 +2532,16 @@ class Chain(object):
 
         return None
 
+    def _ensure_indexes(self):
+        if self.painted:
+            self._frame.index, self._frame.columns = self.index, self.columns
+            if self.structure is not None:
+                self._frame.loc[:, :] = self.frame_values
+        else:
+            self.index, self.columns = self._frame.index, self._frame.columns
+            if self.structure is not None:
+                self.frame_values = self._frame.values
+
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
               transform_tests='cells', add_base_texts='simple', totalize=False,
               sep=None, na_rep=None):
@@ -2534,7 +2568,7 @@ class Chain(object):
             Whether or not to include existing ``.base_descriptions`` str
             to the label of the appropriate base view. Selecting ``'simple'``
             will inject the base texts to non-array type Chains only.
-        totalize : bool, default False
+        totalize : bool, default True
             Text
         sep : str, default None
             The seperator used for painting ``pandas.DataFrame`` columns
@@ -2546,7 +2580,7 @@ class Chain(object):
         None
             The ``.dataframe`` is modified inplace.
         """
-        self.painted = True
+        self._ensure_indexes()
         if self.structure is not None:
             self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
         else:
@@ -2568,18 +2602,24 @@ class Chain(object):
                 self._frame = self._apply_letter_header(self._frame)
             if view_level:
                 self._add_view_level()
+        self.painted = True
         return self
 
-    def _paint_structure(self, text_key, sep=None, na_rep=None):
+    def _paint_structure(self, text_key=None, sep=None, na_rep=None):
         """ Paint the dataframe-type Chain.
         """
+        if not text_key:
+            text_key = self._meta['lib']['default text']
         str_format = '%%s%s%%s' % sep
 
         column_mapper = dict()
 
         na_rep = na_rep or ''
 
+        pattern = r'\, (?=\W|$)'
+
         for column in self.structure.columns:
+            if not column in self._meta['columns']: return None
 
             meta = self._meta['columns'][column]
 
@@ -2596,21 +2636,38 @@ class Chain(object):
                     while pointers:
                         valules = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
-                    value_mapper = {str(item['value']): item['text'][text_key] for item in values}
+                    value_mapper = {
+                        str(item['value']): item['text'][text_key]
+                        for item in values
+                    }
                     series = self.structure[column]
                     series = (series.str.split(';')
                                     .apply(pd.Series, 1)
                                     .stack(dropna=False)
                                     .map(value_mapper.get) #, na_action='ignore')
                                     .unstack())
-                    first, rest = series[series.columns[0]], [series[c] for c in series.columns[1:]]
-                    self.structure[column] = (first.str.cat(rest, sep=', ', na_rep='')
+                    first = series[series.columns[0]]
+                    rest = [series[c] for c in series.columns[1:]]
+                    self.structure[column] = (first
+                                              .str.cat(rest,
+                                                       sep=', ',
+                                                       na_rep='')
                                               .str.slice(0, -2)
-                                              .replace(to_replace=r'\, (?=\W|$)', value='', regex=True)
-                                              .replace(to_replace='', value=na_rep))
+                                              .replace(to_replace=pattern,
+                                                       value='',
+                                                       regex=True)
+                                              .replace(to_replace='',
+                                                       value=na_rep)
+                                             )
                 else:
-                    value_mapper = {item['value']: item['text'][text_key] for item in values}
-                    self.structure[column] = self.structure[column].map(value_mapper.get, na_action='ignore')
+                    value_mapper = {
+                        item['value']: item['text'][text_key]
+                        for item in values
+                    }
+                    self.structure[column] = (self.structure[column]
+                                                  .map(value_mapper.get,
+                                                       na_action='ignore')
+                                             )
 
             self.structure[column].fillna(na_rep, inplace=True)
 
@@ -2755,10 +2812,14 @@ class Chain(object):
                         level_1_text.append(text)
                     else:
                         try:
-                            for item in self._get_values(levels[0][i]):
-                                if int(value) == item['value']:
-                                    text = self._get_text(item, text_keys[axis])
-                                    level_1_text.append(text)
+                            values = self._get_values(levels[0][i])
+                            if not values:
+                                level_1_text.append(value)
+                            else:
+                                for item in self._get_values(levels[0][i]):
+                                    if int(value) == item['value']:
+                                        text = self._get_text(item, text_keys[axis])
+                                        level_1_text.append(text)
                         except ValueError:
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
@@ -2795,10 +2856,10 @@ class Chain(object):
         """ Returns values from self._meta["columns"] or
         self._meta["lib"]["values"][<mask name>] if parent is "array"
         """
-        try:
-            values = self._meta['columns'][column]['values']
-        except KeyError:
-            values = self._meta['lib']['values'][column]
+        if column in self._meta['columns']:
+            values = self._meta['columns'][column].get('values', [])
+        elif column in self._meta['masks']:
+            values = self._meta['lib']['values'].get(column, [])
 
         if isinstance(values, (str, unicode)):
             keys = values.split('@')
@@ -2824,9 +2885,18 @@ class Chain(object):
             self.painted = False
         else:
             self.painted = True
-        index, columns = self._frame.index, self._frame.columns
-        self._frame.index, self._frame.columns = self.index, self.columns
-        self.index, self.columns = index, columns
+
+        attrs = ['index', 'columns']
+        if self.structure is not None:
+            attrs.append('frame_values')
+
+        for attr in attrs:
+            if attr.startswith('frame'):
+                attr = attr[5:]
+            frame_val = getattr(self._frame, attr)
+            setattr(self._frame, attr, getattr(self, attr))
+            setattr(self, attr, frame_val)
+
         return self
 
     @staticmethod

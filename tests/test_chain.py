@@ -108,13 +108,22 @@ def chain_for_structure(dataset, basic_chain):
     del basic_chain
 
 @pytest.fixture(scope='function')
-def chain_structure(chain_for_structure, paint=False):
+def chain_structure(chain_for_structure, paint=False, sep=None):
     if paint:
-        chain_for_structure.paint_all(sep='. ',
+        chain_for_structure.paint_all(sep=sep or '. ',
                                       text_keys='en-GB',
                                       na_rep=fixture.AST)
     it = iter(chain_for_structure)
     return next(it)
+
+@pytest.fixture(scope='function')
+def expected_structure(values, columns, paint=False):
+    _expected = pd.DataFrame(np.array(values).T, columns=columns)
+    _expected.iloc[:, 0] = pd.to_numeric(_expected.iloc[:, 0])
+    _expected.iloc[:, 1] = pd.to_numeric(_expected.iloc[:, 1])
+    if not paint:
+        _expected.iloc[:, 2] = pd.to_numeric(_expected.iloc[:, 2])
+    return _expected
 
 @pytest.fixture(scope='function')
 def multi_index(tuples):
@@ -158,7 +167,11 @@ class TestChainExceptions:
         (['q5_1'], ['@', 'q4'], fixture.X1),
         (['q5_1'], ['@', 'q4 > gender'], fixture.X2),
         (['q5_1'], ['@', 'q4 > gender > Wave'], fixture.X3),
-        (['q5_1'], ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'], fixture.X4),
+        (
+            ['q5_1'],
+            ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'],
+            fixture.X4
+        ),
     ]
 )
 def params_getx(request):
@@ -222,7 +235,9 @@ class TestChainGet:
         x, y = 'q5_1', ['@', 'gender', 'q4']
         chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
                                'x', incl_tests=True, incl_sum=True)
-        chain_df = chains[0].transform_tests().dataframe.replace(np.NaN, 'None')
+        chain_df = (chains[0].transform_tests()
+                             .dataframe.replace(np.NaN, 'None')
+                   )
         # all tests results converted correctly from numbers to letters?
         actual_vals = pd.DataFrame(chain_df.values.tolist())
         expected_vals = pd.DataFrame(fixture.X5_SIG_SIMPLE[0])
@@ -243,8 +258,20 @@ class TestChainGet:
 @pytest.yield_fixture(
     scope='class',
     params=[
-        (False, fixture.CHAIN_STRUCT_COLUMNS, fixture.CHAIN_STRUCT_VALUES),
-        (True, fixture.CHAIN_STRUCT_COLUMNS_PAINTED, fixture.CHAIN_STRUCT_VALUES_PAINTED)
+        (
+            False,
+            fixture.CHAIN_STRUCT_COLUMNS,
+            fixture.CHAIN_STRUCT_VALUES,
+            False,
+            None
+        ),
+        (
+            True,
+            fixture.CHAIN_STRUCT_COLUMNS_PAINTED,
+            fixture.CHAIN_STRUCT_VALUES_PAINTED,
+            fixture.CHAIN_STRUCT_COLUMNS_REPAINTED,
+            '* '
+        )
     ]
 )
 def params_structure(request):
@@ -263,14 +290,25 @@ class TestChainAdd:
         assert _chain.name == 'open'
 
     def test_str(self, chain_for_structure, params_structure):
-        paint, columns, values = params_structure
+        paint, columns, values, repaint_columns, _ = params_structure
 
         _chain = chain_structure(chain_for_structure, paint=paint)
+        _expected_structure = expected_structure(values, columns, paint=paint)
 
-        expected_structure = pd.DataFrame(np.array(values).T, columns=columns)
-        expected_structure.iloc[:, 0] = pd.to_numeric(expected_structure.iloc[:, 0])
-        expected_structure.iloc[:, 1] = pd.to_numeric(expected_structure.iloc[:, 1])
-        if not paint:
-            expected_structure.iloc[:, 2] = pd.to_numeric(expected_structure.iloc[:, 2])
+        assert_frame_equal(_chain.structure.fillna('*'), _expected_structure)
 
-        assert_frame_equal(_chain.structure.fillna('*'), expected_structure)
+class TestChainAddRepaint:
+
+    def test_str(self, chain_for_structure, params_structure):
+        paint, columns, values, repaint_columns, sep = params_structure
+
+        if repaint_columns:
+            _chain = chain_structure(chain_for_structure, paint=paint)
+            _expected_structure = expected_structure(values,
+                                                     repaint_columns,
+                                                     paint=paint)
+
+            _chain.paint(sep=sep, text_keys='en-GB', na_rep=fixture.AST)
+
+            assert_frame_equal(_chain.structure.fillna('*'),
+                               _expected_structure)
