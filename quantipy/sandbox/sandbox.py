@@ -2805,12 +2805,11 @@ class Chain(object):
 
         attrs = ['index', 'columns']
         if self.structure is not None:
-            attrs.append('frame_values')
+            attrs.append('_frame_values')
 
         for attr in attrs:
-            if attr.startswith('frame'):
-                attr = attr[5:]
-            frame_val = getattr(self._frame, attr)
+            vals = attr[6:] if attr.startswith('_frame') else attr
+            frame_val = getattr(self._frame, vals)
             setattr(self._frame, attr, getattr(self, attr))
             setattr(self, attr, frame_val)
 
