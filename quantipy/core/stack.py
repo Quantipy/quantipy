@@ -2423,7 +2423,15 @@ class Stack(defaultdict):
             for stat in stats:
                 options['stats'] = stat
                 view.add_method('stat', kwargs=options)
-                self.aggregate(view, False, on_vars, _batches, on_vars, verbose)
+                self.aggregate(view, False, on_vars, _batches, on_vars, verbose=verbose)
+
+            if recode:
+                if other_source:
+                    raise ValueError('Cannot recode if other_source is provided.')
+                ds = qp.DataSet(dk)
+                ds.from_stack(self, dk)
+                on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
+                _recode_from_stat_def(ds, on_vars, rescale, drop, exclude, verbose)
 
             if factor_labels:
                 all_batches = meta['sets']['batches'].keys()
