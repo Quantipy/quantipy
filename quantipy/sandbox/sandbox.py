@@ -2886,8 +2886,13 @@ class Chain(object):
         else:
             self.painted = True
 
-        for attr in ('index', 'columns'):
-            value = getattr(self._frame, attr)
+        attrs = ['index', 'columns']
+        if self.structure is not None:
+            attrs.append('_frame_values')
+
+        for attr in attrs:
+            vals = attr[6:] if attr.startswith('_frame') else attr
+            frame_val = getattr(self._frame, vals)
             setattr(self._frame, attr, getattr(self, attr))
             setattr(self, attr, value)
 
