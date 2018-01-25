@@ -1165,6 +1165,7 @@ class ChainManager(object):
 
         if meta_from:
             if isinstance(meta_from, (str, unicode)):
+
                 chain._meta = self.stack[meta_from].meta
             else:
                 data_key, filter_key = meta_from
@@ -1217,7 +1218,6 @@ class ChainManager(object):
                     self.__chains.append(chain)
             self._annotations[x_key] = ChainAnnotations()
         return None
-        #return self
 
     def paint_all(self, *args, **kwargs):
         """
@@ -1229,8 +1229,14 @@ class ChainManager(object):
 
         Parameters
         ----------
-        text_keys : str, default None
+        text_key : str, default meta['lib']['default text']
             The language version of any variable metadata applied.
+        text_loc_x : str, default None
+            The key in the 'text' to locate the text_key for the 
+            ``pandas.DataFrame.index`` labels
+        text_loc_y : str, default None
+            The key in the 'text' to locate the text_key for the
+            ``pandas.DataFrame.columns`` labels
         display : {'x', 'y', ['x', 'y']}, default None
             Text
         axes : {'x', 'y', ['x', 'y']}, default None
@@ -1334,7 +1340,6 @@ class ChainAnnotations(dict):
                 acat, apos = splitted[0], splitted[1]
             else:
                 acat, apos = key, None
-            print splitted
             if apos:
                 if acat == 'notes':
                     msg = "'{}' annotation type does not support positions!"
@@ -1481,6 +1486,11 @@ class Chain(object):
     def __len__(self):
         """Returns the total number of cells in the Chain.dataframe"""
         return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
+
+
+    @lazy_property
+    def _default_text(self):
+        return self._meta['lib']['default text']
 
     @lazy_property
     def orientation(self):
@@ -1636,7 +1646,7 @@ class Chain(object):
 
     @property
     def cell_details(self):
-        lang = self._text_key if self._text_key == 'fr-FR' else 'en-GB'
+        lang = self._default_text if self._default_text == 'fr-FR' else 'en-GB'
         cd = CELL_DETAILS[lang]
         ci = self.cell_items
         cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self.cell_items]))
@@ -1644,7 +1654,9 @@ class Chain(object):
         if self.sig_test_letters:
             mapped = ''
             group = None
-            for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-4]):
+            i =  0 if (self._frame.columns.nlevels == 3) else 4
+            print self._frame.columns.labels[0]
+            for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-i]):
                 if letter == '@':
                     continue
                 if group:
@@ -2063,7 +2075,6 @@ class Chain(object):
         self._given_views = views
         self._x_keys = x_keys
         self._y_keys = y_keys
-        self._text_key = self._meta['lib']['default text']
 
         concat_axis = 0
 
@@ -2542,9 +2553,25 @@ class Chain(object):
             if self.structure is not None:
                 self.frame_values = self._frame.values
 
-    def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', add_base_texts='simple', totalize=False,
-              sep=None, na_rep=None):
+    def _finish_text_key(self, text_key, text_loc_x, text_loc_y):
+        text_keys = dict()
+        text_key = text_key or self._default_text
+
+        if text_loc_x:
+            text_keys['x'] = (text_loc_x, text_key)
+        else:
+            text_keys['x'] = text_key 
+
+        if text_loc_y:
+            text_keys['y'] = (text_loc_y, text_key)
+        else:
+            text_keys['y'] = text_key
+        
+        return text_keys
+
+    def paint(self, text_key=None, text_loc_x=None, text_loc_y=None, display=None,
+              axes=None, view_level=False, transform_tests='cells', 
+              add_base_texts='simple', totalize=False, sep=None, na_rep=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -2556,6 +2583,10 @@ class Chain(object):
         ----------
         text_keys : str, default None
             Text
+        text_loc_x : str, default None
+            The key in the 'text' to locate the text_key for the x-axis
+        text_loc_y : str, default None
+            The key in the 'text' to locate the text_key for the y-axis
         display : {'x', 'y', ['x', 'y']}, default None
             Text
         axes : {'x', 'y', ['x', 'y']}, default None
@@ -2581,17 +2612,15 @@ class Chain(object):
             The ``.dataframe`` is modified inplace.
         """
         self._ensure_indexes()
+        text_keys = self._finish_text_key(text_key, text_loc_x, text_loc_y)
         if self.structure is not None:
-            self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
+            self._paint_structure(text_key, sep=sep, na_rep=na_rep)
         else:
             self.totalize = totalize
             if transform_tests: self.transform_tests()
             # Remove any letter header row from transformed tests...
             if self.sig_test_letters:
                 self._remove_letter_header()
-            # Paint the "regular" dataframe
-            if text_keys is None:
-                text_keys = finish_text_key(self._meta, {})
             if display is None:
                 display = _AXES
             if axes is None:
@@ -2713,8 +2742,7 @@ class Chain(object):
                   self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
-        # if self.array_style > -1 and axis == 'y':
-        #     return new_index.droplevel(0)
+
         return new_index
 
     def _get_level_0(self, level, text_keys, display, axis):
@@ -2739,56 +2767,14 @@ class Chain(object):
             level_0_text = ['Total'] + level_0_text[1:]
         return map(unicode, level_0_text)
 
-    @staticmethod
-    def _is_multibase(views, basetype):
-        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
-
-    def _add_base_text(self, base_val, tk, bases):
-        if self._array_style == 0 and bases != 'all':
-            return base_val
-        else:
-            bt = self.base_descriptions
-            if isinstance(bt, dict):
-                bt_by_key = bt[tk]
-            else:
-                bt_by_key = bt
-            if bt_by_key:
-                return '{}: {}'.format(base_val, bt_by_key)
-            else:
-                return base_val
-
-    def _specify_base(self, view_idx, tk, bases):
-        base_vk = self._valid_views()[view_idx]
-        basetype = base_vk.split('|')[-1]
-        weighted = base_vk.split('|')[-2]
-        is_multibase = self._is_multibase(self._views.keys(), basetype)
-        if basetype == 'cbase_gross':
-            if weighted or (not weighted and not is_multibase):
-                # base_value = 'Gross base'
-                base_value = self._transl[tk]['gross All']
-            else:
-               # base_value = 'Unweighted gross base'
-                base_value = self._transl[tk]['no_w_gross_All']
-        elif basetype == 'ebase':
-            if weighted or (not weighted and not is_multibase):
-                base_value = 'Effective base'
-            else:
-                base_value = 'Unweighted effective base'
-        else:
-            if weighted or (not weighted and not is_multibase):
-                # base_value = 'Base'
-                base_value = self._add_base_text(
-                    self._transl[tk]['All'], tk, bases)
-            else:
-                # base_value = 'Unweighted base'
-                base_value = self._add_base_text(
-                    self._transl[tk]['no_w_All'], tk, bases)
-        return base_value
-
     def _get_level_1(self, levels, text_keys, display, axis, bases):
         """
         """
         level_1_text = []
+        if text_keys[axis] in self._transl:
+            tk_transl = text_keys[axis] 
+        else:
+            tk_transl = self._default_text
         for i, value in enumerate(levels[1]):
             if str(value).startswith('#pad'):
                 level_1_text.append(value)
@@ -2802,9 +2788,9 @@ class Chain(object):
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     if value == 'All':
-                        text = self._specify_base(i, text_keys[axis][0], bases)
+                        text = self._specify_base(i, text_keys[axis], bases)
                     else:
-                        text = self._transl[text_keys[axis][0]][value]
+                        text = self._transl[tk_transl][value]
                     level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
@@ -2824,33 +2810,87 @@ class Chain(object):
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
                                     if value in gtm.keys():
-                                        text = gtm[value][text_keys[axis][0]]
+                                        text = self._get_text(gtm[value], text_keys[axis])
                                         level_1_text.append(text)
         return map(unicode, level_1_text)
 
-    def _get_text(self, value, text_keys):
+    @staticmethod
+    def _is_multibase(views, basetype):
+        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
+
+    def _add_base_text(self, base_val, tk, bases):
+        if self._array_style == 0 and bases != 'all':
+            return base_val
+        else:
+            bt = self.base_descriptions
+            if isinstance(bt, dict):
+                bt_by_key = bt[tk]
+            else:
+                bt_by_key = bt
+            if bt_by_key:
+                if bt_by_key.startswith('%s:' % base_val):
+                    bt_by_key = bt_by_key.replace('%s:' % base_val, '')
+                return '{}: {}'.format(base_val, bt_by_key)
+            else:
+                return base_val
+
+    def _specify_base(self, view_idx, tk, bases):
+        tk_transl = tk if tk in self._transl else self._default_text
+        base_vk = self._valid_views()[view_idx]
+        basetype = base_vk.split('|')[-1]
+        weighted = base_vk.split('|')[-2]
+        is_multibase = self._is_multibase(self._views.keys(), basetype)
+        if basetype == 'cbase_gross':
+            if weighted or (not weighted and not is_multibase):
+                base_value = self._transl[tk_transl]['gross All']
+            else:
+                base_value = self._transl[tk_transl]['no_w_gross_All']
+        elif basetype == 'ebase':
+            if weighted or (not weighted and not is_multibase):
+                base_value = 'Effective base'
+            else:
+                base_value = 'Unweighted effective base'
+        else:
+            if weighted or (not weighted and not is_multibase):
+                key = tk
+                if isinstance(tk, tuple):
+                    _, key = tk
+                base_value = self._add_base_text(self._transl[tk_transl]['All'],
+                                                 key, bases)
+            else:
+                base_value = self._transl[tk_transl]['no_w_All']
+        return base_value
+
+    def _get_text(self, value, text_key):
         """
         """
         if value in self._meta['columns'].keys():
-            return self._get_text_from_keys(self._meta['columns'][value],
-                                            text_keys
-                                           )
+            obj = self._meta['columns'][value]['text']
         elif value in self._meta['masks'].keys():
-            return self._get_text_from_keys(self._meta['masks'][value], text_keys)
+            obj = self._meta['masks'][value]['text']
+        elif 'text' in value:
+            obj = value['text']
         else:
-            return self._get_text_from_keys(value, text_keys)
+            obj = value
+        return self._get_text_from_key(obj, text_key)
 
-    def _get_text_from_keys(self, meta_obj, text_keys):
+    def _get_text_from_key(self, text, text_key):
         """ Find the first value in a meta object's "text" key that matches a
         text_key for it's axis.
         """
-        error = "No text keys from {} found in {}"
-
-        for k in text_keys:
-            if k in meta_obj['text']:
-                return meta_obj['text'][k]
-
-        return None
+        if isinstance(text_key, tuple):
+            loc, key = text_key
+            if loc in text:
+                if key in text[loc]:
+                    return text[loc][key]
+                elif self._default_text in text[loc]:
+                    return text[loc][self._default_text]
+            if key in text:
+                return text[key]
+        for key in (text_key, self._default_text):
+            if key in text:
+                return text[key]
+        return '<label>'
 
     def _get_values(self, column):
         """ Returns values from self._meta["columns"] or
@@ -5744,7 +5784,6 @@ class LinearModels(Multivariate):
             result.sort(columns=labs[1], ascending=False, inplace=True)
             if norm:
                 result = result / total_rsq * 100
-        # print '\n'
         return result
 
 class Relations(Multivariate):
