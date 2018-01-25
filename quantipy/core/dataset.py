@@ -5930,27 +5930,26 @@ class DataSet(object):
 
         for name in batches:
             batch = self._meta['sets']['batches'][name]
-            xs = batch['x_y_map'].keys()
+            xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
             f  = batch['filter']
-            ys = batch['x_y_map']
             my  = batch['yks']
 
-            total_len = len(xs) + len(batch['y_on_y'])
-            for idx, x in enumerate(xs, start=1):
+            total_len = len(xys) + len(batch['y_on_y'])
+            for idx, xy in enumerate(xys, start=1):
+                x, y = xy
                 if x == '@':
-                    for y in ys[x]:
-                        stack.add_link(dk, fs[y], x='@', y=y)
+                    stack.add_link(dk, fs[y[0]], x='@', y=y)
                 else:
-                    stack.add_link(dk, fs[x], x=x, y=ys[x])
+                    stack.add_link(dk, fs[x], x=x, y=y)
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',
                     time.sleep(0.01)
                     print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
-            for idx, y_on_y in enumerate(batch['y_on_y'], len(xs)+1):
+            for idx, y_on_y in enumerate(batch['y_on_y'], len(xys)+1):
                 stack.add_link(dk, fy[y_on_y], x=my[1:], y=my)
                 if verbose:
                     done = float(idx) / float(total_len) *100
