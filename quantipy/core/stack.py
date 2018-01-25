@@ -1851,19 +1851,18 @@ class Stack(defaultdict):
         batches = self._check_batches(dk, batches)
         for batch in batches:
             b = self[dk].meta['sets']['batches'][batch]
-            xs = b['x_y_map'].keys()
-            ys = b['x_y_map']
+            xy = b['x_y_map']
             f  = b['x_filter_map']
             fy = b['y_filter_map']
             w  = b['weights']
-            for x in xs:
+            for x, y in xy:
                 if x == '@':
-                    for y in ys[x]:
-                        fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
-                        _append_loop(mapping, x, fn, f[y], w, ys[x])
+                    y = y[0]
+                    fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
+                    _append_loop(mapping, x, fn, f[y], w, y)
                 else:
                     fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
-                    _append_loop(mapping, x, fn, f[x], w, ys[x])
+                    _append_loop(mapping, x, fn, f[x], w, y)
             for yy in b['y_on_y']:
                 fn = fy[yy] if fy[yy] == 'no_filter' else fy[yy].keys()[0]
                 for x in b['yks'][1:]:
@@ -2536,10 +2535,11 @@ class Stack(defaultdict):
                     for yy in batch['y_on_y']:
                         self.add_link(filters=y_f[yy], x=yks[1:], y=yks,
                                       views=vm_tests, weights=weight)
-                    total_len = len(x_y.keys())
-                    for idx, x in enumerate(x_y.keys(), 1):
+                    total_len = len(x_y)
+                    for idx, xy in enumerate(x_y, 1):
+                        x, y = xy
                         if x == '@': continue
-                        self.add_link(filters=x_f[x], x=x, y=x_y[x],
+                        self.add_link(filters=x_f[x], x=x, y=y,
                                        views=vm_tests, weights=weight)
                         if verbose:
                             done = float(idx) / float(total_len) *100
