@@ -1,3 +1,4 @@
+#  -*- coding: utf-8 -*-
 
 import numpy as np
 import pandas as pd
@@ -77,7 +78,12 @@ class ChainManager(object):
 
     def __getitem__(self, value):
         if isinstance(value, (unicode, str)):
-            return self.__chains[self._idx_from_name(value)].values()[0]
+            element = self.__chains[self._idx_from_name(value)]
+            is_folder = isinstance(element, dict)
+            if is_folder:
+                return element.values()[0]
+            else:
+                return element
         else:
             return self.__chains[value]
 
@@ -257,6 +263,26 @@ class ChainManager(object):
     @staticmethod
     def _dupes_in_chainref(chain_refs):
         return len(set(chain_refs)) != len(chain_refs)
+
+    def save(self, path, keep_stack=False):
+        """
+        """
+        if not keep_stack:
+            del self.stack
+            self.stack = None
+        f = open(path, 'wb')
+        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
+        f.close()
+        return None
+
+    def load(self, path):
+        """
+        """
+        f = open(path, 'rb')
+        obj = cPickle.load(f)
+        f.close()
+        return obj
+
 
     def merge(self, folders, new_name=None, drop=True):
         """
@@ -625,12 +651,22 @@ class ChainManager(object):
                 folder_name = [None]
                 folder_items.append(None)
                 item_pos.append(pos)
-            variables.extend([c._x_keys[0] for c in chains])
-            names.extend([c.name for c in chains])
-            folders.extend(folder_name * len(chains))
-            array_sum.extend([True if c.array_style > -1 else False
-                             for c in chains])
-            sources.extend(c.source for c in chains)
+            if chains[0].structure is None:
+                variables.extend([c._x_keys[0] for c in chains])
+                names.extend([c.name for c in chains])
+                folders.extend(folder_name * len(chains))
+                array_sum.extend([True if c.array_style > -1 else False
+                                 for c in chains])
+                sources.extend(c.source for c in chains)
+
+            else:
+                variables.extend([chains[0].name])#(chains[0].structure.columns.tolist())
+                names.extend([chains[0].name])# for _ in xrange(chains[0].structure.shape[1])])
+                # names.extend(chains[0].structure.columns.tolist())
+                folders.extend(folder_name)
+                array_sum.extend([False])
+                sources.extend(c.source for c in chains)
+
         df_data = [item_pos,
                    names,
                    folders,
@@ -1122,6 +1158,10 @@ class ChainManager(object):
         name = name or '.'.join(structure.columns.tolist())
 
         chain = Chain(self.stack, name, structure=structure)
+        chain._frame = chain.structure
+        chain._index = chain._frame.index
+        chain._columns = chain._frame.columns
+        chain._frame_values = chain._frame.values
 
         if meta_from:
             if isinstance(meta_from, (str, unicode)):
@@ -1150,7 +1190,7 @@ class ChainManager(object):
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
         if folder and not isinstance(folder, (str, unicode)):
-            err == "'folder' must be a name provided as string!"
+            err = "'folder' must be a name provided as string!"
             raise ValueError(err)
         if orient == 'x':
             it, keys = x_keys, y_keys
@@ -1361,6 +1401,32 @@ class ChainAnnotations(dict):
         self.__dict__[akey.replace('-', '_')].append(text)
         return None
 
+CELL_DETAILS = {'en-GB': {'cc':    'Cell Contents',
+                          'N':     'Counts',
+                          'c%':    'Column Percentages',
+                          'r%':    'Row Percentages',
+                          'str':   'Statistical Test Results',
+                          'cp':    'Column Proportions',
+                          'cm':    'Means',
+                          'stats': 'Statistics',
+                          'mb':    'Minimum Base',
+                          'sb':	   'Small Base',
+                          'up':    ' indicates result is significantly higher than the result in the Total column',
+                          'down':  ' indicates result is significantly lower than the result in the Total column'
+                          },
+                'fr-FR': {'cc':    'Contenu cellule',
+                          'N':     'Total',
+                          'c%':    'Pourcentage de colonne',
+                          'r%':    'Pourcentage de ligne',
+                          'str':   u'Résultats test statistique',
+                          'cp':    'Proportions de colonne',
+                          'cm':    'Moyennes de colonne',
+                          'stats': 'Statistiques',
+                          'mb':    'Base minimum',
+                          'sb':    'Petite base',
+                          'up':    u' indique que le résultat est significativement supérieur au résultat de la colonne Total',
+                          'down':  u' indique que le résultat est significativement inférieur au résultat de la colonne Total'
+                          }}
 
 class Chain(object):
 
@@ -1387,6 +1453,7 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
+        self._flag_bases = None
 
     def __str__(self):
         if self.structure is not None:
@@ -1461,6 +1528,14 @@ class Chain(object):
         self._columns = columns
 
     @property
+    def frame_values(self):
+        return self._frame_values
+
+    @frame_values.setter
+    def frame_values(self, frame_values):
+        self._frame_values = frame_values
+
+    @property
     def views(self):
         return self._views
 
@@ -1491,40 +1566,52 @@ class Chain(object):
         return self._pad_id
 
     @property
-    def cell_items(self):
-        if self.views:
-            compl_views = [v for v in self.views if ']*:' in v]
-            if not compl_views:
-                c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
-                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
+    def sig_levels(self):
+        sigs = set([v for v in self._valid_views(True)
+                    if v.split('|')[1].startswith('t.')])
+        tests = [t.split('|')[1].split('.')[1] for t in sigs]
+        levels = [t.split('|')[1].split('.')[3] for t in sigs]
+        sig_levels = {}
+        for m in zip(tests, levels):
+            l = '.{}'.format(m[1])
+            t = m[0]
+            if m in sig_levels:
+                sig_levels[t].append(l)
             else:
-                c = any(v.split('|')[3] == '' for v in compl_views)
-                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
-                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
-            c_colpct = c and col_pct
-            c_rowpct = c and row_pct
-            c_colrow_pct = c_colpct and c_rowpct
+                sig_levels[t] = [l]
+        return sig_levels
 
-            single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
-            if single_ci:
-                if c:
-                    return 'counts'
-                elif col_pct:
-                    return 'colpct'
+    @property
+    def cell_items(self):
+        ci = []
+        if self.views:
+            for v in self.views:
+                if ']*:' in v:
+                    if v.split('|')[3] == '':
+                        if 'N' not in ci:
+                            ci.append('N')
+                    if v.split('|')[3] == 'y':
+                        if 'c%' not in ci:
+                            ci.append('c%')
+                    if v.split('|')[3] == 'x':
+                        if 'r%' not in ci:
+                            ci.append('r%')
                 else:
-                    return 'rowpct'
-            else:
-                if c_colrow_pct:
-                    return 'counts_colpct_rowpct'
-                elif c_colpct:
-                    return 'counts_colpct'
-                else:
-                    return 'counts_rowpct'
+                    if v.split('|')[-1] == 'counts':
+                        if 'N' not in ci:
+                            ci.append('N')
+                    elif v.split('|')[-1] == 'c%':
+                        if 'c%' not in ci:
+                            ci.append('c%')
+                    elif v.split('|')[-1] == 'r%':
+                        if 'r%' not in ci:
+                            ci.append('r%')
+
+            return ci
 
     @property
     def ci_count(self):
-        return len(self.cell_items.split('_'))
+        return len(self.cell_items)
 
     @property
     def contents(self):
@@ -1547,6 +1634,57 @@ class Chain(object):
                 contents[row] = self._add_contents(idx.split('|'))
         return contents
 
+    @property
+    def cell_details(self):
+        lang = self._text_key if self._text_key == 'fr-FR' else 'en-GB'
+        cd = CELL_DETAILS[lang]
+        ci = self.cell_items
+        cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self.cell_items]))
+        against_total = False
+        if self.sig_test_letters:
+            mapped = ''
+            group = None
+            for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-4]):
+                if letter == '@':
+                    continue
+                if group:
+                    if lab == group:
+                        mapped += '/' + letter
+                    else:
+                        group = lab
+                        mapped += ', ' + letter
+                else:
+                    group = lab
+                    mapped += letter
+
+            test_types = cd['cp']
+            if self.sig_levels.get('means'):
+                test_types += ', ' + cd['cm']
+
+            levels = []
+            for key in ('props', 'means'):
+                for level in self.sig_levels.get(key, iter(())):
+                    l = '%s%%' % int(100. - float(level.split('+@')[0].split('.')[1]))
+                    if l not in levels:
+                        levels.append(l)
+                    if '+@' in level:
+                        against_total = True
+
+            cd_str = cd_str[:-1] + ', ' + cd['str'] +'), '
+            cd_str += '%s (%s, (%s): %s' % (cd['stats'], test_types, ', '.join(levels), mapped)
+            if self._flag_bases:
+                flags = ([], [])
+                [(flags[0].append(min), flags[1].append(small)) for min, small in self._flag_bases]
+                cd_str += ', %s: %s (**), %s: %s (*)' % (cd['mb'], ', '.join(map(str, flags[0])),
+                                                         cd['sb'], ', '.join(map(str, flags[1])))
+            cd_str += ')'
+
+        cd_str = [cd_str]
+
+        if against_total:
+            cd_str.extend([cd['up'], cd['down']])
+
+        return cd_str
 
     def describe(self):
         def _describe(cell_defs, row_id):
@@ -1662,7 +1800,7 @@ class Chain(object):
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
-    def _valid_views(self):
+    def _valid_views(self, flat=False):
         clean_view_list = []
         valid = self.views.keys()
         for v in self._given_views:
@@ -1678,7 +1816,10 @@ class Chain(object):
                     new_v = tuple(new_v)
                 if new_v:
                     if len(new_v) == 1: new_v = new_v[0]
-                    clean_view_list.append(new_v)
+                    if not flat:
+                        clean_view_list.append(new_v)
+                    else:
+                        clean_view_list.extend(new_v)
         return clean_view_list
 
 
@@ -1922,6 +2063,7 @@ class Chain(object):
         self._given_views = views
         self._x_keys = x_keys
         self._y_keys = y_keys
+        self._text_key = self._meta['lib']['default text']
 
         concat_axis = 0
 
@@ -2191,6 +2333,15 @@ class Chain(object):
                             found[view] = len(frame.index)
                         else:
                             found[view] = len(frame.columns)
+
+                if link[view]._kwargs.get('flag_bases'):
+                    flag_bases = link[view]._kwargs['flag_bases']
+                    try:
+                        if flag_bases not in self._flag_bases:
+                            self._flag_bases.append(flag_bases)
+                    except TypeError:
+                        self._flag_bases = [flag_bases]
+
             except KeyError:
                 pass
         return found, frames
@@ -2351,26 +2502,49 @@ class Chain(object):
         if self.source == 'Crunch multitable':
             self.base_descriptions = self._meta['var_meta'].get('notes', None)
         else:
-            if self.array_style != -1:
-                msg = "Could not test base_text property on array Chain!"
-                warnings.warn(msg)
-                return None
             base_texts = OrderedDict()
-            for x in self._x_keys:
-                if 'properties' in self._meta['columns'][x]:
-                    bt = self._meta['columns'][x]['properties'].get('base_text', None)
-                    if bt:
-                        base_texts[x] = bt
-            if base_texts:
-                if self.orientation == 'x':
-                    self.base_descriptions = base_texts.values()[0]
+            arr_style = self.array_style
+            if arr_style != -1:
+                var = self._x_keys[0] if arr_style == 0 else self._y_keys[0]
+                masks = self._meta['masks']
+                columns = self._meta['columns']
+                item = masks[var]['items'][0]['source'].split('@')[-1]
+                test_item = columns[item]
+                test_mask = masks[var]
+                if 'properties' in test_mask:
+                    base_text = test_mask['properties'].get('base_text', None)
+                elif 'properties' in test_item:
+                        base_text = test_item['properties'].get('base_text', None)
                 else:
-                    self.base_descriptions = base_texts.values()
+                    base_text = None
+                self.base_descriptions = base_text
+            else:
+                for x in self._x_keys:
+                    if 'properties' in self._meta['columns'][x]:
+                        bt = self._meta['columns'][x]['properties'].get('base_text', None)
+                        if bt:
+                            base_texts[x] = bt
+                if base_texts:
+                    if self.orientation == 'x':
+                        self.base_descriptions = base_texts.values()[0]
+                    else:
+                        self.base_descriptions = base_texts.values()
 
         return None
 
+    def _ensure_indexes(self):
+        if self.painted:
+            self._frame.index, self._frame.columns = self.index, self.columns
+            if self.structure is not None:
+                self._frame.loc[:, :] = self.frame_values
+        else:
+            self.index, self.columns = self._frame.index, self._frame.columns
+            if self.structure is not None:
+                self.frame_values = self._frame.values
+
     def paint(self, text_keys=None, display=None, axes=None, view_level=False,
-              transform_tests='cells', totalize=False, sep=None, na_rep=None):
+              transform_tests='cells', add_base_texts='simple', totalize=False,
+              sep=None, na_rep=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -2390,7 +2564,11 @@ class Chain(object):
             Text
         transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
-        totalize : bool, default False
+        add_base_texts : {False, 'all', 'simple'}, default 'simple'
+            Whether or not to include existing ``.base_descriptions`` str
+            to the label of the appropriate base view. Selecting ``'simple'``
+            will inject the base texts to non-array type Chains only.
+        totalize : bool, default True
             Text
         sep : str, default None
             The seperator used for painting ``pandas.DataFrame`` columns
@@ -2402,7 +2580,7 @@ class Chain(object):
         None
             The ``.dataframe`` is modified inplace.
         """
-        self.painted = True
+        self._ensure_indexes()
         if self.structure is not None:
             self._paint_structure(text_keys, sep=sep, na_rep=na_rep)
         else:
@@ -2418,24 +2596,30 @@ class Chain(object):
                 display = _AXES
             if axes is None:
                 axes = _AXES
-            self._paint(text_keys, display, axes)
+            self._paint(text_keys, display, axes, add_base_texts)
             # Re-build the full column index (labels + letter row)
             if self.sig_test_letters and transform_tests == 'full':
                 self._frame = self._apply_letter_header(self._frame)
             if view_level:
                 self._add_view_level()
+        self.painted = True
         return self
 
-    def _paint_structure(self, text_key, sep=None, na_rep=None):
+    def _paint_structure(self, text_key=None, sep=None, na_rep=None):
         """ Paint the dataframe-type Chain.
         """
+        if not text_key:
+            text_key = self._meta['lib']['default text']
         str_format = '%%s%s%%s' % sep
 
         column_mapper = dict()
 
         na_rep = na_rep or ''
 
+        pattern = r'\, (?=\W|$)'
+
         for column in self.structure.columns:
+            if not column in self._meta['columns']: return None
 
             meta = self._meta['columns'][column]
 
@@ -2452,27 +2636,44 @@ class Chain(object):
                     while pointers:
                         valules = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
-                    value_mapper = {str(item['value']): item['text'][text_key] for item in values}
+                    value_mapper = {
+                        str(item['value']): item['text'][text_key]
+                        for item in values
+                    }
                     series = self.structure[column]
                     series = (series.str.split(';')
                                     .apply(pd.Series, 1)
                                     .stack(dropna=False)
                                     .map(value_mapper.get) #, na_action='ignore')
                                     .unstack())
-                    first, rest = series[series.columns[0]], [series[c] for c in series.columns[1:]]
-                    self.structure[column] = (first.str.cat(rest, sep=', ', na_rep='')
+                    first = series[series.columns[0]]
+                    rest = [series[c] for c in series.columns[1:]]
+                    self.structure[column] = (first
+                                              .str.cat(rest,
+                                                       sep=', ',
+                                                       na_rep='')
                                               .str.slice(0, -2)
-                                              .replace(to_replace=r'\, (?=\W|$)', value='', regex=True)
-                                              .replace(to_replace='', value=na_rep))
+                                              .replace(to_replace=pattern,
+                                                       value='',
+                                                       regex=True)
+                                              .replace(to_replace='',
+                                                       value=na_rep)
+                                             )
                 else:
-                    value_mapper = {item['value']: item['text'][text_key] for item in values}
-                    self.structure[column] = self.structure[column].map(value_mapper.get, na_action='ignore')
+                    value_mapper = {
+                        item['value']: item['text'][text_key]
+                        for item in values
+                    }
+                    self.structure[column] = (self.structure[column]
+                                                  .map(value_mapper.get,
+                                                       na_action='ignore')
+                                             )
 
             self.structure[column].fillna(na_rep, inplace=True)
 
         self.structure.rename(columns=column_mapper, inplace=True)
 
-    def _paint(self, text_keys, display, axes):
+    def _paint(self, text_keys, display, axes, bases):
         """ Paint the Chain.dataframe
         """
         indexes = []
@@ -2480,12 +2681,12 @@ class Chain(object):
         for axis in _AXES:
             index = self._index_switch(axis)
             if axis in axes:
-                index = self._paint_index(index, text_keys, display, axis)
+                index = self._paint_index(index, text_keys, display, axis, bases)
             indexes.append(index)
 
         self._frame.index, self._frame.columns = indexes
 
-    def _paint_index(self, index, text_keys, display, axis):
+    def _paint_index(self, index, text_keys, display, axis, bases):
         """ Paint the Chain.dataframe.index1        """
         error = "No text keys from {} found in {}"
         level_0_text, level_1_text = [], []
@@ -2500,7 +2701,7 @@ class Chain(object):
                 tuples = zip(index_0.values, index_1.values)
                 names = (index_0.name, index_1.name)
                 sub = pd.MultiIndex.from_tuples(tuples, names=names)
-                sub = self._paint_index(sub, text_keys, display,axis)
+                sub = self._paint_index(sub, text_keys, display, axis, bases)
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
@@ -2509,7 +2710,7 @@ class Chain(object):
         levels = self._lzip(index.values)
 
         arrays = (self._get_level_0(levels[0], text_keys, display, axis),
-                  self._get_level_1(levels, text_keys, display, axis))
+                  self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
         # if self.array_style > -1 and axis == 'y':
@@ -2542,7 +2743,21 @@ class Chain(object):
     def _is_multibase(views, basetype):
         return len([v for v in views if v.split('|')[-1] == basetype]) > 1
 
-    def _specify_base(self, view_idx, tk):
+    def _add_base_text(self, base_val, tk, bases):
+        if self._array_style == 0 and bases != 'all':
+            return base_val
+        else:
+            bt = self.base_descriptions
+            if isinstance(bt, dict):
+                bt_by_key = bt[tk]
+            else:
+                bt_by_key = bt
+            if bt_by_key:
+                return '{}: {}'.format(base_val, bt_by_key)
+            else:
+                return base_val
+
+    def _specify_base(self, view_idx, tk, bases):
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
         weighted = base_vk.split('|')[-2]
@@ -2562,14 +2777,15 @@ class Chain(object):
         else:
             if weighted or (not weighted and not is_multibase):
                 # base_value = 'Base'
-                base_value = self._transl[tk]['All']
+                base_value = self._add_base_text(
+                    self._transl[tk]['All'], tk, bases)
             else:
                 # base_value = 'Unweighted base'
-                base_value = self._transl[tk]['no_w_All']
+                base_value = self._add_base_text(
+                    self._transl[tk]['no_w_All'], tk, bases)
         return base_value
 
-
-    def _get_level_1(self, levels, text_keys, display, axis):
+    def _get_level_1(self, levels, text_keys, display, axis, bases):
         """
         """
         level_1_text = []
@@ -2586,7 +2802,7 @@ class Chain(object):
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     if value == 'All':
-                        text = self._specify_base(i, text_keys[axis][0])
+                        text = self._specify_base(i, text_keys[axis][0], bases)
                     else:
                         text = self._transl[text_keys[axis][0]][value]
                     level_1_text.append(text)
@@ -2596,10 +2812,14 @@ class Chain(object):
                         level_1_text.append(text)
                     else:
                         try:
-                            for item in self._get_values(levels[0][i]):
-                                if int(value) == item['value']:
-                                    text = self._get_text(item, text_keys[axis])
-                                    level_1_text.append(text)
+                            values = self._get_values(levels[0][i])
+                            if not values:
+                                level_1_text.append(value)
+                            else:
+                                for item in self._get_values(levels[0][i]):
+                                    if int(value) == item['value']:
+                                        text = self._get_text(item, text_keys[axis])
+                                        level_1_text.append(text)
                         except ValueError:
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
@@ -2636,10 +2856,10 @@ class Chain(object):
         """ Returns values from self._meta["columns"] or
         self._meta["lib"]["values"][<mask name>] if parent is "array"
         """
-        try:
-            values = self._meta['columns'][column]['values']
-        except KeyError:
-            values = self._meta['lib']['values'][column]
+        if column in self._meta['columns']:
+            values = self._meta['columns'][column].get('values', [])
+        elif column in self._meta['masks']:
+            values = self._meta['lib']['values'].get(column, [])
 
         if isinstance(values, (str, unicode)):
             keys = values.split('@')
@@ -2665,9 +2885,22 @@ class Chain(object):
             self.painted = False
         else:
             self.painted = True
-        index, columns = self._frame.index, self._frame.columns
-        self._frame.index, self._frame.columns = self.index, self.columns
-        self.index, self.columns = index, columns
+
+        attrs = ['index', 'columns']
+        if self.structure is not None:
+            attrs.append('_frame_values')
+
+        for attr in attrs:
+            vals = attr[6:] if attr.startswith('_frame') else attr
+            frame_val = getattr(self._frame, vals)
+            setattr(self._frame, attr, getattr(self, attr))
+            setattr(self, attr, value)
+
+        if self.structure is not None:
+            values = self._frame.values
+            self._frame.loc[:, :] = self.frame_values
+            self.fram_values = values
+
         return self
 
     @staticmethod
@@ -6101,4 +6334,3 @@ class Stack(defaultdict):
             description = description.pivot_table(values='#', index=index, columns=columns,
                                 aggfunc='count')
         return description
-

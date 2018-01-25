@@ -115,9 +115,11 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         top=_DEFAULTS['border'],
                         top_color=_DEFAULTS['border_color'])
 
-_DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2, text_v_align_text=2, text_h_align_text=3)
+_DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2,
+                      text_v_align_text=2, text_h_align_text=3)
 
-_CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color', 'font_name', 'font_size', 'italic')
+_CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color',
+                    'font_name', 'font_size', 'italic')
 
 _VIEWS_GROUPS = dict(default='default',
                      c_base='base',

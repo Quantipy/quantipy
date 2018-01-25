@@ -35,9 +35,11 @@ class _ExcelFormats(object):
 
     def __init__(self, views_groups, **kwargs):
         for name in self.__default_attributes__:
-            value_or_default = kwargs.get(name, self._view_or_group(name, _VIEWS_GROUPS, views_groups, kwargs))
+            view_or_group = self._view_or_group(name, _VIEWS_GROUPS,
+                                                views_groups, kwargs)
+            value_or_default = kwargs.get(name, view_or_group)
             setattr(self, name, value_or_default)
-    
+
     def _view_or_group(self, name, implicit, explicit, kwargs):
         if self._extract_from(name, explicit, kwargs):
             return self._extract_from(name, explicit, kwargs)
@@ -69,6 +71,7 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__bottom',
                  '_lazy__cell_details',
                  '_lazy__data_header',
+                 '_lazy__data',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__meanstest',
@@ -115,7 +118,7 @@ class ExcelFormats(_ExcelFormats):
                     format_.update(self._method(method))
                 except AttributeError:
                     pass
-                
+
                 if '_lazy__' + method in self.slots:
                     format_.update(getattr(self, '_' + method))
 
@@ -157,8 +160,8 @@ class ExcelFormats(_ExcelFormats):
     def _cell_details(self):
         format_ = self._template
 
-        format_.update(dict(font_name=self.font_name_propstest, text_h_align=1))
-
+        format_.update(dict(text_wrap=False, text_h_align=1))
+        
         return _Format(**format_)
 
     @lazy_property
@@ -168,8 +171,7 @@ class ExcelFormats(_ExcelFormats):
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
-                            bottom=self.border_style_ext,
-                            ))
+                            bottom=self.border_style_ext))
         format_.update(self._method('y'))
 
         return _Format(**format_)
@@ -181,11 +183,14 @@ class ExcelFormats(_ExcelFormats):
         format_.update(dict(left=self.border_style_ext,
                             top=self.border_style_ext,
                             right=self.border_style_ext,
-                            bottom=self.border_style_ext,
-                            ))
+                            bottom=self.border_style_ext))
         format_.update(self._method('data_header'))
 
         return _Format(**format_)
+
+    @lazy_property
+    def _data(self):
+        return dict(text_wrap=False)
 
     @lazy_property
     def _left(self):
