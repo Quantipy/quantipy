@@ -2894,7 +2894,7 @@ class Chain(object):
             vals = attr[6:] if attr.startswith('_frame') else attr
             frame_val = getattr(self._frame, vals)
             setattr(self._frame, attr, getattr(self, attr))
-            setattr(self, attr, value)
+            setattr(self, attr, frame_val)
 
         if self.structure is not None:
             values = self._frame.values
