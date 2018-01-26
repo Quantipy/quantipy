@@ -926,7 +926,7 @@ if __name__ == '__main__':
 
     # RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN
     CA1 = True
-    AC1 = False
+    AC1 = True
     ACB1 = False
     ACM1 = False 
     AC0 = False
@@ -1141,7 +1141,13 @@ if __name__ == '__main__':
                          text_loc_x='x edits',
                          text_loc_y='y edits',
                         )
-    
+
+        # how to attach to single chain
+        #chains[0].annotations.set('Explanation text', 
+        #                      category='header',
+        #                      position='left'
+        #                     )
+
     # ------------------------------------------------------------ dataframe
     if OEC:
         open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
@@ -2257,48 +2263,48 @@ if __name__ == '__main__':
                      'S H E E T',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if AC1:
         x.add_chains(arr_chains_1,
                      'array summary 1',
-                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     #annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if ACB1:
         x.add_chains(arr_chains_block_1,
                      'block summary 1',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if ACM1:
         x.add_chains(arr_chains_mean_1,
                      'means summary 1',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if AC0:
         x.add_chains(arr_chains_0,
                      'array summary 0',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if ACB0:
         x.add_chains(arr_chains_block_0,
                      'block summary 0',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if ACM0:
         x.add_chains(arr_chains_mean_0,
                      'means summary 0',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     if OEC:
         x.add_chains(open_chain,
                      'Open_Ends',
                      annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
                      **sheet_properties
-                     )
+                    )
     x.close()
     # -------------
