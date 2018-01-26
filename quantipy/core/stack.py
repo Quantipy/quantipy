@@ -1859,7 +1859,7 @@ class Stack(defaultdict):
                 if x == '@':
                     y = y[0]
                     fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
-                    _append_loop(mapping, x, fn, f[y], w, y)
+                    _append_loop(mapping, x, fn, f[y], w, [y])
                 else:
                     fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
                     _append_loop(mapping, x, fn, f[x], w, y)
