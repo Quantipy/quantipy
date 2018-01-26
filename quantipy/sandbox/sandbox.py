@@ -1232,7 +1232,7 @@ class ChainManager(object):
         text_key : str, default meta['lib']['default text']
             The language version of any variable metadata applied.
         text_loc_x : str, default None
-            The key in the 'text' to locate the text_key for the 
+            The key in the 'text' to locate the text_key for the
             ``pandas.DataFrame.index`` labels
         text_loc_y : str, default None
             The key in the 'text' to locate the text_key for the
@@ -1382,7 +1382,7 @@ class ChainAnnotations(dict):
         else:
             return a_type
 
-    def set_annotation(self, text, category='header', position='title'):
+    def set(self, text, category='header', position='title'):
         """
         Add annotation texts defined by their category and position.
 
@@ -1446,6 +1446,7 @@ class Chain(object):
         self.totalize = False
         self.base_descriptions = None
         self.painted = False
+        self.annotations = ChainAnnotations()
         self._array_style = None
         self._group_style = None
         self._meta = None
@@ -2560,17 +2561,17 @@ class Chain(object):
         if text_loc_x:
             text_keys['x'] = (text_loc_x, text_key)
         else:
-            text_keys['x'] = text_key 
+            text_keys['x'] = text_key
 
         if text_loc_y:
             text_keys['y'] = (text_loc_y, text_key)
         else:
             text_keys['y'] = text_key
-        
+
         return text_keys
 
     def paint(self, text_key=None, text_loc_x=None, text_loc_y=None, display=None,
-              axes=None, view_level=False, transform_tests='cells', 
+              axes=None, view_level=False, transform_tests='cells',
               add_base_texts='simple', totalize=False, sep=None, na_rep=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
@@ -2772,7 +2773,7 @@ class Chain(object):
         """
         level_1_text = []
         if text_keys[axis] in self._transl:
-            tk_transl = text_keys[axis] 
+            tk_transl = text_keys[axis]
         else:
             tk_transl = self._default_text
         for i, value in enumerate(levels[1]):
