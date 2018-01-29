@@ -418,6 +418,8 @@ class DataSet(object):
             if self._dimensions_comp:
                self.dimensionize()
                self._meta['info']['dimensions_comp'] = True
+            else:
+                self._meta['info']['dimensions_comp'] = False
         return None
 
     def read_dimensions(self, path_meta, path_data):
