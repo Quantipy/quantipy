@@ -840,7 +840,9 @@ class ChainManager(object):
                             colbase_l = -2 if sigtested else -1
                             for base in ['Base', 'UnweightedBase']:
                                 df = df.drop(base, axis=1, level=colbase_l)
-                            chain_dfs.append(to_chain((df, x, y), meta))
+                            chain = to_chain((df, x, y), meta)
+                            chain.name = name
+                            chain_dfs.append(chain)
                         if not folder:
                             chain_coll.extend(chain_dfs)
                         else:
