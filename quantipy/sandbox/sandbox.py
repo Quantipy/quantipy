@@ -1039,9 +1039,9 @@ class ChainManager(object):
             p = any('c%' in view.split('|')[-1] for view in views)
             cp = c and p
             if cp:
-                cell_items = 'cp'
+                cell_items = 'counts_colpct'
             else:
-                cell_items = 'c' if c else 'p'
+                cell_items = 'counts' if c else 'colpct'
             return cell_items
 
         def check_sigtest(views):
@@ -1090,25 +1090,22 @@ class ChainManager(object):
             oe = cluster_spec.get('oe', False)
             if not oe:
 
-                vm = ViewManager(self.stack, tests=cluster_spec['tests'])
-
+                vm = ViewManager(self.stack)
                 vm.get_views(cell_items=cluster_spec['cell_items'],
-                             weights=cluster_spec['weight'],
-                             bases=cluster_spec['bases']
-                            ).group()
+                             weight=cluster_spec['weight'],
+                             bases=cluster_spec['bases'],
+                             stats= ['mean', 'stddev', 'median', 'min', 'max'],
+                             tests=cluster_spec['tests'])
 
-                chains = self.stack.get_chain(data_key=cluster_spec['data_key'],
-                                              filter_key=cluster_spec['filter'],
-                                              x_keys = cluster_spec['xs'],
-                                              y_keys = cluster_spec['ys'],
-                                              views=vm.views,
-                                              orient='x',
-                                              prioritize=True)
-
-                cluster_spec['new_chains'] = chains
-            else:
-                cluster_spec['new_chains'] = cluster_spec['df']
-
+                self.get(data_key=cluster_spec['data_key'],
+                         filter_key=cluster_spec['filter'],
+                         x_keys = cluster_spec['xs'],
+                         y_keys = cluster_spec['ys'],
+                         views=vm.views,
+                         orient='x',
+                         prioritize=True)
+        print 'FOUND OE SHEET, USE STRUCTURE FOR THAT'
+        raise
         new_chain_dict = OrderedDict()
         for c in cluster_specs:
             new_chain_dict[c['name']] = c['new_chains']
