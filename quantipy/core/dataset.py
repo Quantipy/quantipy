@@ -66,7 +66,7 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
-        self._set_dim_comp(dimensions_comp)
+        self.set_dim_comp(dimensions_comp)
         return None
 
     def __contains__(self, name):
@@ -196,7 +196,7 @@ class DataSet(object):
         self._verbose_infos = verbose
         return None
 
-    def _set_dim_comp(self, dimensions_comp):
+    def set_dim_comp(self, dimensions_comp):
         if dimensions_comp is True:
             dimensions_comp = '_grid'
         self._dimensions_comp = dimensions_comp
@@ -421,7 +421,8 @@ class DataSet(object):
                 self.rename(col, renamed)
         if not self._dimensions_comp == 'ignore':
             self.undimensionize()
-            self._meta['info']['dimensions_comp'] = self._dimensions_comp
+            dim_comp = self._meta['info'].get('dimensions_comp')
+            if dim_comp is not None: self._dimensions_comp = dim_comp
             if self._dimensions_comp:
                self.dimensionize()
         return None
@@ -765,7 +766,7 @@ class DataSet(object):
         self.set_verbose_infomsg(False)
         self._set_file_info('', reset=reset)
         dimensions_comp = self._meta['info'].get('dimensions_comp', False)
-        self._set_dim_comp(dimensions_comp)
+        self.set_dim_comp(dimensions_comp)
         return None
 
     def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
@@ -999,8 +1000,12 @@ class DataSet(object):
                      'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
+            d_mode = True
+        else:
+            d_mode = self._dimensions_comp
         print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1, self._dimensions_comp)
+                               len(self._data.columns)-1, d_mode)
         return None
 
     # ------------------------------------------------------------------------
