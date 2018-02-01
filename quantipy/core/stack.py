@@ -319,6 +319,7 @@ class Stack(defaultdict):
         if filter_key:
             raise NotImplementedError("'filter_key' is not implemented.")
         self[data_key].master_meta = copy.deepcopy(self[data_key].meta)
+        self[data_key].meta = copy.deepcopy(self[data_key].meta)
         return None
 
     def restore_meta(self, data_key, filter_key=None):
