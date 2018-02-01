@@ -2106,7 +2106,7 @@ class Chain(object):
                     if self._meta['columns'][link.x].get('parent'):
                         self._is_mask_item = True
                 except KeyError:
-                    raise KeyError("x is not in columns: " + link.x)
+                    pass
 
                 # TODO: contains arrary summ. attr.
                 # TODO: make this work y_frames = self._pad_frames(y_frames)
