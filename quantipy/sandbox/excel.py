@@ -865,7 +865,7 @@ if __name__ == '__main__':
     # Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
     # Y_KEYS = ['@', 'q4 > gender']                               # 3.
     # Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
-    Y_KEYS = ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'] # 5.
+    Y_KEYS = ['@', 'q4 > gender', 'q4 > gender > Wave', 'q5_1'] # 5.
     TESTS = True
 
     # WEIGHT = None
@@ -923,9 +923,37 @@ if __name__ == '__main__':
         VIEW_KEYS = ('x|f|x:|||cbase', ) + VIEW_KEYS
         weights.append(WEIGHT)
 
+
+    # RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN
+    CA1 = True
+    AC1 = False
+    ACB1 = False
+    ACM1 = False 
+    AC0 = False
+    ACB0 = False
+    ACM0 = False 
+    OEC = False
+
     dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
     dataset.read_quantipy(PATH_META, PATH_DATA)
     meta, data = dataset.split()
+
+    # text key modifications ------------------------------------------
+    meta['columns']['Wave']['text']['fail'] = 'from text > fake'
+    meta['columns']['Wave']['text']['x edits'] = {'fail': 'from text > x edits > fail'}
+
+    meta['columns']['gender']['text']['y edits'] = {'fake': 'from text > y edits > fake'}
+    meta['columns']['gender']['text']['x edits'] = {'en-GB': 'from text > x edits > en-GB'}
+
+    meta['columns']['q5_1']['text']['x edits'] = {'fake': 'from text > x edits > fake'}
+    meta['columns']['q5_1']['properties'] = {'base_text': {'fake': 'Base: fake',
+                                                           'en-GB': 'Base: en-GB'}}
+    
+    meta['columns']['q4']['text']['fake'] = 'from text > fake'
+    meta['columns']['q4']['text']['y edits'] = {'fake': 'from text > y edits > fake'}
+    meta['columns']['q4']['properties'] = {'base_text': 'Base: Text'}
+    # -----------------------------------------------------------------
+
     #data = data.head(250)
     data.loc[30:,'q5_2'] = np.NaN
     data.loc[30:,'q5_4'] = np.NaN
@@ -1071,65 +1099,71 @@ if __name__ == '__main__':
                  # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
 
-    chains = ChainManager(stack)
+    if CA1:
+        chains = ChainManager(stack)
 
-    chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-               x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
-               views=VIEW_KEYS, orient=ORIENT,
-               )
-    VIEW_KEYS = ('x|f|x:|||cbase',
-                 'x|f|x:||%s|cbase' % WEIGHT,
-                 'x|f|x:|||cbase_gross',
-                 'x|f|x:||%s|cbase_gross' % WEIGHT,
-                 'x|f|x:|||ebase',
-                 'x|f|x:||%s|ebase' % WEIGHT,
-                 ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
-                  'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
-                  'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
-                  'x|t.props.Dim.80+@|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
-                 #('x|d.mean|x:||%s|stat' % WEIGHT,
-                 # 'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT),
-                 # 'x|d.stddev|x:||%s|stat' % WEIGHT,
-                 # 'x|d.median|x:||%s|stat' % WEIGHT,
-                 # 'x|d.var|x:||%s|stat' % WEIGHT,
-                 # 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
-                 # 'x|d.sem|x:||%s|stat' % WEIGHT,
-                 # 'x|d.lower_q|x:||%s|stat' % WEIGHT,
-                 # 'x|d.upper_q|x:||%s|stat' % WEIGHT,
-                 ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
-                  'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
-                 #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
-                 # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
-                )
+        chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                   x_keys=X_KEYS[:-1], y_keys=Y_KEYS,
+                   views=VIEW_KEYS, orient=ORIENT,
+                   )
+        VIEW_KEYS = ('x|f|x:|||cbase',
+                     'x|f|x:||%s|cbase' % WEIGHT,
+                     'x|f|x:|||cbase_gross',
+                     'x|f|x:||%s|cbase_gross' % WEIGHT,
+                     'x|f|x:|||ebase',
+                     'x|f|x:||%s|ebase' % WEIGHT,
+                     ('x|f|x[{1,2}+],x[{4,5}+]*:||%s|BLOCK' % WEIGHT,
+                      'x|f|x[{1,2}+],x[{4,5}+]*:|y|%s|BLOCK' % WEIGHT,
+                      'x|f|x[{1,2}+],x[{4,5}+]*:|x|%s|BLOCK' % WEIGHT,
+                      'x|t.props.Dim.80+@|x[{1,2}+],x[{4,5}+]*:||%s|test' % WEIGHT),
+                     #('x|d.mean|x:||%s|stat' % WEIGHT,
+                     # 'x|t.means.Dim.80+@|x:||%s|test' % WEIGHT),
+                     # 'x|d.stddev|x:||%s|stat' % WEIGHT,
+                     # 'x|d.median|x:||%s|stat' % WEIGHT,
+                     # 'x|d.var|x:||%s|stat' % WEIGHT,
+                     # 'x|d.varcoeff|x:||%s|stat' % WEIGHT,
+                     # 'x|d.sem|x:||%s|stat' % WEIGHT,
+                     # 'x|d.lower_q|x:||%s|stat' % WEIGHT,
+                     # 'x|d.upper_q|x:||%s|stat' % WEIGHT,
+                     ('x|f.c:f|x:||%s|counts_sum' % WEIGHT,
+                      'x|f.c:f|x:|y|%s|c%%_sum' % WEIGHT),
+                     #('x|f.c:f|x++:||%s|counts_cumsum' % WEIGHT,
+                     # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
+                    )
 
-    chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-               x_keys=X_KEYS[-1], y_keys=Y_KEYS,
-               views=VIEW_KEYS, orient=ORIENT,
-               )
-
-    chains.paint_all(transform_tests='full')
-
+        chains.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                   x_keys=X_KEYS[-1], y_keys=Y_KEYS,
+                   views=VIEW_KEYS, orient=ORIENT,
+                   )
+        
+        chains.paint_all(transform_tests='full', 
+                         text_key='fake',
+                         text_loc_x='x edits',
+                         text_loc_y='y edits',
+                        )
+    
     # ------------------------------------------------------------ dataframe
-    open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
-    open_chain = ChainManager(stack)
-    open_chain = open_chain.add(open_ends,
-                                meta_from=(DATA_KEY, FILTER_KEY),
-                                name='Open Ends')
-    #open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='__NA__')
-    open_chain.paint_all(text_keys='en-GB', sep='. ', na_rep='-')
+    if OEC:
+        open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']]
+        open_chain = ChainManager(stack)
+        open_chain = open_chain.add(open_ends,
+                                    meta_from=(DATA_KEY, FILTER_KEY),
+                                    name='Open Ends')
+        #open_chain.paint_all(text_key='en-GB', sep='. ', na_rep='__NA__')
+        open_chain.paint_all(text_key='en-GB', sep='. ', na_rep='-')
 
-    #open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q2']]
-    #open_chain = open_chain.add(open_ends,
-    #                            meta_from=(DATA_KEY, FILTER_KEY),
-    #                            )
-    #
-    #for x in iter(open_chain):
-    #    print '\n', x
+        #open_ends = data.loc[:, ['RecordNo', 'gender', 'age', 'q2']]
+        #open_chain = open_chain.add(open_ends,
+        #                            meta_from=(DATA_KEY, FILTER_KEY),
+        #                            )
+        #
+        #for x in iter(open_chain):
+        #    print '\n', x
 
-    #open_chain.paint_all(text_keys='en-GB', sep='. ')
-    #
-    #for x in iter(open_chain):
-    #    print '\n', x
+        #open_chain.paint_all(text_key='en-GB', sep='. ')
+        #
+        #for x in iter(open_chain):
+        #    print '\n', x
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries
@@ -1249,26 +1283,28 @@ if __name__ == '__main__':
     #             'x|d.upper_q|x:||%s|stat' % WEIGHT,
     #            )
 
-    arr_chains_1 = ChainManager(stack)
+    if AC1:
+        arr_chains_1 = ChainManager(stack)
 
-    arr_chains_1.get(data_key=DATA_KEY,
-                   filter_key=FILTER_KEY,
-                   x_keys=['@'],
-                   y_keys=['q5'],
-                   views=VIEW_KEYS,
-                  )
+        arr_chains_1.get(data_key=DATA_KEY,
+                       filter_key=FILTER_KEY,
+                       x_keys=['@'],
+                       y_keys=['q5'],
+                       views=VIEW_KEYS,
+                      )
 
-    arr_chains_1.paint_all()
+        arr_chains_1.paint_all()
 
-    arr_chains_0 = ChainManager(stack)
+    if AC0:
+        arr_chains_0 = ChainManager(stack)
 
-    arr_chains_0.get(data_key=DATA_KEY,
-                   filter_key=FILTER_KEY,
-                   x_keys=['q5'],
-                   y_keys=['@'],
-                   views=VIEW_KEYS,
-                  )
-    arr_chains_0.paint_all()
+        arr_chains_0.get(data_key=DATA_KEY,
+                       filter_key=FILTER_KEY,
+                       x_keys=['q5'],
+                       y_keys=['@'],
+                       views=VIEW_KEYS,
+                      )
+        arr_chains_0.paint_all()
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries - block nets
@@ -1291,23 +1327,25 @@ if __name__ == '__main__':
                  # 'x|f.c:f|x++:|y|%s|c%%_cumsum' % WEIGHT)
                 )
 
-    arr_chains_block_1 = ChainManager(stack)
-    arr_chains_block_1.get(data_key=DATA_KEY,
-                           filter_key=FILTER_KEY,
-                           x_keys=['@'],
-                           y_keys=['q5'],
-                           views=VIEW_KEYS,
-                          )
-    arr_chains_block_1.paint_all()
+    if ACB1:
+        arr_chains_block_1 = ChainManager(stack)
+        arr_chains_block_1.get(data_key=DATA_KEY,
+                               filter_key=FILTER_KEY,
+                               x_keys=['@'],
+                               y_keys=['q5'],
+                               views=VIEW_KEYS,
+                              )
+        arr_chains_block_1.paint_all()
 
-    arr_chains_block_0 = ChainManager(stack)
-    arr_chains_block_0.get(data_key=DATA_KEY,
-                           filter_key=FILTER_KEY,
-                           x_keys=['q5'],
-                           y_keys=['@'],
-                           views=VIEW_KEYS,
-                          )
-    arr_chains_block_0.paint_all()
+    if ACB0:
+        arr_chains_block_0 = ChainManager(stack)
+        arr_chains_block_0.get(data_key=DATA_KEY,
+                               filter_key=FILTER_KEY,
+                               x_keys=['q5'],
+                               y_keys=['@'],
+                               views=VIEW_KEYS,
+                              )
+        arr_chains_block_0.paint_all()
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries - mean
@@ -1323,27 +1361,29 @@ if __name__ == '__main__':
                  'x|d.upper_q|x:||%s|stat' % WEIGHT,
                 )
 
-    arr_chains_mean_1 = ChainManager(stack)
+    if ACM1:
+        arr_chains_mean_1 = ChainManager(stack)
 
-    arr_chains_mean_1.get(data_key=DATA_KEY,
-                          filter_key=FILTER_KEY,
-                          x_keys=['@'],
-                          y_keys=['q5'],
-                          views=VIEW_KEYS,
-                         )
+        arr_chains_mean_1.get(data_key=DATA_KEY,
+                              filter_key=FILTER_KEY,
+                              x_keys=['@'],
+                              y_keys=['q5'],
+                              views=VIEW_KEYS,
+                             )
 
-    arr_chains_mean_1.paint_all()
+        arr_chains_mean_1.paint_all()
 
-    arr_chains_mean_0 = ChainManager(stack)
+    if ACM0:
+        arr_chains_mean_0 = ChainManager(stack)
 
-    arr_chains_mean_0.get(data_key=DATA_KEY,
-                          filter_key=FILTER_KEY,
-                          x_keys=['q5'],
-                          y_keys=['@'],
-                          views=VIEW_KEYS,
-                         )
+        arr_chains_mean_0.get(data_key=DATA_KEY,
+                              filter_key=FILTER_KEY,
+                              x_keys=['q5'],
+                              y_keys=['@'],
+                              views=VIEW_KEYS,
+                             )
 
-    arr_chains_mean_0.paint_all()
+        arr_chains_mean_0.paint_all()
     # ------------------------------------------------------------
 
     # table props - check editability
@@ -2212,45 +2252,53 @@ if __name__ == '__main__':
               image=image,
               **tp)
 
-    x.add_chains(chains,
-                 'S H E E T',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(arr_chains_1,
-                 'array summary 1',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(arr_chains_block_1,
-                 'block summary 1',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(arr_chains_mean_1,
-                 'means summary 1',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(arr_chains_0,
-                 'array summary 0',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(arr_chains_block_0,
-                 'block summary 0',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(arr_chains_mean_0,
-                 'means summary 0',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
-    x.add_chains(open_chain,
-                 'Open_Ends',
-                 annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
-                 **sheet_properties
-                 )
+    if CA1:
+        x.add_chains(chains,
+                     'S H E E T',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if AC1:
+        x.add_chains(arr_chains_1,
+                     'array summary 1',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if ACB1:
+        x.add_chains(arr_chains_block_1,
+                     'block summary 1',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if ACM1:
+        x.add_chains(arr_chains_mean_1,
+                     'means summary 1',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if AC0:
+        x.add_chains(arr_chains_0,
+                     'array summary 0',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if ACB0:
+        x.add_chains(arr_chains_block_0,
+                     'block summary 0',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if ACM0:
+        x.add_chains(arr_chains_mean_0,
+                     'means summary 0',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
+    if OEC:
+        x.add_chains(open_chain,
+                     'Open_Ends',
+                     annotations=['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4'],
+                     **sheet_properties
+                     )
     x.close()
     # -------------

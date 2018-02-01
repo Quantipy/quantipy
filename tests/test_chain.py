@@ -111,7 +111,7 @@ def chain_for_structure(dataset, basic_chain):
 def chain_structure(chain_for_structure, paint=False, sep=None):
     if paint:
         chain_for_structure.paint_all(sep=sep or '. ',
-                                      text_keys='en-GB',
+                                      text_key='en-GB',
                                       na_rep=fixture.AST)
     it = iter(chain_for_structure)
     return next(it)
@@ -308,7 +308,7 @@ class TestChainAddRepaint:
                                                      repaint_columns,
                                                      paint=paint)
 
-            _chain.paint(sep=sep, text_keys='en-GB', na_rep=fixture.AST)
+            _chain.paint(sep=sep, text_key='en-GB', na_rep=fixture.AST)
 
             assert_frame_equal(_chain.structure.fillna('*'),
                                _expected_structure)
