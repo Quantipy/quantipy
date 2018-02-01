@@ -38,7 +38,15 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None):
             if var is None: return func(*args, **kwargs)
             if not isinstance(var, list): var = [var]
             # check the variable
-            not_valid = [v for v in var if not v in c + ['@']]
+
+            # not_valid = [v for v in var if not v in c + ['@']]
+            not_valid = []
+            for v in var:
+                print
+                print v
+                if not v in c + ['@']:
+                    not_valid.append(v)
+
             if not_valid:
                 msg = "'{}' argument for {}() must be in {}.\n"
                 msg += '{} is not in {}.'

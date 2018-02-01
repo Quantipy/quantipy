@@ -3151,7 +3151,7 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
-    def get_property(name, prop_name, prop_value, text_key=None):
+    def get_property(self, name, prop_name, text_key=None):
         """
         """
         mask_ref = self._meta['masks']
@@ -3173,7 +3173,7 @@ class DataSet(object):
         p = meta_ref[name]['properties'].get(prop_name, None)
         if p:
             if prop_name == 'base_text' and isinstance(p, dict):
-            p = p[text_key]
+                p = p[text_key]
         return p
 
 
