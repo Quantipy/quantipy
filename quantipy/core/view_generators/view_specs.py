@@ -441,10 +441,7 @@ class ViewManager(object):
                         # Net test views
                         net_test_views.extend([
                             v for v in all_views
-                            if v.split('|')[1]=='t.props.{}{}'.format(
-                                mimic,
-                                level
-                            )
+                            if 't.props.{}{}'.format(mimic, level) in v.split('|')[1]
                             and v.split('|')[2].startswith('x[')
                             and v.split('|')[4]==weight
                         ])
