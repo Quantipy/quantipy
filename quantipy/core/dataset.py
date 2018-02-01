@@ -4089,9 +4089,9 @@ class DataSet(object):
         if not (org_type in valid or is_convertable):
             msg = 'Cannot convert variable {} of type {} to int!'
             raise TypeError(msg.format(name, org_type))
-        self._meta['columns'][name]['type'] = 'int'
         if self._has_categorical_data(name):
             self._meta['columns'][name].pop('values')
+        self._meta['columns'][name]['type'] = 'int'
         if org_type == 'string':
             if is_all_ints:
                 self._data[name] = self._data[name].apply(lambda x: int(x))
