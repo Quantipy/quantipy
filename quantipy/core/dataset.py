@@ -3151,6 +3151,34 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
+    def get_property(name, prop_name, prop_value, text_key=None):
+        """
+        """
+        mask_ref = self._meta['masks']
+        col_ref = self._meta['columns']
+        if not text_key: text_key = self.text_key
+        valid_props = ['base_text']
+
+        if prop_name not in valid_props:
+            raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        has_props = False
+        if self._is_array(name):
+            if 'properties' in mask_ref:
+                has_props = True
+                meta_ref = mask_ref
+        else:
+            if 'properties' in col_ref:
+                has_props = True
+                meta_ref = col_ref
+        p = meta_ref[name]['properties'].get(prop_name, None)
+        if p:
+            if prop_name == 'base_text' and isinstance(p, dict):
+            p = p[text_key]
+        return p
+
+
+
+
     @modify(to_list='name')
     @verify(variables={'name': 'columns'}, axis='axis')
     def slicing(self, name, slicer, axis='y'):
