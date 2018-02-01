@@ -307,7 +307,8 @@ class Box(object):
                  '_columns', '_italic', '_lazy_excel', '_lazy_index',
                  '_lazy_columns', '_lazy_values', '_lazy_contents',
                  '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests',
-                 '_lazy_arrow_rep', '_lazy_arrow_color')
+                 '_lazy_arrow_rep', '_lazy_arrow_color', '_lazy_header_left',
+                 '_lazy_header_center', '_lazy_header_title', '_lazy_notes')
 
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
@@ -397,6 +398,22 @@ class Box(object):
     def arrow_color(self):
         return {"'@L'": self.sheet.arrow_color_high,
                 "'@H'": self.sheet.arrow_color_low}
+
+    @lazy_property
+    def header_left(self):
+        return self.chain.annotations.header_left
+
+    @lazy_property
+    def header_center(self):
+        return self.chain.annotations.header_center
+
+    @lazy_property
+    def header_title(self):
+        return self.chain.annotations.header_title
+
+    @lazy_property
+    def notes(self):
+        return self.chain.annotations.notes
 
     def to_sheet(self, columns):
         # TODO: Doc string
@@ -506,14 +523,27 @@ class Box(object):
         self.sheet._row = row + 1
 
     def _write_rows(self):
+        if self.chain.annotations:
+            self._write_annotations(['header_left', 'header_center', 'header_title'])
+
         column = self.sheet._column
 
         levels = self.index.get_level_values
 
-        self.sheet.write(self.sheet._row, column,
-                         levels(0).unique().values[0],
-                         self.excel._formats['label'])
+        if self.chain._is_mask_item:
+            self.sheet.write(self.sheet._row, column,
+                                   levels(0).unique().values[0],
+                                   self.excel._formats['mask_label'])
+            self._format_row(self.excel._formats['mask_label'])
+        else:
+            self.sheet.write(self.sheet._row, column,
+                             levels(0).unique().values[0],
+                             self.excel._formats['label'])
+            self._format_row(self.excel._formats['label'])
         self.sheet._row += 1
+
+        if self.notes:
+            self._write_annotations(['notes'])
 
         if self.sheet.dummy_tests and self.has_tests:
             level_1, values, contents = self._get_dummies(levels(1).values,
@@ -524,12 +554,14 @@ class Box(object):
         row_max = max(contents.keys())
         flat = np.c_[level_1.T, values].flat
         rel_x, rel_y = flat.coords
+
         bg = use_bg = True
         bg_from = bg_x_contents = None
         border_from = False
         arrow_high_format = arrow_low_format = _None = object()
 
         for data in flat:
+
             if self.chain.array_style == 0:
                 if rel_y == 0:
                     for idx in sorted(contents[rel_x]):
@@ -617,6 +649,19 @@ class Box(object):
             if rel_y == 0:
                 border_from = name
         self.sheet._row += rel_x
+
+    def _write_annotations(self, names):
+        for name in names:
+            anno = getattr(self, name)
+            if anno:
+                self.sheet.write(self.sheet._row, self.sheet._column,
+                                 anno[0], self.excel._formats[name])
+                self._format_row(self.excel._formats[name])
+                self.sheet._row += 1
+
+    def _format_row(self, format_):
+        for rel_y in xrange(1, self.values.shape[1] + 1):
+            self.sheet.write(self.sheet._row, self.sheet._column + rel_y, '', format_)
 
     @lru_cache()
     def _alternate_bg(self, name, bg):
@@ -926,7 +971,7 @@ if __name__ == '__main__':
 
     # RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN
     CA1 = True
-    AC1 = True
+    AC1 = False
     ACB1 = False
     ACM1 = False 
     AC0 = False
@@ -1135,7 +1180,7 @@ if __name__ == '__main__':
                    x_keys=X_KEYS[-1], y_keys=Y_KEYS,
                    views=VIEW_KEYS, orient=ORIENT,
                    )
-        
+
         chains.paint_all(transform_tests='full', 
                          text_key='fake',
                          text_loc_x='x edits',
@@ -1143,10 +1188,15 @@ if __name__ == '__main__':
                         )
 
         # how to attach to single chain
-        #chains[0].annotations.set('Explanation text', 
-        #                      category='header',
-        #                      position='left'
-        #                     )
+        # 1. Add to tables
+        # 2. Add formatting
+        chains[0].annotations.set('Headder Title -- no reason', category='header', position='title')
+        chains[0].annotations.set('Header Left -- explanation text', category='header', position='left')
+        chains[0].annotations.set('Header Center -- mask text', category='header', position='center')
+        chains[0].annotations.set('Notes -- base text', category='notes')
+        chains[1].annotations.set('Header Center -- mask text', category='header', position='center')
+        chains[1].annotations.set('Notes -- base text', category='notes')
+        chains[2].annotations.set('Headder Title -- no reason', category='header', position='title')
 
     # ------------------------------------------------------------ dataframe
     if OEC:
@@ -2187,7 +2237,41 @@ if __name__ == '__main__':
                               # block
                               'bold_block_net_text': True,
                               'italic_block_expanded_text': True,
-                              'italic_block_normal_text': False
+                              'italic_block_normal_text': False,
+
+                              # header - left
+                              'bold_header_left': True,
+                              'font_color_header_left': '#FFFFFF',
+                              'text_h_align_header_left': 1,
+                              'bg_color_header_left': '#AF8272',
+
+                              # header - center
+                              'bold_header_center': True,
+                              'font_color_header_center': '#FFFFFF',
+                              'text_h_align_header_center': 1,
+                              'bg_color_header_center': '#85AD6E',
+
+                              # header - title
+                              'bold_header_title': True,
+                              'font_color_header_title': '#265E1A',
+                              'text_h_align_header_title': 1,
+                              'bg_color_header_title': '#DFF442',
+
+                              # notes 
+                              'bold_notes': True,
+                              'font_color_notes': '#FF6DB8',
+                              'text_h_align_notes': 1,
+                              'bg_color_notes': '#6DFFFC',
+
+                              # mask label
+                              'bold_mask_label': True,
+                              'bg_color_mask_label': '#BDB1D8',
+                              'font_color_mask_label': '#33A59E',
+                              'font_name_mask_label': 'Calibri',
+                              'font_size_mask_label': 11,
+                              'italic_mask_label': True,
+                              'text_v_align_mask_label': 1,
+                              'text_h_align_mask_label': 3,
 
                              }
 
