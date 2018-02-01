@@ -3944,7 +3944,6 @@ class DataSet(object):
         None
         """
         meta = self._meta
-
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
             raise ValueError('{} does already exist.'.format(name))
@@ -3955,7 +3954,6 @@ class DataSet(object):
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
-
         first = var_list[0]
         subtype = self._get_type(var_list[0])
         if self._has_categorical_data(var_list[0]):
@@ -3993,10 +3991,29 @@ class DataSet(object):
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
         meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
                                                 if not v in name_set]
-
         if self._dimensions_comp:
             self.dimensionize(name)
         return None
+
+    @verify(variables={'name': 'both'})
+    def get_property(self, name, prop_name, text_key=None):
+        """
+        """
+        mask_ref = self._meta['masks']
+        col_ref = self._meta['columns']
+        if not text_key: text_key = self.text_key
+        valid_props = ['base_text']
+            if 'properties' in col_ref:
+                has_props = True
+                meta_ref = col_ref
+        if has_props:
+            p = meta_ref[name]['properties'].get(prop_name, None)
+            if p:
+                if prop_name == 'base_text' and isinstance(p, dict):
+                    p = p[text_key]
+            return p
+        else:
+            return None
 
     # ------------------------------------------------------------------------
     # Converting
