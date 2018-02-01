@@ -2632,7 +2632,7 @@ class Chain(object):
             if view_level:
                 self._add_view_level()
         self.painted = True
-        return self
+        return None
 
     def _paint_structure(self, text_key=None, sep=None, na_rep=None):
         """ Paint the dataframe-type Chain.
