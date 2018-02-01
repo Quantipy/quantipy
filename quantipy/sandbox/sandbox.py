@@ -1459,6 +1459,7 @@ class Chain(object):
         self._frame = None
         self._has_rules = None
         self._flag_bases = None
+        self._is_mask_item = False
 
     def __str__(self):
         if self.structure is not None:
@@ -2100,6 +2101,12 @@ class Chain(object):
                 if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(link, views)
                 found.append(found_views)
+
+                try:
+                    if self._meta['columns'][link.x].get('parent'):
+                        self._is_mask_item = True
+                except KeyError:
+                    raise KeyError("x is not in columns: " + link.x)
 
                 # TODO: contains arrary summ. attr.
                 # TODO: make this work y_frames = self._pad_frames(y_frames)
