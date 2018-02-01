@@ -3151,6 +3151,7 @@ class DataSet(object):
             self._meta['columns'][name]['properties'].update(prop_update)
         return None
 
+    @verify(variables={'name': 'both'})
     def get_property(self, name, prop_name, text_key=None):
         """
         """
@@ -3170,11 +3171,14 @@ class DataSet(object):
             if 'properties' in col_ref:
                 has_props = True
                 meta_ref = col_ref
-        p = meta_ref[name]['properties'].get(prop_name, None)
-        if p:
-            if prop_name == 'base_text' and isinstance(p, dict):
-                p = p[text_key]
-        return p
+        if has_props:
+            p = meta_ref[name]['properties'].get(prop_name, None)
+            if p:
+                if prop_name == 'base_text' and isinstance(p, dict):
+                    p = p[text_key]
+            return p
+        else:
+            return None
 
 
 
