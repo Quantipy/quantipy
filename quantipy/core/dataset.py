@@ -3163,7 +3163,7 @@ class DataSet(object):
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
-        if self._is_array(name):
+        if self.is_array(name):
             if 'properties' in mask_ref[name]:
                 has_props = True
                 meta_ref = mask_ref[name]
