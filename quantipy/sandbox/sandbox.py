@@ -1656,7 +1656,6 @@ class Chain(object):
             mapped = ''
             group = None
             i =  0 if (self._frame.columns.nlevels == 3) else 4
-            print self._frame.columns.labels[0]
             for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-i]):
                 if letter == '@':
                     continue
