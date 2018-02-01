@@ -971,13 +971,13 @@ if __name__ == '__main__':
 
     # RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN
     CA1 = True
-    AC1 = False
-    ACB1 = False
-    ACM1 = False 
-    AC0 = False
-    ACB0 = False
-    ACM0 = False 
-    OEC = False
+    AC1 = True
+    ACB1 = True
+    ACM1 = True 
+    AC0 = True
+    ACB0 = True
+    ACM0 = True 
+    OEC = True
 
     dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
     dataset.read_quantipy(PATH_META, PATH_DATA)
@@ -1351,6 +1351,11 @@ if __name__ == '__main__':
 
         arr_chains_1.paint_all()
 
+        arr_chains_1[0].annotations.set('Headder Title -- no reason', category='header', position='title')
+        arr_chains_1[0].annotations.set('Header Left -- explanation text', category='header', position='left')
+        arr_chains_1[0].annotations.set('Header Center -- mask text', category='header', position='center')
+        arr_chains_1[0].annotations.set('Notes -- base text', category='notes')
+
     if AC0:
         arr_chains_0 = ChainManager(stack)
 
@@ -1361,6 +1366,11 @@ if __name__ == '__main__':
                        views=VIEW_KEYS,
                       )
         arr_chains_0.paint_all()
+
+        arr_chains_0[0].annotations.set('Headder Title -- no reason', category='header', position='title')
+        arr_chains_0[0].annotations.set('Header Left -- explanation text', category='header', position='left')
+        arr_chains_0[0].annotations.set('Header Center -- mask text', category='header', position='center')
+        arr_chains_0[0].annotations.set('Notes -- base text', category='notes')
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------ arr. summaries - block nets
@@ -2279,8 +2289,8 @@ if __name__ == '__main__':
     sheet_properties = dict()
 
     #test = 1
-    #test = 2
-    test = 3
+    test = 2
+    #test = 3
 
     if test == 1:
         sheet_properties = dict(dummy_tests=True,
