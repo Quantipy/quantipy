@@ -3995,26 +3995,6 @@ class DataSet(object):
             self.dimensionize(name)
         return None
 
-    @verify(variables={'name': 'both'})
-    def get_property(self, name, prop_name, text_key=None):
-        """
-        """
-        mask_ref = self._meta['masks']
-        col_ref = self._meta['columns']
-        if not text_key: text_key = self.text_key
-        valid_props = ['base_text']
-            if 'properties' in col_ref:
-                has_props = True
-                meta_ref = col_ref
-        if has_props:
-            p = meta_ref[name]['properties'].get(prop_name, None)
-            if p:
-                if prop_name == 'base_text' and isinstance(p, dict):
-                    p = p[text_key]
-            return p
-        else:
-            return None
-
     # ------------------------------------------------------------------------
     # Converting
     # ------------------------------------------------------------------------
@@ -5299,6 +5279,7 @@ class DataSet(object):
 
     # rules and properties
     # ------------------------------------------------------------------------
+    @verify(variables={'name': 'both'})
     def get_property(self, name, prop_name, text_key=None):
         """
         """
@@ -5318,11 +5299,14 @@ class DataSet(object):
             if 'properties' in col_ref:
                 has_props = True
                 meta_ref = col_ref
-        p = meta_ref[name]['properties'].get(prop_name, None)
-        if p:
-            if prop_name == 'base_text' and isinstance(p, dict):
-                p = p[text_key]
-        return p
+        if has_props:
+            p = meta_ref[name]['properties'].get(prop_name, None)
+            if p:
+                if prop_name == 'base_text' and isinstance(p, dict):
+                    p = p[text_key]
+            return p
+        else:
+            return None
 
     @verify(variables={'name': 'both'})
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
