@@ -111,6 +111,7 @@ _DEFAULT_GENERAL = dict(bg_color=_DEFAULTS['bg_color'],
                         text_v_align=2,
                         text_h_align=2,
                         text_h_align_label=1,
+                        text_h_align_mask_label=1,
                         text_wrap=_DEFAULTS['text_wrap'],
                         top=_DEFAULTS['border'],
                         top_color=_DEFAULTS['border_color'])
@@ -122,6 +123,8 @@ _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color',
                     'font_name', 'font_size', 'italic')
 
 _VIEWS_GROUPS = dict(default='default',
+                     label='label',
+                     mask_label='label',
                      c_base='base',
                      u_c_base='u_base',
                      c_base_gross='base',
@@ -175,11 +178,15 @@ _VIEWS_GROUPS = dict(default='default',
                      counts_cumsum='sum',
                      c_pct_cumsum='sum')
 
-_CELLS = ('y', 'data_header', 'label')
+_NO_TEXT = ('label', 'mask_label')
+
+_CELLS = ('y', 'data_header', 'header_left', 'header_center', 'header_title', 'notes')
+
 for view in _VIEWS_GROUPS.keys():
-    _CELLS = _CELLS + (view, view + '_text')
+    _CELLS += (view, ) if view in _NO_TEXT else (view, view + '_text') 
 
 _DEFAULT_CELL = dict()
+
 for cell in _CELLS:
     attrs = [(attr + '_' + cell, _DEFAULTS[attr]) for attr in _CELL_ATTRIBUTES]
     _DEFAULT_CELL.update(dict(attrs))

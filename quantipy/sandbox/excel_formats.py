@@ -72,10 +72,14 @@ class ExcelFormats(_ExcelFormats):
                  '_lazy__cell_details',
                  '_lazy__data_header',
                  '_lazy__data',
+                 '_lazy__header_left',
+                 '_lazy__header_center',
+                 '_lazy__header_title',
                  '_lazy__interior',
                  '_lazy__left',
                  '_lazy__meanstest',
                  '_lazy__net_propstest',
+                 '_lazy__notes',
                  '_lazy__propstest',
                  '_lazy__right',
                  '_lazy__top',
@@ -142,15 +146,13 @@ class ExcelFormats(_ExcelFormats):
 
     @lru_cache()
     def _method(self, method):
-        return dict(bold=getattr(self, 'bold_' + method),
-                    bg_color=getattr(self, 'bg_color_' + method),
-                    font_color=getattr(self, 'font_color_' + method),
-                    font_name=getattr(self, 'font_name_' + method),
-                    font_size=getattr(self, 'font_size_' + method),
-                    italic=getattr(self, 'italic_' + method),
-                    text_v_align=getattr(self, 'text_v_align_' + method),
-                    text_h_align=getattr(self, 'text_h_align_' + method),
-                    text_wrap=self.text_wrap)
+        result = dict(text_wrap=self.text_wrap)
+        for name in ('bold', 'bg_color', 'font_color', 'font_name', 'font_size',
+                     'italic', 'text_v_align', 'text_h_align'):
+            attr = getattr(self, name + '_' + method, None)
+            if attr:
+                result[name] = attr
+        return result
 
     @property
     def _template(self):
@@ -161,7 +163,7 @@ class ExcelFormats(_ExcelFormats):
         format_ = self._template
 
         format_.update(dict(text_wrap=False, text_h_align=1))
-        
+
         return _Format(**format_)
 
     @lazy_property
@@ -173,6 +175,38 @@ class ExcelFormats(_ExcelFormats):
                             right=self.border_style_ext,
                             bottom=self.border_style_ext))
         format_.update(self._method('y'))
+
+        return _Format(**format_)
+
+    @lazy_property
+    def _header_left(self):
+        format_ = self._template
+
+        format_.update(self._method('header_left'))
+
+        return _Format(**format_)
+
+    @lazy_property
+    def _header_center(self):
+        format_ = self._template
+
+        format_.update(self._method('header_center'))
+
+        return _Format(**format_)
+
+    @lazy_property
+    def _header_title(self):
+        format_ = self._template
+
+        format_.update(self._method('header_title'))
+
+        return _Format(**format_)
+
+    @lazy_property
+    def _notes(self):
+        format_ = self._template
+
+        format_.update(self._method('notes'))
 
         return _Format(**format_)
 

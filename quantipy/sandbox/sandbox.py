@@ -1459,6 +1459,7 @@ class Chain(object):
         self._frame = None
         self._has_rules = None
         self._flag_bases = None
+        self._is_mask_item = False
 
     def __str__(self):
         if self.structure is not None:
@@ -1655,7 +1656,6 @@ class Chain(object):
             mapped = ''
             group = None
             i =  0 if (self._frame.columns.nlevels == 3) else 4
-            print self._frame.columns.labels[0]
             for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-i]):
                 if letter == '@':
                     continue
@@ -2100,6 +2100,12 @@ class Chain(object):
                 if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(link, views)
                 found.append(found_views)
+
+                try:
+                    if self._meta['columns'][link.x].get('parent'):
+                        self._is_mask_item = True
+                except KeyError:
+                    pass
 
                 # TODO: contains arrary summ. attr.
                 # TODO: make this work y_frames = self._pad_frames(y_frames)
