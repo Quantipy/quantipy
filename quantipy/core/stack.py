@@ -1,3 +1,4 @@
+
 #-*- coding: utf-8 -*-
 import io
 import itertools
@@ -18,7 +19,13 @@ from view_generators.view_maps import QuantipyViews
 from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.io import unicoder, write_quantipy
-from quantipy.core.tools.dp.prep import frequency, verify_test_results
+from quantipy.core.tools.dp.prep import frequency, verify_test_results, frange
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection, get_logic_index)
 from cache import Cache
 
 import itertools
@@ -1845,24 +1852,23 @@ class Stack(defaultdict):
         batches = self._check_batches(dk, batches)
         for batch in batches:
             b = self[dk].meta['sets']['batches'][batch]
-            xs = b['x_y_map'].keys()
-            ys = b['x_y_map']
+            xy = b['x_y_map']
             f  = b['x_filter_map']
+            fy = b['y_filter_map']
             w  = b['weights']
-            fs = b['filter']
-            for x in xs:
+            for x, y in xy:
                 if x == '@':
-                    for y in ys[x]:
-                        fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
-                        _append_loop(mapping, x, fn, f[y], w, ys[x])
+                    y = y[0]
+                    fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
+                    _append_loop(mapping, x, fn, f[y], w, [y])
                 else:
                     fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
-                    _append_loop(mapping, x, fn, f[x], w, ys[x])
-            if b['y_on_y']:
-                fn = fs if fs == 'no_filter' else fs.keys()[0]
+                    _append_loop(mapping, x, fn, f[x], w, y)
+            for yy in b['y_on_y']:
+                fn = fy[yy] if fy[yy] == 'no_filter' else fy[yy].keys()[0]
                 for x in b['yks'][1:]:
-                    _append_loop(mapping, x, fn, fs, w, b['yks'])
-                    _append_loop(y_on_y, x, fn, fs, w, b['yks'])
+                    _append_loop(mapping, x, fn, fy[yy], w, b['yks'])
+                    _append_loop(y_on_y, x, fn, fy[yy], w, b['yks'])
         return mapping, y_on_y
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
@@ -2456,28 +2462,32 @@ class Stack(defaultdict):
             if not _batches: return None
             for batch_name in _batches:
                 batch = self[dk].meta['sets']['batches'][batch_name]
-                levels = batch['siglevels']
+                sigpro = batch.get('sigproperties', {})
+                levels = batch.get('sigproperties', batch).get('siglevels', [])
                 weight = batch['weights']
                 x_y    = batch['x_y_map']
                 x_f    = batch['x_filter_map']
-                f      = batch['filter']
+                y_f    = batch['y_filter_map']
                 yks    = batch['yks']
 
                 if levels:
                     vm_tests = qp.ViewMapper().make_template(
                     method='coltests',
                     iterators={'metric': ['props', 'means'],
-                               'mimic': ['Dim'],
+                               'mimic': sigpro.get('mimic', ['Dim']),
                                'level': levels})
                     vm_tests.add_method('significance',
-                                        kwargs = {'flag_bases': [30, 100]})
-                    if 'y_on_y' in batch:
-                        self.add_link(filters=f, x=yks[1:], y=yks,
-                                       views=vm_tests, weights=weight)
-                    total_len = len(x_y.keys())
-                    for idx, x in enumerate(x_y.keys(), 1):
+                                        kwargs = {'flag_bases': sigpro.get('flag_bases', [30, 100]),
+                                                  'test_total': sigpro.get('test_total', None),
+                                                  'groups': 'Tests'})
+                    for yy in batch['y_on_y']:
+                        self.add_link(filters=y_f[yy], x=yks[1:], y=yks,
+                                      views=vm_tests, weights=weight)
+                    total_len = len(x_y)
+                    for idx, xy in enumerate(x_y, 1):
+                        x, y = xy
                         if x == '@': continue
-                        self.add_link(filters=x_f[x], x=x, y=x_y[x],
+                        self.add_link(filters=x_f[x], x=x, y=y,
                                        views=vm_tests, weights=weight)
                         if verbose:
                             done = float(idx) / float(total_len) *100

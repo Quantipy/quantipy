@@ -247,7 +247,6 @@ class ViewManager(object):
         # final list of base views:
         self.views = bases + self.views[self._base_len():]
         self._base_views = bases
->>>>>>> i848-excelpainter_rewrite
         return None
 
     def group(self, style='reduce', switch=False):

@@ -16,7 +16,7 @@ def lazy_property(func):
         return getattr(self, attr_name)
     return _lazy_property
 
-def verify(variables=None, categorical=None, text_keys=None, axis=None):
+def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=None):
     """
     Decorator to verify arguments.
     """
