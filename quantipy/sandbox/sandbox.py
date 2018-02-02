@@ -1458,6 +1458,9 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
+        self.grouping = None
+        self.sig_test_letters = None
+        self._group_style = None
         self._flag_bases = None
         self._is_mask_item = False
 
@@ -2657,7 +2660,6 @@ class Chain(object):
             if not column in self._meta['columns']: return None
 
             meta = self._meta['columns'][column]
-
             if sep:
                 column_mapper[column] = str_format % (column, meta['text'][text_key])
             else:

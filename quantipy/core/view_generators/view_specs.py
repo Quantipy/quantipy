@@ -650,7 +650,6 @@ class ViewManager(object):
 
             sum_chains = [sums_cs_flat, sums_ps_flat, sums_cps_flat]
             sum_gvs = [sums_cs, sums_ps, sums_cps]
-
         # Descriptive statistics views
         if descriptives:
             views = {}
