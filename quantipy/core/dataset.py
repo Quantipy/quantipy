@@ -5395,14 +5395,9 @@ class DataSet(object):
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
 
-<<<<<<< HEAD
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
     def hiding(self, name, hide, axis='y', hide_values=True):
-=======
-    def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
-               subset=None, report=True, path_report=None, inplace=True, verbose=True):
->>>>>>> i848-excelpainter_rewrite
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
 
