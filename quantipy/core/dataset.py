@@ -5286,6 +5286,34 @@ class DataSet(object):
 
     # rules and properties
     # ------------------------------------------------------------------------
+    @verify(variables={'name': 'both'})
+    def get_property(self, name, prop_name, text_key=None):
+        """
+        """
+        mask_ref = self._meta['masks']
+        col_ref = self._meta['columns']
+        if not text_key: text_key = self.text_key
+        valid_props = ['base_text']
+
+        if prop_name not in valid_props:
+            raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        has_props = False
+        if self.is_array(name):
+            if 'properties' in mask_ref[name]:
+                has_props = True
+                meta_ref = mask_ref[name]
+        else:
+            if 'properties' in col_ref[name]:
+                has_props = True
+                meta_ref = col_ref[name]
+        if has_props:
+            p = meta_ref['properties'].get(prop_name, None)
+            if p:
+                if prop_name == 'base_text' and isinstance(p, dict):
+                    p = p[text_key]
+            return p
+        else:
+            return None
 
     @verify(variables={'name': 'both'})
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
@@ -5367,9 +5395,14 @@ class DataSet(object):
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
 
+<<<<<<< HEAD
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
     def hiding(self, name, hide, axis='y', hide_values=True):
+=======
+    def weight(self, weight_scheme, weight_name='weight', unique_key='identity',
+               subset=None, report=True, path_report=None, inplace=True, verbose=True):
+>>>>>>> i848-excelpainter_rewrite
         """
         Set or update ``rules[axis]['dropx']`` meta for the named column.
 
