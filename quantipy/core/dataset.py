@@ -5286,7 +5286,7 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text']
+        valid_props = ['base_text', 'created', 'recoded_net']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
