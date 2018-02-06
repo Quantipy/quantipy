@@ -2302,7 +2302,7 @@ class Stack(defaultdict):
                 dims_name = ds._dims_compat_arr_name(arr_name)
                 prop = ds._meta['masks'][dims_name]['properties']
                 prop['recoded_net'] = arr_items[0]
-                print msg.format(dims_name)
+                if verbose: print msg.format(dims_name)
             del ds._meta['sets']['to_array']
 
         return None
