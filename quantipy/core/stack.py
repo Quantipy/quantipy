@@ -2125,6 +2125,20 @@ class Stack(defaultdict):
                             break
                     else:
                         break
+
+                if dataset._is_array_item(var):
+                    if not 'to_array' in dataset._meta['sets']:
+                        dataset._meta['sets']['to_array'] = {}
+                    to_array_set = dataset._meta['sets']['to_array']
+                    arr_name = dataset._dims_free_arr_name(name.split('.')[-1])
+                    arr_name = arr_name.replace('_grid', '')
+                    parent = dataset.parents(var)[0].split('@')[-1]
+                    if not arr_name in to_array_set:
+                        to_array_set[arr_name] = [parent, [name]]
+                    else:
+                        to_array_set[arr_name][1].append(name)
+
+
                 mapper = []
                 if recode == 'extend_codes':
                     mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
@@ -2179,6 +2193,7 @@ class Stack(defaultdict):
                                 codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
                     dataset.remove_values(name, remove)
                     dataset.reorder_values(name, codes)
+
             return None
 
         for dk in self.keys():
@@ -2187,11 +2202,11 @@ class Stack(defaultdict):
             if not _batches and not recode: return None
             meta = self[dk].meta
             data = self[dk].data
+            for v in on_vars:
+                if v in meta['sets']:
+                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars)) + items
             if not only_recode:
-                for v in on_vars:
-                    if v in meta['sets']:
-                        items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
-                        on_vars = list(set(on_vars + items))
                 all_batches = copy.deepcopy(meta['sets']['batches'])
                 for n, b in all_batches.items():
                     if not n in _batches: all_batches.pop(n)
@@ -2228,6 +2243,14 @@ class Stack(defaultdict):
                 for k, net in c_vars.items():
                     checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             net, k, ['@', k], ('net', ['cbase'], view))
+
+        if recode and 'to_array' in ds._meta['sets']:
+            for arr_name, arr_items in ds._meta['sets']['to_array'].items():
+                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]))
+                msg = "Array {} built from recoded view variables!"
+                print msg.format(ds._dims_compat_arr_name(arr_name))
+            del ds._meta['sets']['to_array']
+
         return None
 
     @staticmethod
