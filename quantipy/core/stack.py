@@ -2119,7 +2119,7 @@ class Stack(defaultdict):
                 suffix = '_rc'
                 for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
                     suf = suffix + s
-                    name = '{}{}'.format(var, suf)
+                    name = '{}{}'.format(dataset._dims_free_arr_item_name(var), suf)
                     if dataset.var_exists(name):
                         if dataset._meta['columns'][name]['properties'].get('recoded_net'):
                             break
@@ -2130,9 +2130,8 @@ class Stack(defaultdict):
                     if not 'to_array' in dataset._meta['sets']:
                         dataset._meta['sets']['to_array'] = {}
                     to_array_set = dataset._meta['sets']['to_array']
-                    arr_name = dataset._dims_free_arr_name(name.split('.')[-1])
-                    arr_name = arr_name.replace('_grid', '')
                     parent = dataset.parents(var)[0].split('@')[-1]
+                    arr_name = dataset._dims_free_arr_name(parent) + suf
                     if not arr_name in to_array_set:
                         to_array_set[arr_name] = [parent, [name]]
                     else:
@@ -2248,7 +2247,10 @@ class Stack(defaultdict):
             for arr_name, arr_items in ds._meta['sets']['to_array'].items():
                 ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]))
                 msg = "Array {} built from recoded view variables!"
-                print msg.format(ds._dims_compat_arr_name(arr_name))
+                dims_name = ds._dims_compat_arr_name(arr_name)
+                prop = ds._meta['masks'][dims_name]['properties']
+                prop['recoded_net'] = arr_items[0]
+                print msg.format(dims_name)
             del ds._meta['sets']['to_array']
 
         return None

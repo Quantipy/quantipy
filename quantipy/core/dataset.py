@@ -1591,6 +1591,13 @@ class DataSet(object):
         return mapper
 
     @classmethod
+    def _dims_free_arr_item_name(cls, item_name):
+        if '[' in item_name:
+            return item_name.split('[{')[1].split('}]')[0]
+        else:
+            return item_name
+
+    @classmethod
     def _dims_free_arr_name(cls, arr_name):
         return arr_name.split('.')[0]
 
