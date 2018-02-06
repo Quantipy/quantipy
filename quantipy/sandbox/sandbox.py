@@ -2292,7 +2292,7 @@ class Chain(object):
                 else:
                     agg = link[view].meta()['agg']
                     is_descriptive = agg['method'] == 'descriptives'
-                    is_base = agg['name'] in ['cbase', 'rbase']
+                    is_base = agg['name'] in ['cbase', 'rbase', 'ebase', 'cbase_gross']
                     is_sum = agg['name'] in ['counts_sum', 'c%_sum']
                     is_net = link[view].is_net()
                     oth_src = link[view].has_other_source()

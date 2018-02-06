@@ -22,11 +22,11 @@ DATA_KEY = ORIENT = 'x'
 FILTER_KEY = 'no_filter'
 # X_KEYS = ['q5_1']
 X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
-# Y_KEYS = ['@', 'q4']                                        # 1.
-# Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
-# Y_KEYS = ['@', 'q4 > gender']                               # 3.
-# Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
-Y_KEYS = ['@', 'q4 > gender', 'q4 > gender > Wave', 'q5_1'] # 5.
+Y_KEYS = ['@', 'q4']                                        # 1.
+#Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
+#Y_KEYS = ['@', 'q4 > gender']                               # 3.
+#Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
+#Y_KEYS = ['@', 'q4 > gender', 'q4 > gender > Wave', 'q5_1'] # 5.
 TESTS = True
 
 # WEIGHT = None
@@ -87,12 +87,12 @@ if WEIGHT is not None:
 
 # RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN RUN
 CA1 = True
-AC1 = True
-ACB1 = True
-ACM1 = True
-AC0 = True
-ACB0 = True
-ACM0 = True
+AC1 = False
+ACB1 = False
+ACM1 = False
+AC0 = False
+ACB0 = False
+ACM0 = False
 OEC = True
 
 dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
