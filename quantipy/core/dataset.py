@@ -66,7 +66,7 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
-        self._dimensions_comp = dimensions_comp
+        self.set_dim_comp(dimensions_comp)
         return None
 
     def __contains__(self, name):
@@ -194,6 +194,12 @@ class DataSet(object):
             msg = 'Can only assign boolean values, found {}'
             raise ValueError(msg.format(type(verbose)))
         self._verbose_infos = verbose
+        return None
+
+    def set_dim_comp(self, dimensions_comp):
+        if dimensions_comp is True:
+            dimensions_comp = '_grid'
+        self._dimensions_comp = dimensions_comp
         return None
 
     @classmethod
@@ -413,13 +419,13 @@ class DataSet(object):
                        "'masks'. Renaming to '{}'")
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
-        if self._dimensions_comp != 'ignore':
+        if not self._dimensions_comp == 'ignore':
             self.undimensionize()
+            dim_comp = self._meta['info'].get('dimensions_comp')
+            if dim_comp is not None: self._dimensions_comp = dim_comp
+            self._meta['info']['dimensions_comp'] = self._dimensions_comp
             if self._dimensions_comp:
                self.dimensionize()
-               self._meta['info']['dimensions_comp'] = True
-            else:
-                self._meta['info']['dimensions_comp'] = False
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -447,9 +453,9 @@ class DataSet(object):
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
         self.undimensionize()
-        if self._dimensions_comp:
+        self._meta['info']['dimensions_comp'] = self._dimensions_comp
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
             self.dimensionize()
-            self._meta['info']['dimensions_comp'] = True
         return None
 
     @verify(text_keys='text_key')
@@ -760,10 +766,8 @@ class DataSet(object):
                 self.text_key = None
         self.set_verbose_infomsg(False)
         self._set_file_info('', reset=reset)
-        if self._meta['info'].get('dimensions_comp'):
-            self._dimensions_comp = True
-        else:
-            self._dimensions_comp = False
+        dimensions_comp = self._meta['info'].get('dimensions_comp', False)
+        self.set_dim_comp(dimensions_comp)
         return None
 
     def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
@@ -997,8 +1001,12 @@ class DataSet(object):
                      'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
+            d_mode = True
+        else:
+            d_mode = self._dimensions_comp
         print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1, self._dimensions_comp)
+                               len(self._data.columns)-1, d_mode)
         return None
 
     # ------------------------------------------------------------------------
@@ -1596,8 +1604,8 @@ class DataSet(object):
 
     def _dims_compat_arr_name(self, arr_name):
         arr_name = self._dims_free_arr_name(arr_name)
-        if self._dimensions_comp:
-            return '{}.{}_grid'.format(arr_name, arr_name)
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
+            return '{}.{}{}'.format(arr_name, arr_name, self._dimensions_comp)
         else:
             return arr_name
 
@@ -3021,7 +3029,6 @@ class DataSet(object):
     def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         """
-        dims_comp = self._dimensions_comp
         item_objects = []
         array_name = name
         items = self._check_and_update_element_def(items)
@@ -3057,7 +3064,8 @@ class DataSet(object):
         if datafile_setname not in self._meta['sets']['data file']['items']:
             self._meta['sets']['data file']['items'].append(datafile_setname)
         self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
-        if self._dimensions_comp: self.dimensionize(name)
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
+            self.dimensionize(name)
         return None
 
     @verify(variables={'name': 'columns'})
@@ -3269,7 +3277,6 @@ class DataSet(object):
             err = err.format(verify_name, self.parents(verify_name)[0].split('@')[-1])
             raise NotImplementedError(err)
 
-        dims_comp = self._dimensions_comp
         meta = self._meta
         if not 'renames' in meta['sets']: meta['sets']['renames'] = {}
         renames = meta['sets']['renames']
@@ -3284,16 +3291,9 @@ class DataSet(object):
             self.undimensionize([name] + self.sources(name))
             name = self._dims_free_arr_name(name)
 
-        if dims_comp:
-            check_name = self._dims_compat_arr_name(copy_name)
-        else:
-            check_name = copy_name
+        check_name = self._dims_compat_arr_name(copy_name)
 
         if self.var_exists(check_name): self.drop(check_name)
-
-        # err = "Cannot create copy with name '{}'. Variable already exits!"
-        # raise ValueError(err.format(check_name))
-
 
         if is_array:
             # copy meta and create rename mapper for array items
@@ -3489,7 +3489,7 @@ class DataSet(object):
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
         # convertig value code entries...
-        if self._dimensions_comp: new_name = self._dims_compat_arr_name(new_name)
+        new_name = self._dims_compat_arr_name(new_name)
         trans_items = self._get_itemmap(new_name, 'items')
         trans_values = self._get_valuemap(new_name, 'codes')
         for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
@@ -3503,7 +3503,6 @@ class DataSet(object):
                     slicer = {reg_item_name: [reg_val_code]}
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
-        # if self._dimensions_comp: self.dimensionize(new_name)
         if self._verbose_infos:
             print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
 
@@ -3991,7 +3990,8 @@ class DataSet(object):
         meta['sets']['data file']['items'].append('masks@{}'.format(name))
         meta['sets']['data file']['items'] = [v for v in meta['sets']['data file']['items']
                                                 if not v in name_set]
-        if self._dimensions_comp:
+
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
             self.dimensionize(name)
         return None
 
@@ -4088,9 +4088,9 @@ class DataSet(object):
         if not (org_type in valid or is_convertable):
             msg = 'Cannot convert variable {} of type {} to int!'
             raise TypeError(msg.format(name, org_type))
-        self._meta['columns'][name]['type'] = 'int'
         if self._has_categorical_data(name):
             self._meta['columns'][name].pop('values')
+        self._meta['columns'][name]['type'] = 'int'
         if org_type == 'string':
             if is_all_ints:
                 self._data[name] = self._data[name].apply(lambda x: int(x))
@@ -4219,10 +4219,9 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
 
-        if self._dimensions_comp != 'ignore':
+        if not self._dimensions_comp == 'ignore':
             self.undimensionize([name] + self.sources(name))
-            if self._dimensions_comp:
-                name = name.split('.')[0]
+            name = self._dims_free_arr_name(name)
 
         for s in self.sources(name):
             new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
@@ -4231,8 +4230,8 @@ class DataSet(object):
         self._add_all_renames_to_mapper(renames, name, new_name)
         self.rename_from_mapper(renames)
 
-        if self._dimensions_comp != 'ignore':
-            if self._dimensions_comp: self.dimensionize(new_name)
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
+            self.dimensionize(new_name)
 
         return None
 
@@ -4373,12 +4372,17 @@ class DataSet(object):
         masks = self._meta['masks']
         columns = self._meta['columns']
 
+        if not (self._dimensions_comp or self._dimensions_comp == 'ignore'):
+            suffix = '_grid'
+        else:
+            suffix = self._dimensions_comp
+
         mapper = {}
         if not names:
             names = masks.keys()
         for mask_name, mask in masks.iteritems():
             if mask_name in names:
-                new_mask_name = '{mn}.{mn}_grid'.format(mn=mask_name)
+                new_mask_name = '{mn}.{mn}{s}'.format(mn=mask_name, s=suffix)
                 mapper[mask_name] = new_mask_name
 
                 mask_mapper = 'masks@{mn}'.format(mn=mask_name)
@@ -4392,8 +4396,8 @@ class DataSet(object):
                 items = masks[mask_name]['items']
                 for i, item in enumerate(items):
                     col_name = item['source'].split('@')[-1]
-                    new_col_name = '{mn}[{{{cn}}}].{mn}_grid'.format(
-                        mn=mask_name, cn=col_name
+                    new_col_name = '{mn}[{{{cn}}}].{mn}{s}'.format(
+                        mn=mask_name, cn=col_name, s=suffix
                     )
                     mapper[col_name] = new_col_name
 
@@ -4751,7 +4755,7 @@ class DataSet(object):
             self._meta['sets'][name]['items'].append('columns@{}'.format(col))
             self.set_variable_text(col, label, text_key)
             self._data[col] = '' if source0['type'] == 'delimited set' else np.NaN
-        if self._dimensions_comp:
+        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
             self.dimensionize()
         return None
 
