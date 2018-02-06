@@ -297,7 +297,7 @@ def read_dimensions(path_mdd, path_ddf):
     return meta, data
 
 def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
-                     run=True, clean_up=True):
+                     date_format="DMY", run=True, clean_up=True):
 
     default_stdout = sys.stdout
     default_stderr = sys.stderr
