@@ -81,7 +81,14 @@ Event(OnNextCase)
 			If Not cLong(syear) > 1900 Then
 				DateString = Null
 			Else
-				DateString = sday +" "+ smonth +" "+ syear +" "+ stime
+				Select Case DATE_FORMAT
+					Case "DM", "DDMM", "DMY", "DDMMYY", "DDMMYYYY"
+						DateString = sday +" "+ smonth +" "+ syear +" "+ stime
+					Case "MD", "MMDD", "MDY", "MMDDYY", "MMDDYYYY"
+						DateString = smonth +" "+ sday +" "+ syear +" "+ stime
+					Case Else
+						Debug.Log("Unknown DATE_FORMAT.")
+				End Select
 			End If
 		End If
 
