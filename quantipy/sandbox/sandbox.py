@@ -2800,6 +2800,9 @@ class Chain(object):
                     else:
                         text = self._transl[tk_transl][value]
                     level_1_text.append(text)
+                elif value == 'All (eff.)':
+                    text = self._specify_base(i, text_keys[axis], bases)
+                    level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
                         text = self._get_text(value, text_keys[axis])
