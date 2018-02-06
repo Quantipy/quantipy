@@ -1599,6 +1599,13 @@ class DataSet(object):
         return mapper
 
     @classmethod
+    def _dims_free_arr_item_name(cls, item_name):
+        if '[' in item_name:
+            return item_name.split('[{')[1].split('}]')[0]
+        else:
+            return item_name
+
+    @classmethod
     def _dims_free_arr_name(cls, arr_name):
         return arr_name.split('.')[0]
 
@@ -5290,7 +5297,7 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text']
+        valid_props = ['base_text', 'created', 'recoded_net']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
