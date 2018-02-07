@@ -251,9 +251,6 @@ class TestChainGet:
         expected_letters = fixture.X5_SIG_SIMPLE[2]
         assert expected_letters == actual_letters
 
-
-
-
     def test_annotations_fields(self, stack):
         x, y = 'q5_1', ['@', 'gender', 'q4']
         chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
@@ -280,6 +277,18 @@ class TestChainGet:
         assert annot.footer_right == ['footer-right'] == annot.footer['right']
         assert annot.notes == ['notes'] == annot.notes
 
+    def test_annotations_populated(self, stack):
+        x, y = 'q5_1', ['@', 'gender', 'q4']
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
+                               'x', incl_tests=True, incl_sum=True)
+        annot = chains[0].annotations
+        annot.set('header-center', 'header', 'center')
+        annot.set('footer-left', 'footer', 'left')
+        annot.set('footer-center', 'footer', 'center')
+        annot.set('notes', 'notes', None)
+        # are the populated fields returned in sorted order?
+        expected = ['footer-center', 'footer-left', 'header-center', 'notes']
+        assert annot.populated == expected
 
     def test_sig_transformation_large(self, stack):
         pass
