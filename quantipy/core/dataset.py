@@ -423,6 +423,7 @@ class DataSet(object):
             self.undimensionize()
             dim_comp = self._meta['info'].get('dimensions_comp')
             if dim_comp is not None: self._dimensions_comp = dim_comp
+            self._meta['info']['dimensions_comp'] = self._dimensions_comp
             if self._dimensions_comp:
                self.dimensionize()
         return None
@@ -508,7 +509,8 @@ class DataSet(object):
 
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
-                         mdm_lang='ENG', run=True, clean_up=True):
+                         mdm_lang='ENG', date_format="DMY",
+                         run=True, clean_up=True):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -569,7 +571,7 @@ class DataSet(object):
         path_mdd = path_mdd.replace('//', '/')
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
-                     mdm_lang=mdm_lang, run=run, clean_up=clean_up)
+                     date_format=date_format, run=run, clean_up=clean_up)
         file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
         return None
@@ -5288,6 +5290,34 @@ class DataSet(object):
 
     # rules and properties
     # ------------------------------------------------------------------------
+    @verify(variables={'name': 'both'})
+    def get_property(self, name, prop_name, text_key=None):
+        """
+        """
+        mask_ref = self._meta['masks']
+        col_ref = self._meta['columns']
+        if not text_key: text_key = self.text_key
+        valid_props = ['base_text']
+
+        if prop_name not in valid_props:
+            raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        has_props = False
+        if self.is_array(name):
+            if 'properties' in mask_ref[name]:
+                has_props = True
+                meta_ref = mask_ref[name]
+        else:
+            if 'properties' in col_ref[name]:
+                has_props = True
+                meta_ref = col_ref[name]
+        if has_props:
+            p = meta_ref['properties'].get(prop_name, None)
+            if p:
+                if prop_name == 'base_text' and isinstance(p, dict):
+                    p = p[text_key]
+            return p
+        else:
+            return None
 
     @verify(variables={'name': 'both'})
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
@@ -5934,27 +5964,26 @@ class DataSet(object):
 
         for name in batches:
             batch = self._meta['sets']['batches'][name]
-            xs = batch['x_y_map'].keys()
+            xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
             f  = batch['filter']
-            ys = batch['x_y_map']
             my  = batch['yks']
 
-            total_len = len(xs) + len(batch['y_on_y'])
-            for idx, x in enumerate(xs, start=1):
+            total_len = len(xys) + len(batch['y_on_y'])
+            for idx, xy in enumerate(xys, start=1):
+                x, y = xy
                 if x == '@':
-                    for y in ys[x]:
-                        stack.add_link(dk, fs[y], x='@', y=y)
+                    stack.add_link(dk, fs[y[0]], x='@', y=y)
                 else:
-                    stack.add_link(dk, fs[x], x=x, y=ys[x])
+                    stack.add_link(dk, fs[x], x=x, y=y)
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',
                     time.sleep(0.01)
                     print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
-            for idx, y_on_y in enumerate(batch['y_on_y'], len(xs)+1):
+            for idx, y_on_y in enumerate(batch['y_on_y'], len(xys)+1):
                 stack.add_link(dk, fy[y_on_y], x=my[1:], y=my)
                 if verbose:
                     done = float(idx) / float(total_len) *100

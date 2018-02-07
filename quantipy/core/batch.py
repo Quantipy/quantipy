@@ -807,28 +807,29 @@ class Batch(qp.DataSet):
                     y_keys.append(y)
             return y_keys
 
-        def _extend(x, mapping):
-            mapping[x] = org_copy.deepcopy(self.yks)
-            if x in self.extended_yks_per_x:
-                mapping[x].extend(self.extended_yks_per_x[x])
+        def _get_yks(x):
             if x in self.exclusive_yks_per_x:
-                mapping[x] = self.exclusive_yks_per_x[x]
-            mapping[x] = _order_yks(mapping[x])
-
-        mapping = OrderedDict()
-        for x in self.xks:
-            if x in self._meta['masks']:
-                if x in self.summaries and not self.transposed_arrays.get(x):
-                    mapping[x] = ['@']
-                if x in self.transposed_arrays:
-                    if '@' in mapping:
-                        mapping['@'].extend([x])
-                    else:
-                        mapping['@'] = [x]
-                for x2 in self.sources(x):
-                    _extend(x2, mapping)
+                yks = self.exclusive_yks_per_x[x]
             else:
-                _extend(x, mapping)
+                yks = org_copy.deepcopy(self.yks)
+                yks.extend(self.extended_yks_per_x.get(x, []))
+                yks = _order_yks(yks)
+            return yks
+
+        mapping = []
+        for x in self.xks:
+            if self.is_array(x):
+                if x in self.summaries and not self.transposed_arrays.get(x):
+                    mapping.append((x, ['@']))
+                if not x in self.skip_items:
+                    for x2 in self.sources(x):
+                        mapping.append((x2, _get_yks(x2)))
+                if x in self.transposed_arrays:
+                    mapping.append(('@', [x]))
+            elif self._is_array_item(x) and self._maskname_from_item(x) in self.xks:
+                continue
+            else:
+                mapping.append((x, _get_yks(x)))
         self.x_y_map = mapping
         return None
 

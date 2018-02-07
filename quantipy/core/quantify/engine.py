@@ -209,11 +209,11 @@ class Quantity(object):
         -------
         swapped : New Quantity instance with exchanged x- or y-axis.
         """
-        array_swap = self.ds._is_array(self.x)
+        array_swap = self.ds.is_array(self.x)
         if array_swap and not axis == 'x':
             err  = "Cannot swap y-axis on array type Quantity!"
             raise NotImplementedError(err)
-        test_arrays = self.ds._is_array_item(self.x) or self.ds._is_array(self.x)
+        test_arrays = self.ds._is_array_item(self.x) or self.ds.is_array(self.x)
         if test_arrays:
             new_sources = self.ds.sources(var)
             if self.ds._is_array_item(self.x):
@@ -229,10 +229,10 @@ class Quantity(object):
         if not update_axis_def and array_swap:
             org_name = self.x
             org_ydef = self.ydef
-        if self.ds._is_array_item(self.x) and self.ds._is_array(var):
+        if self.ds._is_array_item(self.x) and self.ds.is_array(var):
             org_no = self.ds.item_no(self.x)
             var = self.ds.sources(var)[org_no-1]
-        elif self.ds._is_array(self.x) and not self.ds._is_array(var):
+        elif self.ds.is_array(self.x) and not self.ds.is_array(var):
             err = "Cannot swap array-type Quantity with non-array variable '{}'!"
             raise TypeError(err.format(var))
         if axis == 'x':
@@ -1464,8 +1464,8 @@ class Quantity(object):
                 self.x_agg_vals = self.xdef if not self.comb_x else self.comb_x
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
-        if ((self.current_agg in ['freq', 'cbase', 'x_sum', 'summary', 'calc'] or
-                self._res_is_stat()) and not self.type == 'array'):
+        ignore = ['freq', 'cbase', 'x_sum', 'summary', 'calc', 'ebase']
+        if ((self.current_agg in ignore or self._res_is_stat()) and not self.type == 'array'):
             if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
         df = pd.DataFrame(self.result)
