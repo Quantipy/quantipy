@@ -1258,7 +1258,7 @@ class ChainManager(object):
                     c.paint(*args, **kwargs)
             else:
                 chain.paint(*args, **kwargs)
-        return self
+        return None
 
 
 HEADERS = ['header-title',
