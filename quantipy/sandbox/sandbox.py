@@ -1372,7 +1372,7 @@ class ChainAnnotations(dict):
         """
         The annotation fields that are defined.
         """
-        return [k for k, v in self.items() if v]
+        return sorted([k for k, v in self.items() if v])
 
     @staticmethod
     def _annot_key(a_type, a_pos):
