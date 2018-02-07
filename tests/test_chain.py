@@ -251,9 +251,38 @@ class TestChainGet:
         expected_letters = fixture.X5_SIG_SIMPLE[2]
         assert expected_letters == actual_letters
 
+
+
+
+    def test_annotations_fields(self, stack):
+        x, y = 'q5_1', ['@', 'gender', 'q4']
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
+                               'x', incl_tests=True, incl_sum=True)
+        annot = chains[0].annotations
+        annot.set('header-title', 'header', 'title')
+        annot.set('header-left', 'header', 'left')
+        annot.set('header-center', 'header', 'center')
+        annot.set('header-right', 'header', 'right')
+        annot.set('footer-title', 'footer', 'title')
+        annot.set('footer-left', 'footer', 'left')
+        annot.set('footer-center', 'footer', 'center')
+        annot.set('footer-right', 'footer', 'right')
+        annot.set('notes', 'notes', None)
+        # are all attributes populated correctly...?
+        # (text, as list, props & dict)
+        assert annot.header_title == ['header-title'] == annot.header['title']
+        assert annot.header_left == ['header-left'] == annot.header['left']
+        assert annot.header_center == ['header-center'] == annot.header['center']
+        assert annot.header_right == ['header-right'] == annot.header['right']
+        assert annot.footer_title == ['footer-title'] == annot.footer['title']
+        assert annot.footer_left == ['footer-left'] == annot.footer['left']
+        assert annot.footer_center == ['footer-center'] == annot.footer['center']
+        assert annot.footer_right == ['footer-right'] == annot.footer['right']
+        assert annot.notes == ['notes'] == annot.notes
+
+
     def test_sig_transformation_large(self, stack):
         pass
-
 
 @pytest.yield_fixture(
     scope='class',
