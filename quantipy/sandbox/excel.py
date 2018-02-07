@@ -19,7 +19,9 @@ from excel_formats import ExcelFormats, _Format
 from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 
 import cPickle
-import warnings; warnings.simplefilter('ignore')
+import warnings
+
+#warnings.simplefilter('ignore')
 
 try:
     from functools import lru_cache
@@ -88,17 +90,13 @@ class Excel(Workbook):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
-        self.views_groups = views_groups
         self.italicise_level = italicise_level
         self.details = details
+        self._views_groups = views_groups
         self._decimals = decimals
         self._image = image
 
-        if views_groups:
-            views_groups = dict([(k, views_groups[k] if k in views_groups else v)
-                                 for k, v in _VIEWS_GROUPS.iteritems()])
-
-        self._formats = ExcelFormats(views_groups, **kwargs)
+        self._formats = ExcelFormats(self.views_groups, **kwargs)
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -108,6 +106,13 @@ class Excel(Workbook):
 
     def __del__(self):
         del self
+
+    @lazy_property
+    def views_groups(self):
+        if self._views_groups:
+            return dict([(k, self._views_groups.get(k, v))
+                        for k, v in _VIEWS_GROUPS.iteritems()])
+        return _VIEWS_GROUPS
 
     @lazy_property
     def decimals(self):
@@ -125,9 +130,23 @@ class Excel(Workbook):
             image.save(os.path.basename(self._image['img_url']))
         return self._image
 
-    def add_chains(self, chains, sheet_name, annotations=None, **kwargs):
+    def add_chains(self, chains, sheet_name=None, annotations=None, **kwargs):
         # TODO: docstring
-        self._write_chains(chains, sheet_name, annotations, **kwargs)
+        warning_message = ('quantipy.ChainManager has folders, '
+                           'sheet_name will be ignored')
+        if chains.folders:
+            if sheet_name:
+                warnings.warn(warning_message)
+            for chain in chains:
+                if isinstance(chain, dict):
+                    sheet_name = chain.keys()[0]
+                    self._write_chains(chain[sheet_name], sheet_name,
+                                       annotations, **kwargs)
+                else:
+                    self._write_chains((chain, ), chain.name,
+                                       annotations, **kwargs)
+        else:
+            self._write_chains(chains, sheet_name, annotations, **kwargs)
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
         worksheet = Sheet(self, chains, sheet_name, annotations, **kwargs)

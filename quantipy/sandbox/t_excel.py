@@ -22,10 +22,10 @@ DATA_KEY = ORIENT = 'x'
 FILTER_KEY = 'no_filter'
 # X_KEYS = ['q5_1']
 X_KEYS = ['q5_1', 'q4', 'gender', 'Wave']
-# Y_KEYS = ['@', 'q4']                                        # 1.
-# Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
-# Y_KEYS = ['@', 'q4 > gender']                               # 3.
-# Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
+#Y_KEYS = ['@', 'q4']                                        # 1.
+#Y_KEYS = ['@', 'q4', 'q5_2', 'gender', 'Wave']              # 2.
+#Y_KEYS = ['@', 'q4 > gender']                               # 3.
+#Y_KEYS = ['@', 'q4 > gender > Wave']                        # 4.
 Y_KEYS = ['@', 'q4 > gender', 'q4 > gender > Wave', 'q5_1'] # 5.
 TESTS = True
 
@@ -1404,8 +1404,8 @@ table_properties_group = {
 
 sheet_properties = dict()
 
-#test = 1
-test = 2
+test = 1
+#test = 2
 #test = 3
 
 if test == 1:
