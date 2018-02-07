@@ -290,6 +290,21 @@ class TestChainGet:
         expected = ['footer-center', 'footer-left', 'header-center', 'notes']
         assert annot.populated == expected
 
+    def test_annotations_list_append(self, stack):
+        x, y = 'q5_1', ['@', 'gender', 'q4']
+        chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
+                               'x', incl_tests=True, incl_sum=True)
+        annot = chains[0].annotations
+        annot.set('header-title1', 'header', 'title')
+        annot.set('footer-right1', 'footer', 'right')
+        annot.set('notes1', 'notes', None)
+        annot.set('header-title2', 'header', 'title')
+        annot.set('footer-right2', 'footer', 'right')
+        annot.set('notes2', 'notes', None)
+        assert annot.header_title == ['header-title1', 'header-title2']
+        assert annot.footer_right == ['footer-right1', 'footer-right2']
+        assert annot.notes == ['notes1', 'notes2']
+
     def test_sig_transformation_large(self, stack):
         pass
 
