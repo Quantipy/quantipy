@@ -1059,8 +1059,12 @@ class ChainManager(object):
             for cluster_def_name, cluster in clusters.items():
                 for name in cluster:
                     if isinstance(cluster[name].items()[0][1], pd.DataFrame):
-                        cluster_def = {'name': name, 'oe': True,
-                                       'df': cluster[name].items()[0][1]}
+                        cluster_def = {'name': name,
+                                       'oe': True,
+                                       'df': cluster[name].items()[0][1],
+                                       'filter': chain.filter,
+                                       'data_key': chain.data_key}
+
                     else:
                         xs, views, weight = [], [], []
                         for chain_name, chain in cluster[name].items():
@@ -1089,14 +1093,12 @@ class ChainManager(object):
         for cluster_spec in cluster_specs:
             oe = cluster_spec.get('oe', False)
             if not oe:
-
                 vm = ViewManager(self.stack)
                 vm.get_views(cell_items=cluster_spec['cell_items'],
                              weight=cluster_spec['weight'],
                              bases=cluster_spec['bases'],
                              stats= ['mean', 'stddev', 'median', 'min', 'max'],
                              tests=cluster_spec['tests'])
-
                 self.get(data_key=cluster_spec['data_key'],
                          filter_key=cluster_spec['filter'],
                          x_keys = cluster_spec['xs'],
@@ -1104,13 +1106,11 @@ class ChainManager(object):
                          views=vm.views,
                          orient='x',
                          prioritize=True)
-        print 'FOUND OE SHEET, USE STRUCTURE FOR THAT'
-        raise
-        new_chain_dict = OrderedDict()
-        for c in cluster_specs:
-            new_chain_dict[c['name']] = c['new_chains']
-        qp.set_option('new_chains', False)
-        return new_chain_dict
+            else:
+                meta = [cluster_spec['data_key'], cluster_spec['filter']]
+                df, name = cluster_spec['df'], cluster_spec['name']
+                self.add(df, meta_from=meta, name=name)
+        return None
 
     @staticmethod
     def _force_list(obj):
