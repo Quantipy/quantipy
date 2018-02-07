@@ -1404,9 +1404,9 @@ table_properties_group = {
 
 sheet_properties = dict()
 
-test = 1
+#test = 1
 #test = 2
-#test = 3
+test = 3
 
 if test == 1:
     sheet_properties = dict(dummy_tests=True,
@@ -1452,11 +1452,12 @@ elif test == 3:
     tp = {'bg_color_freq': 'gray'}
     image = {'img_name': 'logo',
              'img_url': './qplogo_invert.png',
-             'img_size': [110, 120],
-             'img_insert_x': 4,
-             'img_insert_y': 0,
-             'img_x_offset': 3,
-             'img_y_offset': 6}
+             #'img_size': [110, 120],
+             #'img_insert_x': 4,
+             #'img_insert_y': 0,
+             #'img_x_offset': 3,
+             #'img_y_offset': 6
+             }
 
 # -------------
 x = Excel('basic_excel.xlsx',

@@ -62,14 +62,11 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        arrow_color_low='#FC8EAC',
                        arrow_rep_low=u'\u25BC',
                        # -------------------------------------------
-                       #img_insert_x=0,
-                       #img_insert_y=0,
-                       #img_name='qplogo_invert_lg.png',
-                       #img_size=[130, 130],
-                       #img_url='logo/qplogo_invert_lg.png',
-                       #img_x_offset=0,
-                       #img_y_offset=0,
-                       #no_logo=False,
+                       img_insert_x=0,
+                       img_insert_y=0,
+                       img_x_offset=0,
+                       img_y_offset=0,
+                       img_size=[130, 130],
                        #row_height=12.75,
                        #row_wrap_trigger=44,
                        start_column=0,
@@ -126,7 +123,9 @@ class Excel(Workbook):
     def image(self):
         if self._image:
             image = Image.open(self._image['img_url'])
-            image.thumbnail(self._image['img_size'], Image.ANTIALIAS)
+            image.thumbnail(self._image.get('img_size',
+                                            _SHEET_DEFAULTS['img_size']),
+                            Image.ANTIALIAS)
             image.save(os.path.basename(self._image['img_url']))
         return self._image
 
@@ -204,6 +203,10 @@ class Sheet(Worksheet):
     @lazy_property
     def test_letters(self):
         return self.chains[0].sig_test_letters
+
+    @lazy_property
+    def image(self):
+        return self.excel.image
 
     @property
     def column_edges(self):
@@ -294,13 +297,15 @@ class Sheet(Worksheet):
                                        arrow_format, self.arrow_rep_low,
                                        format_, cds[2], format_)
 
-        if self.excel.image:
+        if self.image:
 
-            self.insert_image(self.excel.image['img_insert_x'],
-                              self.excel.image['img_insert_y'],
-                              self.excel.image['img_url'],
-                              dict(x_offset=self.excel.image['img_x_offset'],
-                                   y_offset=self.excel.image['img_y_offset']))
+            self.insert_image(self.image.get('img_insert_x', self.img_insert_x),
+                              self.image.get('img_insert_y', self.img_insert_y),
+                              self.image['img_url'],
+                              dict(x_offset=self.image.get('img_x_offset',
+                                                           self.img_x_offset),
+                                   y_offset=self.image.get('img_y_offset',
+                                                           self.img_y_offset)))
 
     def _set_columns(self, columns):
         # TODO: make column width optional --> Properties().
