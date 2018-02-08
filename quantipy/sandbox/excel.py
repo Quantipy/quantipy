@@ -48,31 +48,24 @@ _SHEET_ATTR = ('str_table',
 
 # Defaults for Sheet.
 _SHEET_DEFAULTS = dict(alternate_bg=True,
-                       dummy_tests=False,
-                       #column_width_str=10,
-                       #df_nan_rep='__NA__',
-                       #display_test_level=True,
-                       #format_label_row=False,
-                       # -------------------------------------------
-                       #TODO: add edtiable to Cell class
-                       freq_0_rep='-',
-                       stat_0_rep='-',
                        arrow_color_high='#2EB08C',
                        arrow_rep_high=u'\u25B2',
                        arrow_color_low='#FC8EAC',
                        arrow_rep_low=u'\u25BC',
-                       # -------------------------------------------
+                       column_width=9,
+                       column_width_label=35,
+                       column_width_frame=15,
+                       dummy_tests=False,
+                       freq_0_rep='-',
                        img_insert_x=0,
                        img_insert_y=0,
+                       img_size=[130, 130],
                        img_x_offset=0,
                        img_y_offset=0,
-                       img_size=[130, 130],
-                       #row_height=12.75,
-                       #row_wrap_trigger=44,
+                       row_height_label=12.75,
                        start_column=0,
                        start_row=0,
-                       #stat_0_rep=0.00,
-                       #test_seperator='.',
+                       stat_0_rep='-',
                        y_header_height=33.75,
                        y_row_height=50
                        )
@@ -308,9 +301,9 @@ class Sheet(Worksheet):
                                                            self.img_y_offset)))
 
     def _set_columns(self, columns):
-        # TODO: make column width optional --> Properties().
-        self.set_column(self._column, self._column, 40)
-        self.set_column(self._column + 1, self._column + columns.size, 10)
+        self.set_column(self._column, self._column, self.column_width_label)
+        self.set_column(self._column + 1, self._column + columns.size,
+                        self.column_width)
 
     def _set_freeze_loc(self, columns):
         if list(columns.labels[0]).count(0) == 1:
@@ -319,6 +312,9 @@ class Sheet(Worksheet):
             offset = 0
         self._freeze_loc = ((self._row + columns.nlevels),
                             (self._column + offset + 1))
+
+    def _set_row(self, row):
+        self.set_row(row, self.row_height_label)
 
 
 class Box(object):
@@ -453,8 +449,9 @@ class Box(object):
             self.sheet.merge_range(self.sheet._row, column,
                                    self.sheet._row + 1, column,
                                    label, format_)
-            self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
-            self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
+            self.sheet.set_column(column, column, self.sheet.column_width_frame)
+        self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
+        self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
 
         self.sheet.freeze_panes(self.sheet._row + 2, self.sheet._column)
 
@@ -476,6 +473,9 @@ class Box(object):
                              self.sheet._column + rel_y,
                              data, format_)
             rel_x, rel_y = flat.coords
+
+        for i in xrange(rel_x):
+            self.sheet._set_row(self.sheet._row + i)
 
     def _write_columns(self):
         contents = dict()
@@ -561,6 +561,7 @@ class Box(object):
                              levels(0).unique().values[0],
                              self.excel._formats['label'])
             self._format_row(self.excel._formats['label'])
+        self.sheet._set_row(self.sheet._row)
         self.sheet._row += 1
 
         if self.notes:
@@ -669,6 +670,8 @@ class Box(object):
             rel_x, rel_y = nxt_x, nxt_y
             if rel_y == 0:
                 border_from = name
+        for i in xrange(rel_x):
+            self.sheet._set_row(self.sheet._row + i)
         self.sheet._row += rel_x
 
     def _write_annotations(self, names):
@@ -678,6 +681,7 @@ class Box(object):
                 self.sheet.write(self.sheet._row, self.sheet._column,
                                  anno[0], self.excel._formats[name])
                 self._format_row(self.excel._formats[name])
+                self.sheet._set_row(self.sheet._row)
                 self.sheet._row += 1
 
     def _format_row(self, format_):
@@ -911,3 +915,4 @@ class Cell(object):
             if isinstance(self.data, (float, np.float64)):
                 return round(self.data, self.decimals)
         return self.data
+
