@@ -1438,7 +1438,16 @@ elif test == 3:
                             freq_0_rep=':',
                             stat_0_rep='#',
                             y_header_height=20,
-                            y_row_height=40)
+                            y_row_height=40,
+                            column_width=10,
+                            column_width_label=40,
+                            column_width_frame=50,
+                            row_height_label=15,
+                            arrow_color_high='#66023C',
+                            arrow_rep_high=u'\u219F',
+                            arrow_color_low='#3F0F69',
+                            arrow_rep_low=u'\u21A1',
+                            )
     custom_vg = {
             'block_expanded_counts': 'freq',
             'block_expanded_c_pct': 'freq',
@@ -1452,11 +1461,11 @@ elif test == 3:
     tp = {'bg_color_freq': 'gray'}
     image = {'img_name': 'logo',
              'img_url': './qplogo_invert.png',
-             #'img_size': [110, 120],
-             #'img_insert_x': 4,
-             #'img_insert_y': 0,
-             #'img_x_offset': 3,
-             #'img_y_offset': 6
+             'img_size': [110, 120],
+             'img_insert_x': 4,
+             'img_insert_y': 0,
+             'img_x_offset': 3,
+             'img_y_offset': 6
              }
 
 # -------------
