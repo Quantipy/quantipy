@@ -2741,7 +2741,8 @@ class Chain(object):
                 tuples = zip(index_0.values, index_1.values)
                 names = (index_0.name, index_1.name)
                 sub = pd.MultiIndex.from_tuples(tuples, names=names)
-                sub = self._paint_index(sub, text_keys, display, axis, bases)
+                sub = self._paint_index(sub, text_keys, display, axis, bases,
+                                        transform_column_names)
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
@@ -2749,14 +2750,15 @@ class Chain(object):
 
         levels = self._lzip(index.values)
 
-        arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+        arrays = (self._get_level_0(levels[0], text_keys, display, axis,
+                                    transform_column_names),
                   self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
 
         return new_index
 
-    def _get_level_0(self, level, text_keys, display, axis):
+    def _get_level_0(self, level, text_keys, display, axis, transform_column_names):
         """
         """
         level_0_text = []
@@ -2770,6 +2772,8 @@ class Chain(object):
                 else:
                     text = self._get_text(value, text_keys[axis])
                     if axis in display:
+                        if transform_column_names:
+                            value = transform_column_names.get(value, value)
                         value = '{}. {}'.format(value, text)
                     else:
                         value = text
