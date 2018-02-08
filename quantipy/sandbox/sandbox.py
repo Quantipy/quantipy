@@ -2863,6 +2863,8 @@ class Chain(object):
                 base_value = 'Unweighted effective base'
         else:
             if weighted or (not weighted and not is_multibase):
+                if not bases:
+                    return self._transl[tk_transl]['All']
                 key = tk
                 if isinstance(tk, tuple):
                     _, key = tk
