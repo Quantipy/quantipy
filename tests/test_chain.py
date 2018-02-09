@@ -11,7 +11,7 @@ from quantipy.sandbox.sandbox import ChainManager
 
 from pandas.util.testing import assert_frame_equal, assert_index_equal
 
-import chain_fixtures as fixture
+import parameters_chain as parameters
 
 # -----------------------------------------------------------------------------
 PATH_DATA = './tests/'
@@ -111,7 +111,7 @@ def chain_structure(chain_for_structure, paint=False, sep=None):
     if paint:
         chain_for_structure.paint_all(sep=sep or '. ',
                                       text_key='en-GB',
-                                      na_rep=fixture.AST)
+                                      na_rep=parameters.AST)
     it = iter(chain_for_structure)
     return next(it)
 
@@ -163,13 +163,13 @@ class TestChainExceptions:
 @pytest.yield_fixture(
     scope='class',
     params=[
-        (['q5_1'], ['@', 'q4'], fixture.X1),
-        (['q5_1'], ['@', 'q4 > gender'], fixture.X2),
-        (['q5_1'], ['@', 'q4 > gender > Wave'], fixture.X3),
+        (['q5_1'], ['@', 'q4'], parameters.X1),
+        (['q5_1'], ['@', 'q4 > gender'], parameters.X2),
+        (['q5_1'], ['@', 'q4 > gender > Wave'], parameters.X3),
         (
             ['q5_1'],
             ['@', 'q4 > gender > Wave', 'q5_1', 'q4 > gender'],
-            fixture.X4
+            parameters.X4
         ),
     ]
 )
@@ -228,7 +228,7 @@ class TestChainGet:
             assert str(chain) == chain_str
 
             ### Test Contents
-            assert chain.contents == fixture.CONTENTS
+            assert chain.contents == parameters.CONTENTS
 
     def test_sig_transformation_simple(self, stack):
         x, y = 'q5_1', ['@', 'gender', 'q4']
@@ -239,15 +239,15 @@ class TestChainGet:
                    )
         # all tests results converted correctly from numbers to letters?
         actual_vals = pd.DataFrame(chain_df.values.tolist())
-        expected_vals = pd.DataFrame(fixture.X5_SIG_SIMPLE[0])
+        expected_vals = pd.DataFrame(parameters.X5_SIG_SIMPLE[0])
         assert_frame_equal(expected_vals, actual_vals)
         # correctly added third index level with letter row?
         actual_cols = chain_df.columns.tolist()
-        expected_cols = fixture.X5_SIG_SIMPLE[1]
+        expected_cols = parameters.X5_SIG_SIMPLE[1]
         assert expected_cols == actual_cols
         # sig_test_letters property updated correctly?
         actual_letters = chains[0].sig_test_letters
-        expected_letters = fixture.X5_SIG_SIMPLE[2]
+        expected_letters = parameters.X5_SIG_SIMPLE[2]
         assert expected_letters == actual_letters
 
     def test_annotations_fields(self, stack):
@@ -312,16 +312,16 @@ class TestChainGet:
     params=[
         (
             False,
-            fixture.CHAIN_STRUCT_COLUMNS,
-            fixture.CHAIN_STRUCT_VALUES,
+            parameters.CHAIN_STRUCT_COLUMNS,
+            parameters.CHAIN_STRUCT_VALUES,
             False,
             None
         ),
         (
             True,
-            fixture.CHAIN_STRUCT_COLUMNS_PAINTED,
-            fixture.CHAIN_STRUCT_VALUES_PAINTED,
-            fixture.CHAIN_STRUCT_COLUMNS_REPAINTED,
+            parameters.CHAIN_STRUCT_COLUMNS_PAINTED,
+            parameters.CHAIN_STRUCT_VALUES_PAINTED,
+            parameters.CHAIN_STRUCT_COLUMNS_REPAINTED,
             '* '
         )
     ]
@@ -357,7 +357,7 @@ class TestChainAddRepaint:
                                                      repaint_columns,
                                                      paint=paint)
 
-            _chain.paint(sep=sep, text_key='en-GB', na_rep=fixture.AST)
+            _chain.paint(sep=sep, text_key='en-GB', na_rep=parameters.AST)
 
             assert_frame_equal(_chain.structure.fillna('*'),
                                _expected_structure)
