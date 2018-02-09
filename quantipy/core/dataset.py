@@ -4380,7 +4380,7 @@ class DataSet(object):
         columns = self._meta['columns']
 
         dim_comp = self._dimensions_comp
-        if isinstance(dim_comp, bool) or not dim_comp == 'ignore'):
+        if isinstance(dim_comp, bool) or not dim_comp == 'ignore':
             suffix = '_grid'
         else:
             suffix = dim_comp
