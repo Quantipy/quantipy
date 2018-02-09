@@ -62,6 +62,7 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        img_size=[130, 130],
                        img_x_offset=0,
                        img_y_offset=0,
+                       in_memory=False,
                        row_height_label=12.75,
                        start_column=0,
                        start_row=0,
@@ -74,14 +75,22 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
 class Excel(Workbook):
     # TODO: docstring
 
-    def __init__(self, filename, toc=False, views_groups=None,
-                 italicise_level=None, details=False, decimals=None,
-                 image=None, **kwargs):
+    def __init__(self,
+                 filename,
+                 toc=False,
+                 views_groups=None,
+                 italicise_level=None,
+                 details=False,
+                 in_memory=False,
+                 decimals=None,
+                 image=None,
+                 **kwargs):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
         self.italicise_level = italicise_level
         self.details = details
+        self.in_memory = in_memory
         self._views_groups = views_groups
         self._decimals = decimals
         self._image = image
@@ -904,7 +913,7 @@ class Cell(object):
                 return self.nan_rep
         except TypeError:
             pass
-        if isinstance(self.data, (str, unicode)):
+        if isinstance(self.data, basestring):
             return re.sub(r'#pad-\d+', str(), self.data)
         if self.normalize:
             if self.decimals is not None:

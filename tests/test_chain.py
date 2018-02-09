@@ -13,7 +13,6 @@ from pandas.util.testing import assert_frame_equal, assert_index_equal
 
 import chain_fixtures as fixture
 
-# CONSTANTS ## fixtures?
 # -----------------------------------------------------------------------------
 PATH_DATA = './tests/'
 NAME_PROJ = 'Example Data (A)'
@@ -331,13 +330,11 @@ def params_structure(request):
     return request.param
 
 class TestChainUnnamedAdd:
-
     def test_unnamed(self, unnamed_chain_for_structure):
         _chain = chain_structure(unnamed_chain_for_structure)
         assert _chain.name == 'record_number.age'
 
 class TestChainAdd:
-
     def test_named(self, chain_for_structure):
         _chain = chain_structure(chain_for_structure)
         assert _chain.name == 'open'
@@ -351,7 +348,6 @@ class TestChainAdd:
         assert_frame_equal(_chain.structure.fillna('*'), _expected_structure)
 
 class TestChainAddRepaint:
-
     def test_str(self, chain_for_structure, params_structure):
         paint, columns, values, repaint_columns, sep = params_structure
 
@@ -365,3 +361,4 @@ class TestChainAddRepaint:
 
             assert_frame_equal(_chain.structure.fillna('*'),
                                _expected_structure)
+
