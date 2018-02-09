@@ -2580,7 +2580,8 @@ class Chain(object):
 
     def paint(self, text_key=None, text_loc_x=None, text_loc_y=None, display=None,
               axes=None, view_level=False, transform_tests='cells',
-              add_base_texts='simple', totalize=False, sep=None, na_rep=None):
+              add_base_texts='simple', totalize=False, sep=None, na_rep=None,
+              transform_column_names=None):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -2634,7 +2635,7 @@ class Chain(object):
                 display = _AXES
             if axes is None:
                 axes = _AXES
-            self._paint(text_keys, display, axes, add_base_texts)
+            self._paint(text_keys, display, axes, add_base_texts, transform_column_names)
             # Re-build the full column index (labels + letter row)
             if self.sig_test_letters and transform_tests == 'full':
                 self._frame = self._apply_letter_header(self._frame)
@@ -2710,7 +2711,7 @@ class Chain(object):
 
         self.structure.rename(columns=column_mapper, inplace=True)
 
-    def _paint(self, text_keys, display, axes, bases):
+    def _paint(self, text_keys, display, axes, bases, transform_column_names):
         """ Paint the Chain.dataframe
         """
         indexes = []
@@ -2718,12 +2719,14 @@ class Chain(object):
         for axis in _AXES:
             index = self._index_switch(axis)
             if axis in axes:
-                index = self._paint_index(index, text_keys, display, axis, bases)
+                index = self._paint_index(index, text_keys, display, axis,
+                                          bases, transform_column_names)
             indexes.append(index)
 
         self._frame.index, self._frame.columns = indexes
 
-    def _paint_index(self, index, text_keys, display, axis, bases):
+    def _paint_index(self, index, text_keys, display, axis, bases,
+                     transform_column_names):
         """ Paint the Chain.dataframe.index1        """
         error = "No text keys from {} found in {}"
         level_0_text, level_1_text = [], []
@@ -2738,7 +2741,8 @@ class Chain(object):
                 tuples = zip(index_0.values, index_1.values)
                 names = (index_0.name, index_1.name)
                 sub = pd.MultiIndex.from_tuples(tuples, names=names)
-                sub = self._paint_index(sub, text_keys, display, axis, bases)
+                sub = self._paint_index(sub, text_keys, display, axis, bases,
+                                        transform_column_names)
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
@@ -2746,14 +2750,15 @@ class Chain(object):
 
         levels = self._lzip(index.values)
 
-        arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+        arrays = (self._get_level_0(levels[0], text_keys, display, axis,
+                                    transform_column_names),
                   self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
 
         return new_index
 
-    def _get_level_0(self, level, text_keys, display, axis):
+    def _get_level_0(self, level, text_keys, display, axis, transform_column_names):
         """
         """
         level_0_text = []
@@ -2767,6 +2772,8 @@ class Chain(object):
                 else:
                     text = self._get_text(value, text_keys[axis])
                     if axis in display:
+                        if transform_column_names:
+                            value = transform_column_names.get(value, value)
                         value = '{}. {}'.format(value, text)
                     else:
                         value = text
@@ -2863,6 +2870,8 @@ class Chain(object):
                 base_value = 'Unweighted effective base'
         else:
             if weighted or (not weighted and not is_multibase):
+                if not bases:
+                    return self._transl[tk_transl]['All']
                 key = tk
                 if isinstance(tk, tuple):
                     _, key = tk
