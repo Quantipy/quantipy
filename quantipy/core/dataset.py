@@ -2510,6 +2510,36 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
+    @modify(to_list=['varlist'])
+    @verify(variables={'varlist': 'both'})
+    def roll_up(self, varlist):
+        """
+        Replace any array items with theor parent mask variable definition name.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of meta ``'columns'`` and/or ``'masks'`` names.
+
+        Returns
+        -------
+        rolled_up : list
+            The modified ``varlist``.
+        """
+        arrays_defs = {arr_name: self.sources(arr_name)
+               for arr_name in self.masks()}
+        item_map = {}
+        for k, v in arrays_defs.items():
+            for item in v:
+                item_map[item] = k
+        rolled_up = []
+        for v in varlist:
+            if v in item_map:
+                if not item_map[v] in rolled_up:
+                    rolled_up.append(item_map[v])
+            else:
+                rolled_up.append(v)
+        return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
     @verify(variables={'varlist': 'both', 'keep': 'masks'})
@@ -5314,7 +5344,10 @@ class DataSet(object):
             p = meta_ref['properties'].get(prop_name, None)
             if p:
                 if prop_name == 'base_text' and isinstance(p, dict):
-                    p = p[text_key]
+                    try:
+                        p = p[text_key]
+                    except:
+                        p = p[self.text_key]
             return p
         else:
             return None
