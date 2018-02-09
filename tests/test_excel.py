@@ -10,6 +10,8 @@ from quantipy.sandbox.sandbox import ChainManager
 from quantipy.sandbox.excel import Excel
 from quantipy.core.view_generators.view_specs import ViewManager
 
+import parameters_excel as parameters
+
 # -----------------------------------------------------------------------------
 PATH_DATA  = './tests/'
 NAME_PROJ  = 'Example Data (A)'
@@ -83,8 +85,7 @@ def excel(chain_manager):
 
 @pytest.yield_fixture(
     scope='class',
-    params=[(X1, Y1, V1, O1, C1, E1),
-           ]
+    params=[parameters.BASIC]
 )
 def params(request):
     return request.param
@@ -104,7 +105,6 @@ class TestExcel:
     def teardown_class(cls):
         cls.cleandir()
 
-    #raise Exception('boooooo cleandir')
     def test_basic(self, tmpdir, stack, params):
         x, y, v, o, c, e = params
 
