@@ -10,8 +10,6 @@ from quantipy.sandbox.sandbox import ChainManager
 from quantipy.sandbox.excel import Excel
 from quantipy.core.view_generators.view_specs import ViewManager
 
-qp.set_option('new_chains', True)
-
 # -----------------------------------------------------------------------------
 PATH_DATA  = './tests/'
 NAME_PROJ  = 'Example Data (A)'
@@ -147,4 +145,3 @@ class TestExcel:
             xml_exp = _read_file(zip_exp, filename)
             err = ' ... %s ...\nGOT: %s\nEXPECTED: %s'
             assert xml_got == xml_exp, err % (filename, xml_got, xml_exp)
-
