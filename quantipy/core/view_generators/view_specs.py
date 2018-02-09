@@ -471,7 +471,9 @@ class ViewManager(object):
             psrps = ps[:] + rps[:]
             cpsrps = cs[:] + ps [:] + rps[:]
             csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
+            csc = csc if csc[0] in all_views else []
             psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)]
+            psc = psc if psc[0] in all_views else []
             cpsc = csc[:] + psc[:]
         else:
             cs = []
