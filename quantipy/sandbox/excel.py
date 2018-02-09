@@ -570,7 +570,6 @@ class Box(object):
                              levels(0).unique().values[0],
                              self.excel._formats['label'])
             self._format_row(self.excel._formats['label'])
-        self.sheet._set_row(self.sheet._row)
         self.sheet._row += 1
 
         if self.notes:

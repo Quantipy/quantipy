@@ -92,6 +92,8 @@ def params(request):
 
 
 class TestExcel:
+    teardown = False
+
     @staticmethod
     def cleandir():
         if os.path.exists('./tmp.xlsx'):
@@ -103,7 +105,8 @@ class TestExcel:
 
     @classmethod
     def teardown_class(cls):
-        cls.cleandir()
+        if cls.teardown:
+            cls.cleandir()
 
     def test_basic(self, tmpdir, stack, params):
         x, y, v, o, c, e = params
@@ -145,3 +148,5 @@ class TestExcel:
             xml_exp = _read_file(zip_exp, filename)
             err = ' ... %s ...\nGOT: %s\nEXPECTED: %s'
             assert xml_got == xml_exp, err % (filename, xml_got, xml_exp)
+
+        TestExcel.teardown = True
