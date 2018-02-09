@@ -4380,10 +4380,11 @@ class DataSet(object):
         masks = self._meta['masks']
         columns = self._meta['columns']
 
-        if not (self._dimensions_comp or self._dimensions_comp == 'ignore'):
+        dim_comp = self._dimensions_comp
+        if isinstance(dim_comp, bool) or not dim_comp == 'ignore'):
             suffix = '_grid'
         else:
-            suffix = self._dimensions_comp
+            suffix = dim_comp
 
         mapper = {}
         if not names:
