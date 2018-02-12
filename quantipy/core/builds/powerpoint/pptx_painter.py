@@ -411,7 +411,7 @@ def PowerPointPainter(
         'right_footer': '',
         'title_footer': ''}
 
-    spec = meta['sets']['spec']
+    spec = meta['sets'].get('spec', False)
 
     # update 'crossbreak' key's value in default_props if
     # force_crossbreak parameter is true
@@ -506,6 +506,14 @@ def PowerPointPainter(
         # log slide number
         slide_num = len(prs.slides)
 
+        # Get Client and Topic tag from meta    
+        if isinstance(spec, dict):
+            topic = u"{}".format(spec.get('topic', ""))        
+            client = u"{}".format(spec.get('name', ""))            
+        else:
+            topic = ""        
+            client = ""                    
+        
         ############################################################################
         # frontpage title ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
@@ -515,14 +523,12 @@ def PowerPointPainter(
 
         if title_shape['addtext_frontpage']:
 
-            topic = spec['topic'][:].encode('cp1252')
             for shape in prs.slides[0].shapes:
                 if shape.name == title_shape['shape_name_frontpage']:
                     shape.text = topic
 
         if client_date_shape['addtext']:
 
-            client = spec['name']
             for shape in prs.slides[0].shapes:
                 if shape.name == title_shape['shape_name']:
                     shape.text = client_date_shape['t_d_text'].format(client,date_range)
@@ -800,7 +806,6 @@ def PowerPointPainter(
                                     ''' title shape'''
                                     if title_shape['addtext']:
 
-                                        topic = spec['topic'][:].encode('cp1252')
                                         for shape in slide.placeholders:
                                             if shape.name == title_shape['shape_name']:
                                                 shape.text = topic
@@ -1001,7 +1006,6 @@ def PowerPointPainter(
                                 ''' title shape'''
                                 if title_shape['addtext']:
 
-                                    topic = spec['topic'][:].encode('cp1252')
                                     for shape in slide.placeholders:
                                         if shape.name == title_shape['shape_name']:
                                             shape.text = topic
