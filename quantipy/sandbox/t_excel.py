@@ -109,7 +109,6 @@ meta['columns']['gender']['text']['x edits'] = {'en-GB': 'from text > x edits > 
 meta['columns']['q5_1']['text']['x edits'] = {'fake': 'from text > x edits > fake'}
 meta['columns']['q5_1']['properties'] = {'base_text': {'fake': 'Base: fake',
                                                        'en-GB': 'Base: en-GB'}}
-
 meta['columns']['q4']['text']['fake'] = 'from text > fake'
 meta['columns']['q4']['text']['y edits'] = {'fake': 'from text > y edits > fake'}
 meta['columns']['q4']['properties'] = {'base_text': 'Base: Text'}

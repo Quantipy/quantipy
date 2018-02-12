@@ -1491,7 +1491,6 @@ class Chain(object):
         """Returns the total number of cells in the Chain.dataframe"""
         return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
 
-
     @lazy_property
     def _default_text(self):
         return self._meta['lib']['default text']
@@ -2260,13 +2259,15 @@ class Chain(object):
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
         """
+        frames = []
 
         totals = [[_TOTAL]] * 2
 
         if found is None:
             found = OrderedDict()
 
-        frames = []
+        if self._text_map is None:
+            self._text_map = dict()
 
         for view in views:
             try:

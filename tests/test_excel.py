@@ -108,7 +108,7 @@ class TestExcel:
         if cls.teardown:
             cls.cleandir()
 
-    def test_basic(self, tmpdir, stack, params):
+    def test_structure(self, tmpdir, stack, params):
         x, y, v, o, c, e = params
 
         stack.add_link(data_keys=DATA_KEY, filters=FILTER_KEY,

@@ -13,4 +13,13 @@ EXCEL = './tests/basic.xlsx'
 BASIC = (XKEYS, YKEYS, VIEWS, OPENS, CELLS, EXCEL)
 # -----------------------------------------------------------------------------
 
+# COMPLEX 1
+# -----------------------------------------------------------------------------
+XKEYS = ['q5_1', 'q4', 'gender', 'Wave']
+YKEYS = ['@', 'q4 > gender', 'q4 > gender > Wave', 'q5_1']
+VIEWS = ['cbase', 'cbase_gross', 'ebase', 'counts', 'c%', 'r%', 'counts_sum', 'c%_sum']
+OPENS = ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']
+CELLS = 'counts'
+EXCEL = './tests/basic.xlsx'
 
+ASDASDA = (XKEYS, YKEYS, VIEWS, OPENS, CELLS, EXCEL)
