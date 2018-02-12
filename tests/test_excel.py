@@ -25,17 +25,6 @@ FILTER_KEY = 'no_filter'
 ISO8601    = r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)'
 # -----------------------------------------------------------------------------
 
-# FIXTURES - move to fixtures file
-# -----------------------------------------------------------------------------
-X1 = ['q2', 'q2b', 'q3', 'q4', ['q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6'],
-      'q8', 'q9']
-Y1 = ['@', 'gender', 'locality']
-V1 = ['cbase', 'counts']
-O1 = ['q8a', 'q9a']
-C1 = 'counts'
-E1 = './tests/basic.xlsx'
-# -----------------------------------------------------------------------------
-
 def _load_zip(path):
     try:
         z = ZipFile(path, 'r')
@@ -52,14 +41,75 @@ def _read_file(zipf, filename):
     else:
         return re.sub(ISO8601, '', f)
 
-def flatten(l):
-    res = []
-    for i, el in enumerate(l):
-        if isinstance(el, basestring):
-            res.append(el)
-        else:
-            res.extend(el)
-    return res
+class Chain_Manager:
+    def __init__(self, stack):
+        self.basic = self.basic_chain_manager(stack)
+        # self.complex = complex(stack)
+
+    def __getitem__(self, value):
+        return getattr(self, value)
+
+    @staticmethod
+    def flatten(l):
+        res = []
+        for i, el in enumerate(l):
+            if isinstance(el, basestring):
+                res.append(el)
+            else:
+                res.extend(el)
+        return res
+
+    def basic_chain_manager(self, stack):
+
+        x_keys = ['q2', 'q2b', 'q3', 'q4',
+                 ['q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6'],
+                 'q8', 'q9']
+        y_keys = ['@', 'gender', 'locality']
+        views = ['cbase', 'counts']
+        opens = ['q8a', 'q9a']
+        cells = 'counts'
+        weight = None
+
+        stack.add_link(data_keys=DATA_KEY,
+                       filters=FILTER_KEY,
+                       x=self.flatten(x_keys),
+                       y=y_keys,
+                       views=views)
+
+        vm = ViewManager(stack)
+        vm.get_views(cell_items=cells,
+                     weight=None,
+                     bases='auto').group()
+
+        _chain_manager_basic = ChainManager(stack)
+        xks = []
+        for item in x_keys:
+            if isinstance(item, basestring):
+                _chain_manager_basic.get(data_key=DATA_KEY,
+                                         filter_key=FILTER_KEY,
+                                         x_keys=item,
+                                         y_keys=y_keys,
+                                         views=vm.views,
+                                         orient='x',
+                                         prioritize=True,
+                                         folder=None)
+            else:
+                _chain_manager_basic.get(data_key=DATA_KEY,
+                                         filter_key=FILTER_KEY,
+                                         x_keys=item,
+                                         y_keys=y_keys,
+                                         views=vm.views,
+                                         orient='x',
+                                         prioritize=True,
+                                         folder='FOLDER_%s' % str(x_keys.index(item)))
+
+        _chain_manager_basic.add(stack[DATA_KEY].data.loc[:, opens],
+                                 meta_from=(DATA_KEY, FILTER_KEY),
+                                 name='Open Ends')
+
+        _chain_manager_basic.paint_all()
+
+        return _chain_manager_basic
 
 @pytest.fixture(scope='module')
 def dataset():
@@ -68,12 +118,11 @@ def dataset():
     yield _dataset.split()
     del _dataset
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope='module')
 def stack(dataset):
     meta, data = dataset
-    _stack = qp.Stack(NAME_PROJ,
-                      add_data={DATA_KEY: {'meta': meta,
-                                           'data': data.copy()}})
+    store = {DATA_KEY: {'meta': meta, 'data': data.copy()}}
+    _stack = qp.Stack(NAME_PROJ, add_data=store)
     yield _stack
     del _stack
 
@@ -83,9 +132,13 @@ def excel(chain_manager):
     x.add_chains(chain_manager)
     x.close()
 
+@pytest.fixture(scope='class')
+def chain_manager(stack):
+    return Chain_Manager(stack)
+
 @pytest.yield_fixture(
     scope='class',
-    params=[parameters.BASIC]
+    params=[('basic', parameters.PATH_BASIC)]
 )
 def params(request):
     return request.param
@@ -108,38 +161,13 @@ class TestExcel:
         if cls.teardown:
             cls.cleandir()
 
-    def test_structure(self, tmpdir, stack, params):
-        x, y, v, o, c, e = params
+    def test_structure(self, chain_manager, params):
 
-        stack.add_link(data_keys=DATA_KEY, filters=FILTER_KEY,
-                       x=flatten(x), y=y, views=v)
+        complexity, path_expected = params
 
-        vm = ViewManager(stack)
-        vm.get_views(cell_items=c, weight=None, bases='auto').group()
+        excel(chain_manager[complexity])
 
-        cm = ChainManager(stack)
-        xks = []
-        for item in x:
-            if isinstance(item, basestring):
-                cm.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                       x_keys=item, y_keys=y,
-                       views=vm.views, orient='x',
-                       prioritize=True, folder=None)
-            else:
-                cm.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
-                       x_keys=item, y_keys=y,
-                       views=vm.views, orient='x',
-                       prioritize=True, folder='FOLDER_%s' % str(x.index(item)))
-
-        cm.add(stack[DATA_KEY].data.loc[:, ['q8a', 'q9a']],
-               meta_from=(DATA_KEY, FILTER_KEY),
-               name='Open Ends')
-
-        cm.paint_all()
-
-        excel(cm)
-
-        zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(e)
+        zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
 
         assert zip_got.namelist() == zip_exp.namelist()
 
