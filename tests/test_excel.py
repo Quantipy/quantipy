@@ -3,6 +3,7 @@ import os
 import re
 import pytest
 import collections
+from operator import sub
 from zipfile import ZipFile, BadZipfile, LargeZipFile
 
 import quantipy as qp
@@ -44,7 +45,7 @@ def _read_file(zipf, filename):
 class Chain_Manager:
     def __init__(self, stack):
         self.basic = self.basic_chain_manager(stack)
-        # self.complex = complex(stack)
+        self.complex = self.complex_chain_manager(stack)
 
     def __getitem__(self, value):
         return getattr(self, value)
@@ -70,46 +71,138 @@ class Chain_Manager:
         cells = 'counts'
         weight = None
 
-        stack.add_link(data_keys=DATA_KEY,
-                       filters=FILTER_KEY,
-                       x=self.flatten(x_keys),
-                       y=y_keys,
-                       views=views)
+        stack.add_link(x=self.flatten(x_keys), y=y_keys,
+                       views=views, weights=weight)
 
         vm = ViewManager(stack)
-        vm.get_views(cell_items=cells,
-                     weight=None,
-                     bases='auto').group()
+        vm.get_views(cell_items=cells, weight=None, bases='auto').group()
 
-        _chain_manager_basic = ChainManager(stack)
-        xks = []
+        _basic = ChainManager(stack)
         for item in x_keys:
-            if isinstance(item, basestring):
-                _chain_manager_basic.get(data_key=DATA_KEY,
-                                         filter_key=FILTER_KEY,
-                                         x_keys=item,
-                                         y_keys=y_keys,
-                                         views=vm.views,
-                                         orient='x',
-                                         prioritize=True,
-                                         folder=None)
-            else:
-                _chain_manager_basic.get(data_key=DATA_KEY,
-                                         filter_key=FILTER_KEY,
-                                         x_keys=item,
-                                         y_keys=y_keys,
-                                         views=vm.views,
-                                         orient='x',
-                                         prioritize=True,
-                                         folder='FOLDER_%s' % str(x_keys.index(item)))
+            folder = None if isinstance(item, basestring) \
+                        else 'FOLDER_%s' % str(x_keys.index(item))
+            _basic.get(data_key=DATA_KEY,
+                       filter_key=FILTER_KEY,
+                       x_keys=item,
+                       y_keys=y_keys,
+                       views=vm.views,
+                       orient='x',
+                       prioritize=True,
+                       folder=folder)
 
-        _chain_manager_basic.add(stack[DATA_KEY].data.loc[:, opens],
-                                 meta_from=(DATA_KEY, FILTER_KEY),
-                                 name='Open Ends')
+        _basic.add(stack[DATA_KEY].data.loc[:, opens],
+                   meta_from=(DATA_KEY, FILTER_KEY),
+                   name='Open Ends')
 
-        _chain_manager_basic.paint_all()
+        _basic.paint_all()
 
-        return _chain_manager_basic
+        return _basic
+
+    @staticmethod
+    def net_mapper(name, logic, text, mapper=None, **kwargs):
+        if mapper is None:
+            freq = qp.QuantipyViews().frequency
+            iters = dict(iterators=dict(rel_to=[None, 'y', 'x'], groups='Nets'))
+            mapper = qp.ViewMapper(template=dict(method=freq, kwargs=iters))
+        kwargs.update(dict(axis='x', logic=logic, text=text))
+        mapper.add_method(name=name, kwargs=kwargs)
+        return mapper
+
+    def complex_chain_manager(self, stack):
+        x_keys = ['q5_1', 'q4', 'gender', 'Wave']
+        y_keys = ['@', 'q4 > gender', 'q4 > gender > Wave', 'q5_1']
+        views = ['cbase', 'cbase_gross', 'ebase', 'counts', 'c%', 'r%',
+                 'counts_sum', 'c%_sum']
+        opens = ['RecordNo', 'gender', 'age', 'q8', 'q8a', 'q9', 'q9a']
+        cells = ['counts_colpct_rowpct']
+        weight = 'weight_a'
+
+        stack.add_link(x=x_keys, y=y_keys, views=views, weights=[None, weight])
+        stack.add_link(x='q5', y='@', views=views, weights=weight)
+        stack.add_link(x='@', y='q5', views=views, weights=weight)
+
+        kwargs = dict(combine=False)
+        mapper = self.net_mapper('No', [dict(No=[1, 2, 3])],
+                                 'Net: No', **kwargs)
+        stack.add_link(x=x_keys[0], y=y_keys, views=mapper, weights=weight)
+        stack.add_link(x='q5', y='@', views=mapper, weights=weight)
+        stack.add_link(x='@', y='q5', views=mapper, weights=weight)
+
+        mapper = self.net_mapper('Yes', [dict(Yes=[4, 5, 97])],
+                                 'Net: Yes', **kwargs)
+        stack.add_link(x=x_keys[0], y=y_keys, views=mapper, weights=weight)
+        stack.add_link(x='q5', y='@', views=mapper, weights=weight)
+        stack.add_link(x='@', y='q5', views=mapper, weights=weight)
+
+        logic = [dict(N1=[1, 2],
+                      text={'en-GB': 'Waves 1 & 2 (NET)'},
+                      expand='after'),
+                 dict(N2=[4, 5],
+                     text={'en-GB': 'Waves 4 & 5 (NET)'},
+                      expand='after')]
+        kwargs = dict(combine=False, complete=True, expand='after')
+        mapper = self.net_mapper('BLOCK', logic,
+                                 'Net: ', **kwargs)
+        stack.add_link(x=x_keys[-1], y=y_keys, views=mapper, weights=weight)
+
+        logic = [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
+                 {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]
+        kwargs = {'calc_only': False,
+                  'calc': {'text': {u'en-GB': u'Net YES'},
+                           'Net agreement': ('Net: Yes', sub, 'Net: No')}}
+        mapper = self.net_mapper('NPS', logic,
+                                 'Net: ', **kwargs)
+
+        logic = [{'text': {u'en-GB': 'Net: No'}, 'Net: No': [1, 2]},
+                 {'text': {u'en-GB': 'Net: Yes'}, 'Net: Yes': [4, 5]}]
+        kwargs = {'calc_only': True,
+                  'calc': {'text': {u'en-GB': u'Net YES'},
+                           'Net agreement (only)': ('Net: Yes', sub, 'Net: No')}}
+
+        mapper = self.net_mapper('NPSonly', logic, 'Net: ',
+                                 mapper=mapper, **kwargs)
+        stack.add_link(x=x_keys[-1], y=y_keys, views=mapper, weights=weight)
+
+        options = dict(stats=None, source=None, rescale=None, drop=False,
+                       exclude=None, axis='x', text='') 
+        stats = ['mean', 'stddev', 'median', 'var',
+                 'varcoeff', 'sem', 'lower_q', 'upper_q']
+        for stat in stats:
+            options['stat'] = stat
+            mapper = qp.ViewMapper()
+            mapper.make_template('descriptives')
+            mapper.add_method(stat, kwargs=options)
+            stack.add_link(x=x_keys, y=y_keys, views=mapper, weights=weight)
+            stack.add_link(x='q5', y='@', views=mapper, weights=weight)
+            stack.add_link(x='@', y='q5', views=mapper, weights=weight)
+
+        test_view = qp.ViewMapper().make_template('coltests')
+        options = dict(level=0.8, metric='props',
+                       test_total=True, flag_bases=[30, 100])
+        test_view.add_method('test', kwargs=options)
+        stack.add_link(x=x_keys, y=y_keys, views=mapper, weights=weight)
+
+        test_view = qp.ViewMapper().make_template('coltests')
+        options = dict(level=0.8, metric='means',
+                       test_total=True, flag_bases=[30, 100])
+        test_view.add_method('test', kwargs=options)
+        stack.add_link(x=x_keys, y=y_keys, views=mapper, weights=weight)
+
+        vm = ViewManager(stack)
+        vm.get_views(cell_items=cells, weight=None, bases='auto').group()
+
+        _complex = ChainManager(stack)
+        _complex.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                     x_keys=x_key, y_keys=y_keys,
+                     views=vm.views, orient='x',
+                     folder='Main')
+
+        _complex.add(stack[DATA_KEY].data.loc[:, opens],
+                     meta_from=(DATA_KEY, FILTER_KEY),
+                     name='Open Ends')
+
+        return _complex
+
 
 @pytest.fixture(scope='module')
 def dataset():
