@@ -37,7 +37,16 @@ Event(OnJobStart)
 	Set dmgrGlobal.CaseData = CreateObject("ADODB.Stream")
 
 	dmgrGlobal.CaseData.CharSet = "utf-8"
-	dmgrGlobal.CaseData.LineSeparator = adCR
+	Select Case CRLF
+		Case "CR"
+			dmgrGlobal.CaseData.LineSeparator = adCR
+		Case "CRLF"
+			dmgrGlobal.CaseData.LineSeparator = adCRLF
+		Case "LF"
+			dmgrGlobal.CaseData.LineSeparator = adLF
+		Case Else
+			Debug.Log("Unknown CRLF.")
+	End Select
 	dmgrGlobal.CaseData.Open()
 	dmgrGlobal.CaseData.LoadFromFile(MASTER_INPUT+"_datastore.csv")
 	
@@ -124,6 +133,7 @@ Event(OnNextCase)
 				End If
 			Case 2
 				oA = data[i].Replace(">_>_>", ",")
+				If oA = "" Then oA = NULL
 			Case 3
 				Select Case oA.Validation.MaxValue
 					Case 1
