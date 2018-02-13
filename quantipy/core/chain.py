@@ -48,7 +48,7 @@ class Chain(defaultdict):
         self.annotations = None
 
     def __repr__(self):
-        return ('%s:\norientation-axis: %s - %s,\ncontent-axis: %s, \nviews: %s' 
+        return ('%s:\norientation-axis: %s - %s,\ncontent-axis: %s, \nviews: %s'
                 %(Chain, self.orientation, self.source_name,
                   self.content_of_axis, len(self.views)))
 
@@ -77,7 +77,7 @@ class Chain(defaultdict):
 
     def copy(self):
         """
-        Create a copy of self by serializing to/from a bytestring using 
+        Create a copy of self by serializing to/from a bytestring using
         cPickle.
         """
         new_chain = cPickle.loads(
@@ -152,7 +152,7 @@ class Chain(defaultdict):
         else:
             for var in self.content_of_axis:
                 views_on_var = []
-                for view in self.views:            
+                for view in self.views:
                     try:
                         res = (chain_query[self.source_name][var]
                                [view].dataframe.copy())
@@ -162,7 +162,7 @@ class Chain(defaultdict):
                         views_on_var.append(res)
                     except:
                         pass
-                contents.append(pd.concat(views_on_var, axis=0))    
+                contents.append(pd.concat(views_on_var, axis=0))
             concat_chain = pd.concat(contents, axis=1)
         return concat_chain
 
@@ -177,13 +177,13 @@ class Chain(defaultdict):
             for vk in self.views:
                 vk_sizes.append(self[dk][fk][xk][yk][vk].dataframe.shape)
             sizes.append(vk_sizes)
-        
+
         return sizes
 
     def view_lengths(self):
 
         lengths = [
-            list(zip(*view_size)[0]) 
+            list(zip(*view_size)[0])
             for view_size in [y_size for y_size in self.view_sizes()]]
 
         return lengths

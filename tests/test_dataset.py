@@ -691,7 +691,7 @@ class TestDataSet(unittest.TestCase):
         text = 'q4 Age Gender'
         self.assertEqual(values, dataset.values('q4AgeGen'))
         self.assertEqual(text, dataset.text('q4AgeGen'))
-        self.assertTrue(dataset._is_delimited_set('q4AgeGen'))
+        self.assertTrue(dataset.is_delimited_set('q4AgeGen'))
 
     def test_dichotomous_to_delimited_set(self):
         dataset = self._get_dataset()

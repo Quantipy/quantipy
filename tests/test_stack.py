@@ -1122,7 +1122,7 @@ class TestStackObject(unittest.TestCase):
         b3.add_y_on_y('y_on_y')
         b3.make_summaries(None)
         b3.set_weights(['weight_a', 'weight_b'])
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], True,
                         'age', ['test1', 'test2'], verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum'],
@@ -1152,7 +1152,7 @@ class TestStackObject(unittest.TestCase):
 
     def test_cumulative_sum(self):
         b, ds = _get_batch('test1', full=True)
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         stack.cumulative_sum(['q1', 'q6'], 'all', verbose=False)
         describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
@@ -1171,7 +1171,7 @@ class TestStackObject(unittest.TestCase):
 
     def test_add_nets(self):
         b, ds = _get_batch('test1', full=True)
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         calcu = calc((2, '-', 1), 'difference', 'en-GB')
         stack.add_nets(['q1', 'q6'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
@@ -1192,9 +1192,29 @@ class TestStackObject(unittest.TestCase):
         self.assertEqual(describe.columns.tolist(), cols)
         self.assertEqual(describe.values.tolist(), values)
 
-    def test_add_stats(self):
+    def test_recode_from_net_def(self):
         b, ds = _get_batch('test1', full=True)
         stack = ds.populate()
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='collect_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [5297, 2264, 694]
+        self.assertEqual(expect, values)
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='drop_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [5297, 694]
+        self.assertEqual(expect, values)
+        stack.add_nets(['q1'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
+                       recode='extend_codes', _batches='all', verbose=False)
+        values = ds['q1_rc'].value_counts().values.tolist()
+        expect = [2999, 2298, 894, 477, 397, 369, 297, 194, 131, 104, 91, 4]
+        self.assertEqual(expect, values)
+        self.assertEqual('delimited set', ds._get_type('q1_rc'))
+
+    def test_add_stats(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         stack.add_stats('q6', ['mean'], rescale={1:3, 2:2, 3:1}, factor_labels=False,
                         _batches='all', verbose=False)
@@ -1215,6 +1235,20 @@ class TestStackObject(unittest.TestCase):
         self.assertEqual(describe.columns.tolist(), cols)
         self.assertEqual(describe.values.tolist(), values)
 
+    def test_recode_from_stat_def(self):
+        b, ds = _get_batch('test1', full=True)
+        stack = ds.populate()
+        stack.add_stats('q6', ['mean'], rescale={1:0, 2:50, 3:100}, factor_labels=False,
+                        _batches='all', verbose=False, recode=True)
+        expect_ind = [0.0, 50.0, 100.0]
+        index = ds['q6_1_rc'].value_counts().index.tolist()
+        expect_val = [3074, 2620, 875]
+        values = ds['q6_1_rc'].value_counts().values.tolist()
+        self.assertEqual(expect_val, values)
+        self.assertEqual(expect_ind, index)
+        self.assertRaises(ValueError, stack.add_stats, 'q6', other_source='q1')
+
+
     def test_factor_labels(self):
         def _factor_on_values(values, axis = 'x'):
             return all(v['text']['{} edits'.format(axis)]['en-GB'].endswith(
@@ -1227,7 +1261,7 @@ class TestStackObject(unittest.TestCase):
         b2, ds = _get_batch('test2', ds, True)
         b2.add_x(['q1', 'q2b', 'q6'])
         b2.set_variable_text('q1', 'some new text2')
-        stack = ds.populate()
+        stack = ds.populate(verbose=False)
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         stack.add_stats(['q1', 'q2b', 'q6'], ['mean'], _batches='all', verbose=False)
         for dk in stack.keys():

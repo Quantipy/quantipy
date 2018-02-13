@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 28)
+		self.assertEqual(len(_get_meta(batch1).keys()), 30)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -102,7 +102,7 @@ class TestBatch(unittest.TestCase):
 		                 				 u'q14r07c01', u'q14r08c01', u'q14r09c01', u'q14r10c01'])
 		self.assertEqual(b_meta['forced_names'], {'q3': 'q3_label', 'q5': 'q5_label'})
 		self.assertEqual(b_meta['summaries'], ['q5', 'q14_1'])
-		x_y_map = OrderedDict([('q1', ['@']), ('q2', ['@']), ('q2b', ['@']),
+		x_y_map = [('q1', ['@']), ('q2', ['@']), ('q2b', ['@']),
 							   ('q3', ['@']), ('q4', ['@']), ('q5', ['@']),
 							   (u'q5_1', ['@']), (u'q5_2', ['@']),
 							   (u'q5_3', ['@']), (u'q5_4', ['@']),
@@ -112,7 +112,7 @@ class TestBatch(unittest.TestCase):
 							   (u'q14r04c01', ['@']), (u'q14r05c01', ['@']),
 							   (u'q14r06c01', ['@']), (u'q14r07c01', ['@']),
 							   (u'q14r08c01', ['@']), (u'q14r09c01', ['@']),
-							   (u'q14r10c01', ['@'])])
+							   (u'q14r10c01', ['@'])]
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
 	def test_add_y(self):
@@ -122,7 +122,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['yks'], ['@', 'gender', 'q2b'])
 		self.assertRaises(KeyError, batch.add_y, ['@', 'GENDER'])
 		batch.add_x('q1')
-		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2b'])])
+		x_y_map = [('q1', ['@', 'gender', 'q2b'])]
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
 	def test_add_open_ends(self):
@@ -185,7 +185,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(b_meta['additional'], True)
 		self.assertEqual(b_meta['verbatims'], {})
 		self.assertEqual(b_meta['verbatim_names'], [])
-		self.assertEqual(b_meta['y_on_y'], None)
+		self.assertEqual(b_meta['y_on_y'], [])
 
 	def test_set_cell_items(self):
 		batch, ds = _get_batch('test', full=True)
@@ -229,13 +229,13 @@ class TestBatch(unittest.TestCase):
 		b_meta2 = _get_meta(batch2)
 		self.assertRaises(ValueError, batch1.extend_y, 'q2b', 'q5')
 		batch1.extend_y('q2b')
-		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2', 'q2b']),
+		x_y_map = [('q1', ['@', 'gender', 'q2', 'q2b']),
 							   ('q2', ['@', 'gender', 'q2', 'q2b']),
 							   ('q6', ['@']),
 							   (u'q6_1', ['@', 'gender', 'q2', 'q2b']),
 							   (u'q6_2', ['@', 'gender', 'q2', 'q2b']),
 							   (u'q6_3', ['@', 'gender', 'q2', 'q2b']),
-							   ('age', ['@', 'gender', 'q2', 'q2b'])])
+							   ('age', ['@', 'gender', 'q2', 'q2b'])]
 		self.assertEqual(b_meta1['x_y_map'], x_y_map)
 		self.assertEqual(b_meta1['extended_yks_global'], ['q2b'])
 		batch2.extend_y('q2b', 'q2')
@@ -243,13 +243,13 @@ class TestBatch(unittest.TestCase):
 		extended_yks_per_x = {u'q6_3': ['q3'], 'q2': ['q2b'], u'q6_1': ['q3'],
 							  u'q6_2': ['q3'], 'q6': ['q3']}
 		self.assertEqual(b_meta2['extended_yks_per_x'], extended_yks_per_x)
-		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']),
+		x_y_map = [('q1', ['@', 'gender', 'q2']),
 							   ('q2', ['@', 'gender', 'q2', 'q2b']),
 							   ('q6', ['@']),
 							   (u'q6_1', ['@', 'gender', 'q2', 'q3']),
 							   (u'q6_2', ['@', 'gender', 'q2', 'q3']),
 							   (u'q6_3', ['@', 'gender', 'q2', 'q3']),
-							   ('age', ['@', 'gender', 'q2'])])
+							   ('age', ['@', 'gender', 'q2'])]
 		self.assertEqual(b_meta2['x_y_map'], x_y_map)
 
 	def test_replace_y(self):
@@ -262,13 +262,13 @@ class TestBatch(unittest.TestCase):
 							   u'q6_2': ['@', 'q2b'],
 							   'q6': ['@', 'q2b']}
 		self.assertEqual(b_meta['exclusive_yks_per_x'], exclusive_yks_per_x)
-		x_y_map = OrderedDict([('q1', ['@', 'gender', 'q2']),
+		x_y_map = [('q1', ['@', 'gender', 'q2']),
 							   ('q2', ['@', 'gender', 'q2']),
 							   ('q6', ['@']),
 							   (u'q6_1', ['@', 'q2b']),
 							   (u'q6_2', ['@', 'q2b']),
 							   (u'q6_3', ['@', 'q2b']),
-							   ('age', ['@', 'gender', 'q2'])])
+							   ('age', ['@', 'gender', 'q2'])]
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
 	def test_extend_filter(self):
@@ -293,8 +293,10 @@ class TestBatch(unittest.TestCase):
 	def test_add_y_on_y(self):
 		batch, ds = _get_batch('test', full=True)
 		b_meta = _get_meta(batch)
-		batch.add_y_on_y('cross')
-		self.assertEqual(b_meta['y_on_y'], 'cross')
+		batch.add_y_on_y('cross', {'age': frange('20-30')}, 'extend')
+		batch.add_y_on_y('back', 'no_filter', 'replace')
+		self.assertEqual(b_meta['y_filter_map']['back'], 'no_filter')
+		self.assertEqual(b_meta['y_on_y'], ['cross', 'back'])
 
 
 	######################### meta edit methods ##############################

@@ -4,24 +4,34 @@ from collections import OrderedDict
 from itertools import chain
 from operator import add, sub, mul, div
 import re
+import warnings
 
 class ViewManager(object):
-    def __init__(self, stack, basics=True, nets=True, stats=['mean'], tests=None):
+    def __init__(self, stack):
         self.stack = stack
-        self.basics = basics
-        self.nets = nets
-        self.stats = stats
-        self.tests = tests
+        self.basics = None
+        self.nets = None
+        self.stats = None
+        self.tests = None
         self.views = None
         self.grouping = None
         self.base_spec = None
-        self.weighted = False
+        self.weighted = None
+        self.sums_pos = None
         self._base_views = None
         self._grouped_views = None
         return None
 
-    def get_views(self, data_key=None, filter_key=None, cell_items='p',
-                  weights=None, bases='auto'):
+
+    def _base_len(self):
+        """
+        """
+        return len(self._base_views) if self._base_views else None
+
+    def get_views(self, data_key=None, filter_key=None, weight=None,
+                  freqs=True, nets=True, stats=['mean', 'stddev'],
+                  sums='bottom', tests=None, cell_items='colpct',
+                  ci_order='normal', bases='auto'):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -31,12 +41,33 @@ class ViewManager(object):
             The data_key name of the ``qp.Stack`` path to be queried.
         filter_key : str, default None
             The filter_key name of the ``qp.Stack`` path to be queried.
-        cell_items: {'c', 'p', 'cp'}, default 'p'
-            The kind of frequency aggregations that should be returned;
-            'c'(ounts), 'p'(ercentages) or both ('cp').
-        weights : str, default None
-            The name of a weight variable that has been used in the aggregation
-            and should now be queried from the ``qp.Stack``.
+        weight : str, default None
+            The name of the weight variable to look for searching aggregations.
+        freqs : bool, default True
+            Determines if all regular frequency-types are being pulled
+            from the ``qp.Stack``. This includes counts, percentage and
+            cumulative percentages.
+        nets : bool, default True
+            Determines if net-types are being pulled from the ``qp.Stack``.
+            This includes simple, block-like and expanded nets as well as
+            attached calculations.
+        stats : (list of) {'mean', 'stddev', 'min', 'max', ...},
+                default ['mean', 'stddev']
+            The descriptive statistics (if any) to get from the ``qp.Stack``.
+        sums: str {'bottom', 'mid'} or None, default 'bottom'
+            The position of the sums (if any) in the view-list.
+        tests : (list of) float, default None
+            Text...
+        cell_items: {'counts', 'colpct', 'rowpct', 'counts_colpct',
+                     'counts_rowpct', 'colpct_rowpct', 'counts_colpct_rowpct'},
+                    default 'colpct'
+            The kind of frequency aggregations that should be returned: raw
+            counts, column or row percentages or grouped versions of the
+            former, e.g. 'counts_colpct' will show both counts and column
+            percentages as a set of cell items.
+        ci_order: {'normal', 'switched'}
+            If more than one cell_item is requested, 'normal' returns pcts in
+            the first place, 'switched' returns counts in the first place.
         bases : {'auto', 'both', 'weighted', 'unweighted'}
             The base view(s) to include. 'auto' will match the base to the
             ``weights`` parameter. If ``weights`` is provided (i.e. the
@@ -44,21 +75,34 @@ class ViewManager(object):
             and the 'weighted' base, 'weighted' / 'unweighted' will try to get
             the respective version of the base view. The latter three will
             automatically fall back to the 'auto' behaviour if the passed value
-            would lead to a failure.
+            would lead to a failure or inconsistencies.
 
         Returns
         -------
         self
         """
-        valid_ci = ['c', 'p', 'cp']
+        self.basics = freqs
+        self.nets = nets
+        self.stats = stats
+        self.tests = tests
+        self.weighted = weight
+        self.sums_pos = sums
+        cimap = {'c': 'counts', 'p': 'colpct', 'cp': 'counts_colpct'}
+        for old, new in cimap.items():
+            if cell_items == old:
+                cell_items = new
+                msg = "'{}' is an old cell item reference, please use '{}' instead."
+                warnings.warn(msg.format(old, new))
+        valid_ci = ['counts', 'colpct', 'rowpct',
+                    'counts_colpct', 'counts_rowpct', 'colpct_rowpct',
+                    'counts_colpct_rowpct']
         valid_bases = ['auto', 'both', 'weighted', 'unweighted']
         if bases not in valid_bases:
-            err = "'bases must be one of {}, not {}!".format(valid_bases, bases)
+            err = "'bases must be one of {}, not '{}'!".format(valid_bases, bases)
             raise ValueError(err)
         self.base_spec = bases
-        self.weighted = True if weights else False
         if cell_items not in valid_ci:
-            err = "'cell_items' must be one of {}, not {}!"
+            err = "'cell_items' must be one of {}, not '{}'!"
             raise ValueError(err.format(valid_ci, cell_items))
         stack = self.stack
         if not data_key:
@@ -78,71 +122,140 @@ class ViewManager(object):
                 filter_key = stack[data_key].keys()[0]
 
         views = self._request_views(
-            data_key=data_key, filter_key=filter_key, weight=weights,
+            data_key=data_key, filter_key=filter_key, weight=self.weighted,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
-            sums='bottom', coltests=True if self.tests else False,
+            sums=self.sums_pos, coltests=True if self.tests else False,
             sig_levels=self.tests if self.tests else [])
-
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
-
-        self._fixate_base_views()
-
+        # Defining the base view layout vs. all collected views...
+        # See also: .set_bases()
+        views = self.views[:]
+        if self.weighted:
+            base_views = views[:6]
+            other_views = views[6:]
+        else:
+            base_views = views[:3]
+            other_views = views[3:]
+        if bases == 'auto':
+            wparam = 'w' if self.weighted else 'uw'
+        elif bases == 'both':
+            wparam = 'both'
+        elif bases == 'weighted':
+            wparam = 'w'
+        elif bases == 'unweighted':
+            wparam = 'uw'
+        self.set_bases(base=wparam)
+        self.views = self._base_views + other_views
+        if ci_order == 'normal':
+            self.group(switch=False)
+        elif ci_order == 'switched':
+            self.group(switch=True)
         return self
 
+    def set_bases(self, base='w', gross=False, effective=False,
+                  order=['base', 'gross', 'effective'], uw_pos='before',
+                  sticky_gross=False):
+        """
+        Set the base (sample size) view presentation.
 
-    def _fixate_base_views(self):
-        views = self.views[:]
-        if views[3].split('|')[-1] != 'cbase':
-            ebase = [views[2]] if views[2].split('|')[-1] == 'ebase' else []
-            if ebase:
-                bases = views[:3]
-                other_views = views[3:]
-            else:
-                bases = views[:2]
-                other_views = views[2:]
+        Parameters
+        ----------
+        base : {'w', 'uw', 'both'}, default 'w'
+            Show the *weighted* or *unweighted* version of the regular base or
+            *both*.
+        gross : {'w', 'uw', 'both'}, default False
+            Show the *weighted* or *unweighted* version of the gross base or
+            *both*.
+        effective : {'w', 'uw', 'both'}, default False
+            Show the *weighted* or *unweighted* version of the effective base
+            or *both*.
+        order : list of elements 'base', 'gross', 'effective',
+                default ['base', 'gross', 'effective']
+            Set the order in that regular, gross and effective bases should
+            appear.
+        uw_pos : {'after', 'before'}, default 'after'
+            Define if unweighted bases appear before or after their weighted
+            versions.
+        sticky_gross : bool, default False
+            If there are weighted and unweighted versions of both regular and
+            gross bases, this option will alternate between them, taking into
+            account the ``order`` and ``uw_pos`` parameter values. With this
+            option set to ``True``, any *effective* bases, however,  will be
+            placed at the end.
+
+        Returns
+        -------
+        None
+        """
+        if not self.views:
+            err = 'Cannot set base views, please run .get_views() before!'
+            raise RuntimeError(err)
+        bases = []
+        # test for reasonable setup
+        if not self.weighted:
+            if base: base = 'uw'
+            if gross: gross = 'uw'
+            if effective: effective = 'uw'
+        valid_order_items = ['base', 'gross', 'effective']
+        if not all(b in valid_order_items for b in order):
+            err = "Items in 'order' must be one of: {}!".format(valid_order_items)
+            raise ValueError(err)
+        # view key definitions
+        base_vk = 'x|f|x:||{}|cbase'
+        gross_vk = 'x|f|x:||{}|cbase_gross'
+        effective_vk = 'x|f|x:||{}|ebase'
+        uw_base_vk = base_vk.format('')
+        uw_gross_vk = gross_vk.format('')
+        uw_effective_vk = effective_vk.format('')
+        if self.weighted:
+            w_base_vk = base_vk.format(self.weighted)
+            w_gross_vk = gross_vk.format(self.weighted)
+            w_effective_vk = effective_vk.format(self.weighted)
         else:
-            ebase = [views[4]] if views[4].split('|')[-1] == 'ebase' else []
-            if ebase:
-                bases = views[:5]
-                other_views = views[5:]
-            else:
-                bases = views[:4]
-                other_views = views[4:]
-        has_both_bases = len(bases) >= 4
-        if self.base_spec == 'auto':
-            if has_both_bases:
-                if self.weighted:
-                    bases = bases[2:4] + ebase
+            w_base_vk = w_gross_vk = w_effective_vk = None
+        base_dict = {'base': [base, uw_base_vk, w_base_vk],
+                     'gross': [gross, uw_gross_vk, w_gross_vk],
+                     'effective': [effective, uw_effective_vk, w_effective_vk]}
+        # assembling all base types...
+        for base_type in order:
+            btype = base_dict[base_type][0]
+            uw_vk = base_dict[base_type][1]
+            w_vk = base_dict[base_type][2]
+            if btype:
+                if btype == 'w':
+                    bases.append(w_vk)
+                elif btype == 'uw':
+                    bases.append(uw_vk)
                 else:
-                    bases = bases[:2] + ebase
-            else:
-                pass
-        elif self.base_spec == 'both':
-            pass
-        elif self.base_spec == 'weighted':
-            if has_both_bases:
-                bases = bases[2:4] + ebase
-            else:
-                pass
-        elif self.base_spec == 'unweighted':
-            if has_both_bases:
-                bases = bases[:2] + ebase
-            else:
-                pass
+                    if uw_pos == 'after':
+                        bases.extend([w_vk, uw_vk])
+                    else:
+                        bases.extend([uw_vk, w_vk])
+        # rearrange reg. and gross bases if requested (alternate between them):
+        if sticky_gross and gross == 'both' and base == 'both':
+            sticky_bases = []
+            other_bases = []
+            for base in bases:
+                btype = base.split('|')[-1]
+                if btype in ['cbase_gross', 'cbase']:
+                    sticky_bases.append(base)
+                else:
+                    other_bases.append(base)
+            sticky_bases = sticky_bases[::2] + sticky_bases[1::2]
+            bases = sticky_bases + other_bases
+        # final list of base views:
+        self.views = bases + self.views[self._base_len():]
         self._base_views = bases
-        self.views = other_views
-
         return None
 
-
-    def group(self, style='reduce'):
+    def group(self, style='reduce', switch=False):
         """
         Reorder the ``.views`` list to group belonging aggregations together.
 
         Parameters
         ----------
-        style : {'reduce', 'repeat'}, default `reduce`
+        style : {'reduce', 'repeat'}, default 'reduce'
             Defines how the grouping will instruct the indexing of concatenated
             ``View`` dataframes in a ``qp.Chain`` object. ``'reduced'`` will
             show each index code a single time, while ``'repeat'`` will show
@@ -155,6 +268,7 @@ class ViewManager(object):
         """
         self.grouping = style
         grouped_views = self._grouped_views
+
         if grouped_views is None:
             msg = 'Grouped views are not defined. Run ``.get_views()`` first.'
             raise ValueError(msg)
@@ -163,52 +277,79 @@ class ViewManager(object):
         full_grouped_views = []
         flat_gv = list(chain.from_iterable(grouped_views))
 
-        non_grouped = [v for v in self.views if v not in flat_gv]
+        non_grouped = [v for v in self.views[self._base_len():] if v not in flat_gv]
 
-
-        if non_grouped:
-            if not grouped_views:
-                view_collection = non_grouped
-            else:
-                if grouped_views[-1][0].split('|')[1].startswith('f.c'):
-                    regulars = grouped_views[:-1]
-                else:
-                    regulars = grouped_views
-
-                # We need to grab all isolated stats (all that are not means with
-                # tests if tests are requested)
-
-                stats = [v for v in non_grouped if v.split('|')[1].startswith('d.')]
-
-                # if not stats and not non_grouped[1].split('|')[1].startswith('f.c') :
-                #     stats =  non_grouped[1:]
-
-                sums = [v for v in non_grouped if v.split('|')[1].startswith('f.c')]
-
-                if not sums and grouped_views[-1][0].split('|')[1].startswith('f.c'):
-                    sums = [grouped_views[-1]]
-
-                view_collection = regulars + stats + sums
-        else:
-            view_collection = grouped_views
+        regs, nets, comps, stats, sums = self._get_view_types(grouped_views)
+        if switch:
+            regs = self._switch(regs)
+            comps = self._switch(comps)
+            sums = self._switch(sums)
+            nets = self._switch(nets)
+        regs2, nets2, comps2, stats2, sums2 = self._get_view_types(non_grouped)
+        regs.extend(regs2)
+        nets.extend(nets2)
+        comps.extend(comps2)
+        stats.extend(stats2)
+        sums.extend(sums2)
+        if self.sums_pos == 'bottom':
+            view_collection = regs + comps + nets  + stats + sums
+        elif self.sums_pos == 'mid':
+            view_collection = regs + comps + sums + nets + stats
 
         view_collection = self._base_views + view_collection
 
         for view_sect in view_collection:
-            if isinstance(view_sect, list) and style == 'reduce':
-                full_grouped_views.append(tuple(view_sect))
-            else:
-                full_grouped_views.append(view_sect)
+            if view_sect:
+                if isinstance(view_sect, list) and style == 'reduce':
+                    full_grouped_views.append(tuple(view_sect))
+                else:
+                    full_grouped_views.append(view_sect)
 
         self.views = full_grouped_views
         return self
 
+    @staticmethod
+    def _get_view_types(views):
+        regulars = []
+        nets = []
+        completes = []
+        stats = []
+        sums = []
+        for v in views:
+            if isinstance(v, list):
+                split = v[0].split('|')
+            else:
+                split = v.split('|')
+            if split[-1].endswith('_sum'):
+                sums.append(v)
+            elif split[1].startswith('d.'):
+                stats.append(v)
+            elif split[2].endswith(']*:'):
+                completes.append(v)
+            elif split[-1].startswith('net'):
+                nets.append(v)
+            else:
+                regulars.append(v)
+        return regulars, nets, completes, stats, sums
 
+    @staticmethod
+    def _switch(views):
+        n_views = []
+        for v in views:
+            if not isinstance(v, list):
+                n_views.append(v)
+            elif v[0].split('|')[1].startswith('d.'):
+                n_views.append(v)
+            elif len(v) < 3 and any(view.split('|')[1].startswith('t.') for view in v):
+                n_views.append(v)
+            else:
+                n_views.append(v[1::-1] + v[2:])
+        return n_views
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
                       sums=None, coltests=True, mimic='Dim',
-                      sig_levels=[".05"], x=None, y=None, by_x=False):
+                      sig_levels=[".05"], x=None, y=None):
         """
         Get structured, request-ready views from ``self.stack``.
 
@@ -245,9 +386,6 @@ class ViewManager(object):
             The x-keys to which the results should be restricted.
         y : str, default=None
             The y-keys to which the results should be restricted.
-        by_x : bool, default=False
-            If True, the get_chain object in the returned dict will be
-            structured as a dict of x-keys.
 
         Returns
         -------
@@ -307,28 +445,15 @@ class ViewManager(object):
 
         all_views = sorted(described['view'].dropna().unique().tolist())
 
-        if by_x:
-            xks = described['x'].unique().tolist()
-            requested_views = {
-                'get_chain': {
-                    xk: {'c': [], 'p': [], 'cp': []}
-                    for xk in xks
-                },
-                'grouped_views': {'c': [], 'p': [], 'cp': []}
-            }
-            xks_views = {
-                xk: [vk for vk in described.loc[described['x']==xk]['view']]
-                for xk in xks
-            }
-        else:
-            requested_views = {
-                'get_chain': {'c': [], 'p': [], 'cp': []},
-                'grouped_views': {'c': [], 'p': [], 'cp': []}
-            }
+        ci = {'counts': [], 'colpct': [], 'rowpct': [],
+              'counts_colpct': [], 'counts_rowpct': [], 'colpct_rowpct': [],
+              'counts_colpct_rowpct': []
+             }
+        requested_views = {'get_chain': ci.copy(), 'grouped_views': ci.copy()}
 
         # Base views
         # bases = ['x|f|x:|||cbase']
-        bases = ['x|f|x:|||cbase_gross', 'x|f|x:|||cbase']
+        bases = ['x|f|x:|||cbase_gross', 'x|f|x:|||cbase', 'x|f|x:|||ebase']
         if weight is None:
             weight = ''
         else:
@@ -340,14 +465,22 @@ class ViewManager(object):
         if frequencies:
             cs = ['x|f|:||%s|counts' % (weight)]
             ps = ['x|f|:|y|%s|c%%' % (weight)]
+            rps = ['x|f|:|x|%s|r%%' % (weight)]
             cps = cs[:] + ps [:]
+            crps = cs[:] + rps[:]
+            psrps = ps[:] + rps[:]
+            cpsrps = cs[:] + ps [:] + rps[:]
             csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
             psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)]
             cpsc = csc[:] + psc[:]
         else:
             cs = []
             ps = []
+            rps = []
             cps = []
+            crps = []
+            psrps = []
+            cpsrps = []
             csc = []
             psc = []
             cpsc = []
@@ -392,19 +525,11 @@ class ViewManager(object):
                 ]
                 cs.extend(props_test_views)
                 ps.extend(props_test_views)
+                rps.extend(props_test_views)
                 cps.extend(props_test_views)
-
-            for level in sig_levels:
-                # Main cumulative test views
-                props_test_views = [
-                    v for v in all_views
-                    if 't.props.{}{}'.format(
-                        mimic,
-                        level
-                    ) in v
-                    and v.split('|')[2]=='x++:'
-                    and v.split('|')[4]==weight
-                ]
+                crps.extend(props_test_views)
+                psrps.extend(props_test_views)
+                cpsrps.extend(props_test_views)
                 csc.extend(props_test_views)
                 psc.extend(props_test_views)
                 cpsc.extend(props_test_views)
@@ -425,12 +550,43 @@ class ViewManager(object):
                 and v.split('|')[3]=='y'
                 and v.split('|')[4]==weight
             ]
+            net_rps = [
+                [v] for v in all_views
+                if v.split('|')[1].startswith('f')
+                and v.split('|')[2].startswith('x[')
+                and v.split('|')[3]=='x'
+                and v.split('|')[4]==weight
+            ]
+
+
             net_cps = []
             for vc in net_cs:
                 for vp in net_ps:
                     if  vc[0] == vp[0].replace('|y|', '||'):
                         net_cps.append([vc[0], vp[0]])
                         break
+
+            net_crps = []
+            for vc in net_cs:
+                for vp in net_rps:
+                    if  vc[0] == vp[0].replace('|x|', '||'):
+                        net_crps.append([vc[0], vp[0]])
+                        break
+
+            net_psrps = []
+            for vc in net_ps:
+                for vp in net_rps:
+                    if  vc[0] == vp[0].replace('|x|', '|y|'):
+                        net_psrps.append([vc[0], vp[0]])
+                        break
+
+            net_cpsrps = []
+            for vc in net_cs:
+                for vp in net_ps:
+                    for vrp in net_rps:
+                        if  vc[0] == vp[0].replace('|y|', '||') and vc[0] == vrp[0].replace('|x|', '||'):
+                            net_cpsrps.append([vc[0], vp[0], vrp[0]])
+                            break
 
             # Column tests
             if coltests:
@@ -441,10 +597,7 @@ class ViewManager(object):
                         # Net test views
                         net_test_views.extend([
                             v for v in all_views
-                            if v.split('|')[1]=='t.props.{}{}'.format(
-                                mimic,
-                                level
-                            )
+                            if 't.props.{}{}'.format(mimic, level) in v.split('|')[1]
                             and v.split('|')[2].startswith('x[')
                             and v.split('|')[4]==weight
                         ])
@@ -456,10 +609,18 @@ class ViewManager(object):
                             net_cs[i].append(vt)
                             net_ps[i].append(vt)
                             net_cps[i].append(vt)
+                            if net_rps: net_rps[i].append(vt)
+                            if net_crps: net_crps[i].append(vt)
+                            if net_psrps: net_psrps[i].append(vt)
+                            if net_cpsrps: net_cpsrps[i].append(vt)
         else:
             net_cs = False
             net_ps = False
+            net_rps = False
             net_cps = False
+            net_crps = False
+            net_psrps = False
+            net_cpsrps = False
 
         # Sum views
         if sums:
@@ -489,17 +650,21 @@ class ViewManager(object):
 
             sum_chains = [sums_cs_flat, sums_ps_flat, sums_cps_flat]
             sum_gvs = [sums_cs, sums_ps, sums_cps]
-
-
         # Descriptive statistics views
         if descriptives:
             views = {}
+            rel_w = []
             for descriptive in descriptives:
                 views[descriptive] = [
                     [v] for v in all_views
-                    if v.split('|')[1] == 'd.{}'.format(descriptive)
+                    if v.split('|')[1].startswith('d.{}'.format(descriptive))
                     and v.split('|')[4] == weight
                 ]
+                for desv in views[descriptive]:
+                    rel = desv[0].split('|')[2]
+                    w = desv[0].split('|')[4]
+                    if not tuple([rel, w]) in rel_w:
+                        rel_w.append(tuple([rel, w]))
 
                 # Column tests
                 if descriptive=='mean' and coltests:
@@ -515,7 +680,6 @@ class ViewManager(object):
                             and v.split('|')[4]==weight
                         ])
 
-            base_desc =  descriptives[0]
             if 'mean' in descriptives and coltests:
                 for i, vbd in enumerate(views['mean']):
                     for vt in means_test_views:
@@ -524,88 +688,92 @@ class ViewManager(object):
                         if eq_relation and eq_weight:
                             views['mean'][i].append(vt)
 
-            if len(descriptives) > 1:
-                for i, vbd in enumerate(views[base_desc]):
-                    for rem_desc in descriptives[1:]:
-                        for vrd in views[rem_desc]:
-                            eq_relation = vbd[0].split('|')[2]  == vrd[0].split('|')[2]
-                            eq_weight = vbd[0].split('|')[4] == vrd[0].split('|')[4]
-                            if eq_relation and eq_weight:
-                                views[base_desc][i].extend(vrd)
+            desc = []
+            for rel, w in rel_w:
+                rel_w_v = []
+                for des in descriptives:
+                    for desv in views[des]:
+                        if desv[0].split('|')[2] == rel and desv[0].split('|')[4] == w:
+                            rel_w_v.extend(desv)
+                if rel_w_v:
+                    desc.append(rel_w_v)
 
-            desc = views[base_desc]
-            # ----------------------------------------------------------------
-            # This section reorders the all descriptives so that all means +
-            # their tests are leading and other stats follow...
-            # ----------------------------------------------------------------
-            # mean_dom_desc = []
-            # stats = []
-            # for d in desc:
-            #     valid_d = ('t.means', 'd.mean')
-            #     means = [v for v in d if v.split('|')[1].startswith(valid_d)]
-            #     d_stats = [v for v in d if not v.split('|')[1].startswith(valid_d)]
-            #     stats.extend(d_stats)
-            #     mean_dom_desc.append(means)
-            # mean_dom_desc[-1].extend(stats)
-            # desc = mean_dom_desc
-            # ----------------------------------------------------------------
         else:
             desc = False
 
         # Construct request object
-        if by_x:
-            xks = described['x'].unique().tolist()
-            all_views = {
-                xk: described.loc[described['x']==xk]['view'].unique().tolist()
-                for xk in xks
-            }
 
-        if by_x:
-            for xk in xks:
-                requested_views['get_chain'][xk]['c'] = bases + cs + csc
-                requested_views['get_chain'][xk]['p'] = bases + ps + psc
-                requested_views['get_chain'][xk]['cp'] = bases + cps + cpsc
-        else:
-            requested_views['get_chain']['c'] = bases + cs + csc
-            requested_views['get_chain']['p'] = bases + ps + psc
-            requested_views['get_chain']['cp'] = bases + cps + cpsc
+        requested_views['get_chain']['counts'] = bases + cs + csc
+        requested_views['get_chain']['colpct'] = bases + ps + psc
+        requested_views['get_chain']['rowpct'] = bases + rps + psc
+        requested_views['get_chain']['counts_colpct'] = bases + cps + cpsc
+        requested_views['get_chain']['counts_rowpct'] = bases + crps + psc
+        requested_views['get_chain']['colpct_rowpct'] = bases + psrps + psc
+        requested_views['get_chain']['counts_colpct_rowpct'] = bases + cpsrps + psc
 
-        requested_views['grouped_views']['c'] = [bases, cs, csc]
-        requested_views['grouped_views']['p'] = [bases, ps, psc]
-        requested_views['grouped_views']['cp'] = [bases, cps, cpsc]
-
-        if nets and net_cs and net_ps and net_cps:
-
-            net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
-            net_ps_flat = self._shake_nets([v for item in net_ps for v in item])
-            net_cps_flat = self._shake_nets([v for item in net_cps for v in item])
-
-            if by_x:
-                for xk in xks:
-                    requested_views['get_chain'][xk]['c'].extend([
-                        v for v in net_cs_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['p'].extend([
-                        v for v in net_ps_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['cp'].extend([
-                        v for v in net_cps_flat
-                        if v in xks_views[xk]])
-            else:
-                requested_views['get_chain']['c'].extend(net_cs_flat)
-                requested_views['get_chain']['p'].extend(net_ps_flat)
-                requested_views['get_chain']['cp'].extend(net_cps_flat)
-
-
-            requested_views['grouped_views']['c'].extend(net_cs)
-            requested_views['grouped_views']['p'].extend(net_ps)
-            requested_views['grouped_views']['cp'].extend(net_cps)
+        requested_views['grouped_views']['counts'] = [bases, cs, csc]
+        requested_views['grouped_views']['colpct'] = [bases, ps, psc]
+        requested_views['grouped_views']['rowpct'] = [bases, rps, psc]
+        requested_views['grouped_views']['counts_colpct'] = [bases, cps, cpsc]
+        requested_views['grouped_views']['counts_rowpct'] = [bases, crps, psc]
+        requested_views['grouped_views']['colpct_rowpct'] = [bases, psrps, psc]
+        requested_views['grouped_views']['counts_colpct_rowpct'] = [bases, cpsrps, psc]
 
         if sums == 'mid':
-            for ci, sum_chain in zip(['c', 'p', 'cp'], sum_chains):
-                requested_views['get_chain'][ci].extend(sum_chain)
-            for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
-                requested_views['grouped_views'][ci].extend(sum_gv)
+            requested_views['get_chain']['counts'].extend(sums_cs_flat)
+            requested_views['get_chain']['colpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct'].extend(sums_cps_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(sums_cps_flat)
+
+            requested_views['grouped_views']['counts'].extend(sums_cs)
+            requested_views['grouped_views']['colpct'].extend(sums_ps)
+            requested_views['grouped_views']['rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct'].extend(sums_cps)
+            requested_views['grouped_views']['counts_rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(sums_cps)
+
+        if nets and net_cs and net_ps and net_cps:
+            net_cs_flat = self._shake_nets([v for item in net_cs for v in item])
+            net_ps_flat = self._shake_nets([v for item in net_ps for v in item])
+
+            if net_rps:
+                net_rps_flat = self._shake_nets([v for item in net_rps for v in item])
+            else:
+                net_rps_flat = []
+            net_cps_flat = self._shake_nets([v for item in net_cps for v in item])
+
+            if net_crps:
+                net_crps_flat = self._shake_nets([v for item in net_crps for v in item])
+            else:
+                net_crps_flat = []
+
+            if net_psrps:
+                net_psrps_flat = self._shake_nets([v for item in net_psrps for v in item])
+            else:
+                net_psrps_flat = []
+
+            if net_cpsrps:
+                net_cpsrps_flat = self._shake_nets([v for item in net_cpsrps for v in item])
+            else:
+                net_cpsrps_flat = []
+
+            requested_views['get_chain']['counts'].extend(net_cs_flat)
+            requested_views['get_chain']['colpct'].extend(net_ps_flat)
+            requested_views['get_chain']['rowpct'].extend(net_rps_flat)
+            requested_views['get_chain']['counts_colpct'].extend(net_cs_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(net_crps_flat)
+            requested_views['get_chain']['colpct_rowpct'].extend(net_psrps_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(net_cpsrps_flat)
+
+            requested_views['grouped_views']['counts'].extend(net_cs)
+            requested_views['grouped_views']['colpct'].extend(net_ps)
+            requested_views['grouped_views']['rowpct'].extend(net_rps)
+            requested_views['grouped_views']['counts_colpct'].extend(net_cps)
+            requested_views['grouped_views']['counts_rowpct'].extend(net_crps)
+            requested_views['grouped_views']['colpct_rowpct'].extend(net_psrps)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(net_cpsrps)
 
         if descriptives and desc:
 
@@ -613,34 +781,40 @@ class ViewManager(object):
                 [v for item in desc for v in item],
                 descriptives)
 
-            if by_x:
-                for xk in xks:
-                    requested_views['get_chain'][xk]['c'].extend([
-                        v for v in desc_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['p'].extend([
-                        v for v in desc_flat
-                        if v in xks_views[xk]])
-                    requested_views['get_chain'][xk]['cp'].extend([
-                        v for v in desc_flat
-                        if v in xks_views[xk]])
-            else:
-                requested_views['get_chain']['c'].extend(desc_flat)
-                requested_views['get_chain']['p'].extend(desc_flat)
-                requested_views['get_chain']['cp'].extend(desc_flat)
+            requested_views['get_chain']['counts'].extend(desc_flat)
+            requested_views['get_chain']['colpct'].extend(desc_flat)
+            requested_views['get_chain']['rowpct'].extend(desc_flat)
+            requested_views['get_chain']['counts_colpct'].extend(desc_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(desc_flat)
+            requested_views['get_chain']['colpct_rowpct'].extend(desc_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(desc_flat)
 
-            requested_views['grouped_views']['c'].extend(desc)
-            requested_views['grouped_views']['p'].extend(desc)
-            requested_views['grouped_views']['cp'].extend(desc)
+            requested_views['grouped_views']['counts'].extend(desc)
+            requested_views['grouped_views']['colpct'].extend(desc)
+            requested_views['grouped_views']['rowpct'].extend(desc)
+            requested_views['grouped_views']['counts_colpct'].extend(desc)
+            requested_views['grouped_views']['counts_rowpct'].extend(desc)
+            requested_views['grouped_views']['colpct_rowpct'].extend(desc)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(desc)
 
         if sums == 'bottom':
-            for ci, sum_chain in zip(['c', 'p', 'cp'], sum_chains):
-                requested_views['get_chain'][ci].extend(sum_chain)
-            for ci, sum_gv in zip(['c', 'p', 'cp'], sum_gvs):
-                requested_views['grouped_views'][ci].extend(sum_gv)
+            requested_views['get_chain']['counts'].extend(sums_cs_flat)
+            requested_views['get_chain']['colpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct'].extend(sums_cps_flat)
+            requested_views['get_chain']['counts_rowpct'].extend(sums_ps_flat)
+            requested_views['get_chain']['counts_colpct_rowpct'].extend(sums_cps_flat)
+
+            requested_views['grouped_views']['counts'].extend(sums_cs)
+            requested_views['grouped_views']['colpct'].extend(sums_ps)
+            requested_views['grouped_views']['rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct'].extend(sums_cps)
+            requested_views['grouped_views']['counts_rowpct'].extend(sums_ps)
+            requested_views['grouped_views']['counts_colpct_rowpct'].extend(sums_cps)
 
         # Remove bases and lists with one element
-        for key in ['c', 'p', 'cp']:
+        for key in ['counts', 'colpct', 'rowpct', 'counts_colpct', 'counts_rowpct', 'colpct_rowpct', 'counts_colpct_rowpct']:
+
             requested_views['grouped_views'][key].pop(0)
             requested_views['grouped_views'][key] = [
                 item
@@ -653,9 +827,20 @@ class ViewManager(object):
                     vk
                     for vk in item
                     if vk.split('|')[1] not in ['d.median', 'd.stddev',
-                                                'd.sem', 'd.max', 'd.min']
+                                                'd.sem', 'd.max', 'd.min', 'd.mean'] or
+                    vk.split('|')[1] == 'd.mean' and coltests
                 ]
+
+            requested_views['grouped_views'][key] = [
+                item
+                for item in requested_views['grouped_views'][key]
+                if len(item) > 1
+            ]
+
+            if all(not rg for rg in requested_views['grouped_views'][key]):
+                requested_views['grouped_views'][key] = []
         return requested_views
+
 
     @staticmethod
     def _uniquify_list(l):
@@ -675,7 +860,10 @@ class ViewManager(object):
         tests_mapper = {}
         for idx_test in s.index:
             if s[idx_test].startswith('t.'):
-                tests_mapper[float(s[idx_test][-3:])] = idx_test
+                # old version backuped:
+                # tests_mapper[float(s[idx_test][-3:])] = idx_test
+                sigid = float(s[idx_test].split('.')[3].replace('+@', ''))
+                tests_mapper[sigid] = idx_test
         tests_slicer = [
             tests_mapper[level]
             for level in sorted(tests_mapper.keys())
@@ -720,7 +908,7 @@ class ViewManager(object):
                 mean_found = False
                 tests_done = False
                 for idx in s.index:
-                    if s[idx]=='d.{}'.format(desc):
+                    if s[idx].startswith('d.{}'.format(desc)):
                         slicer.append(idx)
                         if desc=='mean':
                             mean_found = True
@@ -731,7 +919,6 @@ class ViewManager(object):
 
         s = df.loc[slicer]['view']
         l = s.values.tolist()
-
         return l
 
 
