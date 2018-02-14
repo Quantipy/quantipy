@@ -21,7 +21,8 @@ from quantipy.core.helpers.functions import(
 from quantipy.core.builds.powerpoint.add_shapes import(
     chart_selector,
     add_stacked_bar_chart,
-    add_textbox)
+    add_textbox,
+    add_net)
 from quantipy.core.builds.powerpoint.transformations import(
     is_grid_element,
     get_base,
@@ -34,6 +35,21 @@ from quantipy.core.builds.powerpoint.transformations import(
     auto_sort)
 from quantipy.core.builds.powerpoint.visual_editor import(
     return_slide_layout_by_name)
+from pptx.enum.text import(
+  PP_ALIGN,
+  MSO_AUTO_SIZE,
+  MSO_ANCHOR
+  )
+from pptx.util import(
+    Emu,
+    Pt,
+    Cm,
+    Inches
+    )
+from quantipy.core.builds.powerpoint.add_shapes import (
+    percentage_of_num,
+    get_cht_plot_height,
+    get_upper_cht_plot_gap)
 
 thisdir = path.split(__file__)[0]
 
