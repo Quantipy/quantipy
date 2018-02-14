@@ -1491,7 +1491,6 @@ class Chain(object):
         """Returns the total number of cells in the Chain.dataframe"""
         return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
 
-
     @lazy_property
     def _default_text(self):
         return self._meta['lib']['default text']
@@ -1597,6 +1596,38 @@ class Chain(object):
 
     @property
     def cell_items(self):
+        if self.views:
+            compl_views = [v for v in self.views if ']*:' in v]
+            if not compl_views:
+                c = any(v.split('|')[-1] == 'counts' for v in self.views)
+                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
+            else:
+                c = any(v.split('|')[3] == '' for v in compl_views)
+                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
+                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+            c_colpct = c and col_pct
+            c_rowpct = c and row_pct
+            c_colrow_pct = c_colpct and c_rowpct
+
+            single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
+            if single_ci:
+                if c:
+                    return 'counts'
+                elif col_pct:
+                    return 'colpct'
+                else:
+                    return 'rowpct'
+            else:
+                if c_colrow_pct:
+                    return 'counts_colpct_rowpct'
+                elif c_colpct:
+                    return 'counts_colpct'
+                else:
+                    return 'counts_rowpct'
+
+    @property
+    def _ci_simple(self):
         ci = []
         if self.views:
             for v in self.views:
@@ -1625,7 +1656,7 @@ class Chain(object):
 
     @property
     def ci_count(self):
-        return len(self.cell_items)
+        return len(self.cell_items.split('_'))
 
     @property
     def contents(self):
@@ -2260,13 +2291,15 @@ class Chain(object):
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
         """
+        frames = []
 
         totals = [[_TOTAL]] * 2
 
         if found is None:
             found = OrderedDict()
 
-        frames = []
+        if self._text_map is None:
+            self._text_map = dict()
 
         for view in views:
             try:
