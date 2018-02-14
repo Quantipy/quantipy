@@ -507,7 +507,10 @@ def add_bar_chart(
                 series_line_width=None,
 
                 #Excel table
-                excel_num_format='0.00%'
+                excel_num_format='0.00%',
+                
+                #Color for separator
+                separator_color=(255,255,255)
                 ):
     #-------------------------------------------------------------------------
     """Adds single or multi series bar chart to a given slide and set it's properties.
