@@ -712,6 +712,48 @@ def add_bar_chart(
             data_labels.number_format = data_labels_num_format
         data_labels.number_format_is_linked = data_labels_num_format_is_linked
 
+    # Show Net settings
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    net_separator = ['net_separator']
+    category_labels = [i.label for i in chart_data.categories]
+    if net_separator[0] in category_labels:
+        pos_net_separator = [category_labels.index(i) for i in net_separator]
+        # Delete the net separator text
+        category_labels[pos_net_separator[0]] = ''
+        chart_data.categories = category_labels
+        chart.replace_data(chart_data)
+
+        # Add fill to the separator
+        bar = chart.series[0].points
+        for x in pos_net_separator:
+
+            point = bar[x]
+            fill = point.format.fill
+            fill.solid()
+            fill.fore_color.rgb = RGBColor(*separator_color)
+
+        # Hide data label
+        chart_values = get_chart_values(chart)
+
+        for s, series in enumerate(chart_values):
+            values = [
+                value for value in series.values()[0]
+            ]
+
+        for v, value in enumerate(values):
+            point = chart.series[s].points[v]
+            #point.format.line.color.rgb = RGBColor(0,0,0)
+            frame = point.data_label.text_frame
+            frame.text = '' if value == 1.01 else str(int(round(float(value) * 100))) + "%"
+            run = frame.paragraphs[0].runs
+            for point_label in run:
+                point_label.font.size = Pt(data_labels_font_size)
+                point_label.font.name = data_labels_font_name
+                point_label.font.bold = data_labels_font_bold
+                point_label.font.italic = data_labels_font_italic
+                point_label.font.color.rgb = RGBColor(*data_labels_font_color)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
     if series_color_order and len(dataframe.columns) > 1:
         ser_colors_list = color_setter(len(dataframe.columns), series_color_order)
 
