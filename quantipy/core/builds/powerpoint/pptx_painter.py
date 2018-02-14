@@ -32,7 +32,8 @@ from quantipy.core.builds.powerpoint.transformations import(
     strip_html_tags,
     rename_label,
     df_splitter,
-    auto_sort)
+    auto_sort,
+    round_df_cells)
 from quantipy.core.builds.powerpoint.visual_editor import(
     return_slide_layout_by_name)
 from pptx.enum.text import(
