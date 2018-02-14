@@ -850,7 +850,7 @@ def PowerPointPainter(
                                             if shape_properties else {}))
 
                                     ''' net table '''
-                                    if net_setup:
+                                    if include_nets and net_setup:
                                         save_width = shape_properties['chart_shape']['stacked_bar']['width']
                                         if net_setup_stacked_bar['show_table']:
                                             if not df_grid_table_net.empty:
@@ -1107,7 +1107,7 @@ def PowerPointPainter(
                                     shape_properties['chart_shape'][chart_type]['has_legend'] = legend_switch
 
                                 # Net settings
-                                if net_setup:
+                                if include_nets and net_setup:
                                     net_setup = net_setup.get(chart_type, False)
                                     if not net_setup == False and net_setup['show_nets']:
                                         if len(collection_of_dfs) == 1:
