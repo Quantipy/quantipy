@@ -506,11 +506,10 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         return None
-
+     
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
-                         mdm_lang='ENG', date_format="DMY",
-                         run=True, clean_up=True):
+                         date_format="DMY", run=True, clean_up=True):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -533,8 +532,6 @@ class DataSet(object):
         text_key : str, default None
             The desired ``text_key`` for all ``text`` label information. Uses
             the ``DataSet.text_key`` information if not provided.
-        mdm_lang : str, default 'ENG'
-            A valid Dimensions MDM language code.
         run : bool, default True
             If True, the method will try to run the metadata creating .mrs
             script and execute a DMSRun for the case data transformation in
