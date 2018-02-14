@@ -21,7 +21,7 @@ from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 import cPickle
 import warnings
 
-#warnings.simplefilter('ignore')
+warnings.simplefilter('ignore')
 
 try:
     from functools import lru_cache
@@ -84,7 +84,7 @@ class Excel(Workbook):
                  in_memory=False,
                  decimals=None,
                  image=None,
-                 **kwargs):
+                 **formats):
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
@@ -95,7 +95,7 @@ class Excel(Workbook):
         self._decimals = decimals
         self._image = image
 
-        self._formats = ExcelFormats(self.views_groups, **kwargs)
+        self._formats = ExcelFormats(self.views_groups, **formats)
 
     def __repr__(self):
         return 'Excel(%r)' % self.filename
@@ -137,7 +137,7 @@ class Excel(Workbook):
                            'sheet_name will be ignored')
         if chains.folders:
             if sheet_name:
-                warnings.warn(warning_message)
+                print UserWarning(warning_message)
             for chain in chains:
                 if isinstance(chain, dict):
                     sheet_name = chain.keys()[0]
