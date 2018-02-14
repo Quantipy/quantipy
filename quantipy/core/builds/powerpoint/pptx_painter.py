@@ -1127,6 +1127,9 @@ def PowerPointPainter(
                                      **(shape_properties['chart_shape'][chart_type]
                                         if shape_properties else {}))
 
+                                if include_nets and net_setup:
+                                    shape_properties['chart_shape']['stacked_bar']['width'] = save_width
+                                
                                 ''' footer shape '''
                                 base_text_shp = add_textbox(
                                     slide,
