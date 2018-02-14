@@ -2845,7 +2845,10 @@ class Chain(object):
                     level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
-                        text = self._get_text(value, text_keys[axis])
+                        parent = self._meta['columns'][value]['parent'].keys()[0].split('@')[-1]
+                        items = self._meta['masks'][parent]['items']
+                        obj = [i['text'] for i in items if value in i['source']][0]
+                        text = self._get_text_from_key(obj, text_keys[axis])
                         level_1_text.append(text)
                     else:
                         try:
