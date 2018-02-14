@@ -21,7 +21,8 @@ from quantipy.core.helpers.functions import(
 from quantipy.core.builds.powerpoint.add_shapes import(
     chart_selector,
     add_stacked_bar_chart,
-    add_textbox)
+    add_textbox,
+    add_net)
 from quantipy.core.builds.powerpoint.transformations import(
     is_grid_element,
     get_base,
@@ -31,9 +32,25 @@ from quantipy.core.builds.powerpoint.transformations import(
     strip_html_tags,
     rename_label,
     df_splitter,
-    auto_sort)
+    auto_sort,
+    round_df_cells)
 from quantipy.core.builds.powerpoint.visual_editor import(
     return_slide_layout_by_name)
+from pptx.enum.text import(
+  PP_ALIGN,
+  MSO_AUTO_SIZE,
+  MSO_ANCHOR
+  )
+from pptx.util import(
+    Emu,
+    Pt,
+    Cm,
+    Inches
+    )
+from quantipy.core.builds.powerpoint.add_shapes import (
+    percentage_of_num,
+    get_cht_plot_height,
+    get_upper_cht_plot_gap)
 
 thisdir = path.split(__file__)[0]
 
@@ -563,12 +580,17 @@ def PowerPointPainter(
                     ('is_weighted', 'True'),
                     ('is_sum', 'False')])
 
-                # if include_nets == false
+                # Net settings
+                net_setup = shape_properties.get('net_setup', False)
                 if not include_nets:
                     chartdata_conditions.update({'is_net': 'False'})
                     chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
                 elif include_nets == True:
-                    chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
+                    if net_setup:
+                        chartdata_conditions.update({'is_net': 'False'})
+                        chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
+                    else:
+                        chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
                 #elif include_net == 'partly':
                 else:
                     chartdata_conditions_grid = copy.deepcopy(chartdata_conditions)
@@ -735,6 +757,16 @@ def PowerPointPainter(
                                             qname=grid,
                                             war_msg=''))
 
+                                #extract df for net
+                                if net_setup:
+                                    net_setup_stacked_bar = net_setup.get('stacked_bar', False)
+                                    if net_setup_stacked_bar:
+                                        df_grid_table_net = df_meta_filter(
+                                            merged_grid_df,
+                                            grped_g_meta,
+                                            {'is_net' : 'True'},
+                                            index_key='label')
+                                            
                                 #extract df for chart
                                 df_grid_table = df_meta_filter(
                                     merged_grid_df,
@@ -818,6 +850,26 @@ def PowerPointPainter(
                                         **(shape_properties['header_shape']
                                             if shape_properties else {}))
 
+                                    ''' net table '''
+                                    if include_nets and net_setup:
+                                        save_width = shape_properties['chart_shape']['stacked_bar']['width']
+                                        if net_setup_stacked_bar['show_table']:
+                                            if not df_grid_table_net.empty:
+                                                df_grid_table_net = round_df_cells(df_grid_table_net,
+                                                                                   net_setup_stacked_bar['table_decimals'])
+                                                if net_setup_stacked_bar['add_percent_sign']:
+                                                    df_grid_table_net = df_grid_table_net.astype(str) + '%'
+                                                cols = len(df_grid_table_net.T.columns)
+                                                shapes=shape_properties['chart_shape']['stacked_bar']
+                                                shapes['legend_position']='bottom'
+                                                shapes['width'] -= net_setup_stacked_bar['table_column_width'] * cols
+                                                # Set net table size and position
+                                                height = shapes['height']
+                                                top = shapes['top']
+                                                left = shapes['left'] + shapes['width']
+                                                width = net_setup_stacked_bar['table_column_width']
+                                                net_table = add_net(slide, df_grid_table_net.T, height=height, width=width, top=top, left=left)                                            
+                                            
                                     ''' chart shape '''
                                     chart_shp = chart_selector(
                                         slide,
@@ -826,6 +878,9 @@ def PowerPointPainter(
                                         **(shape_properties['chart_shape']['stacked_bar']
                                             if shape_properties else {}))
 
+                                    if include_nets and net_setup:
+                                        shape_properties['chart_shape']['stacked_bar']['width'] = save_width
+                                            
                                     ''' footer shape '''
                                     if base_text:
                                         base_text_shp = add_textbox(
@@ -902,6 +957,16 @@ def PowerPointPainter(
                             'Total',
                             orientation='Top')
 
+                        # extract df for net
+                        if net_setup:
+                            df_table_net = df_meta_filter(
+                            grped_df,
+                            grped_meta,
+                            {'is_net': 'True'},
+                            index_key='label')
+                            # standardise table values
+                            df_table_net = np.round(df_table_net.fillna(0.0) / 100, 4)
+                            
                         #extract df for chart
                         df_table = df_meta_filter(
                             grped_df,
@@ -1046,13 +1111,27 @@ def PowerPointPainter(
                                 if 'has_legend' in shape_properties['chart_shape'][chart_type]:
                                     shape_properties['chart_shape'][chart_type]['has_legend'] = legend_switch
 
+                                # Net settings
+                                if include_nets and net_setup:
+                                    net_setup = net_setup.get(chart_type, False)
+                                    if not net_setup == False and net_setup['show_nets']:
+                                        if len(collection_of_dfs) == 1:
+                                            if not df_table_net.empty:
+                                                if net_setup['separator']:
+                                                    df_table_slice = df_table_slice.T
+                                                    df_table_slice.insert(len(df_table_slice.columns), 'net_separator', 1.01)
+                                                    df_table_slice = df_table_slice.T
+                                                #df_table_slice.loc[len(df_table_slice)]=0
+                                                df_table_slice = pd.concat([df_table_slice, df_table_net])
+                                                shape_properties['chart_shape']['bar']['separator_color'] = net_setup['separator_color']                                    
+                                    
                                 chart = chart_selector(
                                     slide,
                                     df_table_slice,
                                     chart_type=chart_type,
                                      **(shape_properties['chart_shape'][chart_type]
                                         if shape_properties else {}))
-
+                                
                                 ''' footer shape '''
                                 base_text_shp = add_textbox(
                                     slide,
