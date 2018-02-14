@@ -260,15 +260,13 @@ def stack(dataset):
     del _stack
 
 @pytest.fixture(scope='function')
-def excel(chain_manager, views_groups, italicise_level, details,
-          decimals, image, formats):
-    if formats:
-        x = Excel('tmp.xlsx', views_groups, italicise_level, details,
-                  decimals, image, **formats)
-    else:
-        x = Excel('tmp.xlsx', views_groups, italicise_level, details,
-                  decimals, image)
-    x.add_chains(chain_manager)
+def excel(chain_manager, sheet_properties, views_groups, italicise_level,
+          details, decimals, image, formats):
+    kwargs = formats if formats else dict()
+    x = Excel('tmp.xlsx', views_groups, italicise_level, details,
+              decimals, image, **kwargs)
+    kwargs = sheet_properties if sheet_properties else dict()
+    x.add_chains(chain_manager, **kwargs)
     x.close()
 
 @pytest.fixture(scope='class')
@@ -278,8 +276,12 @@ def chain_manager(stack):
 @pytest.yield_fixture(
     scope='class',
     params=[
-        ('basic', p.PATH_BASIC, None, None, False, None, None, None),
-        ('complex', p.PATH_COMPLEX_0, None, None, False, None, None, None)
+        ('basic', p.PATH_BASIC, None, None, None, False, None, None, None),
+        ('complex', p.PATH_COMPLEX_0, None, None, None, False, None, None, None),
+        (
+            'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
+            None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1
+        )
     ]
 )
 def params(request):
@@ -305,9 +307,9 @@ class TestExcel:
 
     def test_structure(self, chain_manager, params):
 
-        complexity, path_expected, vg, il, dt, dc, im, fm = params
+        complexity, path_expected, sp, vg, il, dt, dc, im, fm = params
 
-        excel(chain_manager[complexity], vg, il, dt, dc, im, fm)
+        excel(chain_manager[complexity], sp, vg, il, dt, dc, im, fm)
 
         zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
 

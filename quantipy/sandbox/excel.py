@@ -62,7 +62,6 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        img_size=[130, 130],
                        img_x_offset=0,
                        img_y_offset=0,
-                       in_memory=False,
                        row_height_label=12.75,
                        start_column=0,
                        start_row=0,
@@ -78,10 +77,10 @@ class Excel(Workbook):
     def __init__(self,
                  filename,
                  toc=False,
-                 views_groups=None,
                  italicise_level=None,
                  details=False,
                  in_memory=False,
+                 views_groups=None,
                  decimals=None,
                  image=None,
                  **formats):
@@ -141,13 +140,16 @@ class Excel(Workbook):
             for chain in chains:
                 if isinstance(chain, dict):
                     sheet_name = chain.keys()[0]
+                    sheet_properties = kwargs.get(sheet_name, kwargs)
                     self._write_chains(chain[sheet_name], sheet_name,
-                                       annotations, **kwargs)
+                                       annotations, **sheet_properties)
                 else:
+                    sheet_properties = kwargs.get(chain.name, kwargs)
                     self._write_chains((chain, ), chain.name,
-                                       annotations, **kwargs)
+                                       annotations, **sheet_properties)
         else:
-            self._write_chains(chains, sheet_name, annotations, **kwargs)
+            sheet_properties = kwargs.get(sheet_name, kwargs)
+            self._write_chains(chains, sheet_name, annotations, **sheet_properties)
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
         worksheet = Sheet(self, chains, sheet_name, annotations, **kwargs)
