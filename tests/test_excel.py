@@ -90,26 +90,10 @@ class Chain_Manager:
 
         return _basic
 
-    def net_mapper(self, name, logic, text, mapper=None, **kwargs):
-        if mapper is None:
-            mapper = self.new_net_mapper()
-        kwargs.update(dict(axis='x', logic=logic, text=text))
-        mapper.add_method(name=name, kwargs=kwargs)
-        return mapper
-
-    @staticmethod
-    def new_net_mapper():
-        freq = qp.QuantipyViews().frequency
-        iters = dict(iterators=dict(rel_to=[None, 'y', 'x'], groups='Nets'))
-        return qp.ViewMapper(template=dict(method=freq, kwargs=iters))
-
     def complex_chain_manager(self, stack):
-        stack.add_link(x=p.XKEYS_COMPLEX, y=p.YKEYS_COMPLEX,
-                       views=p.VIEWS_COMPLEX, weights=[None, p.WEIGHT_COMPLEX])
-        stack.add_link(x='q5', y='@', views=p.VIEWS_COMPLEX,
-                       weights=p.WEIGHT_COMPLEX)
-        stack.add_link(x='@', y='q5', views=p.VIEWS_COMPLEX,
-                       weights=p.WEIGHT_COMPLEX)
+        weight = [None, p.WEIGHT_COMPLEX]
+        for x, y in [(p.XKEYS_COMPLEX, p.YKEYS_COMPLEX), ('q5', '@'), ('@', 'q5')]:
+            stack.add_link(x=x, y=y, views=p.VIEWS_COMPLEX, weights=weight)
 
         kwargs = dict(combine=False)
         mapper = self.net_mapper('No', [dict(No=[1, 2, 3])],
@@ -204,13 +188,60 @@ class Chain_Manager:
                      views=p.VIEWS_COMPLEX_WAVE, orient='x',
                      folder='Main')
 
+        _complex.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                     x_keys='q5', y_keys='@',
+                     views=p.VIEWS_COMPLEX_ARRAY,
+                     folder='arr_0')
+
+        _complex.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                     x_keys='@', y_keys='q5',
+                     views=p.VIEWS_COMPLEX_ARRAY,
+                     folder='arr_1')
+
+        _complex.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                     x_keys='q5', y_keys='@',
+                     views=p.VIEWS_COMPLEX_MEAN,
+                     folder='mean_0')
+
+        _complex.get(data_key=DATA_KEY, filter_key=FILTER_KEY,
+                     x_keys='@', y_keys='q5',
+                     views=p.VIEWS_COMPLEX_MEAN,
+                     folder='mean_1')
+
         _complex.add(stack[DATA_KEY].data.loc[:, p.OPENS_COMPLEX],
                      meta_from=(DATA_KEY, FILTER_KEY),
                      name='Open Ends')
 
         _complex.paint_all(transform_tests='full')
 
+        self.add_annotations(_complex)
+
         return _complex
+
+    def net_mapper(self, name, logic, text, mapper=None, **kwargs):
+        if mapper is None:
+            mapper = self.new_net_mapper()
+        kwargs.update(dict(axis='x', logic=logic, text=text))
+        mapper.add_method(name=name, kwargs=kwargs)
+        return mapper
+
+    @staticmethod
+    def new_net_mapper():
+        freq = qp.QuantipyViews().frequency
+        iters = dict(iterators=dict(rel_to=[None, 'y', 'x'], groups='Nets'))
+        return qp.ViewMapper(template=dict(method=freq, kwargs=iters))
+
+    @staticmethod
+    def add_annotations(chain_manager):
+        chains = chain_manager.chains
+        for i in (0, 4, 5, 6, 7):
+            chains[i].annotations.set('Headder Title -- no reason',
+                                      category='header', position='title')
+            chains[i].annotations.set('Header Left -- explanation text',
+                                      category='header', position='left')
+            chains[i].annotations.set('Header Center -- mask text',
+                                      category='header', position='center')
+            chains[i].annotations.set('Notes -- base text', category='notes')
 
 
 @pytest.fixture(scope='module')
@@ -229,8 +260,14 @@ def stack(dataset):
     del _stack
 
 @pytest.fixture(scope='function')
-def excel(chain_manager):
-    x = Excel('tmp.xlsx')
+def excel(chain_manager, views_groups, italicise_level, details,
+          decimals, image, formats):
+    if formats:
+        x = Excel('tmp.xlsx', views_groups, italicise_level, details,
+                  decimals, image, **formats)
+    else:
+        x = Excel('tmp.xlsx', views_groups, italicise_level, details,
+                  decimals, image)
     x.add_chains(chain_manager)
     x.close()
 
@@ -241,8 +278,8 @@ def chain_manager(stack):
 @pytest.yield_fixture(
     scope='class',
     params=[
-        ('basic', p.PATH_BASIC),
-        ('complex', p.PATH_COMPLEX_0)
+        ('basic', p.PATH_BASIC, None, None, False, None, None, None),
+        ('complex', p.PATH_COMPLEX_0, None, None, False, None, None, None)
     ]
 )
 def params(request):
@@ -268,9 +305,9 @@ class TestExcel:
 
     def test_structure(self, chain_manager, params):
 
-        complexity, path_expected = params
+        complexity, path_expected, vg, il, dt, dc, im, fm = params
 
-        excel(chain_manager[complexity])
+        excel(chain_manager[complexity], vg, il, dt, dc, im, fm)
 
         zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
 
