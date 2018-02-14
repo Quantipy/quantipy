@@ -1684,7 +1684,7 @@ class Chain(object):
         lang = self._default_text if self._default_text == 'fr-FR' else 'en-GB'
         cd = CELL_DETAILS[lang]
         ci = self.cell_items
-        cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self.cell_items]))
+        cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self._ci_simple]))
         against_total = False
         if self.sig_test_letters:
             mapped = ''
