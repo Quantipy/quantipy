@@ -5,7 +5,7 @@ import pytest
 import collections
 from operator import sub
 from zipfile import ZipFile, BadZipfile, LargeZipFile
-
+import numpy as np
 import quantipy as qp
 from quantipy.sandbox.sandbox import ChainManager
 from quantipy.sandbox.excel import Excel
@@ -254,6 +254,8 @@ def dataset():
 @pytest.fixture(scope='module')
 def stack(dataset):
     meta, data = dataset
+    data.loc[30:,'q5_2'] = np.NaN
+    data.loc[30:,'q5_4'] = np.NaN
     store = {DATA_KEY: {'meta': meta, 'data': data.copy()}}
     _stack = qp.Stack(NAME_PROJ, add_data=store)
     yield _stack
@@ -261,10 +263,16 @@ def stack(dataset):
 
 @pytest.fixture(scope='function')
 def excel(chain_manager, sheet_properties, views_groups, italicise_level,
-          details, decimals, image, formats):
+          details, decimals, image, formats, annotations):
     kwargs = formats if formats else dict()
-    x = Excel('tmp.xlsx', views_groups, italicise_level, details,
-              decimals, image, **kwargs)
+    x = Excel('tmp.xlsx',
+              views_groups=views_groups,
+              italicise_level=italicise_level,
+              details=details,
+              decimals=decimals,
+              image=image,
+              annotations=annotations,
+              **kwargs)
     kwargs = sheet_properties if sheet_properties else dict()
     x.add_chains(chain_manager, **kwargs)
     x.close()
@@ -276,11 +284,26 @@ def chain_manager(stack):
 @pytest.yield_fixture(
     scope='class',
     params=[
-        ('basic', p.PATH_BASIC, None, None, None, False, None, None, None),
-        ('complex', p.PATH_COMPLEX_0, None, None, None, False, None, None, None),
+        (
+            'basic', p.PATH_BASIC,
+            None, None, None, False, None, None, None, None
+        ),
+        (
+            'complex', p.PATH_COMPLEX_0,
+            None, None, None, False, None, None, None, None
+        ),
         (
             'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
-            None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1
+            None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1, None
+        ),
+        (
+            'complex', p.PATH_COMPLEX_2, p.SHEET_PROPERTIES_2, p.VIEW_GROUPS_2,
+            None, False, None, None, p.FORMATS_2, p.ANNOTATIONS_2
+        ),
+        (
+            'complex', p.PATH_COMPLEX_3, p.SHEET_PROPERTIES_3, p.VIEW_GROUPS_3,
+            p.ITALICISE_LEVEL_3 , p.DETAILS_3, p.DECIMALS_3, None, p.FORMATS_3,
+            p.ANNOTATIONS_3
         )
     ]
 )
@@ -293,8 +316,9 @@ class TestExcel:
 
     @staticmethod
     def cleandir():
-        if os.path.exists('./tmp.xlsx'):
-            os.remove('./tmp.xlsx')
+        for x in ('./tmp.xlsx', './qplogo_invert.png'):
+            if os.path.exists(x):
+                os.remove(x)
 
     @classmethod
     def setup_class(cls):
@@ -307,9 +331,9 @@ class TestExcel:
 
     def test_structure(self, chain_manager, params):
 
-        complexity, path_expected, sp, vg, il, dt, dc, im, fm = params
+        complexity, path_expected, sp, vg, il, dt, dc, im, fm, an = params
 
-        excel(chain_manager[complexity], sp, vg, il, dt, dc, im, fm)
+        excel(chain_manager[complexity], sp, vg, il, dt, dc, im, fm, an)
 
         zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
 
