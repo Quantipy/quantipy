@@ -850,8 +850,36 @@ FORMATS_3 = {'bold_y': True,
              'text_v_align_c_pct_sum': 1,
              'text_h_align_c_pct_sum': 3}
 
-annotations_spec = (('Main', ['Main. 1', 'Main. 2', 'Main. 3', 'Main. 4']),
-                    ('arr_0', ['Arr.0 0']),
+annotations_spec = ((
+                        'Main',
+                        [(
+                             'Main. 1', 
+                             dict(font_size=8,
+                                  font_color='yellow',
+                                  bg_color='gray')
+                         ),
+                         (
+                             'Main. 2',
+                             dict(font_size=10,
+                                  font_color='green',
+                                  bg_color='gray',
+                                  bold=True)
+                         ),
+                         (
+                             'Main. 3',
+                             dict(font_size=12,
+                                  font_color='blue',
+                                  bg_color='gray',
+                                  italic=True)
+                         ),
+                         (
+                             'Main. 4',
+                             dict(font_size=14,
+                                  font_color='pink',
+                                  bg_color='gray')
+                         )],
+                    ),
+                    ('arr_0', ['Arr.0 0 - loooooooooooong - to test text wrapping']),
                     ('arr_1', ['Arr.1 1', 'Arr.1 1']),
                     ('mean_0', ['Mean.0 1', 'Mean.0 1', 'Mean.0 2']),
                     ('mean_1', ['Mean.1 1','Mean.1 2','Mean.1 3','Mean.1 4']),

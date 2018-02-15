@@ -16,7 +16,7 @@ from PIL import Image
 from difflib import SequenceMatcher
 
 from excel_formats import ExcelFormats, _Format
-from excel_formats_constants import _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
+from excel_formats_constants import _DEFAULTS, _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
 
 import cPickle
 import warnings
@@ -29,7 +29,7 @@ except ImportError:
     from functools32 import lru_cache
 
 
-# Initialization data to pass to the worksheet._
+# Initialization data to pass to the worksheet.
 _SHEET_ATTR = ('str_table',
                'worksheet_meta',
                'optimization',
@@ -43,8 +43,7 @@ _SHEET_ATTR = ('str_table',
                'default_url_format',
                'excel2003_style',
                'remove_timezone',
-               'constant_memory'
-              )
+               'constant_memory')
 
 # Defaults for Sheet.
 _SHEET_DEFAULTS = dict(alternate_bg=True,
@@ -67,8 +66,7 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        start_row=0,
                        stat_0_rep='-',
                        y_header_height=33.75,
-                       y_row_height=50
-                       )
+                       y_row_height=50)
 
 
 class Excel(Workbook):
@@ -143,7 +141,6 @@ class Excel(Workbook):
             else:
                 raise TypeError(error_message)
         return annotations
-
 
     def add_chains(self, chains, sheet_name=None, annotations=None, **kwargs):
         # TODO: docstring
@@ -231,6 +228,16 @@ class Sheet(Worksheet):
     def image(self):
         return self.excel.image
 
+    @lazy_property
+    def default_annotation_format(self):
+        exclude_keys = ('border', 'border_style_int', 'border_style_ext',
+                        'num_format_counts', 'num_format_default',
+                        'num_format_c_pct', 'num_format_mean')
+        format_spec = dict([(k, v) 
+                            for k, v in _DEFAULTS.iteritems()
+                            if k not in exclude_keys])
+        return self.excel._add_format(_Format(**format_spec))
+
     @property
     def column_edges(self):
         if self._column_edges is None:
@@ -259,8 +266,13 @@ class Sheet(Worksheet):
     def write_chains(self):
         # TODO: docstring
         if self.annotations:
-            for ann in self.annotations:
-                self.write(self._row, self._column, ann)
+            for annotation in self.annotations:
+                try:
+                    annotation, format_spec = annotation
+                    format_ = self.excel._add_format(_Format(**format_spec))
+                except ValueError:
+                    format_ = self.default_annotation_format
+                self.write(self._row, self._column, annotation, format_)
                 self._row += 1
 
         for i, chain in enumerate(self.chains):
