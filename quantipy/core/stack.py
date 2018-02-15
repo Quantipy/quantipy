@@ -359,7 +359,7 @@ class Stack(defaultdict):
         else:
             def _get_chain(name=None, data_keys=None, filters=None, x=None, y=None,
                            views=None, orient_on=None, select=None,
-                           rules=False, rules_weight=None):
+                           rules=False, rules_weight=None, described=None):
                 """
                 Construct a "chain" shaped subset of Links and their Views from the Stack.
 
@@ -403,8 +403,8 @@ class Stack(defaultdict):
                         orientation = 'x'
                 else:
                     orientation = orient_on
-
-                described = self.describe()
+                if described is None:
+                    described = self.describe()
 
                 if isinstance(rules, bool):
                     if rules:
@@ -448,7 +448,6 @@ class Stack(defaultdict):
 
                     if self.__has_list(data_keys):
                         for key in data_keys:
-
                             # Use describe method to get x keys if not supplied.
                             if x is None:
                                 x_keys = described['x'].drop_duplicates().values.tolist()
