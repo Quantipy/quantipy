@@ -68,7 +68,6 @@ class ChainManager(object):
         self.stack = stack
         self.__chains = []
         self.source = 'native'
-        self._annotations = {}
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -103,13 +102,6 @@ class ChainManager(object):
         else:
             raise StopIteration
     next = __next__
-
-    @property
-    def annotations(self):
-        if len(self._annotations) > 1:
-            return self._annotations
-        else:
-            return self._annotations[self._annotations.keys()[0]]
 
     @property
     def folders(self):
@@ -555,67 +547,6 @@ class ChainManager(object):
             else:
                 native_stat_names.append(val)
         return native_stat_names
-
-    def set_footer(self):
-        """
-        Add customized text information to a ``qp.Chain.annotations`` of self.
-
-        ``qp.Chain.annotations['footer']`` is being read during Build exports
-        and can be used to provide extra information on the aggregation results
-        or to provide context and structural information.
-
-        .. note:: A ``footer`` is placed below the ``Chain.dataframe``!
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-        """
-        pass
-
-    def set_header(self):
-        """
-        Add customized text information to a ``qp.Chain.annotations`` of self.
-
-        ``qp.Chain.annotations['header']`` is being read during Build exports
-        and can be used to provide extra information on the aggregation results
-        or to provide context and structural information.
-
-        .. note:: A ``header`` is placed right before the ``Chain.dataframe``!
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-        """
-        pass
-
-    def set_note(self):
-        """
-        Add customized text information to a ``qp.Chain.annotations`` of self.
-
-        ``qp.Chain.annotations['note']`` is being read during Build exports and
-        can be used to provide extra information on the aggregation results or
-        to provide context and structural information.
-
-        .. note:: A ``note`` is placed as the first row within the
-            ``Chain.dataframe``!
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-        """
-        pass
 
     def describe(self, by_folder=False):
         """
@@ -1215,7 +1146,6 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
-            self._annotations[x_key] = ChainAnnotations()
         return None
 
     def paint_all(self, *args, **kwargs):
