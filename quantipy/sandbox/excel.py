@@ -45,7 +45,7 @@ _SHEET_ATTR = ('str_table',
                'remove_timezone',
                'constant_memory')
 
-# Defaults for Sheet.
+# Defaults for _Sheet.
 _SHEET_DEFAULTS = dict(alternate_bg=True,
                        arrow_color_high='#2EB08C',
                        arrow_rep_high=u'\u25B2',
@@ -70,19 +70,223 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
 
 
 class Excel(Workbook):
-    # TODO: docstring
+    """
+    A class for writing ChainManager to Excel XLSX files.
+    Built on top of the xlsxwriter lib.
+    """
 
-    def __init__(self,
-                 filename,
-                 toc=False,
-                 italicise_level=None,
-                 details=False,
-                 in_memory=False,
-                 annotations=None,
-                 views_groups=None,
-                 decimals=None,
-                 image=None,
-                 **formats):
+    def __init__(self, filename, toc=False, italicise_level=None, details=False,
+                 in_memory=False, annotations=None, views_groups=None,
+                 decimals=None, image=None, **formats):
+        """
+        Parameters
+        ----------
+        filename : ``str``
+            The path of the target XLSX file.
+        toc : ``bool``, default ``False``
+            Not implemented
+        italicise_level : ``int``, default ``None``
+            Italicise column values with column base below given level.
+        details : ``bool``, default ``False``
+            A summary of the aggregated data displayed in the sheet.
+            If any views contain column proportion tests against the
+            total column, there are 2 additional cells to explain the
+            representation of ``higher/ lower than`` result.
+        in_memory : ``bool``, default ``False``
+            To avoid the use of temporay files in the assembly of the
+            final XLSX file set to ``True``.
+        annotations ``list-like``/ ``dict``: , default ``None``
+            1. A ``list`` of annotation items. These items can be ``str`` or a
+               ``list-like`` with ``str`` and ``dict``. The ``str`` are written
+               before any chains are written in row ``start_row`` and column
+               ``start_column`` using default formats or format spec provided in
+               ``dict``. These will be applied to every sheet.
+            2. A `dict`` with keys as ``Sheet`` names and a ``list-like`` as
+               described in 1.
+            see notes for more information on formats.
+        views_groups ``dict``: , default ``None``
+            When modifying the default formatting, view types can be grouped
+            to share a custom format.
+            see noted for more information on view groups.
+        decimals : ``int``/ ``dict``, default None
+            The digits to round ``float`` data to in the underlying data.
+            An ``int`` implies all ``float`` data to be rounded with the same
+            digits. You can specify the following keys in a dict to use specific
+            digits for different view types...
+                N - count frequency views
+                P - percentage frequency views
+                D - descriptive views
+        image : ``dict``, default None
+            Describes the location, sizing and location of an image to insert
+            in all ``Sheets``.
+            The following key-vaue pairs must be provided:
+                img_name - ``str`` (Arbitrary image name)
+                img_url - ``str`` (The path to the image. PNG/ JPEG/ BMP format)
+            The following key-value pairs are optional:
+                img_insert_x - ``int``, default 0 (the cell row (zero indexed))
+                img_insert_y - ``int``, default 0 (the cell column (zero indexed))
+                img_size - ``list``, default [130, 130] (resize to [width, height])
+                img_x_offset - ``int``, default 0 (offset by pixels - x axis)
+                img_y_offset - ``int``, default 0 (offset by pixels - y axis)
+        **formats : ``dict``
+            see notes for more information on formats.
+
+        Notes
+        -----
+        Format keys must start with either a ``general`` or ``view type`` or
+        ``view group`` and refer to different elements in a sheet:
+
+        ~ General ~
+        ~~~~~~~~~~~
+        ``y`` - for column headers
+        ``label`` - question labels
+        ``mask_label`` - mask labels, which use ``label`` otherwise
+        ``data_header`` - column headers in a dataframe sheet (``Chain.structure``)
+        ``header_left`` - ``Chain.annotation`` Header Left
+        ``header_center`` - ``Chain.annotation`` Header Center
+        ``header_title`` - ``Chain.annotation`` Header Title
+        ``notes`` - ``Chain.annotation`` Notes
+
+        ~ View types/ groups ~
+        ~~~~~~~~~~~~~~~~~~~~~~
+        These refer to the values in a row of a Chain.dataframe, since a row
+        will be one view type, such as ``cbase`` or ``counts``.
+        Below are the view types with their default view groups.
+        If you modify a group format, that will modify all type formats unless
+        that type key is also modified.
+
+        TYPE                            GROUP
+        ~~~~                            ~~~~~
+        ``default``                     ``default``
+        ``label``                       ``label``
+        ``mask_label``                  ``label``
+        ``c_base``                      ``base``
+        ``u_c_base``                    ``u_base``
+        ``c_base_gross``                ``base``
+        ``u_c_base_gross``              ``u_base``
+        ``e_base``                      ``base``
+        ``u_e_base``                    ``u_base``
+        ``u_r_base``                    ``base``
+        ``r_base``                      ``u_base``
+        ``counts``                      ``freq``
+        ``c_pct``                       ``freq``
+        ``res_c_pct``                   ``freq``
+        ``r_pct``                       ``freq``
+        ``block_normal_counts``         ``freq``
+        ``block_normal_c_pct``          ``freq``
+        ``block_normal_r_pct``          ``freq``
+        ``block_normal_propstest``      ``freq``
+        ``propstest``                   ``freq``
+        ``net_counts``                  ``net``
+        ``net_c_pct``                   ``net``
+        ``net_r_pct``                   ``net``
+        ``net_propstest``               ``net``
+        ``block_calc_net_counts``       ``net``
+        ``block_calc_net_c_pct``        ``net``
+        ``block_calc_net_r_pct``        ``net``
+        ``block_calc_net_propstest``    ``net``
+        ``block_calc_counts``           ``net``
+        ``block_calc_c_pct``            ``net``
+        ``block_calc_r_pct``            ``net``
+        ``block_calc_propstest``        ``net``
+        ``block_expanded_counts``       ``block_expanded``
+        ``block_expanded_c_pct``        ``block_expanded``
+        ``block_expanded_r_pct``        ``block_expanded``
+        ``block_expanded_propstest``    ``block_expanded``
+        ``block_net_counts``            ``block_net``
+        ``block_net_c_pct``             ``block_net``
+        ``block_net_r_pct``             ``block_net``
+        ``block_net_propstest``         ``block_net``
+        ``mean``                        ``stat``
+        ``stddev``                      ``stat``
+        ``min``                         ``stat``
+        ``max``                         ``stat``
+        ``median``                      ``stat``
+        ``var``                         ``stat``
+        ``varcoeff``                    ``stat``
+        ``sem``                         ``stat``
+        ``lower_q``                     ``stat``
+        ``upper_q``                     ``stat``
+        ``meanstest``                   ``stat``
+        ``counts_sum``                  ``sum``
+        ``c_pct_sum``                   ``sum``
+        ``counts_cumsum``               ``sum``
+        ``c_pct_cumsum``                ``sum``
+
+        Each of the view types/ groups above also have a corresponding text
+        option for formatting the row label, such as ``cbase_text`` or
+        ``net_text``.
+
+        Editable format keys are listed below:
+
+        ``bg_color``
+        ``bold``
+        ``border_color``
+        ``bottom``
+        ``bottom_color``
+        ``font_color``
+        ``font_name``
+        ``font_size``
+        ``font_script``
+        ``italic``
+        ``left``
+        ``left_color``
+        ``num_format``
+        ``right``
+        ``right_color``
+        ``text_v_align``
+        ``text_h_align``
+        ``text_wrap``
+        ``top``
+        ``top_color``
+        (See xlsxwriter.readthedocs.io/format.html for more information on these)
+
+        Combining the a general or view key with an editable format key you can
+        create consistent modifcations to the table formatting.
+
+        Examples
+        --------
+        annotations = dict(sheet_1=[('Text. 1', dict(font_size=8,
+                                                     font_color='yellow',
+                                                     bg_color='gray'))],
+                           sheet_2=[('Text 2.a', dict(font_size=10,
+                                                      font_color='pink',
+                                                      bg_color='gray')),
+                                    ('Text 2.b', dict(font_size=12,
+                                                      font_color='pink',
+                                                      bg_color='blue')) ])
+
+        view_groups = dict(block_expanded_counts='freq',
+                           block_expanded_c_pct='freq',
+                           block_expanded_r_pct='freq',
+                           block_expanded_propstest='freq',
+                           block_net_counts='freq',
+                           block_net_c_pct='freq',
+                           block_net_r_pct='freq',
+                           block_net_propstest='freq')
+
+        decimals = dict(N=0, P=2, D=1)
+
+        image = dict(img_name='name',
+                     img_url='/path/to/image.png',
+                     img_size=[110, 120],
+                     img_insert_x=4,
+                     img_insert_y=0,
+                     img_x_offset=3,
+                     img_y_offset=6)
+
+        formats = dict(bg_color_freq='gray')
+
+        excel = Excel('/path/to/file.xlsx',
+                      italicise_level=50,
+                      details=True,
+                      annotations=annotations,
+                      views_groups=view_groups,
+                      decimals=decimals,
+                      image=image,
+                      **formats):
+
+        """
         super(Excel, self).__init__()
         self.filename = filename
         self.toc = toc
@@ -143,7 +347,55 @@ class Excel(Workbook):
         return annotations
 
     def add_chains(self, chains, sheet_name=None, annotations=None, **kwargs):
-        # TODO: docstring
+        """Add a ChainManager to be written to Excel.Sheet(s). If the
+        ChainManager has no folders the Chain objects are written into a single 
+        sheet.When there are folders, a Chain not in a folder is written to a 
+        single sheet and folders are written to a sheet.
+
+        Parameters
+        ----------
+        chains : ``ChainManager``
+            The object containing the ``Chain`` objects to be written.
+        sheet_name : ``str``, default None
+            The name of the sheet for a ChainManager without folders.
+        annotations ``list-like``/ ``dict``: , default ``None``
+            Same as in the ``Excel`` constructor but for a can be used here to
+            overwrite the global annotations.
+        **kwargs : ``dict``
+            Optional arguments for sheet formatting, shown below with defaults:
+
+            Option              Default     Definition
+            ~~~~~~              ~~~~~~~     ~~~~~~~~~~
+            alternate_bg        True        Alternate bg_color in freq views
+            arrow_color_high    '#2EB08C'   High arrow color
+            arrow_rep_high      u'\u25B2'   High arrow representation for column
+                                            proportion tests
+            arrow_color_low     '#FC8EAC'   Low arrow color
+            arrow_rep_low       u'\u25BC'   Low arrow representation for column
+                                            proportion tests
+            column_width        9           Column width - column 1, ..., N
+            column_width_label  35          Column width - column 0
+            column_width_frame  15          Column width - Chain.structure
+            dummy_tests         False       If column proportion/ mean tests in
+                                            views add dummy test rows for view
+            freq_0_rep          '-'         Representation of zero data in
+                                            frequency views
+            img_insert_x        0           Cell row to insert image
+                                            (zero indexed)
+            img_insert_y        0           Cell column to insert image
+                                            (zero indexed)
+            img_size            [130, 130]  Resize image to [width, height]
+            img_x_offset        0           Offset image by pixels - x axis
+            img_y_offset        0           Offset image by pixels - y axis
+            row_height_label    12.75       Row height for view rows
+            start_column        0           Start column (zero indexed)
+            start_row           0           Start row (zero indexed)
+            stat_0_rep          '-'         Representation of zero data in
+                                            descriptive views
+            y_header_height     33.75       y row hieght - header (level 0)
+            y_row_height        50          y row height (level 1)
+
+        """
         warning_message = ('quantipy.ChainManager has folders, '
                            'sheet_name will be ignored')
         if chains.folders:
@@ -168,7 +420,7 @@ class Excel(Workbook):
                                **sheet_properties)
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
-        worksheet = Sheet(self, chains, sheet_name, annotations, **kwargs)
+        worksheet = _Sheet(self, chains, sheet_name, annotations, **kwargs)
 
         init_data = {attr: getattr(self, attr, None) for attr in _SHEET_ATTR}
         init_data.update({'name': sheet_name,
@@ -188,19 +440,11 @@ class Excel(Workbook):
     def _add_format(self, format_):
         return self.add_format(format_)
 
-    # def close(self):
-    #    print '...........'
-    #    if self.toc:
-    #        self._write_toc()
-    #    self.close()
 
-
-
-class Sheet(Worksheet):
-    # TODO: docstring
+class _Sheet(Worksheet):
 
     def __init__(self, excel, chains, sheet_name, annotations, **kwargs):
-        super(Sheet, self).__init__()
+        super(_Sheet, self).__init__()
         self.excel = excel
         self.chains = chains
         self.sheet_name = sheet_name
@@ -247,7 +491,7 @@ class Sheet(Worksheet):
     def write(self, *args):
         if isinstance(args[-1], dict):
             args = args[:-1] + (self.excel._add_format(args[-1]), )
-        super(Sheet, self).write(*args)
+        super(_Sheet, self).write(*args)
 
     def write_rich_string(self, *args):
         args, rich_text = ((args[0], args[1]), ), args[2:]
@@ -257,14 +501,13 @@ class Sheet(Worksheet):
             else:
                 args = args + (arg, )
         args = (xl_rowcol_to_cell(*args[0]), ) + args[1:]
-        super(Sheet, self).write_rich_string(*args)
+        super(_Sheet, self).write_rich_string(*args)
 
     def merge_range(self, *args):
         args = args[:-1] + (self.excel._add_format(args[-1]), )
-        super(Sheet, self).merge_range(*args)
+        super(_Sheet, self).merge_range(*args)
 
     def write_chains(self):
-        # TODO: docstring
         if self.annotations:
             for annotation in self.annotations:
                 try:
@@ -289,7 +532,7 @@ class Sheet(Worksheet):
                 columns = chain.structure.columns
 
             # write frame
-            box = Box(self, chain, self._row, self._column)
+            box = _Box(self, chain, self._row, self._column)
             box.to_sheet(columns=(i==0))
 
             del box
@@ -359,8 +602,7 @@ class Sheet(Worksheet):
         self.set_row(row, self.row_height_label)
 
 
-class Box(object):
-    # TODO: docstring
+class _Box(object):
 
     __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
                  '_columns', '_italic', '_lazy_excel', '_lazy_index',
@@ -905,7 +1147,7 @@ class Box(object):
     @lru_cache()
     def _cell(self, value, **contents):
         normalize, vtype, nan_rep = self._cell_args(**contents)
-        return Cell(value, normalize, self.excel.decimals.get(vtype), nan_rep).__repr__()
+        return _Cell(value, normalize, self.excel.decimals.get(vtype), nan_rep).__repr__()
 
     def _cell_args(self, **contents):
         pct = self._is('pct', **contents)
@@ -931,7 +1173,7 @@ class Box(object):
     def _is(name, **contents):
         return any(name in _ for _ in list(filter(contents.get, contents)))
 
-class Cell(object):
+class _Cell(object):
 
     def __init__(self, data, normalize, decimals, nan_rep):
         self.data = data
