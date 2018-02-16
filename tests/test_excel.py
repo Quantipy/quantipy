@@ -44,7 +44,7 @@ def _read_file(zipf, filename):
 
 class Chain_Manager:
     def __init__(self, stack):
-        self.basic = self.basic_chain_manager(stack)
+        #self.basic = self.basic_chain_manager(stack)
         self.complex = self.complex_chain_manager(stack)
 
     def __getitem__(self, value):
@@ -284,27 +284,27 @@ def chain_manager(stack):
 @pytest.yield_fixture(
     scope='class',
     params=[
-        (
-            'basic', p.PATH_BASIC,
-            None, None, None, False, None, None, None, None
-        ),
-        (
-            'complex', p.PATH_COMPLEX_0,
-            None, None, None, False, None, None, None, None
-        ),
-        (
-            'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
-            None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1, None
-        ),
+        #(
+        #    'basic', p.PATH_BASIC,
+        #    None, None, None, False, None, None, None, None
+        #),
+        #(
+        #    'complex', p.PATH_COMPLEX_0,
+        #    None, None, None, False, None, None, None, None
+        #),
+        #(
+        #    'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
+        #    None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1, None
+        #),
         (
             'complex', p.PATH_COMPLEX_2, p.SHEET_PROPERTIES_2, p.VIEW_GROUPS_2,
             None, False, None, None, p.FORMATS_2, p.ANNOTATIONS_2
         ),
-        (
-            'complex', p.PATH_COMPLEX_3, p.SHEET_PROPERTIES_3, p.VIEW_GROUPS_3,
-            p.ITALICISE_LEVEL_3 , p.DETAILS_3, p.DECIMALS_3, None, p.FORMATS_3,
-            p.ANNOTATIONS_3
-        )
+        #(
+        #    'complex', p.PATH_COMPLEX_3, p.SHEET_PROPERTIES_3, p.VIEW_GROUPS_3,
+        #    p.ITALICISE_LEVEL_3 , p.DETAILS_3, p.DECIMALS_3, None, p.FORMATS_3,
+        #    p.ANNOTATIONS_3
+        #)
     ]
 )
 def params(request):

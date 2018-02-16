@@ -99,7 +99,6 @@ class ExcelFormats(_ExcelFormats):
     def __getitem__(self, name):
         return self._format_builder(name)
 
-    #@lru_cache() # problem with array summary formatting when using
     def _format_builder(self, name):
         format_ = self._template
 
