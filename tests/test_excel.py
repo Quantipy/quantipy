@@ -44,11 +44,17 @@ def _read_file(zipf, filename):
 
 class Chain_Manager:
     def __init__(self, stack):
-        self.basic = self.basic_chain_manager(stack)
-        self.complex = self.complex_chain_manager(stack)
+        self.stack = stack
+        self.basic = None
+        self.complex = None
 
     def __getitem__(self, value):
-        return getattr(self, value)
+        attr = getattr(self, value)
+        if attr:
+            return attr
+        attr = getattr(self, value + '_chain_manager')(self.stack)
+        setattr(self, value, attr)
+        return attr
 
     @staticmethod
     def flatten(l):
