@@ -16,7 +16,9 @@ from PIL import Image
 from difflib import SequenceMatcher
 
 from excel_formats import ExcelFormats, _Format
-from excel_formats_constants import _DEFAULTS, _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
+from excel_formats_constants import (_DEFAULTS,
+                                     _DEFAULT_ATTRIBUTES,
+                                     _VIEWS_GROUPS)
 
 import cPickle
 import warnings
@@ -75,9 +77,9 @@ class Excel(Workbook):
     Built on top of the xlsxwriter lib.
     """
 
-    def __init__(self, filename, toc=False, italicise_level=None, details=False,
-                 in_memory=False, annotations=None, views_groups=None,
-                 decimals=None, image=None, **formats):
+    def __init__(self, filename, toc=False, italicise_level=None,
+                 details=False, in_memory=False, annotations=None,
+                 views_groups=None, decimals=None, image=None, **formats):
         """
         Parameters
         ----------
@@ -335,21 +337,23 @@ class Excel(Workbook):
         return self._image
 
     def _get_annotations(self, annotations, sheet_name):
-        error_messaage = ('"annotations" passed to Excel() must either be a list, for all sheets,'
-                          ' or a dict, key=sheet name : value=list of annotations')
+        error_messaage = ('"annotations" passed to Excel() must either be a '
+                          'list, for all sheets, or a dict, key=sheet name '
+                          ': value=list of annotations')
         if self.annotations:
             if isinstance(self.annotations, list):
                 return annotations or self.annotations
             elif isinstance(self.annotations, dict):
-                return annotations or self.annotations.get(sheet_name, annotations)
+                sheet_anno = self.annotations.get(sheet_name,  annotations)
+                return annotations or sheet_anno
             else:
                 raise TypeError(error_message)
         return annotations
 
     def add_chains(self, chains, sheet_name=None, annotations=None, **kwargs):
         """Add a ChainManager to be written to Excel.Sheet(s). If the
-        ChainManager has no folders the Chain objects are written into a single 
-        sheet.When there are folders, a Chain not in a folder is written to a 
+        ChainManager has no folders the Chain objects are written into a single
+        sheet.When there are folders, a Chain not in a folder is written to a
         single sheet and folders are written to a sheet.
 
         Parameters
@@ -406,16 +410,18 @@ class Excel(Workbook):
                     sheet_name = chain.keys()[0]
                     sheet_properties = kwargs.get(sheet_name, kwargs)
                     self._write_chains(chain[sheet_name], sheet_name,
-                                       self._get_annotations(annotations, sheet_name),
+                                       self._get_annotations(annotations,
+                                                             sheet_name),
                                        **sheet_properties)
                 else:
                     sheet_properties = kwargs.get(chain.name, kwargs)
                     self._write_chains((chain, ), chain.name,
-                                       self._get_annotations(annotations, chain.name),
+                                       self._get_annotations(annotations,
+                                                             chain.name),
                                        **sheet_properties)
         else:
             sheet_properties = kwargs.get(sheet_name, kwargs)
-            self._write_chains(chains, sheet_name, 
+            self._write_chains(chains, sheet_name,
                                self._get_annotations(annotations, sheet_name),
                                **sheet_properties)
 
@@ -477,7 +483,7 @@ class _Sheet(Worksheet):
         exclude_keys = ('border', 'border_style_int', 'border_style_ext',
                         'num_format_counts', 'num_format_default',
                         'num_format_c_pct', 'num_format_mean')
-        format_spec = dict([(k, v) 
+        format_spec = dict([(k, v)
                             for k, v in _DEFAULTS.iteritems()
                             if k not in exclude_keys])
         return self.excel._add_format(_Format(**format_spec))
@@ -733,7 +739,8 @@ class _Box(object):
             self.sheet.merge_range(self.sheet._row, column,
                                    self.sheet._row + 1, column,
                                    label, format_)
-            self.sheet.set_column(column, column, self.sheet.column_width_frame)
+            self.sheet.set_column(column, column,
+                                  self.sheet.column_width_frame)
         self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
         self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
 
@@ -795,8 +802,10 @@ class _Box(object):
                         r = 0
                         while r != right:
 
-                            self.sheet.merge_range(row, column + group_sizes[0][0],
-                                                   row, column + group_sizes[0][1],
+                            self.sheet.merge_range(row,
+                                                   column + group_sizes[0][0],
+                                                   row,
+                                                   column + group_sizes[0][1],
                                                    data, format_)
                             _, r = group_sizes.pop(0)
                     elif left == right:
@@ -812,7 +821,8 @@ class _Box(object):
                 if next_ is None:
                     break
 
-            if not self.has_tests or ((level_id + 1) != nlevels) and self.has_tests:
+            has_tests = self.has_tests
+            if not has_tests or (((level_id + 1) != nlevels) and has_tests):
                 if (row % 2) == 0:
                     self.sheet.set_row(row, self.sheet.y_header_height)
                 else:
@@ -820,7 +830,8 @@ class _Box(object):
 
         for cindex in self.single_columns:
             level = -(1 + self.has_tests)
-            data = self._cell(self.columns.get_level_values(level)[cindex], **contents)
+            data = self._cell(self.columns.get_level_values(level)[cindex],
+                              **contents)
             self.sheet.merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
                                    data, format_)
@@ -829,7 +840,8 @@ class _Box(object):
 
     def _write_rows(self):
         if self.chain.annotations:
-            self._write_annotations(['header_left', 'header_center', 'header_title'])
+            cat_pos = ['header_left', 'header_center', 'header_title']
+            self._write_annotations(cat_pos)
 
         column = self.sheet._column
 
@@ -854,7 +866,9 @@ class _Box(object):
             level_1, values, contents = self._get_dummies(levels(1).values,
                                                           self.values)
         else:
-            level_1, values, contents = levels(1).values, self.values, self.contents
+            level_1, values, contents = (levels(1).values,
+                                         self.values,
+                                         self.contents)
 
         row_max = max(contents.keys())
         flat = np.c_[level_1.T, values].flat
@@ -894,8 +908,9 @@ class _Box(object):
                                      view_border, border_from)
 
             if self.excel.italicise_level:
+                base = self._is('base', **x_contents)
                 if rel_y and self.chain.array_style == 0:
-                    if self._is('base', **x_contents) and not x_contents['is_weighted']:
+                    if base and  not x_contents['is_weighted']:
                         if data == data:
                             if data <= self.excel.italicise_level:
                                 arr_summ_ital = True
@@ -908,7 +923,7 @@ class _Box(object):
                         self._italic.remove(rel_y)
                 else:
                     if rel_y not in self._columns:
-                        if self._is('base', **x_contents) and not x_contents['is_weighted']:
+                        if base and not x_contents['is_weighted']:
                             if data <= self.excel.italicise_level:
                                 self._italic.append(rel_y)
                             self._columns.append(rel_y)
@@ -932,11 +947,13 @@ class _Box(object):
                     cell_data = cell_data + '*'
                 arrow_rep = self.arrow_rep.get(arrow)
                 arrow_color = self.arrow_color.get(arrow)
-                arrow_format = {"'@L'": arrow_high_format, "'@H'": arrow_low_format}.get(arrow)
+                arrow_format = {"'@L'": arrow_high_format,
+                                "'@H'": arrow_low_format}.get(arrow)
 
                 if arrow_format is _None:
                     arrow_format = self._format_x(name, rel_x, rel_y,
-                                                  row_max, x_contents.get('dummy'),
+                                                  row_max,
+                                                  x_contents.get('dummy'),
                                                   use_bg, view_border,
                                                   border_from,
                                                   **{'font_color': arrow_color})
@@ -969,12 +986,15 @@ class _Box(object):
 
     def _format_row(self, format_):
         for rel_y in xrange(1, self.values.shape[1] + 1):
-            self.sheet.write(self.sheet._row, self.sheet._column + rel_y, '', format_)
+            self.sheet.write(self.sheet._row,
+                             self.sheet._column + rel_y, '',
+                             format_)
 
     @lru_cache()
     def _alternate_bg(self, name, bg):
         freq_view_group = self.excel.views_groups.get(name, '') == 'freq'
-        is_freq_test = any(_ in name for _ in ('counts', 'pct', 'propstest'))
+        is_freq_test = any(_ in name
+                           for _ in ('counts', 'pct', 'propstest'))
         is_mean = 'mean' in name
         not_net_sum = all(_ not in name for _ in ('net', 'sum'))
         if ((is_freq_test and not_net_sum) or freq_view_group) or \
@@ -1121,11 +1141,14 @@ class _Box(object):
                 if group and dummy:
                     dummy_idx.append(ndx + len(dummy_idx) + 1)
                 break
-        dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]], dtype=str)
+        dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]],
+                             dtype=str)
         for idx in dummy_idx:
             try:
                 index = np.insert(index, idx, u'')
-                values = np.vstack((values[:idx, :], dummy_arr, values[idx:, :]))
+                values = np.vstack((values[:idx, :],
+                                   dummy_arr,
+                                   values[idx:, :]))
             except IndexError:
                 index = np.append(index, u'')
                 values = np.vstack((values, dummy_arr))
@@ -1147,7 +1170,9 @@ class _Box(object):
     @lru_cache()
     def _cell(self, value, **contents):
         normalize, vtype, nan_rep = self._cell_args(**contents)
-        return _Cell(value, normalize, self.excel.decimals.get(vtype), nan_rep).__repr__()
+        return _Cell(value, normalize,
+                     self.excel.decimals.get(vtype),
+                     nan_rep).__repr__()
 
     def _cell_args(self, **contents):
         pct = self._is('pct', **contents)
@@ -1198,4 +1223,3 @@ class _Cell(object):
             if isinstance(self.data, (float, np.float64)):
                 return round(self.data, self.decimals)
         return self.data
-
