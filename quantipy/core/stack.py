@@ -2332,6 +2332,27 @@ class Stack(defaultdict):
                     v['text']['{} edits'.format(ax)][tk] = new_lab
         return values
 
+    @staticmethod
+    def _add_factor_meta(dataset, var, options):
+        rescale = options[0]
+        drop = options[1]
+        exclude = options[2]
+        dataset.clear_factors(var)
+        all_codes = dataset.codes(var)
+        if rescale:
+            fm = rescale
+        else:
+            fm = {c: c for c in all_codes}
+        if not drop and rescale:
+            for c in all_codes:
+                if not c in fm:
+                    fm[c] = c
+        if exclude:
+            for e in exclude:
+                if e in fm:
+                    del fm[e]
+        dataset.set_factors(var, fm)
+        return None
 
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
@@ -2421,8 +2442,6 @@ class Stack(defaultdict):
                    'drop': drop, 'exclude': exclude,
                    'axis': 'x',
                    'text': '' if not custom_text else custom_text}
-        for v in on_vars:
-            dataset.set_factors(v, rescale)
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
             if not _batches: return None
@@ -2442,6 +2461,13 @@ class Stack(defaultdict):
                     check_on = list(set(check_on + [items[0]]))
                 else:
                     check_on = list(set(check_on + [v]))
+
+            ds = qp.DataSet(dk)
+            ds.from_stack(self, dk)
+
+            self._add_factor_meta(ds, v, (rescale, drop, exclude))
+
+
             view = qp.ViewMapper()
             view.make_template('descriptives')
             for stat in stats:
