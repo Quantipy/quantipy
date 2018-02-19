@@ -5324,6 +5324,20 @@ class DataSet(object):
     # rules and properties
     # ------------------------------------------------------------------------
     @verify(variables={'name': 'both'})
+    def _apply_factors(self, name, factormap):
+        """
+        """
+        vals = self.codes(name)
+        facts = factormap.values()
+        if not all(f in vals for f in facts):
+            err = 'At least one factor is mapped to a code that does not exist '
+            err += 'in the values object of "{}"!'
+            raise ValueError(err.format(name))
+        for val, fact in factormap.items():
+
+        return None
+
+    @verify(variables={'name': 'both'})
     def get_property(self, name, prop_name, text_key=None):
         """
         """
@@ -5379,7 +5393,7 @@ class DataSet(object):
         -------
         None
         """
-        valid_props = ['base_text']
+        valid_props = ['base_text', 'factors']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         prop_update = {prop_name: prop_value}
