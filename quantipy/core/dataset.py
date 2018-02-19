@@ -5344,7 +5344,6 @@ class DataSet(object):
             self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
 
-    @staticmethod
     @verify(variables={'name': 'both'})
     def clear_factors(self, name):
         """
