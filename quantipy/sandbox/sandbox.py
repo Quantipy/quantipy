@@ -318,8 +318,25 @@ class ChainManager(object):
         """
         return self._check_equality(other, False)
 
-    def compare(self, other, strict=True, summary='full'):
+    def compare(self, other, strict=True, full_summary=True):
         """
+        Compare structure and content of self to another ``ChainManager`` instance.
+
+        Parameters
+        ----------
+        other : ``qp.ChainManager``
+            Another ``ChainManager`` object to compare.
+        strict : bool, default True
+            Test if the structure of folders vs. single Chain objects is the
+            same in both ChainManager instances.
+        full_summary : bool, default True
+            ``False`` will disable the detailed comparison ``pd.DataFrame``
+            that informs about differences between the objects.
+
+        Returns
+        -------
+        result : str
+            A brief feedback message about the comparison results.
         """
         diffs = []
         if strict:
@@ -338,11 +355,12 @@ class ChainManager(object):
             if 'l' in diffs:
                 diffs_in += '\n  -Length (number of stored Chain objects)'
             if 's' in diffs:
-                diffs_in += '\n  -Structure (folders and single Chain objects)'
+                diffs_in += '\n  -Structure (folders and/or single Chain order)'
             if 'c' in diffs:
                 diffs_in += '\n  -Chain elements (properties and content of Chain objects)'
         if diffs_in:
-            result = 'ChainManagers are not identical:\n' + diffs_in
+            result = 'ChainManagers are not identical:\n'
+            result += '--------------------------------' + diffs_in
         else:
             result = 'ChainManagers are identical.'
         print result
