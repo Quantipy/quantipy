@@ -306,7 +306,7 @@ class ChainManager(object):
         """
         return self._check_equality(other, False)
 
-    def compare(self, other):
+    def compare(self, other, strict=True, summary='full'):
         """
         """
         check = self._check_equality(other)
