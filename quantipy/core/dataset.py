@@ -506,7 +506,7 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         return None
-     
+
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
                          date_format="DMY", run=True, clean_up=True):
@@ -1275,6 +1275,29 @@ class DataSet(object):
             The list of category codes.
         """
         return self._get_valuemap(name, non_mapped='codes')
+
+    @verify(variables={'name': 'both'})
+    def factors(self, name):
+        """
+        Get categorical data's stat. factor values.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        factors : OrderedDict
+            A ``{value: factor}`` mapping.
+        """
+        val_loc = self._get_value_loc(name)
+        factors = OrderedDict()
+        for val in val_loc:
+            f = val.get('factor', None)
+            if f: factors[val['value']] = f
+        return factors
 
     @verify(variables={'name': 'columns'}, categorical='name')
     def codes_in_data(self, name):
@@ -2507,6 +2530,36 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
+    @modify(to_list=['varlist'])
+    @verify(variables={'varlist': 'both'})
+    def roll_up(self, varlist):
+        """
+        Replace any array items with theor parent mask variable definition name.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of meta ``'columns'`` and/or ``'masks'`` names.
+
+        Returns
+        -------
+        rolled_up : list
+            The modified ``varlist``.
+        """
+        arrays_defs = {arr_name: self.sources(arr_name)
+               for arr_name in self.masks()}
+        item_map = {}
+        for k, v in arrays_defs.items():
+            for item in v:
+                item_map[item] = k
+        rolled_up = []
+        for v in varlist:
+            if v in item_map:
+                if not item_map[v] in rolled_up:
+                    rolled_up.append(item_map[v])
+            else:
+                rolled_up.append(v)
+        return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
     @verify(variables={'varlist': 'both', 'keep': 'masks'})
@@ -5287,6 +5340,69 @@ class DataSet(object):
             self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
 
+    @verify(variables={'name': 'both'})
+    def clear_factors(self, name):
+        """
+        Remove all factors set in the variable's ``'values'`` object.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        None
+        """
+        val_loc = self._get_value_loc(name)
+        for value in val_loc:
+            value['factor'] = None
+        return None
+
+    @verify(variables={'name': 'both'})
+    def set_factors(self, name, factormap):
+        """
+        Apply numerical factors to ``single``-type categorical variables.
+
+        Factors can be read while aggregating descrp. stat. ``qp.Views``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        factormap : dict
+            A mapping of ``{value: factor}`` (``int`` to ``int``).
+
+        Returns
+        -------
+        None
+        """
+        e = False
+        if name in self.masks():
+            if self._get_subtype(name) != 'single':
+                e = True
+        else:
+            if self._get_type(name) != 'single':
+                e = True
+        if e:
+            err = "Can only set factors to 'single' type categorical variables!"
+            raise TypeError(err)
+        vals = self.codes(name)
+        facts = factormap.keys()
+        val_loc = self._get_value_loc(name)
+        if not all(f in vals for f in facts):
+            err = 'At least one factor is mapped to a code that does not exist '
+            err += 'in the values object of "{}"!'
+            raise ValueError(err.format(name))
+        for value in val_loc:
+            if value['value'] in factormap:
+                value['factor'] = factormap[value['value']]
+            else:
+                value['factor'] = None
+        return None
+
     # rules and properties
     # ------------------------------------------------------------------------
     @verify(variables={'name': 'both'})
@@ -5296,7 +5412,7 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text', 'created', 'recoded_net']
+        valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
@@ -5312,7 +5428,10 @@ class DataSet(object):
             p = meta_ref['properties'].get(prop_name, None)
             if p:
                 if prop_name == 'base_text' and isinstance(p, dict):
-                    p = p[text_key]
+                    try:
+                        p = p[text_key]
+                    except:
+                        p = p[self.text_key]
             return p
         else:
             return None
