@@ -5360,7 +5360,7 @@ class DataSet(object):
         None
         """
         val_loc = self._get_value_loc(name)
-        for value in value_loc:
+        for value in val_loc:
             value['factor'] = None
         return None
 
