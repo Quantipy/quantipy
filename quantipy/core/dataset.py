@@ -1276,6 +1276,29 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='codes')
 
+    @verify(variables={'name': 'both'})
+    def factors(self, name):
+        """
+        Get categorical data's stat. factor values.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        factors : OrderedDict
+            A ``{value: factor}`` mapping.
+        """
+        val_loc = self._get_value_loc(name)
+        factors = OrderedDict()
+        for val in val_loc:
+            f = val.get('factor', None)
+            if f: factors[val['value']] = f
+        return factors
+
     @verify(variables={'name': 'columns'}, categorical='name')
     def codes_in_data(self, name):
         """
@@ -5315,6 +5338,49 @@ class DataSet(object):
         for item_no, item_text in renamed_items.items():
             source = self.sources(name)[item_no - 1]
             self.set_variable_text(source, item_text, text_key, axis_edit)
+        return None
+
+    @verify(variables={'name': 'both'})
+    def set_factors(self, name, factormap):
+        """
+        Apply numerical factors to ``single``-type categorical variables.
+
+        Factors can be read while aggregating descrp. stat. ``qp.Views``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        factormap : dict
+            A mapping of ``{value: factor}`` (``int`` to ``int``).
+
+        Returns
+        -------
+        None
+        """
+        e = False
+        if name in self.masks():
+            if self._get_subtype(name) != 'single':
+                e = True
+        else:
+            if self._get_type(name) != 'single':
+                e = True
+        if e:
+            err = "Can only set factors to 'single' type categorical variables!"
+            raise TypeError(err)
+        vals = self.codes(name)
+        facts = factormap.keys()
+        val_loc = self._get_value_loc(name)
+        if not all(f in vals for f in facts):
+            err = 'At least one factor is mapped to a code that does not exist '
+            err += 'in the values object of "{}"!'
+            raise ValueError(err.format(name))
+        for value in val_loc:
+            if value['value'] in factormap:
+                value['factor'] = factormap[value['value']]
+            else:
+                value['factor'] = None
         return None
 
     # rules and properties
