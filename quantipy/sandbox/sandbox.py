@@ -286,6 +286,18 @@ class ChainManager(object):
                             diffs[att] = [atts1[att], atts2[att]]
             return diffs if return_diffs else not diffs
 
+    def _test_same_structure(self, other):
+        """
+        """
+        folders1 = self.folders
+        singles1 = self.singles
+        folders2 = other.folders
+        singles2 = other.singles
+        if (folders1 != folders2 or singles1 != singles2):
+            return False
+        else:
+            return True
+
     def equals(self, other):
         """
         Test equality of self to another ``ChainManager`` object instance.
@@ -309,12 +321,32 @@ class ChainManager(object):
     def compare(self, other, strict=True, summary='full'):
         """
         """
+        diffs = []
+        if strict:
+            same_structure = self._test_same_structure(other)
+            if not same_structure:
+                diffs.append('s')
         check = self._check_equality(other)
         if isinstance(check, bool):
-            pass
+            diffs.append('l')
         else:
-            report_full = ['_frame', '_x_keys', '_y_keys', 'index', '_columns']
-        pass
+            if check: diffs.append('c')
+        report_full = ['_frame', '_x_keys', '_y_keys', 'index', '_columns',
+                       'base_descriptions', 'annotations']
+        diffs_in = ''
+        if diffs:
+            if 'l' in diffs:
+                diffs_in += '\n  -Length (number of stored Chain objects)'
+            if 's' in diffs:
+                diffs_in += '\n  -Structure (folders and single Chain objects)'
+            if 'c' in diffs:
+                diffs_in += '\n  -Chain elements (properties and content of Chain objects)'
+        if diffs_in:
+            result = 'ChainManagers are not identical:\n' + diffs_in
+        else:
+            result = 'ChainManagers are identical.'
+        print result
+        return None
 
     def save(self, path, keep_stack=False):
         """
@@ -334,7 +366,6 @@ class ChainManager(object):
         obj = cPickle.load(f)
         f.close()
         return obj
-
 
     def merge(self, folders, new_name=None, drop=True):
         """
