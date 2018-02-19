@@ -13,6 +13,8 @@ from quantipy.core.view_generators.view_specs import ViewManager
 
 import parameters_excel as p
 
+qp.OPTIONS['new_chains'] = True
+
 # -----------------------------------------------------------------------------
 PATH_DATA  = './tests/'
 NAME_PROJ  = 'Example Data (A)'
@@ -89,7 +91,7 @@ class Chain_Manager:
                        folder=folder)
 
         _basic.add(stack[DATA_KEY].data.loc[:, p.OPENS_BASIC],
-                   meta_from=(DATA_KEY, FILTER_KEY),
+                   meta_from=DATA_KEY,
                    name='Open Ends')
 
         _basic.paint_all()
@@ -215,7 +217,7 @@ class Chain_Manager:
                      folder='mean_1')
 
         _complex.add(stack[DATA_KEY].data.loc[:, p.OPENS_COMPLEX],
-                     meta_from=(DATA_KEY, FILTER_KEY),
+                     meta_from=DATA_KEY,
                      name='Open Ends')
 
         _complex.paint_all(transform_tests='full')

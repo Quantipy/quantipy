@@ -147,7 +147,6 @@ class ExcelFormats(_ExcelFormats):
     def slots(self):
         return self.__slots__ + tuple(super(ExcelFormats, self).__slots__)
 
-    @lru_cache()
     def _method(self, method):
         result = dict(text_wrap=self.text_wrap)
         for name in ('bold', 'bg_color', 'font_color', 'font_name',
@@ -282,9 +281,9 @@ class ExcelFormats(_ExcelFormats):
     def _meanstest(self):
         return dict(font_script=self.font_script_meanstest)
 
-    @lru_cache()
     def _view_border(self, name, alt):
         border = getattr(self, 'view_border_' + name)
         if border or alt is None:
             return dict(top=border)
         return dict(top=getattr(self, 'view_border_' + alt))
+
