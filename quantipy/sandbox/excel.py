@@ -1,35 +1,27 @@
 # -* coding: utf-8 -*-
 
-import os
-import re
 import numpy as np
 import pandas as pd
 import quantipy as qp
-
-from quantipy.core.tools.qp_decorators import lazy_property
-from xlsxwriter import Workbook
-from xlsxwriter.worksheet import Worksheet
-from xlsxwriter.utility import xl_rowcol_to_cell
-from itertools import izip, dropwhile, groupby
-from operator import itemgetter
-from PIL import Image
-from difflib import SequenceMatcher
+import cPickle as cp
 
 from excel_formats import ExcelFormats, _Format
 from excel_formats_constants import (_DEFAULTS,
                                      _DEFAULT_ATTRIBUTES,
                                      _VIEWS_GROUPS)
-
-import cPickle
-import warnings
-
-warnings.simplefilter('ignore')
+from difflib import SequenceMatcher
+from os.path import basename
+from PIL import Image
+from quantipy.core.tools.qp_decorators import lazy_property
+from re import sub as rsub
+from xlsxwriter import Workbook
+from xlsxwriter.worksheet import Worksheet
+from xlsxwriter.utility import xl_rowcol_to_cell
 
 try:
     from functools import lru_cache
 except ImportError:
     from functools32 import lru_cache
-
 
 # Initialization data to pass to the worksheet.
 _SHEET_ATTR = ('str_table',
@@ -333,7 +325,7 @@ class Excel(Workbook):
             image.thumbnail(self._image.get('img_size',
                                             _SHEET_DEFAULTS['img_size']),
                             Image.ANTIALIAS)
-            image.save(os.path.basename(self._image['img_url']))
+            image.save(basename(self._image['img_url']))
         return self._image
 
     def _get_annotations(self, annotations, sheet_name):
@@ -368,36 +360,36 @@ class Excel(Workbook):
         **kwargs : ``dict``
             Optional arguments for sheet formatting, shown below with defaults:
 
-            Option              Default     Definition
-            ~~~~~~              ~~~~~~~     ~~~~~~~~~~
-            alternate_bg        True        Alternate bg_color in freq views
-            arrow_color_high    '#2EB08C'   High arrow color
-            arrow_rep_high      u'\u25B2'   High arrow representation for column
-                                            proportion tests
-            arrow_color_low     '#FC8EAC'   Low arrow color
-            arrow_rep_low       u'\u25BC'   Low arrow representation for column
-                                            proportion tests
-            column_width        9           Column width - column 1, ..., N
-            column_width_label  35          Column width - column 0
-            column_width_frame  15          Column width - Chain.structure
-            dummy_tests         False       If column proportion/ mean tests in
-                                            views add dummy test rows for view
-            freq_0_rep          '-'         Representation of zero data in
-                                            frequency views
-            img_insert_x        0           Cell row to insert image
-                                            (zero indexed)
-            img_insert_y        0           Cell column to insert image
-                                            (zero indexed)
-            img_size            [130, 130]  Resize image to [width, height]
-            img_x_offset        0           Offset image by pixels - x axis
-            img_y_offset        0           Offset image by pixels - y axis
-            row_height_label    12.75       Row height for view rows
-            start_column        0           Start column (zero indexed)
-            start_row           0           Start row (zero indexed)
-            stat_0_rep          '-'         Representation of zero data in
-                                            descriptive views
-            y_header_height     33.75       y row hieght - header (level 0)
-            y_row_height        50          y row height (level 1)
+            Option                  Default     Definition
+            ~~~~~~                  ~~~~~~~     ~~~~~~~~~~
+            ``alternate_bg``        ``True``        Alternate bg_color in freq views
+            ``arrow_color_high``    ``'#2EB08C'``   High arrow color
+            ``arrow_rep_high``      ``u'\u25B2'``   High arrow representation for column
+                                                    proportion tests
+            ``arrow_color_low``     ``'#FC8EAC'``   Low arrow color
+            ``arrow_rep_low``       ``u'\u25BC'``   Low arrow representation for column
+                                                    proportion tests
+            ``column_width``        ``9``           Column width - column 1, ..., N
+            ``column_width_label``  ``35``          Column width - column 0
+            ``column_width_frame``  ``15``          Column width - Chain.structure
+            ``dummy_tests``         ``False``       If column proportion/ mean tests in
+                                                    views add dummy test rows for view
+            ``freq_0_rep``          ``'-'``         Representation of zero data in
+                                                    frequency views
+            ``img_insert_x``        ``0``           Cell row to insert image
+                                                    (zero indexed)
+            ``img_insert_y``        ``0``           Cell column to insert image
+                                                    (zero indexed)
+            ``img_size``            ``[130,`` 130]  Resize image to [width, height]
+            ``img_x_offset``        ``0``           Offset image by pixels - x axis
+            ``img_y_offset``        ``0``           Offset image by pixels - y axis
+            ``row_height_label``    ``12.75``       Row height for view rows
+            ``start_column``        ``0``           Start column (zero indexed)
+            ``start_row``           ``0``           Start row (zero indexed)
+            ``stat_0_rep``          ``'-'``         Representation of zero data in
+                                                    descriptive views
+            ``y_header_height``     ``33.75``       y row hieght - header (level 0)
+            ``y_row_height``        ``50``          y row height (level 1)
 
         """
         warning_message = ('quantipy.ChainManager has folders, '
@@ -462,13 +454,17 @@ class _Sheet(Worksheet):
 
         self._row = self.start_row
         self._column = self.start_column
-
+        self._formats = None
         self._freeze_loc = None
         self._columns = None
         self._test_letters = None
         self._column_edges = None
         self._view_keys = None
         self._group_order = None
+
+    @property
+    def formats(self):
+        return self.excel._formats
 
     @lazy_property
     def test_letters(self):
@@ -514,6 +510,9 @@ class _Sheet(Worksheet):
         super(_Sheet, self).merge_range(*args)
 
     def write_chains(self):
+        write = self.write
+        write_rich_string = self.write_rich_string
+
         if self.annotations:
             for annotation in self.annotations:
                 try:
@@ -521,7 +520,7 @@ class _Sheet(Worksheet):
                     format_ = self.excel._add_format(_Format(**format_spec))
                 except ValueError:
                     format_ = self.default_annotation_format
-                self.write(self._row, self._column, annotation, format_)
+                write(self._row, self._column, annotation, format_)
                 self._row += 1
 
         for i, chain in enumerate(self.chains):
@@ -549,7 +548,7 @@ class _Sheet(Worksheet):
         self.hide_gridlines(2)
 
         if self.excel.details and all(c.structure is None for c in self.chains):
-            format_ = self.excel._formats._cell_details
+            format_ = self.formats._cell_details
             cd = None
             arrow_descriptions = None
             for chain in self.chains:
@@ -560,29 +559,28 @@ class _Sheet(Worksheet):
                     cd = cds[0]
                 else:
                     if cd <> cds[0]:
-                        long = max((cd, cds[0]), key=len)
+                        long_ = max((cd, cds[0]), key=len)
                         short = min((cd, cds[0]), key=len)
-                        sm = SequenceMatcher(None, long, short)
+                        sm = SequenceMatcher(None, long_, short)
                         for tag, i1, i2, j1, j2 in sm.get_opcodes():
                             if tag == 'insert':
-                                long = long[:i1] + short[j1:j2] + long[i2:]
-                        cd = long
+                                long_ = long_[:i1] + short[j1:j2] + long_[i2:]
+                        cd = long_
 
-            self.write(self._row + 1, self._column + 1, cd, format_)
+            write(self._row + 1, self._column + 1, cd, format_)
             if arrow_descriptions:
                 arrow_format = _Format(**{'font_color': self.arrow_color_high})
                 arrow_format = self.excel._add_format(arrow_format)
-                self.write_rich_string(self._row + 2, self._column + 1,
-                                       arrow_format, self.arrow_rep_high,
-                                       format_, cds[1], format_)
+                write_rich_string(self._row + 2, self._column + 1,
+                                  arrow_format, self.arrow_rep_high,
+                                  format_, cds[1], format_)
                 arrow_format = _Format(**{'font_color': self.arrow_color_low})
                 arrow_format = self.excel._add_format(arrow_format)
-                self.write_rich_string(self._row + 3, self._column + 1,
-                                       arrow_format, self.arrow_rep_low,
-                                       format_, cds[2], format_)
+                write_rich_string(self._row + 3, self._column + 1,
+                                  arrow_format, self.arrow_rep_low,
+                                  format_, cds[2], format_)
 
         if self.image:
-
             self.insert_image(self.image.get('img_insert_x', self.img_insert_x),
                               self.image.get('img_insert_y', self.img_insert_y),
                               self.image['img_url'],
@@ -610,7 +608,7 @@ class _Sheet(Worksheet):
 
 class _Box(object):
 
-    __slots__ = ('sheet', 'chain', '_single_columns','_column_edges',
+    __slots__ = ('sheet', 'chain', '_formats', '_single_columns','_column_edges',
                  '_columns', '_italic', '_lazy_excel', '_lazy_index',
                  '_lazy_columns', '_lazy_values', '_lazy_contents',
                  '_lazy_is_weighted', '_lazy_shape', '_lazy_has_tests',
@@ -620,11 +618,15 @@ class _Box(object):
     def __init__(self, sheet, chain, row, column):
         self.sheet = sheet
         self.chain = chain
+        self._formats = None
         self._single_columns = None
         self._column_edges = None
-
         self._columns = []
         self._italic = []
+
+    @property
+    def formats(self):
+        return self.excel._formats
 
     @lazy_property
     def excel(self):
@@ -655,8 +657,7 @@ class _Box(object):
     @lazy_property
     def contents(self):
         descr = self.chain.describe()
-        protocol = cPickle.HIGHEST_PROTOCOL
-        contents = cPickle.loads(cPickle.dumps(self.chain.contents, protocol))
+        contents = cp.loads(cp.dumps(self.chain.contents, cp.HIGHEST_PROTOCOL))
 
         def _contents(c, d):
             if 0 in c.values()[0]:
@@ -732,13 +733,15 @@ class _Box(object):
             self._write_rows()
 
     def _write_data(self):
-        format_ = self.excel._formats._data_header
+        write = self.sheet.write
+        merge_range = self.sheet.merge_range
+        format_ = self.formats._data_header
 
         for rel_y, label in enumerate(self.chain.structure.columns):
             column = self.sheet._column + rel_y
-            self.sheet.merge_range(self.sheet._row, column,
-                                   self.sheet._row + 1, column,
-                                   label, format_)
+            merge_range(self.sheet._row, column,
+                        self.sheet._row + 1, column,
+                        label, format_)
             self.sheet.set_column(column, column,
                                   self.sheet.column_width_frame)
         self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
@@ -759,10 +762,10 @@ class _Box(object):
             elif rel_x == row_max:
                 name += 'bottom^'
             name += 'data'
-            format_ = self.excel._formats[name]
-            self.sheet.write(self.sheet._row + rel_x,
-                             self.sheet._column + rel_y,
-                             data, format_)
+            format_ = self.formats[name]
+            write(self.sheet._row + rel_x,
+                  self.sheet._column + rel_y,
+                  data, format_)
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
@@ -770,9 +773,11 @@ class _Box(object):
 
     def _write_columns(self):
         contents = dict()
-        format_ = self.excel._formats._y
+        format_ = self.formats._y
         column = self.sheet._column + 1
         nlevels = self.columns.nlevels
+        write = self.sheet.write
+        merge_range = self.sheet.merge_range
         for level_id in xrange(nlevels):
             row = self.sheet._row + level_id
             is_tests =  self.has_tests and (level_id == (nlevels - 1))
@@ -801,19 +806,16 @@ class _Box(object):
                     if group_sizes and not is_values:
                         r = 0
                         while r != right:
-
-                            self.sheet.merge_range(row,
-                                                   column + group_sizes[0][0],
-                                                   row,
-                                                   column + group_sizes[0][1],
-                                                   data, format_)
+                            merge_range(row, column + group_sizes[0][0],
+                                        row, column + group_sizes[0][1],
+                                        data, format_)
                             _, r = group_sizes.pop(0)
                     elif left == right:
-                        self.sheet.write(row, column + left, data, format_)
+                        write(row, column + left, data, format_)
                     else:
-                        self.sheet.merge_range(row, column + left,
-                                               row, column + right,
-                                               data, format_)
+                        merge_range(row, column + left,
+                                    row, column + right,
+                                    data, format_)
                     if is_values:
                         group_sizes.append((left, right))
                 data = next_
@@ -832,13 +834,16 @@ class _Box(object):
             level = -(1 + self.has_tests)
             data = self._cell(self.columns.get_level_values(level)[cindex],
                               **contents)
-            self.sheet.merge_range(row - nlevels + 1, column + cindex,
+            merge_range(row - nlevels + 1, column + cindex,
                                    row, column + cindex,
                                    data, format_)
 
         self.sheet._row = row + 1
 
     def _write_rows(self):
+        write = self.sheet.write
+        write_rich_string = self.sheet.write_rich_string
+
         if self.chain.annotations:
             cat_pos = ['header_left', 'header_center', 'header_title']
             self._write_annotations(cat_pos)
@@ -848,15 +853,14 @@ class _Box(object):
         levels = self.index.get_level_values
 
         if self.chain._is_mask_item:
-            self.sheet.write(self.sheet._row, column,
+            write(self.sheet._row, column,
                                    levels(0).unique().values[0],
-                                   self.excel._formats['mask_label'])
-            self._format_row(self.excel._formats['mask_label'])
+                                   self.formats['mask_label'])
+            self._format_row(self.formats['mask_label'])
         else:
-            self.sheet.write(self.sheet._row, column,
-                             levels(0).unique().values[0],
-                             self.excel._formats['label'])
-            self._format_row(self.excel._formats['label'])
+            write(self.sheet._row, column,
+                  levels(0).unique().values[0], self.formats['label'])
+            self._format_row(self.formats['label'])
         self.sheet._row += 1
 
         if self.notes:
@@ -932,8 +936,8 @@ class _Box(object):
 
             if rel_y and bg_from:
                 bg_format = self._format_x(bg_from, rel_x, rel_y, row_max,
-                                          bg_x_contents.get('dummy'), use_bg,
-                                          view_border, border_from)
+                                           bg_x_contents.get('dummy'), use_bg,
+                                           view_border, border_from)
                 format_['bg_color'] = bg_format.get('bg_color', '#FFFFFF')
 
             cell_data = self._cell(data, **x_contents)
@@ -957,15 +961,14 @@ class _Box(object):
                                                   use_bg, view_border,
                                                   border_from,
                                                   **{'font_color': arrow_color})
-                self.sheet.write_rich_string(self.sheet._row + rel_x,
-                                             self.sheet._column + rel_y,
-                                             arrow_format, arrow_rep,
-                                             format_, ' ' + cell_data, format_)
+                write_rich_string(self.sheet._row + rel_x,
+                                  self.sheet._column + rel_y,
+                                  arrow_format, arrow_rep,
+                                  format_, ' ' + cell_data, format_)
             else:
-                self.sheet.write(self.sheet._row + rel_x,
-                                 self.sheet._column + rel_y,
-                                 cell_data,
-                                 format_)
+                write(self.sheet._row + rel_x,
+                      self.sheet._column + rel_y,
+                      cell_data, format_)
             nxt_x, nxt_y = flat.coords
             rel_x, rel_y = nxt_x, nxt_y
             if rel_y == 0:
@@ -979,18 +982,19 @@ class _Box(object):
             anno = getattr(self, name)
             if anno:
                 self.sheet.write(self.sheet._row, self.sheet._column,
-                                 anno[0], self.excel._formats[name])
-                self._format_row(self.excel._formats[name])
+                                 anno[0], self.formats[name])
+                self._format_row(self.formats[name])
                 self.sheet._set_row(self.sheet._row)
                 self.sheet._row += 1
 
     def _format_row(self, format_):
+        value = ''
+        write = self.sheet.write
+        row = self.sheet._row
+        column = self.sheet._column
         for rel_y in xrange(1, self.values.shape[1] + 1):
-            self.sheet.write(self.sheet._row,
-                             self.sheet._column + rel_y, '',
-                             format_)
+            write(row, column + rel_y, value, format_)
 
-    @lru_cache()
     def _alternate_bg(self, name, bg):
         freq_view_group = self.excel.views_groups.get(name, '') == 'freq'
         is_freq_test = any(_ in name
@@ -1002,7 +1006,6 @@ class _Box(object):
             return not bg, bg
         return self.sheet.alternate_bg, True
 
-    @lru_cache()
     def _row_format_name(self, **contents):
         if contents.get('block_type'):
             if contents['is_propstest']:
@@ -1082,7 +1085,6 @@ class _Box(object):
         elif contents['is_percentile']:
             return contents['stat']
 
-    @lru_cache()
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border,
                   border_from, **kwargs):
         if rel_y == 0:
@@ -1094,7 +1096,7 @@ class _Box(object):
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
-        format_ = self.excel._formats[format_name]
+        format_ = self.formats[format_name]
         if kwargs:
             for key, value in kwargs.iteritems():
                 format_[key] = value
@@ -1120,6 +1122,7 @@ class _Box(object):
         group = ''
         dummy = True
         dummy_idx = []
+        append = dummy_idx.append
         while True:
             try:
                 ndx, next_ = next(it)
@@ -1132,14 +1135,14 @@ class _Box(object):
                     if group and self._is('test', **self.contents[idx]):
                         dummy = False
                     if group and dummy:
-                        dummy_idx.append(ndx + len(dummy_idx))
+                        append(ndx + len(dummy_idx))
                     if not self._is('base', **self.contents[idx]):
                         group = next_
                     dummy = True
                 idx, data = ndx, next_
             except StopIteration:
                 if group and dummy:
-                    dummy_idx.append(ndx + len(dummy_idx) + 1)
+                    append(ndx + len(dummy_idx) + 1)
                 break
         dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]],
                              dtype=str)
@@ -1167,7 +1170,6 @@ class _Box(object):
 
         return index, values, contents
 
-    @lru_cache()
     def _cell(self, value, **contents):
         normalize, vtype, nan_rep = self._cell_args(**contents)
         return _Cell(value, normalize,
@@ -1194,7 +1196,6 @@ class _Box(object):
         return pct, vtype, nan_rep
 
     @staticmethod
-    @lru_cache()
     def _is(name, **contents):
         return any(name in _ for _ in list(filter(contents.get, contents)))
 
@@ -1213,7 +1214,7 @@ class _Cell(object):
         except TypeError:
             pass
         if isinstance(self.data, basestring):
-            return re.sub(r'#pad-\d+', str(), self.data)
+            return rsub(r'#pad-\d+', str(), self.data)
         if self.normalize:
             if self.decimals is not None:
                 if isinstance(self.data, (float, np.float64)):
@@ -1223,3 +1224,4 @@ class _Cell(object):
             if isinstance(self.data, (float, np.float64)):
                 return round(self.data, self.decimals)
         return self.data
+
