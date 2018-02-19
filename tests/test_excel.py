@@ -217,7 +217,7 @@ class Chain_Manager:
                      folder='mean_1')
 
         _complex.add(stack[DATA_KEY].data.loc[:, p.OPENS_COMPLEX],
-                     meta_from=(DATA_KEY, FILTER_KEY),
+                     meta_from=DATA_KEY,
                      name='Open Ends')
 
         _complex.paint_all(transform_tests='full')
