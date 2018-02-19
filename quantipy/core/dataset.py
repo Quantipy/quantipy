@@ -5365,9 +5365,9 @@ class DataSet(object):
         return None
 
     @verify(variables={'name': 'both'})
-    def set_factors(self, name, factormap):
+    def set_factors(self, name, factormap, safe=False):
         """
-        Apply numerical factors to ``single``-type categorical variables.
+        Apply numerical factors to (``single``-type categorical) variables.
 
         Factors can be read while aggregating descrp. stat. ``qp.Views``.
 
@@ -5378,6 +5378,9 @@ class DataSet(object):
             ``_meta['masks']``.
         factormap : dict
             A mapping of ``{value: factor}`` (``int`` to ``int``).
+        safe : bool, default False
+            Set to ``True`` to prevent setting factors to the ``values`` meta
+            data of non-``single`` type variables.
 
         Returns
         -------
@@ -5391,8 +5394,11 @@ class DataSet(object):
             if self._get_type(name) != 'single':
                 e = True
         if e:
-            err = "Can only set factors to 'single' type categorical variables!"
-            raise TypeError(err)
+            if safe:
+                err = "Can only set factors to 'single' type categorical variables!"
+                raise TypeError(err)
+            else:
+                return None
         vals = self.codes(name)
         facts = factormap.keys()
         val_loc = self._get_value_loc(name)
