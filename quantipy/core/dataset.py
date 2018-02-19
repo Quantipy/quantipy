@@ -5345,6 +5345,26 @@ class DataSet(object):
         return None
 
     @verify(variables={'name': 'both'})
+    def clean_factors(self, name):
+        """
+        Remove all factors set in the variable's ``'values'`` object.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        None
+        """
+        val_loc = self._get_value_loc(name)
+        for value in value_loc:
+            value['factor'] = None
+        return None
+
+    @verify(variables={'name': 'both'})
     def set_factors(self, name, factormap):
         """
         Apply numerical factors to ``single``-type categorical variables.
