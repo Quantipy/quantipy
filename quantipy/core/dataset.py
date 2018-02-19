@@ -66,7 +66,8 @@ class DataSet(object):
         self._verbose_errors = True
         self._verbose_infos = True
         self._cache = Cache()
-        self.set_dim_comp(dimensions_comp)
+        self._dimensions_comp = dimensions_comp
+        self._dimensions_suffix = '_grid'
         return None
 
     def __contains__(self, name):
@@ -197,9 +198,16 @@ class DataSet(object):
         return None
 
     def set_dim_comp(self, dimensions_comp):
-        if dimensions_comp is True:
-            dimensions_comp = '_grid'
         self._dimensions_comp = dimensions_comp
+        self._meta['info']['dimensions_comp'] = dimensions_comp
+        return None
+
+    def set_dim_suffix(self, suffix=None):
+        if not suffix:
+            suffix = self._meta['info'].get('dimensions_suffix', self._dimensions_suffix)
+        if not suffix == self._dimensions_suffix:
+            self._dimensions_suffix = suffix
+        self._meta['info']['dimensions_suffix'] = suffix
         return None
 
     @classmethod
@@ -420,12 +428,11 @@ class DataSet(object):
                 print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
         if not self._dimensions_comp == 'ignore':
+            d_comp = self._dimensions_comp
+            self._meta['info']['dimensions_comp'] = d_comp
+            self.set_dim_suffix()
             self.undimensionize()
-            dim_comp = self._meta['info'].get('dimensions_comp')
-            if dim_comp is not None: self._dimensions_comp = dim_comp
-            self._meta['info']['dimensions_comp'] = self._dimensions_comp
-            if self._dimensions_comp:
-               self.dimensionize()
+        if d_comp is True: self.dimensionize()
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -452,10 +459,12 @@ class DataSet(object):
         if path_data.endswith('.ddf'): path_data = path_data.replace('.ddf', '')
         self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
-        self.undimensionize()
-        self._meta['info']['dimensions_comp'] = self._dimensions_comp
-        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
-            self.dimensionize()
+        if not self._dimensions_comp == 'ignore':
+            d_comp = self._dimensions_comp
+            self._meta['info']['dimensions_comp'] = d_comp
+            self.set_dim_suffix()
+            self.undimensionize()
+        if d_comp is True: self.dimensionize()
         return None
 
     @verify(text_keys='text_key')
@@ -767,8 +776,7 @@ class DataSet(object):
                 self.text_key = None
         self.set_verbose_infomsg(False)
         self._set_file_info('', reset=reset)
-        dimensions_comp = self._meta['info'].get('dimensions_comp', False)
-        self.set_dim_comp(dimensions_comp)
+        self.set_dim_suffix()
         return None
 
     def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
@@ -1002,12 +1010,8 @@ class DataSet(object):
                      'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
         file_name = '{}{}'.format(self.path, self.name)
-        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
-            d_mode = True
-        else:
-            d_mode = self._dimensions_comp
         print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1, d_mode)
+                               len(self._data.columns)-1, self._dimensions_comp)
         return None
 
     # ------------------------------------------------------------------------
@@ -1606,7 +1610,7 @@ class DataSet(object):
     def _dims_compat_arr_name(self, arr_name):
         arr_name = self._dims_free_arr_name(arr_name)
         if self._dimensions_comp and not self._dimensions_comp == 'ignore':
-            return '{}.{}{}'.format(arr_name, arr_name, self._dimensions_comp)
+            return '{}.{}{}'.format(arr_name, arr_name, self._dimensions_suffix)
         else:
             return arr_name
 
@@ -4378,12 +4382,7 @@ class DataSet(object):
         """
         masks = self._meta['masks']
         columns = self._meta['columns']
-
-        dim_comp = self._dimensions_comp
-        if isinstance(dim_comp, bool) or not dim_comp == 'ignore':
-            suffix = '_grid'
-        else:
-            suffix = dim_comp
+        suffix = self._dimensions_suffix
 
         mapper = {}
         if not names:
@@ -4473,8 +4472,11 @@ class DataSet(object):
         """
         Rename the dataset columns for Dimensions compatibility.
         """
+        if not names and self._dimensions_comp:
+            raise ValueError('File is already dimensionized.')
         mapper = self.dimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
+        if not names: self.set_dim_comp(True)
 
     @modify(to_list='names')
     @verify(variables={'names': 'both'})
@@ -4485,6 +4487,7 @@ class DataSet(object):
         mapper = self.undimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
         if mapper_to_meta: self._meta['sets']['rename_mapper'] = mapper
+        if not names: self.set_dim_comp(False)
 
     # value manipulation
     # ------------------------------------------------------------------------
