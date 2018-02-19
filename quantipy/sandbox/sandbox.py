@@ -264,6 +264,108 @@ class ChainManager(object):
     def _dupes_in_chainref(chain_refs):
         return len(set(chain_refs)) != len(chain_refs)
 
+    def _check_equality(self, other, return_diffs=True):
+        """
+        """
+        chains1 = self.chains
+        chains2 = other.chains
+        diffs = {}
+        if not len(chains1) == len(chains2):
+            return False
+        else:
+            paired = zip(chains1, chains2)
+            for c1, c2 in paired:
+                atts1 = c1.__dict__
+                atts2 = c2.__dict__
+                for att in atts1.keys():
+                    if isinstance(atts1[att], (pd.DataFrame, pd.Index)):
+                        if not atts1[att].equals(atts2[att]):
+                            diffs[att] = [atts1[att], atts2[att]]
+                    else:
+                        if atts1[att] != atts2[att]:
+                            diffs[att] = [atts1[att], atts2[att]]
+            return diffs if return_diffs else not diffs
+
+    def _test_same_structure(self, other):
+        """
+        """
+        folders1 = self.folders
+        singles1 = self.singles
+        folders2 = other.folders
+        singles2 = other.singles
+        if (folders1 != folders2 or singles1 != singles2):
+            return False
+        else:
+            return True
+
+    def equals(self, other):
+        """
+        Test equality of self to another ``ChainManager`` object instance.
+
+        .. note::
+            Only the flattened list of ``Chain`` objects stored are tested, i.e.
+            any folder structure differences are ignored. Use ``compare()`` for
+            a more detailed comparison.
+
+        Parameters
+        ----------
+        other : ``qp.ChainManager``
+            Another ``ChainManager`` object to compare.
+
+        Returns
+        -------
+        equality : bool
+        """
+        return self._check_equality(other, False)
+
+    def compare(self, other, strict=True, full_summary=True):
+        """
+        Compare structure and content of self to another ``ChainManager`` instance.
+
+        Parameters
+        ----------
+        other : ``qp.ChainManager``
+            Another ``ChainManager`` object to compare.
+        strict : bool, default True
+            Test if the structure of folders vs. single Chain objects is the
+            same in both ChainManager instances.
+        full_summary : bool, default True
+            ``False`` will disable the detailed comparison ``pd.DataFrame``
+            that informs about differences between the objects.
+
+        Returns
+        -------
+        result : str
+            A brief feedback message about the comparison results.
+        """
+        diffs = []
+        if strict:
+            same_structure = self._test_same_structure(other)
+            if not same_structure:
+                diffs.append('s')
+        check = self._check_equality(other)
+        if isinstance(check, bool):
+            diffs.append('l')
+        else:
+            if check: diffs.append('c')
+        report_full = ['_frame', '_x_keys', '_y_keys', 'index', '_columns',
+                       'base_descriptions', 'annotations']
+        diffs_in = ''
+        if diffs:
+            if 'l' in diffs:
+                diffs_in += '\n  -Length (number of stored Chain objects)'
+            if 's' in diffs:
+                diffs_in += '\n  -Structure (folders and/or single Chain order)'
+            if 'c' in diffs:
+                diffs_in += '\n  -Chain elements (properties and content of Chain objects)'
+        if diffs_in:
+            result = 'ChainManagers are not identical:\n'
+            result += '--------------------------------' + diffs_in
+        else:
+            result = 'ChainManagers are identical.'
+        print result
+        return None
+
     def save(self, path, keep_stack=False):
         """
         """
@@ -282,7 +384,6 @@ class ChainManager(object):
         obj = cPickle.load(f)
         f.close()
         return obj
-
 
     def merge(self, folders, new_name=None, drop=True):
         """
@@ -1258,7 +1359,7 @@ class ChainManager(object):
                     c.paint(*args, **kwargs)
             else:
                 chain.paint(*args, **kwargs)
-        return self
+        return None
 
 
 HEADERS = ['header-title',
