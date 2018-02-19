@@ -2370,7 +2370,8 @@ class Stack(defaultdict):
                    'drop': drop, 'exclude': exclude,
                    'axis': 'x',
                    'text': '' if not custom_text else custom_text}
-
+        for v in on_vars:
+            dataset.set_factors(v, rescale)
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
             if not _batches: return None
