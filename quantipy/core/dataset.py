@@ -506,7 +506,7 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         return None
-     
+
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
                          date_format="DMY", run=True, clean_up=True):
@@ -5326,7 +5326,7 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text', 'created', 'recoded_net']
+        valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
