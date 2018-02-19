@@ -2286,6 +2286,7 @@ class Stack(defaultdict):
         rescale = options[0]
         drop = options[1]
         exclude = options[2]
+        dataset.clear_factors(var)
         all_codes = dataset.codes(var)
         if rescale:
             fm = rescale

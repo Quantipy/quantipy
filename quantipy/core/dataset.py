@@ -5344,8 +5344,9 @@ class DataSet(object):
             self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
 
+    @staticmethod
     @verify(variables={'name': 'both'})
-    def clean_factors(self, name):
+    def clear_factors(self, name):
         """
         Remove all factors set in the variable's ``'values'`` object.
 
