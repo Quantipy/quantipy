@@ -13,8 +13,6 @@ from quantipy.core.view_generators.view_specs import ViewManager
 
 import parameters_excel as p
 
-qp.OPTIONS['new_chains'] = True
-
 # -----------------------------------------------------------------------------
 PATH_DATA  = './tests/'
 NAME_PROJ  = 'Example Data (A)'
