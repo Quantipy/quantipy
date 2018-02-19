@@ -2283,6 +2283,8 @@ class Stack(defaultdict):
 
     @staticmethod
     def _add_factor_meta(dataset, var, options):
+        if not dataset._has_categorical_data(var):
+            return None
         rescale = options[0]
         drop = options[1]
         exclude = options[2]
