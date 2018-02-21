@@ -1949,10 +1949,11 @@ class DataSet(object):
         Update value meta for array items. Workaround for badly converted meta.
         """
         for m in self.masks():
-            lib_vals = 'lib@values@{}'.format(m)
-            self._meta['masks'][m]['values'] = lib_vals
-            for s in self.sources(m):
-                self._meta['columns'][s]['values'] = lib_vals
+            if self._has_categorical_data(m):
+                lib_vals = 'lib@values@{}'.format(m)
+                self._meta['masks'][m]['values'] = lib_vals
+                for s in self.sources(m):
+                    self._meta['columns'][s]['values'] = lib_vals
         return None
 
     def _clean_datafile_set(self):
