@@ -2132,11 +2132,12 @@ class Stack(defaultdict):
                     to_array_set = dataset._meta['sets']['to_array']
                     parent = dataset.parents(var)[0].split('@')[-1]
                     arr_name = dataset._dims_free_arr_name(parent) + suf
+                    no = dataset.item_no(var)
                     if not arr_name in to_array_set:
-                        to_array_set[arr_name] = [parent, [name]]
+                        to_array_set[arr_name] = [parent, [name], [no]]
                     else:
                         to_array_set[arr_name][1].append(name)
-
+                        to_array_set[arr_name][2].append(no)
 
                 mapper = []
                 if recode == 'extend_codes':
@@ -2245,11 +2246,23 @@ class Stack(defaultdict):
 
         if recode and 'to_array' in ds._meta['sets']:
             for arr_name, arr_items in ds._meta['sets']['to_array'].items():
-                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]))
-                msg = "Array {} built from recoded view variables!"
                 dims_name = ds._dims_compat_arr_name(arr_name)
+                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]))
+                sorter = list(enumerate(arr_items[2], start=1))
+                sorter.sort(key = lambda x: x[1])
+                sorter = [s[0] for s in sorter]
+                ds.reorder_items(dims_name, sorter)
+                msg = "Array {} built from recoded view variables!"
                 prop = ds._meta['masks'][dims_name]['properties']
                 prop['recoded_net'] = arr_items[0]
+                if 'properties' in ds._meta['masks'][arr_items[0]]:
+                    for p, v in ds._meta['masks'][arr_items[0]]['properties'].items():
+                        prop[p] = v
+                org_items = ds.sources(arr_items[0])
+                new_items = ds.sources(dims_name)
+                for org, new in zip(org_items, new_items):
+                    for p, v in ds._meta['columns'][org]['properties'].items():
+                        ds._meta['columns'][new]['properties'][p] = v
                 if verbose: print msg.format(dims_name)
             del ds._meta['sets']['to_array']
 
