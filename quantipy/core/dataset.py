@@ -886,17 +886,18 @@ class DataSet(object):
             filters = []
             for add_batch in add_batches:
                 if all_batches[add_batch]['filter'] != 'no_filter':
-                    filters.append(all_batches[add_batch]['filter'])
+                    filters.append((add_batch, all_batches[add_batch]['filter']))
             if not filters: return None
             cats = [(1, 'active')]
             fnames = []
             for no, f in enumerate(filters, start=1):
                 fname = 'filter_{}'.format(no)
                 fnames.append(fname)
-                flogic = f.values()[0]
-                flabel = f.keys()[0]
+                source = f[0]
+                flogic = f[1].values()[0]
+                flabel = f[1].keys()[0]
                 ds.add_meta(fname, 'single', flabel, cats)
-                ds._meta['columns'][fname]['properties']['recoded_filter'] = batch_name
+                ds._meta['columns'][fname]['properties']['recoded_filter'] = source
                 ds[ds.take(flogic), fname] = 1
             return fnames
 
