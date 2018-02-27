@@ -824,7 +824,7 @@ class DataSet(object):
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def from_batch(self, batch_name, include='identity', text_key=[],
-                   apply_edits=True, additions=True):
+                   apply_edits=True, additions='variables'):
         """
         Get a filtered subset of the DataSet using qp.Batch definitions.
 
@@ -840,10 +840,11 @@ class DataSet(object):
         apply_edits: bool, default True
             meta_edits and rules are used as/ applied on global meta of the
             new DataSet instance.
-        additions: bool, default True
+        additions: {'variables', 'filters', 'full', None}
             Extend included variables by the xks, yks and open ends of the
-            additional batches. Filters/ meta edits are ignored (/ taken from
-            the main Batch).
+            additional batches if set to 'variables', 'filters' will create
+            new 1/0-coded variables that reflect any filters defined. Selecting
+            'full' will do both, ``None`` will ignore additional Batches completely.
 
         Returns
         -------
@@ -888,6 +889,28 @@ class DataSet(object):
                                 ds._meta['columns'][name].pop('rules')
                         return None
 
+        def _manifest_filters(ds, batch_name):
+            all_batches = ds._meta['sets']['batches']
+            add_batches = ds._meta['sets']['batches'][batch_name]['additions']
+            if not adds: return None
+            filters = []
+            for add_batch in add_batches:
+                if all_batches[add_batch]['filter'] != 'no_filter':
+                    filters.append((add_batch, all_batches[add_batch]['filter']))
+            if not filters: return None
+            cats = [(1, 'active')]
+            fnames = []
+            for no, f in enumerate(filters, start=1):
+                fname = 'filter_{}'.format(no)
+                fnames.append(fname)
+                source = f[0]
+                flogic = f[1].values()[0]
+                flabel = f[1].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats)
+                ds._meta['columns'][fname]['properties']['recoded_filter'] = source
+                ds[ds.take(flogic), fname] = 1
+            return fnames
+
         batches = self._meta['sets'].get('batches', {})
         if not batch_name in batches:
             msg = 'No Batch named "{}" is included in DataSet.'
@@ -905,16 +928,22 @@ class DataSet(object):
             b_ds = self.filter(batch_name, batch['filter'].values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
-        if additions:
+        if additions in ['full', 'variables']:
             adds = batch['additions']
         else:
             adds = []
+        if additions in ['full', 'filters']:
+            filter_vars = _manifest_filters(b_ds, batch_name)
+        else:
+            filter_vars = []
+
         variables = include
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
+        if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
@@ -5422,7 +5451,8 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat']
+        valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
+                       'recoded_filter']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False

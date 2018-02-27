@@ -549,7 +549,7 @@ class Batch(qp.DataSet):
         """
         if not (filter_name in self.filter_names or self.filter == 'no_filter'):
             old_name = self.filter.keys()[0]
-            n_filter = old_name + filter_name
+            n_filter = old_name + ' - ' + filter_name
             n_logic  = intersection([self.filter.values()[0], filter_logic])
             self.filter = {n_filter: n_logic}
             self.filter_names.remove(old_name)
