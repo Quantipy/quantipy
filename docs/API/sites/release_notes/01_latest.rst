@@ -50,8 +50,8 @@ The ``additions`` parameter has been updated to also be able to create recoded
 variables from existing "additional" Batches that are attached to a parent one.
 Filter variables will get the new meta ``'properties'`` tag ``'recoded_filter'``
 and only have one category (``1``, ``'active'``). They are named simply
-``'filter_1'``, ``'filter_2'`` and so on. The new possible parameters of the
-method are now:
+``'filter_1'``, ``'filter_2'`` and so on. The new possible values of the
+parameters are now:
 
 	* ``None``: ``as_addition()``-Batches are not considered.
 	* ``'variables'``: Only cross- and downbreak variables are considered.
