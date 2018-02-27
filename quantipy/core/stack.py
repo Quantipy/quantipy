@@ -359,7 +359,7 @@ class Stack(defaultdict):
         else:
             def _get_chain(name=None, data_keys=None, filters=None, x=None, y=None,
                            views=None, orient_on=None, select=None,
-                           rules=False, rules_weight=None):
+                           rules=False, rules_weight=None, described=None):
                 """
                 Construct a "chain" shaped subset of Links and their Views from the Stack.
 
@@ -403,8 +403,8 @@ class Stack(defaultdict):
                         orientation = 'x'
                 else:
                     orientation = orient_on
-
-                described = self.describe()
+                if described is None:
+                    described = self.describe()
 
                 if isinstance(rules, bool):
                     if rules:
@@ -448,7 +448,6 @@ class Stack(defaultdict):
 
                     if self.__has_list(data_keys):
                         for key in data_keys:
-
                             # Use describe method to get x keys if not supplied.
                             if x is None:
                                 x_keys = described['x'].drop_duplicates().values.tolist()
@@ -761,24 +760,24 @@ class Stack(defaultdict):
         for dk in data_keys:
             self._verify_key_exists(dk)
             for filter_def, logic in filters.items():
-                # if not filter_def in self[dk].keys():
-                if filter_def=='no_filter':
-                    self[dk][filter_def].data = self[dk].data
-                    self[dk][filter_def].meta = self[dk].meta
-                else:
-                    if not qplogic_filter:
-                        try:
-                            self[dk][filter_def].data = self[dk].data.query(logic)
-                            self[dk][filter_def].meta = self[dk].meta
-                        except Exception, ex:
-                            raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
-                            continue
+                if not filter_def in self[dk].keys():
+                    if filter_def=='no_filter':
+                        self[dk][filter_def].data = self[dk].data
+                        self[dk][filter_def].meta = self[dk].meta
                     else:
-                        dataset = qp.DataSet('stack')
-                        dataset.from_components(self[dk].data, self[dk].meta)
-                        f_dataset = dataset.filter(filter_def, logic, inplace=False)
-                        self[dk][filter_def].data = f_dataset._data
-                        self[dk][filter_def].meta = f_dataset._meta
+                        if not qplogic_filter:
+                            try:
+                                self[dk][filter_def].data = self[dk].data.query(logic)
+                                self[dk][filter_def].meta = self[dk].meta
+                            except Exception, ex:
+                                raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
+                                continue
+                        else:
+                            dataset = qp.DataSet('stack')
+                            dataset.from_components(self[dk].data, self[dk].meta)
+                            f_dataset = dataset.filter(filter_def, logic, inplace=False)
+                            self[dk][filter_def].data = f_dataset._data
+                            self[dk][filter_def].meta = f_dataset._meta
 
                 fdata = self[dk][filter_def].data
                 if len(fdata) == 0:
