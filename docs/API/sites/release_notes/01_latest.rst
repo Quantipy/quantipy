@@ -27,6 +27,38 @@ not calculated from scratch anymore. Additionally the method has a new parameter
 needs to be calculated in each loop.
 
 """"
+**Update**: ``Stack.add_nets()`` (recoded ``Views``)
+
+Nets that are applied on array variables will now also create a new recoded
+array that reflects the net definitions if ``recoded`` is used. The
+method has been creating only the item versions before.
+
+""""
+
+**Update**: ``Stack.add_stats()``
+
+The method will now create a new metadata property called ``'factor'`` for each
+variable it is applied on. You can only have one factor assigned to one
+categorical value, so for multiple statistic definitions (exclusions, etc.)
+it will get overwritten.
+
+""""
+
+**Update**: ``DataSet.from_batch()`` (``additions`` parameter)
+
+The ``additions`` parameter has been updated to also be able to create recoded
+variables from existing "additional" Batches that are attached to a parent one.
+Filter variables will get the new meta ``'properties'`` tag ``'recoded_filter'``
+and only have one category (``1``, ``'active'``). They are named simply
+ ``'filter_1'``, ``'filter_2'`` and so on. The new possible parameters of the
+ method are now:
+
+	* ``None``: ``as_addition()``-Batches are not considered.
+	* ``'variables'``: Only cross- and downbreak variables are considered.
+	* ``'filters'``: Only filters are recoded.
+	* ``'full'``: ``'variables'`` + ``'filters'``
+
+""""
 
 **Bugfix**: ``ViewManager._request_views()``
 
