@@ -471,7 +471,9 @@ class ViewManager(object):
             psrps = ps[:] + rps[:]
             cpsrps = cs[:] + ps [:] + rps[:]
             csc = ['x|f.c:f|x++:||%s|counts_cumsum' % (weight)]
+            csc = csc if csc[0] in all_views else []
             psc = ['x|f.c:f|x++:|y|%s|c%%_cumsum' % (weight)]
+            psc = psc if psc[0] in all_views else []
             cpsc = csc[:] + psc[:]
         else:
             cs = []
@@ -530,9 +532,19 @@ class ViewManager(object):
                 crps.extend(props_test_views)
                 psrps.extend(props_test_views)
                 cpsrps.extend(props_test_views)
-                csc.extend(props_test_views)
-                psc.extend(props_test_views)
-                cpsc.extend(props_test_views)
+
+                props_test_views_cumsum = [
+                    v for v in all_views
+                    if 't.props.{}{}'.format(
+                        mimic,
+                        level
+                    ) in v
+                    and v.split('|')[2]=='x++:'
+                    and v.split('|')[4]==weight
+                ]
+                csc.extend(props_test_views_cumsum)
+                psc.extend(props_test_views_cumsum)
+                cpsc.extend(props_test_views_cumsum)
 
         # Net views
         if nets:
