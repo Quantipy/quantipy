@@ -2277,7 +2277,7 @@ class Stack(defaultdict):
 
             if recode and any(rec in recode
                               for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
-                ds = qp.DataSet(dk)
+                ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
@@ -2477,7 +2477,7 @@ class Stack(defaultdict):
                 else:
                     check_on = list(set(check_on + [v]))
 
-            ds = qp.DataSet(dk)
+            ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
             ds.from_stack(self, dk)
 
             self._add_factor_meta(ds, v, (rescale, drop, exclude))
@@ -2493,7 +2493,7 @@ class Stack(defaultdict):
             if recode:
                 if other_source:
                     raise ValueError('Cannot recode if other_source is provided.')
-                ds = qp.DataSet(dk)
+                ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_stat_def(ds, on_vars, rescale, drop, exclude, verbose)
