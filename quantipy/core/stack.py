@@ -2159,6 +2159,9 @@ class Stack(defaultdict):
                 if not dataset._meta['columns'][name].get('properties'):
                     dataset._meta['columns'][name]['properties'] = {}
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
+                if 'properties' in dataset._meta['columns'][var]:
+                    for pname, props in dataset._meta['columns'][var]['properties'].items():
+                        dataset._meta['columns'][name]['properties'][pname] = props
                 if verbose:
                     print 'Created: {}'. format(name)
                 if 'collect_codes' in recode:
