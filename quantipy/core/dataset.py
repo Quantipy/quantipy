@@ -2574,6 +2574,8 @@ class DataSet(object):
         """
         if ignore_arrays and not isinstance(ignore_arrays, list):
             ignore_arrays = [ignore_arrays]
+        else:
+            ignore_arrays = []
         arrays_defs = {arr_name: self.sources(arr_name)
                for arr_name in self.masks() if not arr_name in ignore_arrays}
         item_map = {}
