@@ -2566,7 +2566,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     @modify(to_list=['varlist'])
     @verify(variables={'varlist': 'both'})
-    def roll_up(self, varlist):
+    def roll_up(self, varlist, ignore_arrays=None):
         """
         Replace any array items with theor parent mask variable definition name.
 
@@ -2574,14 +2574,18 @@ class DataSet(object):
         ----------
         varlist : list
            A list of meta ``'columns'`` and/or ``'masks'`` names.
-
+        ignore_arrays : (list of) str
+            A list of array mask names that should not be rolled up if their
+            items are found inside ``varlist``.
         Returns
         -------
         rolled_up : list
             The modified ``varlist``.
         """
+        if ignore_arrays and not isinstance(ignore_arrays, list):
+            ignore_arrays = [ignore_arrays]
         arrays_defs = {arr_name: self.sources(arr_name)
-               for arr_name in self.masks()}
+               for arr_name in self.masks() if not arr_name in ignore_arrays}
         item_map = {}
         for k, v in arrays_defs.items():
             for item in v:
