@@ -760,24 +760,24 @@ class Stack(defaultdict):
         for dk in data_keys:
             self._verify_key_exists(dk)
             for filter_def, logic in filters.items():
-                if not filter_def in self[dk].keys():
-                    if filter_def=='no_filter':
-                        self[dk][filter_def].data = self[dk].data
-                        self[dk][filter_def].meta = self[dk].meta
+                # if not filter_def in self[dk].keys():
+                if filter_def=='no_filter':
+                    self[dk][filter_def].data = self[dk].data
+                    self[dk][filter_def].meta = self[dk].meta
+                else:
+                    if not qplogic_filter:
+                        try:
+                            self[dk][filter_def].data = self[dk].data.query(logic)
+                            self[dk][filter_def].meta = self[dk].meta
+                        except Exception, ex:
+                            raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
+                            continue
                     else:
-                        if not qplogic_filter:
-                            try:
-                                self[dk][filter_def].data = self[dk].data.query(logic)
-                                self[dk][filter_def].meta = self[dk].meta
-                            except Exception, ex:
-                                raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
-                                continue
-                        else:
-                            dataset = qp.DataSet('stack')
-                            dataset.from_components(self[dk].data, self[dk].meta)
-                            f_dataset = dataset.filter(filter_def, logic, inplace=False)
-                            self[dk][filter_def].data = f_dataset._data
-                            self[dk][filter_def].meta = f_dataset._meta
+                        dataset = qp.DataSet('stack')
+                        dataset.from_components(self[dk].data, self[dk].meta)
+                        f_dataset = dataset.filter(filter_def, logic, inplace=False)
+                        self[dk][filter_def].data = f_dataset._data
+                        self[dk][filter_def].meta = f_dataset._meta
 
                 fdata = self[dk][filter_def].data
                 if len(fdata) == 0:
