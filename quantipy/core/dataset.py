@@ -2558,7 +2558,7 @@ class DataSet(object):
     @verify(variables={'varlist': 'both'})
     def roll_up(self, varlist, ignore_arrays=None):
         """
-        Replace any array items with theor parent mask variable definition name.
+        Replace any array items with their parent mask variable definition name.
 
         Parameters
         ----------
@@ -2572,23 +2572,25 @@ class DataSet(object):
         rolled_up : list
             The modified ``varlist``.
         """
-        if ignore_arrays and not isinstance(ignore_arrays, list):
-            ignore_arrays = [ignore_arrays]
+        if ignore_arrays:
+            if not isinstance(ignore_arrays, list):
+                ignore_arrays = [ignore_arrays]
         else:
             ignore_arrays = []
-        arrays_defs = {arr_name: self.sources(arr_name)
-               for arr_name in self.masks() if not arr_name in ignore_arrays}
+        arrays_defs = {arr: self.sources(arr) for arr in self.masks()
+                       if not arr in ignore_arrays}
         item_map = {}
         for k, v in arrays_defs.items():
             for item in v:
                 item_map[item] = k
         rolled_up = []
         for v in varlist:
-            if v in item_map:
-                if not item_map[v] in rolled_up:
-                    rolled_up.append(item_map[v])
-            else:
-                rolled_up.append(v)
+            if not self.is_array(v):
+                if v in item_map:
+                    if not item_map[v] in rolled_up:
+                        rolled_up.append(item_map[v])
+                else:
+                    rolled_up.append(v)
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
