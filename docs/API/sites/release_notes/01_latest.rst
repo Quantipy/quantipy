@@ -2,10 +2,15 @@
 	:maxdepth: 5
 	:includehidden:
 
-===================
+================
 Upcoming (March)
-===================
+================
 
+**Update**: ``Stack.add_stats(..., factor_labels=True, ...)``
+
+The parameter ``factor_labels`` is now also able to take the string ``()``,
+then factors are written in the normal brackets next to the label (instead
+of ``[]``).
 
 ===================
 Latest (27/02/2018)
