@@ -2323,11 +2323,14 @@ class Stack(defaultdict):
         return None
 
     @staticmethod
-    def _factor_labs(values, rescale, drop, exclude, axis=['x']):
+    def _factor_labs(values, rescale, drop, exclude, axis=['x'], factor_labels=True):
         if not rescale: rescale = {}
         ignore = [v['value'] for v in values if v['value'] in exclude or
                   (not v['value'] in rescale.keys() and drop)]
-
+        if factor_labels == '()':
+            new_lab = '{} ({})'
+        else:
+            new_lab = '{} [{}]'
         factors_mapped = {}
         for v in values:
             if v['value'] in ignore: continue
@@ -2344,8 +2347,7 @@ class Stack(defaultdict):
                         t = v['text']['{} edits'.format(ax)][tk]
                     except:
                         t = text
-                    new_lab = '{} [{}]'.format(t, factor)
-                    v['text']['{} edits'.format(ax)][tk] = new_lab
+                    v['text']['{} edits'.format(ax)][tk] = new_lab.format(t, factor)
         return values
 
     @staticmethod
@@ -2398,9 +2400,9 @@ class Stack(defaultdict):
             ignored in the computation.
         exclude : list
             Codes/values to ignore in the computation.
-        factor_lables : bool, default True
-            If True, will write the (rescaled) factor values next to the
-            category text label.
+        factor_labels : bool / str, default True
+            Writes the (rescaled) factor values next to the category text label.
+            If True, square-brackets are used. If '()', normal brackets are used.
         custom_text : str, default None
             A custom string affix to put at the end of the requested statistics'
             names.
@@ -2518,21 +2520,23 @@ class Stack(defaultdict):
                             values = batch_me['lib'][p]
                             batch_me['lib'][p] = self._factor_labs(values, rescale,
                                                                    drop, exclude,
-                                                                   ['x', 'y'])
+                                                                   ['x', 'y'], factor_labels)
                         else:
                             batch_me[v]['values'] = self._factor_labs(values, rescale,
                                                                       drop, exclude,
-                                                                      ['x'])
+                                                                      ['x'], factor_labels)
                     if globally:
                         values = meta['columns'][v]['values']
                         if not isinstance(values, list):
                             p = values.split('@')[-1]
                             values = meta['lib']['values'][p]
                             meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
-                                                                         exclude, ['x', 'y'])
+                                                                         exclude, ['x', 'y'],
+                                                                         factor_labels)
                         else:
                             meta['columns'][v]['values'] = self._factor_labs(values, rescale,
-                                                                        drop, exclude, ['x'])
+                                                                        drop, exclude, ['x'],
+                                                                        factor_labels)
                     if isinstance(checking_cluster, ChainManager):
                         cm_meta = checking_cluster.stack['checks'].meta
                         values = cm_meta['columns'][v]['values']
@@ -2540,10 +2544,12 @@ class Stack(defaultdict):
                             p = values.split('@')[-1]
                             values = cm_meta['lib']['values'][p]
                             cm_meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
-                                                                            exclude, ['x', 'y'])
+                                                                            exclude, ['x', 'y'],
+                                                                            factor_labels)
                         else:
                             cm_meta['columns'][v]['values'] = self._factor_labs(values, rescale,
-                                                                                drop, exclude, ['x'])
+                                                                                drop, exclude, ['x'],
+                                                                                factor_labels)
             if checking_cluster and 'mean' in stats and check_on:
 
                 options['stats'] = 'mean'

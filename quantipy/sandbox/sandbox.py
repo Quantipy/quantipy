@@ -64,8 +64,9 @@ _AXES = ['x', 'y']
 
 class ChainManager(object):
 
-    def __init__(self, stack):
+    def __init__(self, stack, name=''):
         self.stack = stack
+        self.name = name
         self.__chains = []
         self.source = 'native'
 
@@ -369,7 +370,8 @@ class ChainManager(object):
         f.close()
         return None
 
-    def load(self, path):
+    @staticmethod
+    def load(path):
         """
         """
         f = open(path, 'rb')
