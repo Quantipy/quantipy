@@ -12,6 +12,9 @@ The parameter ``factor_labels`` is now also able to take the string ``'()'``,
 then factors are written in the normal brackets next to the label (instead
 of ``[]``).
 
+In the new version factor_labels are also just added if there are none included
+before, except new scales are used.
+
 ===================
 Latest (27/02/2018)
 ===================
