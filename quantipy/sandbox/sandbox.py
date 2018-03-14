@@ -1916,7 +1916,10 @@ class Chain(object):
 
     @staticmethod
     def _statname(parts):
-        return parts[1].split('.')[-1]
+        split = parts[1].split('.')
+        if len(split) > 1:
+            return split[1]
+        return split[-1]
 
     def _is_mean(self, parts):
         return self._statname(parts) == 'mean'

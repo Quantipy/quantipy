@@ -380,7 +380,7 @@ class Excel(Workbook):
                                                     (zero indexed)
             ``img_insert_y``        ``0``           Cell column to insert image
                                                     (zero indexed)
-            ``img_size``            ``[130,`` 130]  Resize image to [width, height]
+            ``img_size``            ``[130, 130]``  Resize image to [width, height]
             ``img_x_offset``        ``0``           Offset image by pixels - x axis
             ``img_y_offset``        ``0``           Offset image by pixels - y axis
             ``row_height_label``    ``12.75``       Row height for view rows

@@ -36,6 +36,14 @@ class _ExcelFormats(object):
     __slots__ = __default_attributes__ + ('_view_or_group', )
 
     def __init__(self, views_groups, **kwargs):
+        # update default for globals, e.g. "font_size"
+        for x in kwargs:
+            if x in _ATTRIBUTES:
+                for y in _DEFAULT_ATTRIBUTES:
+                    if y.startswith(x):
+                        _DEFAULT_ATTRIBUTES[y] = kwargs[x]
+
+        # set attributes
         for name in self.__default_attributes__:
             view_or_group = self._view_or_group(name, _VIEWS_GROUPS,
                                                 views_groups, kwargs)
