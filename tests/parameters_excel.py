@@ -1,5 +1,5 @@
 
-# BASIC 
+# BASIC
 # -----------------------------------------------------------------------------
 PATH_BASIC = './tests/basic.xlsx'
 XKEYS_BASIC = ('q2', 'q2b', 'q3', 'q4',
@@ -10,6 +10,28 @@ VIEWS_BASIC = ('cbase', 'counts')
 OPENS_BASIC = ('q8a', 'q9a')
 CELLS_BASIC = 'counts'
 WEIGHT_BASIC = None
+
+SHEET_PROPERTIES_BASIC = dict(alternate_bg=True)
+
+SHEET_PROPERTIES_EXCEL_BASIC = dict(dummy_tests         = True,
+                                    stat_0_rep          = '-',
+                                    column_width        = 10,
+                                    column_width_label  = 20,
+                                    column_width_frame  = 10,
+                                    alternate_bg        = False)
+
+FORMATS_BASIC = dict(view_border_freq        = None,
+                     view_border_net         = None,
+                     bold_u_base_text        = True,
+                     bold_base_text          = True,
+                     bold_label              = True,
+                     bold_y                  = True,
+                     font_size               = 8,
+                     font_color_u_base_text  = '#551A8B',
+                     font_color_u_base       = '#551A8B',
+                     font_color_base         = '#066B06',
+                     font_color_base_text    = '#066B06',
+                     bg_color_freq           = 'yellow')
 # -----------------------------------------------------------------------------
 
 # COMPLEX 1
@@ -76,7 +98,7 @@ VIEWS_COMPLEX_MAIN = ('x|f|x:|||cbase',
                       (
                           'x|f.c:f|x:||weight_a|counts_sum',
                           'x|f.c:f|x:|y|weight_a|c%_sum'
-                      )) 
+                      ))
 
 VIEWS_COMPLEX_WAVE = ('x|f|x:|||cbase',
                       'x|f|x:||weight_a|cbase',
@@ -151,6 +173,8 @@ VIEWS_COMPLEX_MEAN = ('x|f|x:|||cbase',
                       'x|d.sem|x:||weight_a|stat',
                       'x|d.lower_q|x:||weight_a|stat',
                       'x|d.upper_q|x:||weight_a|stat')
+
+SHEET_PROPERTIES_0 = dict(alternate_bg=True)
 
 SHEET_PROPERTIES_1 = dict(alternate_bg=True,
                           freq_0_rep=':',
@@ -853,7 +877,7 @@ FORMATS_3 = {'bold_y': True,
 annotations_spec = ((
                         'Main',
                         [(
-                             'Main. 1', 
+                             'Main. 1',
                              dict(font_size=8,
                                   font_color='yellow',
                                   bg_color='gray')

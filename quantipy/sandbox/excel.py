@@ -7,7 +7,6 @@ import cPickle as cp
 
 from excel_formats import ExcelFormats, _Format
 from excel_formats_constants import (_DEFAULTS,
-                                     _DEFAULT_ATTRIBUTES,
                                      _VIEWS_GROUPS)
 from difflib import SequenceMatcher
 from os.path import basename
@@ -71,7 +70,8 @@ class Excel(Workbook):
 
     def __init__(self, filename, toc=False, italicise_level=None,
                  details=False, in_memory=False, annotations=None,
-                 views_groups=None, decimals=None, image=None, **formats):
+                 views_groups=None, decimals=None, image=None,
+                 sheet_properties=None, **formats):
         """
         Parameters
         ----------
@@ -122,6 +122,8 @@ class Excel(Workbook):
                 img_size - ``list``, default [130, 130] (resize to [width, height])
                 img_x_offset - ``int``, default 0 (offset by pixels - x axis)
                 img_y_offset - ``int``, default 0 (offset by pixels - y axis)
+        sheet_properties : ``str``, default None
+            Optional arguments for sheet formatting, shown below with defaults.
         **formats : ``dict``
             see notes for more information on formats.
 
@@ -291,6 +293,7 @@ class Excel(Workbook):
         self._views_groups = views_groups
         self._decimals = decimals
         self._image = image
+        self._sheet_properties = sheet_properties
 
         self._formats = ExcelFormats(self.views_groups, **formats)
 
@@ -323,10 +326,17 @@ class Excel(Workbook):
         if self._image:
             image = Image.open(self._image['img_url'])
             image.thumbnail(self._image.get('img_size',
-                                            _SHEET_DEFAULTS['img_size']),
+                                            self.sheet_properties['img_size']),
                             Image.ANTIALIAS)
             image.save(basename(self._image['img_url']))
         return self._image
+
+    @lazy_property
+    def sheet_properties(self):
+        if self._sheet_properties:
+            return dict([(key, self._sheet_properties.get(key, value))
+                         for key, value in _SHEET_DEFAULTS.iteritems()])
+        return _SHEET_DEFAULTS
 
     def _get_annotations(self, annotations, sheet_name):
         error_messaage = ('"annotations" passed to Excel() must either be a '
@@ -358,7 +368,7 @@ class Excel(Workbook):
             Same as in the ``Excel`` constructor but for a can be used here to
             overwrite the global annotations.
         **kwargs : ``dict``
-            Optional arguments for sheet formatting, shown below with defaults:
+            Optional arguments for sheet formatting, shown below with defaults.
 
             Option                  Default     Definition
             ~~~~~~                  ~~~~~~~     ~~~~~~~~~~
@@ -448,8 +458,8 @@ class _Sheet(Worksheet):
         self.sheet_name = sheet_name
         self.annotations = annotations
 
-        for name in _SHEET_DEFAULTS:
-            value_or_default = kwargs.get(name, _SHEET_DEFAULTS[name])
+        for name in self.excel.sheet_properties:
+            value_or_default = kwargs.get(name, self.excel.sheet_properties[name])
             setattr(self, name, value_or_default)
 
         self._row = self.start_row
@@ -558,7 +568,7 @@ class _Sheet(Worksheet):
                 if cd is None:
                     cd = cds[0]
                 else:
-                    if cd <> cds[0]:
+                    if cd != cds[0]:
                         long_ = max((cd, cds[0]), key=len)
                         short = min((cd, cds[0]), key=len)
                         sm = SequenceMatcher(None, long_, short)
