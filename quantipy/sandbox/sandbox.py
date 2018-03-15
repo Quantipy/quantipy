@@ -68,7 +68,6 @@ class ChainManager(object):
         self.stack = stack
         self.__chains = []
         self.source = 'native'
-        self._annotations = {}
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -103,13 +102,6 @@ class ChainManager(object):
         else:
             raise StopIteration
     next = __next__
-
-    @property
-    def annotations(self):
-        if len(self._annotations) > 1:
-            return self._annotations
-        else:
-            return self._annotations[self._annotations.keys()[0]]
 
     @property
     def folders(self):
@@ -555,67 +547,6 @@ class ChainManager(object):
             else:
                 native_stat_names.append(val)
         return native_stat_names
-
-    def set_footer(self):
-        """
-        Add customized text information to a ``qp.Chain.annotations`` of self.
-
-        ``qp.Chain.annotations['footer']`` is being read during Build exports
-        and can be used to provide extra information on the aggregation results
-        or to provide context and structural information.
-
-        .. note:: A ``footer`` is placed below the ``Chain.dataframe``!
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-        """
-        pass
-
-    def set_header(self):
-        """
-        Add customized text information to a ``qp.Chain.annotations`` of self.
-
-        ``qp.Chain.annotations['header']`` is being read during Build exports
-        and can be used to provide extra information on the aggregation results
-        or to provide context and structural information.
-
-        .. note:: A ``header`` is placed right before the ``Chain.dataframe``!
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-        """
-        pass
-
-    def set_note(self):
-        """
-        Add customized text information to a ``qp.Chain.annotations`` of self.
-
-        ``qp.Chain.annotations['note']`` is being read during Build exports and
-        can be used to provide extra information on the aggregation results or
-        to provide context and structural information.
-
-        .. note:: A ``note`` is placed as the first row within the
-            ``Chain.dataframe``!
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-        """
-        pass
 
     def describe(self, by_folder=False):
         """
@@ -1215,7 +1146,6 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
-            self._annotations[x_key] = ChainAnnotations()
         return None
 
     def paint_all(self, *args, **kwargs):
@@ -1491,7 +1421,6 @@ class Chain(object):
         """Returns the total number of cells in the Chain.dataframe"""
         return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
 
-
     @lazy_property
     def _default_text(self):
         return self._meta['lib']['default text']
@@ -1597,6 +1526,38 @@ class Chain(object):
 
     @property
     def cell_items(self):
+        if self.views:
+            compl_views = [v for v in self.views if ']*:' in v]
+            if not compl_views:
+                c = any(v.split('|')[-1] == 'counts' for v in self.views)
+                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
+            else:
+                c = any(v.split('|')[3] == '' for v in compl_views)
+                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
+                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+            c_colpct = c and col_pct
+            c_rowpct = c and row_pct
+            c_colrow_pct = c_colpct and c_rowpct
+
+            single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
+            if single_ci:
+                if c:
+                    return 'counts'
+                elif col_pct:
+                    return 'colpct'
+                else:
+                    return 'rowpct'
+            else:
+                if c_colrow_pct:
+                    return 'counts_colpct_rowpct'
+                elif c_colpct:
+                    return 'counts_colpct'
+                else:
+                    return 'counts_rowpct'
+
+    @property
+    def _ci_simple(self):
         ci = []
         if self.views:
             for v in self.views:
@@ -1625,7 +1586,7 @@ class Chain(object):
 
     @property
     def ci_count(self):
-        return len(self.cell_items)
+        return len(self.cell_items.split('_'))
 
     @property
     def contents(self):
@@ -1653,7 +1614,7 @@ class Chain(object):
         lang = self._default_text if self._default_text == 'fr-FR' else 'en-GB'
         cd = CELL_DETAILS[lang]
         ci = self.cell_items
-        cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self.cell_items]))
+        cd_str = '%s (%s)' % (cd['cc'], ', '.join([cd[_] for _ in self._ci_simple]))
         against_total = False
         if self.sig_test_letters:
             mapped = ''
@@ -2263,13 +2224,15 @@ class Chain(object):
     def _concat_views(self, link, views, found=None):
         """ Concatenates the Views of a Chain.
         """
+        frames = []
 
         totals = [[_TOTAL]] * 2
 
         if found is None:
             found = OrderedDict()
 
-        frames = []
+        if self._text_map is None:
+            self._text_map = dict()
 
         for view in views:
             try:
@@ -2583,7 +2546,8 @@ class Chain(object):
 
     def paint(self, text_key=None, text_loc_x=None, text_loc_y=None, display=None,
               axes=None, view_level=False, transform_tests='cells',
-              add_base_texts='simple', totalize=False, sep=None, na_rep=None):
+              add_base_texts='simple', totalize=False, sep=None, na_rep=None,
+              transform_column_names=None, exclude_mask_text=False):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -2617,7 +2581,10 @@ class Chain(object):
             The seperator used for painting ``pandas.DataFrame`` columns
         na_rep : str, default None
             numpy.NaN will be replaced with na_rep if passed
-
+        transform_column_names : dict, default None
+            Transformed column_names are added to the labeltexts.
+        exclude_mask_text : bool, default False
+            Exclude mask text from mask-item texts.
         Returns
         -------
         None
@@ -2637,7 +2604,8 @@ class Chain(object):
                 display = _AXES
             if axes is None:
                 axes = _AXES
-            self._paint(text_keys, display, axes, add_base_texts)
+            self._paint(text_keys, display, axes, add_base_texts,
+                        transform_column_names, exclude_mask_text)
             # Re-build the full column index (labels + letter row)
             if self.sig_test_letters and transform_tests == 'full':
                 self._frame = self._apply_letter_header(self._frame)
@@ -2713,7 +2681,8 @@ class Chain(object):
 
         self.structure.rename(columns=column_mapper, inplace=True)
 
-    def _paint(self, text_keys, display, axes, bases):
+    def _paint(self, text_keys, display, axes, bases, transform_column_names,
+               exclude_mask_text):
         """ Paint the Chain.dataframe
         """
         indexes = []
@@ -2721,12 +2690,15 @@ class Chain(object):
         for axis in _AXES:
             index = self._index_switch(axis)
             if axis in axes:
-                index = self._paint_index(index, text_keys, display, axis, bases)
+                index = self._paint_index(index, text_keys, display, axis,
+                                          bases, transform_column_names,
+                                          exclude_mask_text)
             indexes.append(index)
 
         self._frame.index, self._frame.columns = indexes
 
-    def _paint_index(self, index, text_keys, display, axis, bases):
+    def _paint_index(self, index, text_keys, display, axis, bases,
+                     transform_column_names, exclude_mask_text):
         """ Paint the Chain.dataframe.index1        """
         error = "No text keys from {} found in {}"
         level_0_text, level_1_text = [], []
@@ -2741,7 +2713,8 @@ class Chain(object):
                 tuples = zip(index_0.values, index_1.values)
                 names = (index_0.name, index_1.name)
                 sub = pd.MultiIndex.from_tuples(tuples, names=names)
-                sub = self._paint_index(sub, text_keys, display, axis, bases)
+                sub = self._paint_index(sub, text_keys, display, axis, bases,
+                                        transform_column_names, exclude_mask_text)
                 arrays.extend(self._lzip(sub.ravel()))
 
             tuples = self._lzip(arrays)
@@ -2749,14 +2722,16 @@ class Chain(object):
 
         levels = self._lzip(index.values)
 
-        arrays = (self._get_level_0(levels[0], text_keys, display, axis),
+        arrays = (self._get_level_0(levels[0], text_keys, display, axis,
+                                    transform_column_names, exclude_mask_text),
                   self._get_level_1(levels, text_keys, display, axis, bases))
 
         new_index = pd.MultiIndex.from_arrays(arrays, names=index.names)
 
         return new_index
 
-    def _get_level_0(self, level, text_keys, display, axis):
+    def _get_level_0(self, level, text_keys, display, axis,
+                     transform_column_names, exclude_mask_text):
         """
         """
         level_0_text = []
@@ -2768,8 +2743,10 @@ class Chain(object):
                 if value in self._text_map.keys():
                     value = self._text_map[value]
                 else:
-                    text = self._get_text(value, text_keys[axis])
+                    text = self._get_text(value, text_keys[axis], exclude_mask_text)
                     if axis in display:
+                        if transform_column_names:
+                            value = transform_column_names.get(value, value)
                         value = '{}. {}'.format(value, text)
                     else:
                         value = text
@@ -2808,7 +2785,7 @@ class Chain(object):
                     level_1_text.append(text)
                 else:
                     if any(self.array_style == a and axis == x for a, x in ((0, 'x'), (1, 'y'))):
-                        text = self._get_text(value, text_keys[axis])
+                        text = self._get_text(value, text_keys[axis], True)
                         level_1_text.append(text)
                     else:
                         try:
@@ -2866,6 +2843,8 @@ class Chain(object):
                 base_value = 'Unweighted effective base'
         else:
             if weighted or (not weighted and not is_multibase):
+                if not bases:
+                    return self._transl[tk_transl]['All']
                 key = tk
                 if isinstance(tk, tuple):
                     _, key = tk
@@ -2875,11 +2854,17 @@ class Chain(object):
                 base_value = self._transl[tk_transl]['no_w_All']
         return base_value
 
-    def _get_text(self, value, text_key):
+    def _get_text(self, value, text_key, item_text=False):
         """
         """
         if value in self._meta['columns'].keys():
-            obj = self._meta['columns'][value]['text']
+            col = self._meta['columns'][value]
+            if item_text and col.get('parent'):
+                parent = col['parent'].keys()[0].split('@')[-1]
+                items = self._meta['masks'][parent]['items']
+                obj = [i['text'] for i in items if value in i['source']][0]
+            else:
+                obj = col['text']
         elif value in self._meta['masks'].keys():
             obj = self._meta['masks'][value]['text']
         elif 'text' in value:

@@ -3,7 +3,9 @@ Excel cell formats
 """
 
 import re
-from excel_formats_constants import _ATTRIBUTES, _DEFAULT_ATTRIBUTES, _VIEWS_GROUPS
+from excel_formats_constants import (_ATTRIBUTES,
+                                     _DEFAULT_ATTRIBUTES,
+                                     _VIEWS_GROUPS)
 from quantipy.core.tools.qp_decorators import lazy_property
 try:
     from functools import lru_cache
@@ -97,7 +99,6 @@ class ExcelFormats(_ExcelFormats):
     def __getitem__(self, name):
         return self._format_builder(name)
 
-    #@lru_cache()
     def _format_builder(self, name):
         format_ = self._template
 
@@ -127,7 +128,9 @@ class ExcelFormats(_ExcelFormats):
                     format_.update(getattr(self, '_' + method))
 
                 if '_' + method in self.slots:
-                    format_.update(getattr(self, '_' + method)(methods[-1], alt))
+                    format_.update(
+                        getattr(self, '_' + method)(methods[-1], alt)
+                    )
 
             if 'num_format_' + method in self.slots:
                 format_['num_format'] = getattr(self, 'num_format_' + method)
@@ -144,11 +147,10 @@ class ExcelFormats(_ExcelFormats):
     def slots(self):
         return self.__slots__ + tuple(super(ExcelFormats, self).__slots__)
 
-    @lru_cache()
     def _method(self, method):
         result = dict(text_wrap=self.text_wrap)
-        for name in ('bold', 'bg_color', 'font_color', 'font_name', 'font_size',
-                     'italic', 'text_v_align', 'text_h_align'):
+        for name in ('bold', 'bg_color', 'font_color', 'font_name',
+                     'font_size', 'italic', 'text_v_align', 'text_h_align'):
             attr = getattr(self, name + '_' + method, None)
             if attr:
                 result[name] = attr
@@ -279,7 +281,6 @@ class ExcelFormats(_ExcelFormats):
     def _meanstest(self):
         return dict(font_script=self.font_script_meanstest)
 
-    @lru_cache()
     def _view_border(self, name, alt):
         border = getattr(self, 'view_border_' + name)
         if border or alt is None:
