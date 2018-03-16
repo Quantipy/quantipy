@@ -1,5 +1,5 @@
 # -* coding: utf-8 -*-
-
+import ctypes
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -463,9 +463,6 @@ class _Sheet(Worksheet):
 
         for attr, value in kwargs.iteritems():
             setattr(self, attr, value)
-        # for name in self.excel.sheet_properties:
-        #     value_or_default = kwargs.get(name, self.excel.sheet_properties[name])
-        #     setattr(self, name, value_or_default)
 
         self._row = self.start_row
         self._column = self.start_column
@@ -637,6 +634,47 @@ class _Sheet(Worksheet):
             width = self.column_width_specific.get(relative, self.column_width)
             self.set_column(relative, relative, width)
 
+    def set_row(self, row, height, label=None):
+        padding = 5
+        units_to_pixels = 4.0 / 3.0
+
+        if label:
+
+            font_size = self.excel._formats.default_attributes['font_size']
+            font_name = self.excel._formats.default_attributes['font_name']
+
+            column_dimensions = self._size_col(self.start_column)
+            label_dimensions = self._label_dimension(label,
+                                                     font_size,
+                                                     font_name)
+            if (label_dimensions[1]  * units_to_pixels) - padding > font_size:
+                # text too tall
+                return
+
+            if (label_dimensions[0] + padding) > column_dimensions:
+                # text too long
+                return
+
+        super(_Sheet, self).set_row(row, height)
+
+    def _label_dimension(self, text, points, font):
+
+        class SIZE(ctypes.Structure):
+            _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
+
+        hdc = ctypes.windll.user32.GetDC(0)
+        hfont = ctypes.windll.gdi32.CreateFontA(points, 0, 0, 0, 0, 0, 0,
+                                                0, 0, 0, 0, 0, 0, font)
+        hfont_old = ctypes.windll.gdi32.SelectObject(hdc, hfont)
+        size = SIZE(0, 0)
+        ctypes.windll.gdi32.GetTextExtentPoint32A(hdc,
+                                                  text,
+                                                  len(text),
+                                                  ctypes.byref(size))
+        ctypes.windll.gdi32.SelectObject(hdc, hfont_old)
+        ctypes.windll.gdi32.DeleteObject(hfont)
+        return (size.cx, size.cy)
+
     def _set_freeze_loc(self, columns):
         if list(columns.labels[0]).count(0) == 1:
             offset = 1
@@ -644,9 +682,6 @@ class _Sheet(Worksheet):
             offset = 0
         self._freeze_loc = ((self._row + columns.nlevels),
                             (self._column + offset + 1))
-
-    def _set_row(self, row):
-        self.set_row(row, self.row_height_label)
 
 
 class _Box(object):
@@ -815,7 +850,8 @@ class _Box(object):
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
-            self.sheet._set_row(self.sheet._row + i)
+            self.sheet.set_row(self.sheet._row + i,
+                               self.sheet.row_height_label)
 
     def _write_columns(self):
         contents = dict()
@@ -1020,7 +1056,9 @@ class _Box(object):
             if rel_y == 0:
                 border_from = name
         for i in xrange(rel_x):
-            self.sheet._set_row(self.sheet._row + i)
+            self.sheet.set_row(self.sheet._row + i,
+                               self.sheet.row_height_label,
+                               label=level_1[i])
         self.sheet._row += rel_x
 
     def _write_annotations(self, names):
@@ -1030,7 +1068,8 @@ class _Box(object):
                 self.sheet.write(self.sheet._row, self.sheet._column,
                                  anno[0], self.formats[name])
                 self._format_row(self.formats[name])
-                self.sheet._set_row(self.sheet._row)
+                self.sheet.set_row(self.sheet._row,
+                                   self.sheet.row_height_label)
                 self.sheet._row += 1
 
     def _format_row(self, format_):

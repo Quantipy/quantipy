@@ -20,9 +20,6 @@ widths = {0: 15, 5: 5, 10: 40}
 SHEET_PROPERTIES_BASIC.update(dict([(tab, dict(column_width_specific=widths))
                                     for tab in tab_names]))
 
-import json
-print json.dumps(SHEET_PROPERTIES_BASIC, indent=4)
-
 SHEET_PROPERTIES_EXCEL_BASIC = dict(dummy_tests           = True,
                                     stat_0_rep            = '-',
                                     column_width          = 10,
