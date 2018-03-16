@@ -353,4 +353,4 @@ class TestExcel:
             err = ' ... %s ...\nGOT: %s\nEXPECTED: %s'
             assert xml_got == xml_exp, err % (filename, xml_got, xml_exp)
 
-        TestExcel.teardown = False
+        TestExcel.teardown = True

@@ -638,7 +638,7 @@ class _Sheet(Worksheet):
         padding = 5
         units_to_pixels = 4.0 / 3.0
 
-        if label:
+        if isinstance(label, basestring):
 
             font_size = self.excel._formats.default_attributes['font_size']
             font_name = self.excel._formats.default_attributes['font_name']
@@ -844,6 +844,8 @@ class _Box(object):
                 name += 'bottom^'
             name += 'data'
             format_ = self.formats[name]
+            if data != data:
+                data = ''
             write(self.sheet._row + rel_x,
                   self.sheet._column + rel_y,
                   data, format_)
