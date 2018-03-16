@@ -11,14 +11,24 @@ OPENS_BASIC = ('q8a', 'q9a')
 CELLS_BASIC = 'counts'
 WEIGHT_BASIC = None
 
-SHEET_PROPERTIES_BASIC = dict(alternate_bg=True)
+tab_names = ('q2b', 'q3', 'q4', 'FOLDER_4', 'q8', 'q9')
+SHEET_PROPERTIES_BASIC = dict([(tab, dict(alternate_bg=True))
+                               for tab in tab_names])
 
-SHEET_PROPERTIES_EXCEL_BASIC = dict(dummy_tests         = True,
-                                    stat_0_rep          = '-',
-                                    column_width        = 10,
-                                    column_width_label  = 20,
-                                    column_width_frame  = 10,
-                                    alternate_bg        = False)
+tab_names = ('q2', 'Open Ends')
+widths = {0: 15, 5: 5, 10: 40}
+SHEET_PROPERTIES_BASIC.update(dict([(tab, dict(column_width_specific=widths))
+                                    for tab in tab_names]))
+
+import json
+print json.dumps(SHEET_PROPERTIES_BASIC, indent=4)
+
+SHEET_PROPERTIES_EXCEL_BASIC = dict(dummy_tests           = True,
+                                    stat_0_rep            = '-',
+                                    column_width          = 10,
+                                    column_width_label    = 20,
+                                    column_width_frame    = 50,
+                                    alternate_bg          = False)
 
 FORMATS_BASIC = dict(view_border_freq        = None,
                      view_border_net         = None,

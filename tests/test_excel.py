@@ -272,7 +272,6 @@ def stack(dataset):
 def excel(chain_manager, sheet_properties, views_groups, italicise_level,
           details, decimals, image, formats, annotations, properties):
     kwargs = formats if formats else dict()
-    print formats
     x = Excel('tmp.xlsx',
               views_groups=views_groups,
               italicise_level=italicise_level,
@@ -354,4 +353,4 @@ class TestExcel:
             err = ' ... %s ...\nGOT: %s\nEXPECTED: %s'
             assert xml_got == xml_exp, err % (filename, xml_got, xml_exp)
 
-        TestExcel.teardown = True
+        TestExcel.teardown = False

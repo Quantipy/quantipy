@@ -47,6 +47,7 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        column_width=9,
                        column_width_label=35,
                        column_width_frame=15,
+                       column_width_specific=dict(),
                        dummy_tests=False,
                        freq_0_rep='-',
                        img_insert_x=0,
@@ -60,7 +61,6 @@ _SHEET_DEFAULTS = dict(alternate_bg=True,
                        stat_0_rep='-',
                        y_header_height=33.75,
                        y_row_height=50)
-
 
 class Excel(Workbook):
     """
@@ -382,6 +382,7 @@ class Excel(Workbook):
             ``column_width``        ``9``           Column width - column 1, ..., N
             ``column_width_label``  ``35``          Column width - column 0
             ``column_width_frame``  ``15``          Column width - Chain.structure
+            ``column_width_specific``  balh blah
             ``dummy_tests``         ``False``       If column proportion/ mean tests in
                                                     views add dummy test rows for view
             ``freq_0_rep``          ``'-'``         Representation of zero data in
@@ -408,21 +409,23 @@ class Excel(Workbook):
             if sheet_name:
                 print UserWarning(warning_message)
             for chain in chains:
+                sheet_properties = dict(self.sheet_properties)
                 if isinstance(chain, dict):
                     sheet_name = chain.keys()[0]
-                    sheet_properties = kwargs.get(sheet_name, kwargs)
+                    sheet_properties.update(kwargs.get(sheet_name, kwargs))
                     self._write_chains(chain[sheet_name], sheet_name,
                                        self._get_annotations(annotations,
                                                              sheet_name),
                                        **sheet_properties)
                 else:
-                    sheet_properties = kwargs.get(chain.name, kwargs)
+                    sheet_properties.update(kwargs.get(chain.name, kwargs))
                     self._write_chains((chain, ), chain.name,
                                        self._get_annotations(annotations,
                                                              chain.name),
                                        **sheet_properties)
         else:
-            sheet_properties = kwargs.get(sheet_name, kwargs)
+            sheet_properties = dict(self.sheet_properties)
+            sheet_properties.update(kwargs.get(sheet_name, kwargs))
             self._write_chains(chains, sheet_name,
                                self._get_annotations(annotations, sheet_name),
                                **sheet_properties)
@@ -458,9 +461,11 @@ class _Sheet(Worksheet):
         self.sheet_name = sheet_name
         self.annotations = annotations
 
-        for name in self.excel.sheet_properties:
-            value_or_default = kwargs.get(name, self.excel.sheet_properties[name])
-            setattr(self, name, value_or_default)
+        for attr, value in kwargs.iteritems():
+            setattr(self, attr, value)
+        # for name in self.excel.sheet_properties:
+        #     value_or_default = kwargs.get(name, self.excel.sheet_properties[name])
+        #     setattr(self, name, value_or_default)
 
         self._row = self.start_row
         self._column = self.start_column
@@ -471,6 +476,7 @@ class _Sheet(Worksheet):
         self._column_edges = None
         self._view_keys = None
         self._group_order = None
+        self._columns_set = None
 
     @property
     def formats(self):
@@ -499,6 +505,12 @@ class _Sheet(Worksheet):
         if self._column_edges is None:
             self._column_edges = []
         return self._column_edges
+
+    @property
+    def columns_set(self):
+        if self._columns_set is None:
+            self._columns_set = set()
+        return self._columns_set
 
     def write(self, *args):
         if isinstance(args[-1], dict):
@@ -541,7 +553,7 @@ class _Sheet(Worksheet):
                 # make y-axis writing availbale to all chains
                 if i == 0:
                     self._set_freeze_loc(columns)
-                    self._set_columns(columns)
+                    self._set_column(columns)
 
             except AttributeError:
                 columns = chain.structure.columns
@@ -599,10 +611,31 @@ class _Sheet(Worksheet):
                                    y_offset=self.image.get('img_y_offset',
                                                            self.img_y_offset)))
 
-    def _set_columns(self, columns):
-        self.set_column(self._column, self._column, self.column_width_label)
-        self.set_column(self._column + 1, self._column + columns.size,
-                        self.column_width)
+        if self.column_width_specific:
+            for column, width in self.column_width_specific.iteritems():
+                self.set_column(column, column, width)
+
+    def set_column(self, *args):
+        first_col, last_col = args[:2]
+        if first_col == last_col:
+            if first_col in self.columns_set:
+                return
+            self.columns_set.add(first_col)
+        else:
+            for column in xrange(first_col, last_col + 1):
+                if column in self.columns_set:
+                    return
+            self.columns_set.add(list(xrange(first_col, last_col + 1)))
+        super(_Sheet, self).set_column(*args)
+
+    def _set_column(self, columns):
+        column = self._column
+        width = self.column_width_specific.get(column, self.column_width_label)
+        self.set_column(column, column, width)
+        for idx in xrange(columns.size):
+            relative = column + idx + 1
+            width = self.column_width_specific.get(relative, self.column_width)
+            self.set_column(relative, relative, width)
 
     def _set_freeze_loc(self, columns):
         if list(columns.labels[0]).count(0) == 1:
@@ -752,8 +785,11 @@ class _Box(object):
             merge_range(self.sheet._row, column,
                         self.sheet._row + 1, column,
                         label, format_)
-            self.sheet.set_column(column, column,
-                                  self.sheet.column_width_frame)
+
+            width = self.sheet.column_width_specific.get(
+                column,
+                self.sheet.column_width_frame)
+            self.sheet.set_column(column, column, width)
         self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
         self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
 
