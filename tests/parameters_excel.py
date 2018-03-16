@@ -11,7 +11,7 @@ OPENS_BASIC = ('q8a', 'q9a')
 CELLS_BASIC = 'counts'
 WEIGHT_BASIC = None
 
-tab_names = ('q2b', 'q3', 'q4', 'FOLDER_4', 'q8', 'q9')
+tab_names = ('q2b', 'q3', 'FOLDER_4', 'q8', 'q9')
 SHEET_PROPERTIES_BASIC = dict([(tab, dict(alternate_bg=True))
                                for tab in tab_names])
 

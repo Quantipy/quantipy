@@ -336,7 +336,7 @@ class Excel(Workbook):
         if self._sheet_properties:
             return dict([(key, self._sheet_properties.get(key, value))
                          for key, value in _SHEET_DEFAULTS.iteritems()])
-        return _SHEET_DEFAULTS
+        return dict(_SHEET_DEFAULTS)
 
     def _get_annotations(self, annotations, sheet_name):
         error_messaage = ('"annotations" passed to Excel() must either be a '
@@ -405,30 +405,36 @@ class Excel(Workbook):
         """
         warning_message = ('quantipy.ChainManager has folders, '
                            'sheet_name will be ignored')
+        for key in self.sheet_properties.iterkeys():
+            if key in kwargs:
+                self.sheet_properties[key] = kwargs.pop(key)
         if chains.folders:
             if sheet_name:
                 print UserWarning(warning_message)
             for chain in chains:
-                sheet_properties = dict(self.sheet_properties)
+                this_sheet_properties = dict(self.sheet_properties)
                 if isinstance(chain, dict):
                     sheet_name = chain.keys()[0]
-                    sheet_properties.update(kwargs.get(sheet_name, kwargs))
+                    if sheet_name in kwargs:
+                        this_sheet_properties.update(kwargs[sheet_name])
                     self._write_chains(chain[sheet_name], sheet_name,
                                        self._get_annotations(annotations,
                                                              sheet_name),
-                                       **sheet_properties)
+                                       **this_sheet_properties)
                 else:
-                    sheet_properties.update(kwargs.get(chain.name, kwargs))
+                    if chain.name in kwargs:
+                        this_sheet_properties.update(kwargs[chain.name])
                     self._write_chains((chain, ), chain.name,
                                        self._get_annotations(annotations,
                                                              chain.name),
-                                       **sheet_properties)
+                                       **this_sheet_properties)
         else:
-            sheet_properties = dict(self.sheet_properties)
-            sheet_properties.update(kwargs.get(sheet_name, kwargs))
+            this_sheet_properties = dict(self.sheet_properties)
+            if sheet_name in kwargs:
+                this_sheet_properties.update(kwargs[sheet_name])
             self._write_chains(chains, sheet_name,
                                self._get_annotations(annotations, sheet_name),
-                               **sheet_properties)
+                               **this_sheet_properties)
 
     def _write_chains(self, chains, sheet_name, annotations, **kwargs):
         worksheet = _Sheet(self, chains, sheet_name, annotations, **kwargs)
