@@ -1,4 +1,5 @@
 # -* coding: utf-8 -*-
+
 import ctypes
 import numpy as np
 import pandas as pd
@@ -6,8 +7,7 @@ import quantipy as qp
 import cPickle as cp
 
 from excel_formats import ExcelFormats, _Format
-from excel_formats_constants import (_DEFAULTS,
-                                     _VIEWS_GROUPS)
+from excel_formats_constants import _DEFAULTS, _VIEWS_GROUPS
 from difflib import SequenceMatcher
 from os.path import basename
 from PIL import Image
@@ -39,105 +39,176 @@ _SHEET_ATTR = ('str_table',
                'constant_memory')
 
 # Defaults for _Sheet.
-_SHEET_DEFAULTS = dict(alternate_bg=True,
-                       arrow_color_high='#2EB08C',
-                       arrow_rep_high=u'\u25B2',
-                       arrow_color_low='#FC8EAC',
-                       arrow_rep_low=u'\u25BC',
-                       column_width=9,
-                       column_width_label=35,
-                       column_width_frame=15,
-                       column_width_specific=dict(),
-                       dummy_tests=False,
-                       freq_0_rep='-',
-                       img_insert_x=0,
-                       img_insert_y=0,
-                       img_size=[130, 130],
-                       img_x_offset=0,
-                       img_y_offset=0,
-                       row_height_label=12.75,
-                       start_column=0,
-                       start_row=0,
-                       stat_0_rep='-',
-                       y_header_height=33.75,
-                       y_row_height=50)
+_SHEET_DEFAULTS = dict(alternate_bg             = True,
+                       arrow_color_high         = '#2EB08C',
+                       arrow_rep_high           = u'\u25B2',
+                       arrow_color_low          = '#FC8EAC',
+                       arrow_rep_low            = u'\u25BC',
+                       column_width             = 9,
+                       column_width_label       = 35,
+                       column_width_frame       = 15,
+                       column_width_specific    = dict(),
+                       dummy_tests              = False,
+                       freq_0_rep               = '-',
+                       img_insert_x             = 0,
+                       img_insert_y             = 0,
+                       img_size                 = [130, 130],
+                       img_x_offset             = 0,
+                       img_y_offset             = 0,
+                       row_height_label         = 12.75,
+                       start_column             = 0,
+                       start_row                = 0,
+                       stat_0_rep               = '-',
+                       y_header_height          = 33.75,
+                       y_row_height             = 50)
 
 class Excel(Workbook):
     """
     A class for writing ChainManager to Excel XLSX files.
-    Built on top of the xlsxwriter lib.
-    """
+    Uses the xlsxwriter lib.
 
-    def __init__(self, filename, toc=False, italicise_level=None,
-                 details=False, in_memory=False, annotations=None,
-                 views_groups=None, decimals=None, image=None,
-                 sheet_properties=None, **formats):
-        """
-        Parameters
-        ----------
-        filename : ``str``
-            The path of the target XLSX file.
-        toc : ``bool``, default ``False``
-            Not implemented
-        italicise_level : ``int``, default ``None``
-            Italicise column values with column base below given level.
-        details : ``bool``, default ``False``
-            A summary of the aggregated data displayed in the sheet.
-            If any views contain column proportion tests against the
-            total column, there are 2 additional cells to explain the
-            representation of ``higher/ lower than`` result.
-        in_memory : ``bool``, default ``False``
-            To avoid the use of temporay files in the assembly of the
-            final XLSX file set to ``True``.
-        annotations ``list-like``/ ``dict``: , default ``None``
-            1. A ``list`` of annotation items. These items can be ``str`` or a
-               ``list-like`` with ``str`` and ``dict``. The ``str`` are written
-               before any chains are written in row ``start_row`` and column
-               ``start_column`` using default formats or format spec provided in
-               ``dict``. These will be applied to every sheet.
-            2. A `dict`` with keys as ``Sheet`` names and a ``list-like`` as
-               described in 1.
-            see notes for more information on formats.
-        views_groups ``dict``: , default ``None``
-            When modifying the default formatting, view types can be grouped
-            to share a custom format.
-            see noted for more information on view groups.
-        decimals : ``int``/ ``dict``, default None
-            The digits to round ``float`` data to in the underlying data.
-            An ``int`` implies all ``float`` data to be rounded with the same
-            digits. You can specify the following keys in a dict to use specific
-            digits for different view types...
-                N - count frequency views
-                P - percentage frequency views
-                D - descriptive views
-        image : ``dict``, default None
-            Describes the location, sizing and location of an image to insert
-            in all ``Sheets``.
-            The following key-vaue pairs must be provided:
-                img_name - ``str`` (Arbitrary image name)
-                img_url - ``str`` (The path to the image. PNG/ JPEG/ BMP format)
-            The following key-value pairs are optional:
-                img_insert_x - ``int``, default 0 (the cell row (zero indexed))
-                img_insert_y - ``int``, default 0 (the cell column (zero indexed))
-                img_size - ``list``, default [130, 130] (resize to [width, height])
-                img_x_offset - ``int``, default 0 (offset by pixels - x axis)
-                img_y_offset - ``int``, default 0 (offset by pixels - y axis)
-        sheet_properties : ``str``, default None
-            Optional arguments for sheet formatting, shown below with defaults.
-        **formats : ``dict``
-            see notes for more information on formats.
+    Parameters
+    ----------
+    filename : ``str``
+        The path of the target XLSX file.
+    italicise_level : ``int``, default ``None``
+        Italicise column values with column base below given level.
+    details : ``bool``, default ``False``
+        A summary of the aggregated data displayed in the sheet.
+        If any views contain column proportion tests against the
+        total column, there are 2 additional cells to explain the
+        representation of ``higher/ lower than`` result.
+    annotations ``list-like``/ ``dict``: , default ``None``
+        1. A ``list`` of annotation items. These items can be ``str`` or a
+           ``list-like`` with ``str`` and ``dict``. The ``str`` are written
+           before any chains are written in row ``start_row`` and column
+           ``start_column`` using default formats or format spec provided in
+           ``dict``. These will be applied to every sheet.
+        2. A `dict`` with keys as ``Sheet`` names and a ``list-like`` as
+           described in 1.
+        see notes for more information on formats.
+    decimals : ``int``/ ``dict``, default None
+        The digits to round ``float`` data to in the underlying data.
+        An ``int`` implies all ``float`` data to be rounded with the same
+        digits. You can specify the following keys in a dict to use specific
+        digits for different view types...
+            N - count frequency views
+            P - percentage frequency views
+            D - descriptive views
+    image : ``dict``, default None
+        Describes the location, sizing and location of an image to insert
+        in all ``Sheets``.
+        The following key-vaue pairs must be provided:
+            img_name - ``str`` (Arbitrary image name)
+            img_url - ``str`` (The path to the image. PNG/ JPEG/ BMP format)
+        The following key-value pairs are optional:
+            img_insert_x - ``int``, default 0 (the cell row (zero indexed))
+            img_insert_y - ``int``, default 0 (the cell column (zero indexed))
+            img_size - ``list``, default [130, 130] (resize to [width, height])
+            img_x_offset - ``int``, default 0 (offset by pixels - x axis)
+            img_y_offset - ``int``, default 0 (offset by pixels - y axis)
+    sheet_properties : ``dict``, default None
+        Optional sheet properties (see Notes 1.).
+    views_groups ``dict``: , default ``None``
+        When modifying the default formatting, view types can be grouped
+        to share a custom format (see Notes 2.).
+    **formats : ``dict``
+        The format specifications by view type (see Notes 2.).
 
-        Notes
-        -----
-        Format keys must start with either a ``general`` or ``view type`` or
-        ``view group`` and refer to different elements in a sheet:
+    Notes
+    -----
 
-        ~ General ~
-        ~~~~~~~~~~~
+    1. ``sheet_properties``
+
+        The following table shows the default sheet properties:
+
+        Property                Default value   Definition
+        ~~~~~~~~                ~~~~~~~~~~~~~   ~~~~~~~~~~
+        ``alternate_bg``        ``True``        Alternate bg_color in freq views
+        ``arrow_color_high``    ``'#2EB08C'``   High arrow color
+        ``arrow_rep_high``      ``u'\u25B2'``   High arrow representation for column
+                                                proportion tests
+        ``arrow_color_low``     ``'#FC8EAC'``   Low arrow color
+        ``arrow_rep_low``       ``u'\u25BC'``   Low arrow representation for column
+                                                proportion tests
+        ``column_width``        ``9``           Column width - column 1, ..., N
+        ``column_width_label``  ``35``          Column width - column 0
+        ``column_width_frame``  ``15``          Column width - Chain.structure
+        ``column_width_specific``  balh blah
+        ``dummy_tests``         ``False``       If column proportion/ mean tests in
+                                                views add dummy test rows for view
+        ``freq_0_rep``          ``'-'``         Representation of zero data in
+                                                frequency views
+        ``img_insert_x``        ``0``           Cell row to insert image
+                                                (zero indexed)
+        ``img_insert_y``        ``0``           Cell column to insert image
+                                                (zero indexed)
+        ``img_size``            ``[130, 130]``  Resize image to [width, height]
+        ``img_x_offset``        ``0``           Offset image by pixels - x axis
+        ``img_y_offset``        ``0``           Offset image by pixels - y axis
+        ``row_height_label``    ``12.75``       Row height for view rows
+        ``start_column``        ``0``           Start column (zero indexed)
+        ``start_row``           ``0``           Start row (zero indexed)
+        ``stat_0_rep``          ``'-'``         Representation of zero data in
+                                                descriptive views
+        ``y_header_height``     ``33.75``       y row hieght - header (pands.DataFrame.index.level #0)
+        ``y_row_height``        ``50``          y row height (pands.DataFrame.index.level #1)
+
+        To change the values pass a dict with the property / new value as
+        key/ value pair.
+        To modify a property for a specific sheet, pass a dict to the kwargs
+        parameter in the ``quantipy.Excel.add_chains`` method.
+        When you have a ``quantipy.ChainManager`` with many sheets the kwargs
+        dict should contain a key with the sheet name and a value of the sheet
+        properties as previously described. Otherwise you are simply updateing
+        the property for every sheet.
+
+    2. ``formats``
+
+        The following cell properties can be modified, globally or by view type:
+
+        ``bg_color``
+        ``bold``
+        ``border_color``
+        ``bottom``
+        ``bottom_color``
+        ``font_color``
+        ``font_name``
+        ``font_size``
+        ``font_script``
+        ``italic``
+        ``left``
+        ``left_color``
+        ``num_format``
+        ``right``
+        ``right_color``
+        ``text_v_align``
+        ``text_h_align``
+        ``text_wrap``
+        ``top``
+        ``top_color``
+
+        (See xlsxwriter.readthedocs.io/format.html for more information on these)
+
+        Add the keys above to set a global property, which ignores element/
+        view type.
+
+        For element/ view type, the key will start with one of the properties above, and must
+        be concatenated with either an ``element`` or ``view type`` (or
+        ``view group``) name, for example:
+
+        To make the rows that contain base views italic, ``formats`` will
+        contain a key "font_italic_base" with value ``True``.
+
+        ~ Elements ~
+        ~~~~~~~~~~~~
+        The following elements refer to the parts of the Excel tables that
+        are not part of the ``Chain.dataframe`` rows:
+
         ``y`` - for column headers
         ``label`` - question labels
         ``mask_label`` - mask labels, which use ``label`` otherwise
-        ``data_header`` - column headers in a dataframe sheet (``Chain.structure``)
+        ``data_header`` - column headers in a sheet from ``Chain.structure``
         ``header_left`` - ``Chain.annotation`` Header Left
         ``header_center`` - ``Chain.annotation`` Header Center
         ``header_title`` - ``Chain.annotation`` Header Title
@@ -145,11 +216,16 @@ class Excel(Workbook):
 
         ~ View types/ groups ~
         ~~~~~~~~~~~~~~~~~~~~~~
-        These refer to the values in a row of a Chain.dataframe, since a row
+        These refer to the values in a row of a ``Chain.dataframe``, since a row
         will be one view type, such as ``cbase`` or ``counts``.
-        Below are the view types with their default view groups.
-        If you modify a group format, that will modify all type formats unless
-        that type key is also modified.
+
+        To modify more than one view type in the same way, either use the
+        default group (specified below) or a group name that is passed to the
+        ``view_groups`` parameter.
+
+        Each of the view types/ groups also have a corresponding text
+        option for formatting the row label, such as ``cbase_text`` or
+        ``net_text``.
 
         TYPE                            GROUP
         ~~~~                            ~~~~~
@@ -209,86 +285,67 @@ class Excel(Workbook):
         ``counts_cumsum``               ``sum``
         ``c_pct_cumsum``                ``sum``
 
-        Each of the view types/ groups above also have a corresponding text
-        option for formatting the row label, such as ``cbase_text`` or
-        ``net_text``.
+    There is one exception to the above, "view_border_<view type>".
+    Views which can have more than one row, e.g. counts or c%, will have an
+    internal border between these rows. To remove these internal borders set
+    this to ``None``.
 
-        Editable format keys are listed below:
+    Examples
+    --------
+    annotations = dict(sheet_1=[('Text. 1', dict(font_size=8,
+                                                 font_color='yellow',
+                                                 bg_color='gray'))],
+                       sheet_2=[('Text 2.a', dict(font_size=10,
+                                                  font_color='pink',
+                                                  bg_color='gray')),
+                                ('Text 2.b', dict(font_size=12,
+                                                  font_color='pink',
+                                                  bg_color='blue')) ])
 
-        ``bg_color``
-        ``bold``
-        ``border_color``
-        ``bottom``
-        ``bottom_color``
-        ``font_color``
-        ``font_name``
-        ``font_size``
-        ``font_script``
-        ``italic``
-        ``left``
-        ``left_color``
-        ``num_format``
-        ``right``
-        ``right_color``
-        ``text_v_align``
-        ``text_h_align``
-        ``text_wrap``
-        ``top``
-        ``top_color``
-        (See xlsxwriter.readthedocs.io/format.html for more information on these)
+    view_groups = dict(block_expanded_counts='freq',
+                       block_expanded_c_pct='freq',
+                       block_expanded_r_pct='freq',
+                       block_expanded_propstest='freq',
+                       block_net_counts='freq',
+                       block_net_c_pct='freq',
+                       block_net_r_pct='freq',
+                       block_net_propstest='freq')
 
-        Combining the a general or view key with an editable format key you can
-        create consistent modifcations to the table formatting.
+    decimals = dict(N=0, P=2, D=1)
 
-        Examples
-        --------
-        annotations = dict(sheet_1=[('Text. 1', dict(font_size=8,
-                                                     font_color='yellow',
-                                                     bg_color='gray'))],
-                           sheet_2=[('Text 2.a', dict(font_size=10,
-                                                      font_color='pink',
-                                                      bg_color='gray')),
-                                    ('Text 2.b', dict(font_size=12,
-                                                      font_color='pink',
-                                                      bg_color='blue')) ])
+    image = dict(img_name='name',
+                 img_url='/path/to/image.png',
+                 img_size=[110, 120],
+                 img_insert_x=4,
+                 img_insert_y=0,
+                 img_x_offset=3,
+                 img_y_offset=6)
 
-        view_groups = dict(block_expanded_counts='freq',
-                           block_expanded_c_pct='freq',
-                           block_expanded_r_pct='freq',
-                           block_expanded_propstest='freq',
-                           block_net_counts='freq',
-                           block_net_c_pct='freq',
-                           block_net_r_pct='freq',
-                           block_net_propstest='freq')
+    sheet_properties = dict(alternate_bg=True,
+                            dummy_tests=True,
+                            row_height_label=15)
 
-        decimals = dict(N=0, P=2, D=1)
+    formats = dict(bg_color_freq='gray',
+                   bold_propstest=True,
+                   font_size=8)
 
-        image = dict(img_name='name',
-                     img_url='/path/to/image.png',
-                     img_size=[110, 120],
-                     img_insert_x=4,
-                     img_insert_y=0,
-                     img_x_offset=3,
-                     img_y_offset=6)
-
-        formats = dict(bg_color_freq='gray')
-
-        excel = Excel('/path/to/file.xlsx',
-                      italicise_level=50,
-                      details=True,
-                      annotations=annotations,
-                      views_groups=view_groups,
-                      decimals=decimals,
-                      image=image,
-                      **formats):
-
-        """
+    excel = Excel('/path/to/file.xlsx',
+                  italicise_level=50,
+                  details=True,
+                  annotations=annotations,
+                  views_groups=view_groups,
+                  decimals=decimals,
+                  image=image,
+                  sheet_properties=sheet_properties,
+                  **formats)
+    """
+    def __init__(self, filename, italicise_level=None, details=False,
+                 annotations=None, decimals=None, image=None,
+                 sheet_properties=None, views_groups=None, **formats):
         super(Excel, self).__init__()
         self.filename = filename
-        self.toc = toc
         self.italicise_level = italicise_level
         self.details = details
-        self.in_memory = in_memory
         self.annotations = annotations
         self._views_groups = views_groups
         self._decimals = decimals
@@ -353,9 +410,10 @@ class Excel(Workbook):
         return annotations
 
     def add_chains(self, chains, sheet_name=None, annotations=None, **kwargs):
-        """Add a ChainManager to be written to Excel.Sheet(s). If the
+        """
+        Add a ChainManager to be written to Excel.Sheet(s). If the
         ChainManager has no folders the Chain objects are written into a single
-        sheet.When there are folders, a Chain not in a folder is written to a
+        sheet. When there are folders, a Chain not in a folder is written to a
         single sheet and folders are written to a sheet.
 
         Parameters
@@ -368,40 +426,8 @@ class Excel(Workbook):
             Same as in the ``Excel`` constructor but for a can be used here to
             overwrite the global annotations.
         **kwargs : ``dict``
-            Optional arguments for sheet formatting, shown below with defaults.
-
-            Option                  Default     Definition
-            ~~~~~~                  ~~~~~~~     ~~~~~~~~~~
-            ``alternate_bg``        ``True``        Alternate bg_color in freq views
-            ``arrow_color_high``    ``'#2EB08C'``   High arrow color
-            ``arrow_rep_high``      ``u'\u25B2'``   High arrow representation for column
-                                                    proportion tests
-            ``arrow_color_low``     ``'#FC8EAC'``   Low arrow color
-            ``arrow_rep_low``       ``u'\u25BC'``   Low arrow representation for column
-                                                    proportion tests
-            ``column_width``        ``9``           Column width - column 1, ..., N
-            ``column_width_label``  ``35``          Column width - column 0
-            ``column_width_frame``  ``15``          Column width - Chain.structure
-            ``column_width_specific``  balh blah
-            ``dummy_tests``         ``False``       If column proportion/ mean tests in
-                                                    views add dummy test rows for view
-            ``freq_0_rep``          ``'-'``         Representation of zero data in
-                                                    frequency views
-            ``img_insert_x``        ``0``           Cell row to insert image
-                                                    (zero indexed)
-            ``img_insert_y``        ``0``           Cell column to insert image
-                                                    (zero indexed)
-            ``img_size``            ``[130, 130]``  Resize image to [width, height]
-            ``img_x_offset``        ``0``           Offset image by pixels - x axis
-            ``img_y_offset``        ``0``           Offset image by pixels - y axis
-            ``row_height_label``    ``12.75``       Row height for view rows
-            ``start_column``        ``0``           Start column (zero indexed)
-            ``start_row``           ``0``           Start row (zero indexed)
-            ``stat_0_rep``          ``'-'``         Representation of zero data in
-                                                    descriptive views
-            ``y_header_height``     ``33.75``       y row hieght - header (level 0)
-            ``y_row_height``        ``50``          y row height (level 1)
-
+            Optional arguments to update sheet properties for a given
+            sheet.
         """
         warning_message = ('quantipy.ChainManager has folders, '
                            'sheet_name will be ignored')
@@ -584,8 +610,9 @@ class _Sheet(Worksheet):
                     cd = cds[0]
                 else:
                     if cd != cds[0]:
-                        long_ = max((cd, cds[0]), key=len)
-                        short = min((cd, cds[0]), key=len)
+                        lists = (cd, cds[0])
+                        long_ = max(lists, key=len)
+                        short = min(lists, key=len)
                         sm = SequenceMatcher(None, long_, short)
                         for tag, i1, i2, j1, j2 in sm.get_opcodes():
                             if tag == 'insert':
@@ -669,16 +696,15 @@ class _Sheet(Worksheet):
             _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
 
         hdc = ctypes.windll.user32.GetDC(0)
-        hfont = ctypes.windll.gdi32.CreateFontA(points, 0, 0, 0, 0, 0, 0,
-                                                0, 0, 0, 0, 0, 0, font)
-        hfont_old = ctypes.windll.gdi32.SelectObject(hdc, hfont)
+        gdi32 = ctypes.windll.gdi32
+        hfont = gdi32.CreateFontA(points, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                  font)
+        hfont_old = gdi32.SelectObject(hdc, hfont)
         size = SIZE(0, 0)
-        ctypes.windll.gdi32.GetTextExtentPoint32A(hdc,
-                                                  text,
-                                                  len(text),
-                                                  ctypes.byref(size))
-        ctypes.windll.gdi32.SelectObject(hdc, hfont_old)
-        ctypes.windll.gdi32.DeleteObject(hfont)
+        gdi32.GetTextExtentPoint32A(hdc, text, len(text), ctypes.byref(size))
+        gdi32.SelectObject(hdc, hfont_old)
+        gdi32.DeleteObject(hfont)
+
         return (size.cx, size.cy)
 
     def _set_freeze_loc(self, columns):
@@ -1317,4 +1343,3 @@ class _Cell(object):
             if isinstance(self.data, (float, np.float64)):
                 return round(self.data, self.decimals)
         return self.data
-
