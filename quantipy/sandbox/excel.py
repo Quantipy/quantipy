@@ -708,7 +708,7 @@ class _Sheet(Worksheet):
         return (size.cx, size.cy)
 
     def _set_freeze_loc(self, columns):
-        if list(columns.labels[0]).count(0) == 1:
+        if list(columns.labels[-1]).count(0) == 1:
             offset = 1
         else:
             offset = 0
