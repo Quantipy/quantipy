@@ -419,8 +419,8 @@ class Batch(qp.DataSet):
             List of arrays for which summary tables are created. Summary tables
             can only be created for arrays that are included in ``self.xks``.
         exclusive: bool/ list, default False
-            If True only summaries are created and items skipped. Exclusive
-            property can be provided for a selection of arrays. Example::
+            If True only summaries are created and items skipped. ``exclusive``
+            parameter can be provided for a selection of arrays. Example::
             >>> b.make_summaries(['array1', 'array2'], exclusive = ['array2'])
         Returns
         -------
