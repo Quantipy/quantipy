@@ -66,7 +66,9 @@ def meta_editor(self, dataset_func):
                 meta = ds_clone._meta['masks'][n]
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
-            self.meta_edits[n] = meta
+
+            if not dataset_func.func_name == 'hide_empty_items':
+                self.meta_edits[n] = meta
     return edit
 
 def not_implemented(dataset_func):
