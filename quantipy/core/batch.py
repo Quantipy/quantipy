@@ -66,9 +66,7 @@ def meta_editor(self, dataset_func):
                 meta = ds_clone._meta['masks'][n]
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
-
-            if not dataset_func.func_name == 'hide_empty_items':
-                self.meta_edits[n] = meta
+            self.meta_edits[n] = meta
     return edit
 
 def not_implemented(dataset_func):
@@ -139,7 +137,7 @@ class Batch(qp.DataSet):
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
-        self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
+        # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
         self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
         self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
