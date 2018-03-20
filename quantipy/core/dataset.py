@@ -5436,6 +5436,7 @@ class DataSet(object):
     @verify(variables={'name': 'masks'})
     def hide_empty_items(self, name, condition=None):
         """
+        TEXT
         """
         for n in name:
             empty_items = self.empty_items(n, condition, False)

@@ -134,10 +134,10 @@ class Batch(qp.DataSet):
             self._update()
 
         # DECORATED / OVERWRITTEN DataSet methods
+        # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
-        # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
         self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
         self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
