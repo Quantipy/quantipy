@@ -5436,7 +5436,19 @@ class DataSet(object):
     @verify(variables={'name': 'masks'})
     def hide_empty_items(self, name, condition=None):
         """
-        TEXT
+        Apply ``rules`` meta to automatically hide empty array items.
+
+        Parameters
+        ----------
+        name : (list of) str
+            The mask variable names keyed in ``_meta['masks']``.
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+
+        Returns
+        -------
+        None
         """
         for n in name:
             empty_items = self.empty_items(n, condition, False)
