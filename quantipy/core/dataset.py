@@ -5439,6 +5439,9 @@ class DataSet(object):
         """
         for n in name:
             empty_items = self.empty_items(n, condition, False)
+            if len(empty_items) == len(self.sources(n)):
+                w = "All items of array '{}' are hidden! Array summary will fail!"
+                warnings.warn(w.format(n))
             self.hiding(n, empty_items, axis='x', hide_values=False)
         return None
 
