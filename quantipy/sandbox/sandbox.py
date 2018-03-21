@@ -64,11 +64,11 @@ _AXES = ['x', 'y']
 
 class ChainManager(object):
 
-    def __init__(self, stack, name=''):
+    def __init__(self, stack):
         self.stack = stack
-        self.name = name
         self.__chains = []
         self.source = 'native'
+        self.build_info = {}
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
