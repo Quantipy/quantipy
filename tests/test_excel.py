@@ -297,8 +297,8 @@ def chain_manager(stack):
            p.FORMATS_BASIC, None, p.SHEET_PROPERTIES_EXCEL_BASIC
         ),
         (
-           'complex', p.PATH_COMPLEX_0,
-           None, None, None, False, None, None, None, None, None
+           'complex', p.PATH_COMPLEX_0, None, None, None, False, None,
+            None, p.FORMATS_0,  None, None
         ),
         (
            'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
