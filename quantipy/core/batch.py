@@ -134,6 +134,7 @@ class Batch(qp.DataSet):
             self._update()
 
         # DECORATED / OVERWRITTEN DataSet methods
+        # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
@@ -418,8 +419,8 @@ class Batch(qp.DataSet):
             List of arrays for which summary tables are created. Summary tables
             can only be created for arrays that are included in ``self.xks``.
         exclusive: bool/ list, default False
-            If True only summaries are created and items skipped. Exclusive
-            property can be provided for a selection of arrays. Example::
+            If True only summaries are created and items skipped. ``exclusive``
+            parameter can be provided for a selection of arrays. Example::
             >>> b.make_summaries(['array1', 'array2'], exclusive = ['array2'])
         Returns
         -------

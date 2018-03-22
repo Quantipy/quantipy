@@ -3350,7 +3350,7 @@ class DataSet(object):
         else:
             finalized = True
         if finalized:
-            #reduce the meta/data?
+            # reduce the meta/data?
             if copy_not:
                 remove = [c for c in self.codes(copy_name) if c in copy_not]
                 self.remove_values(copy_name, remove)
@@ -5399,6 +5399,72 @@ class DataSet(object):
             for ax in axis:
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
+
+    @verify(variables={'name': 'masks'})
+    def empty_items(self, name, condition=None, by_name=True):
+        """
+        Return items without any responses (opt. restricted by a condition).
+
+        Parameters
+        ----------
+        name : str
+            The mask variable name keyed in ``_meta['masks']``.
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+        by_name : bool, default
+            Return array items by their name or their index.
+
+        Returns
+        -------
+        empty_items : list
+            The list of empty items by their source names or positional index
+            (starting from 1!).
+        """
+        if condition:
+            slicer = self.take(condition)
+            df = self[slicer, name].sum().copy()
+        else:
+            df = self[name].sum().copy()
+        slicer = df == 0
+        empty_items = df.loc[slicer].index.values.tolist()
+        if by_name:
+            return empty_items
+        else:
+            return [self.item_no(i) for i in empty_items]
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'masks'})
+    def hide_empty_items(self, name, condition=None):
+        """
+        Apply ``rules`` meta to automatically hide empty array items.
+
+        Parameters
+        ----------
+        name : (list of) str
+            The mask variable names keyed in ``_meta['masks']``.
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+
+        Returns
+        -------
+        None
+        """
+        for n in name:
+            empty_items = self.empty_items(n, condition, False)
+            if len(empty_items) == len(self.sources(n)):
+                w = "All items of array '{}' are hidden! Array summary will fail!"
+                warnings.warn(w.format(n))
+            self.hiding(n, empty_items, axis='x', hide_values=False)
+        return None
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'both'})
+    def hide_empty_values(self, name, condition=None):
+        """
+        """
+        pass
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
