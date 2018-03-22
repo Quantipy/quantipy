@@ -547,6 +547,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        filter_name = filter_name.encode('utf-8', errors='ignore')
         if not (filter_name in self.filter_names or self.filter == 'no_filter'):
             old_name = self.filter.keys()[0]
             n_filter = old_name + filter_name
