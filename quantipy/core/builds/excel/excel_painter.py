@@ -1736,7 +1736,8 @@ def ExcelPainter(path_excel,
 
                             conditions = [
                                 view.meta()['agg']['name'].startswith('cbase'),
-                                view.meta()['agg']['is_weighted']==False]
+                                view.meta()['agg']['is_weighted']==False,
+                                not is_array]
                             if all(conditions):
                                 a = view.dataframe.values[0]
                                 for cbindex, cb in np.ndenumerate(a):

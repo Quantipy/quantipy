@@ -2171,12 +2171,26 @@ class Stack(defaultdict):
                 suffix = '_rc'
                 for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
                     suf = suffix + s
-                    name = '{}{}'.format(var, suf)
+                    name = '{}{}'.format(dataset._dims_free_arr_item_name(var), suf)
                     if dataset.var_exists(name):
                         if dataset._meta['columns'][name]['properties'].get('recoded_net'):
                             break
                     else:
                         break
+
+                if dataset._is_array_item(var):
+                    if not 'to_array' in dataset._meta['sets']:
+                        dataset._meta['sets']['to_array'] = {}
+                    to_array_set = dataset._meta['sets']['to_array']
+                    parent = dataset.parents(var)[0].split('@')[-1]
+                    arr_name = dataset._dims_free_arr_name(parent) + suf
+                    no = dataset.item_no(var)
+                    if not arr_name in to_array_set:
+                        to_array_set[arr_name] = [parent, [name], [no]]
+                    else:
+                        to_array_set[arr_name][1].append(name)
+                        to_array_set[arr_name][2].append(no)
+
                 mapper = []
                 if recode == 'extend_codes':
                     mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
@@ -2197,6 +2211,9 @@ class Stack(defaultdict):
                 if not dataset._meta['columns'][name].get('properties'):
                     dataset._meta['columns'][name]['properties'] = {}
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
+                if 'properties' in dataset._meta['columns'][var]:
+                    for pname, props in dataset._meta['columns'][var]['properties'].items():
+                        dataset._meta['columns'][name]['properties'][pname] = props
                 if verbose:
                     print 'Created: {}'. format(name)
                 if 'collect_codes' in recode:
@@ -2231,6 +2248,7 @@ class Stack(defaultdict):
                                 codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
                     dataset.remove_values(name, remove)
                     dataset.reorder_values(name, codes)
+
             return None
 
         for dk in self.keys():
@@ -2239,11 +2257,11 @@ class Stack(defaultdict):
             if not _batches and not recode: return None
             meta = self[dk].meta
             data = self[dk].data
+            for v in on_vars:
+                if v in meta['sets']:
+                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars)) + items
             if not only_recode:
-                for v in on_vars:
-                    if v in meta['sets']:
-                        items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
-                        on_vars = list(set(on_vars + items))
                 all_batches = copy.deepcopy(meta['sets']['batches'])
                 for n, b in all_batches.items():
                     if not n in _batches: all_batches.pop(n)
@@ -2262,7 +2280,7 @@ class Stack(defaultdict):
 
             if recode and any(rec in recode
                               for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
-                ds = qp.DataSet(dk)
+                ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
@@ -2280,6 +2298,29 @@ class Stack(defaultdict):
                 for k, net in c_vars.items():
                     checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             net, k, ['@', k], ('net', ['cbase'], view))
+
+        if recode and 'to_array' in ds._meta['sets']:
+            for arr_name, arr_items in ds._meta['sets']['to_array'].items():
+                dims_name = ds._dims_compat_arr_name(arr_name)
+                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]))
+                sorter = list(enumerate(arr_items[2], start=1))
+                sorter.sort(key = lambda x: x[1])
+                sorter = [s[0] for s in sorter]
+                ds.reorder_items(dims_name, sorter)
+                msg = "Array {} built from recoded view variables!"
+                prop = ds._meta['masks'][dims_name]['properties']
+                prop['recoded_net'] = arr_items[0]
+                if 'properties' in ds._meta['masks'][arr_items[0]]:
+                    for p, v in ds._meta['masks'][arr_items[0]]['properties'].items():
+                        prop[p] = v
+                org_items = ds.sources(arr_items[0])
+                new_items = ds.sources(dims_name)
+                for org, new in zip(org_items, new_items):
+                    for p, v in ds._meta['columns'][org]['properties'].items():
+                        ds._meta['columns'][new]['properties'][p] = v
+                if verbose: print msg.format(dims_name)
+            del ds._meta['sets']['to_array']
+
         return None
 
     @staticmethod
@@ -2316,6 +2357,29 @@ class Stack(defaultdict):
                     v['text']['{} edits'.format(ax)][tk] = new_lab.format(t, factor)
         return values
 
+    @staticmethod
+    def _add_factor_meta(dataset, var, options):
+        if not dataset._has_categorical_data(var):
+            return None
+        rescale = options[0]
+        drop = options[1]
+        exclude = options[2]
+        dataset.clear_factors(var)
+        all_codes = dataset.codes(var)
+        if rescale:
+            fm = rescale
+        else:
+            fm = {c: c for c in all_codes}
+        if not drop and rescale:
+            for c in all_codes:
+                if not c in fm:
+                    fm[c] = c
+        if exclude:
+            for e in exclude:
+                if e in fm:
+                    del fm[e]
+        dataset.set_factors(var, fm)
+        return None
 
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
@@ -2425,7 +2489,6 @@ class Stack(defaultdict):
                    'drop': drop, 'exclude': exclude,
                    'axis': 'x',
                    'text': '' if not custom_text else custom_text}
-
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
             if not _batches: return None
@@ -2445,6 +2508,13 @@ class Stack(defaultdict):
                     check_on = list(set(check_on + [items[0]]))
                 else:
                     check_on = list(set(check_on + [v]))
+
+            ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
+            ds.from_stack(self, dk)
+
+            self._add_factor_meta(ds, v, (rescale, drop, exclude))
+
+
             view = qp.ViewMapper()
             view.make_template('descriptives')
             for stat in stats:
@@ -2455,7 +2525,7 @@ class Stack(defaultdict):
             if recode:
                 if other_source:
                     raise ValueError('Cannot recode if other_source is provided.')
-                ds = qp.DataSet(dk)
+                ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_stat_def(ds, on_vars, rescale, drop, exclude, verbose)
