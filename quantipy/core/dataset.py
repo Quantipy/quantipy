@@ -824,7 +824,7 @@ class DataSet(object):
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def from_batch(self, batch_name, include='identity', text_key=[],
-                   apply_edits=True, additions=True):
+                   apply_edits=True, additions='variables'):
         """
         Get a filtered subset of the DataSet using qp.Batch definitions.
 
@@ -840,10 +840,11 @@ class DataSet(object):
         apply_edits: bool, default True
             meta_edits and rules are used as/ applied on global meta of the
             new DataSet instance.
-        additions: bool, default True
+        additions: {'variables', 'filters', 'full', None}
             Extend included variables by the xks, yks and open ends of the
-            additional batches. Filters/ meta edits are ignored (/ taken from
-            the main Batch).
+            additional batches if set to 'variables', 'filters' will create
+            new 1/0-coded variables that reflect any filters defined. Selecting
+            'full' will do both, ``None`` will ignore additional Batches completely.
 
         Returns
         -------
@@ -888,6 +889,28 @@ class DataSet(object):
                                 ds._meta['columns'][name].pop('rules')
                         return None
 
+        def _manifest_filters(ds, batch_name):
+            all_batches = ds._meta['sets']['batches']
+            add_batches = ds._meta['sets']['batches'][batch_name]['additions']
+            if not adds: return None
+            filters = []
+            for add_batch in add_batches:
+                if all_batches[add_batch]['filter'] != 'no_filter':
+                    filters.append((add_batch, all_batches[add_batch]['filter']))
+            if not filters: return None
+            cats = [(1, 'active')]
+            fnames = []
+            for no, f in enumerate(filters, start=1):
+                fname = 'filter_{}'.format(no)
+                fnames.append(fname)
+                source = f[0]
+                flogic = f[1].values()[0]
+                flabel = f[1].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats)
+                ds._meta['columns'][fname]['properties']['recoded_filter'] = source
+                ds[ds.take(flogic), fname] = 1
+            return fnames
+
         batches = self._meta['sets'].get('batches', {})
         if not batch_name in batches:
             msg = 'No Batch named "{}" is included in DataSet.'
@@ -905,16 +928,22 @@ class DataSet(object):
             b_ds = self.filter(batch_name, batch['filter'].values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
-        if additions:
+        if additions in ['full', 'variables']:
             adds = batch['additions']
         else:
             adds = []
+        if additions in ['full', 'filters']:
+            filter_vars = _manifest_filters(b_ds, batch_name)
+        else:
+            filter_vars = []
+
         variables = include
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
+        if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
@@ -1280,6 +1309,29 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='codes')
 
+    @verify(variables={'name': 'both'})
+    def factors(self, name):
+        """
+        Get categorical data's stat. factor values.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        factors : OrderedDict
+            A ``{value: factor}`` mapping.
+        """
+        val_loc = self._get_value_loc(name)
+        factors = OrderedDict()
+        for val in val_loc:
+            f = val.get('factor', None)
+            if f: factors[val['value']] = f
+        return factors
+
     @verify(variables={'name': 'columns'}, categorical='name')
     def codes_in_data(self, name):
         """
@@ -1599,6 +1651,13 @@ class DataSet(object):
         mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
         mapper[old] = new
         return mapper
+
+    @classmethod
+    def _dims_free_arr_item_name(cls, item_name):
+        if '[' in item_name:
+            return item_name.split('[{')[1].split('}]')[0]
+        else:
+            return item_name
 
     @classmethod
     def _dims_free_arr_name(cls, arr_name):
@@ -1929,10 +1988,11 @@ class DataSet(object):
         Update value meta for array items. Workaround for badly converted meta.
         """
         for m in self.masks():
-            lib_vals = 'lib@values@{}'.format(m)
-            self._meta['masks'][m]['values'] = lib_vals
-            for s in self.sources(m):
-                self._meta['columns'][s]['values'] = lib_vals
+            if self._has_categorical_data(m):
+                lib_vals = 'lib@values@{}'.format(m)
+                self._meta['masks'][m]['values'] = lib_vals
+                for s in self.sources(m):
+                    self._meta['columns'][s]['values'] = lib_vals
         return None
 
     def _clean_datafile_set(self):
@@ -2504,6 +2564,44 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
+    @modify(to_list=['varlist'])
+    @verify(variables={'varlist': 'both'})
+    def roll_up(self, varlist, ignore_arrays=None):
+        """
+        Replace any array items with their parent mask variable definition name.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of meta ``'columns'`` and/or ``'masks'`` names.
+        ignore_arrays : (list of) str
+            A list of array mask names that should not be rolled up if their
+            items are found inside ``varlist``.
+        Returns
+        -------
+        rolled_up : list
+            The modified ``varlist``.
+        """
+        if ignore_arrays:
+            if not isinstance(ignore_arrays, list):
+                ignore_arrays = [ignore_arrays]
+        else:
+            ignore_arrays = []
+        arrays_defs = {arr: self.sources(arr) for arr in self.masks()
+                       if not arr in ignore_arrays}
+        item_map = {}
+        for k, v in arrays_defs.items():
+            for item in v:
+                item_map[item] = k
+        rolled_up = []
+        for v in varlist:
+            if not self.is_array(v):
+                if v in item_map:
+                    if not item_map[v] in rolled_up:
+                        rolled_up.append(item_map[v])
+                else:
+                    rolled_up.append(v)
+        return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
     @verify(variables={'varlist': 'both', 'keep': 'masks'})
@@ -5289,6 +5387,75 @@ class DataSet(object):
             self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
 
+    @verify(variables={'name': 'both'})
+    def clear_factors(self, name):
+        """
+        Remove all factors set in the variable's ``'values'`` object.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        None
+        """
+        val_loc = self._get_value_loc(name)
+        for value in val_loc:
+            value['factor'] = None
+        return None
+
+    @verify(variables={'name': 'both'})
+    def set_factors(self, name, factormap, safe=False):
+        """
+        Apply numerical factors to (``single``-type categorical) variables.
+
+        Factors can be read while aggregating descrp. stat. ``qp.Views``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        factormap : dict
+            A mapping of ``{value: factor}`` (``int`` to ``int``).
+        safe : bool, default False
+            Set to ``True`` to prevent setting factors to the ``values`` meta
+            data of non-``single`` type variables.
+
+        Returns
+        -------
+        None
+        """
+        e = False
+        if name in self.masks():
+            if self._get_subtype(name) != 'single':
+                e = True
+        else:
+            if self._get_type(name) != 'single':
+                e = True
+        if e:
+            if safe:
+                err = "Can only set factors to 'single' type categorical variables!"
+                raise TypeError(err)
+            else:
+                return None
+        vals = self.codes(name)
+        facts = factormap.keys()
+        val_loc = self._get_value_loc(name)
+        if not all(f in vals for f in facts):
+            err = 'At least one factor is mapped to a code that does not exist '
+            err += 'in the values object of "{}"!'
+            raise ValueError(err.format(name))
+        for value in val_loc:
+            if value['value'] in factormap:
+                value['factor'] = factormap[value['value']]
+            else:
+                value['factor'] = None
+        return None
+
     # rules and properties
     # ------------------------------------------------------------------------
     @verify(variables={'name': 'both'})
@@ -5298,8 +5465,8 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text']
-
+        valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
+                       'recoded_filter']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
@@ -5315,7 +5482,10 @@ class DataSet(object):
             p = meta_ref['properties'].get(prop_name, None)
             if p:
                 if prop_name == 'base_text' and isinstance(p, dict):
-                    p = p[text_key]
+                    try:
+                        p = p[text_key]
+                    except:
+                        p = p[self.text_key]
             return p
         else:
             return None
