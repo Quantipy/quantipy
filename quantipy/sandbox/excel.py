@@ -916,7 +916,10 @@ class _Box(object):
                 data = self._cell(data, **contents)
                 if level_id == 0:
                     if left == right:
-                        self.single_columns.append(left)
+                        level = -(1 + self.has_tests)
+                        lowest_label = self.columns.get_level_values(level)[left]
+                        if lowest_label == 'Total':
+                            self.single_columns.append(left)
                     self.column_edges.append(right + 1)
                 if left not in self.single_columns:
                     if group_sizes and not is_values:
@@ -951,8 +954,8 @@ class _Box(object):
             data = self._cell(self.columns.get_level_values(level)[cindex],
                               **contents)
             merge_range(row - nlevels + 1, column + cindex,
-                                   row, column + cindex,
-                                   data, format_)
+                        row, column + cindex,
+                        data, format_)
 
         self.sheet._row = row + 1
 

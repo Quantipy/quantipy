@@ -183,6 +183,11 @@ VIEWS_COMPLEX_MEAN = ('x|f|x:|||cbase',
 
 SHEET_PROPERTIES_0 = dict(alternate_bg=True)
 
+FORMATS_0 = dict(view_border_freq             = None,
+                 view_border_net              = None,
+                 view_border_block_net        = None,
+                 view_border_block_expanded   = None)
+
 SHEET_PROPERTIES_1 = dict(alternate_bg=True,
                           freq_0_rep=':',
                           stat_0_rep='#',
