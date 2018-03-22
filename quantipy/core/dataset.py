@@ -1381,7 +1381,7 @@ class DataSet(object):
         for text in text_label:
             sub_codes = []
             for c, l in vals:
-                if text in l and not exact:
+                if l and text in l and not exact:
                     sub_codes.append(c)
                 elif l == text:
                     sub_codes.append(c)

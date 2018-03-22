@@ -33,9 +33,19 @@ class _Format(dict):
 class _ExcelFormats(object):
 
     __default_attributes__ = tuple(_DEFAULT_ATTRIBUTES.keys())
-    __slots__ = __default_attributes__ + ('_view_or_group', )
+    __slots__ = __default_attributes__ + ('default_attributes', '_view_or_group')
 
     def __init__(self, views_groups, **kwargs):
+        self.default_attributes = dict(_DEFAULT_ATTRIBUTES)
+
+        # update default for globals, e.g. "font_size"
+        for x in kwargs:
+            if x in _ATTRIBUTES:
+                for y in self.default_attributes:
+                    if y.startswith(x):
+                        self.default_attributes[y] = kwargs[x]
+
+        # set attributes
         for name in self.__default_attributes__:
             view_or_group = self._view_or_group(name, _VIEWS_GROUPS,
                                                 views_groups, kwargs)
@@ -43,13 +53,13 @@ class _ExcelFormats(object):
             setattr(self, name, value_or_default)
 
     def _view_or_group(self, name, implicit, explicit, kwargs):
-        if self._extract_from(name, explicit, kwargs):
+        if self._extract_from(name, explicit, kwargs) != '#':
             return self._extract_from(name, explicit, kwargs)
 
-        if self._extract_from(name, implicit, kwargs):
+        if self._extract_from(name, implicit, kwargs) != '#':
             return self._extract_from(name, implicit, kwargs)
 
-        return _DEFAULT_ATTRIBUTES[name]
+        return self.default_attributes[name]
 
     @staticmethod
     def _extract_from(name, source, kwargs):
@@ -61,7 +71,7 @@ class _ExcelFormats(object):
                 attr = groups[0] + group + groups[2]
                 if attr in kwargs:
                     return kwargs[attr]
-        return None
+        return '#'
 
 class ExcelFormats(_ExcelFormats):
 
