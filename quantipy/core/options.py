@@ -5,7 +5,8 @@ OPTIONS = {
 	'new_rules': False,
 	'new_chains': False,
 	'short_item_texts': False,
-	'convert_chains': False
+	'convert_chains': False,
+	'fast_stack_filters': False
 }
 
 def set_option(option, val):
