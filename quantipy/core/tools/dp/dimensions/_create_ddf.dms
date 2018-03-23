@@ -51,6 +51,13 @@ Event(OnJobStart)
 	dmgrGlobal.CaseData.LoadFromFile(MASTER_INPUT+"_datastore.csv")
 	
 	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadText(-2)
+    
+	'Set decimal separator
+	Dim oExcel
+	dmgrJob.GlobalVariables.Add("DecimalSeparator")
+	dmgrJob.GlobalVariables.DecimalSeparator = "."  
+	Set oExcel = createobject("Excel.Application")
+	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","    
 
 End Event
 
@@ -103,7 +110,7 @@ Event(OnNextCase)
 
 	End Function
 
-	Dim i, oA
+	Dim i, oA, oA_value
 	Dim columns, col, data
 	Dim gSplit, gName, gElement, gField
 	Dim response
@@ -129,7 +136,11 @@ Event(OnNextCase)
 				If data[i] = "NULL" Then
 					oA = NULL
 				Else
-					oA = data[i]
+					oA_value=data[i]
+					if dmgrJob.GlobalVariables.DecimalSeparator = "," Then 
+						oA_value = Replace(CText(oA_value),".",",")
+					End If	
+					oA = oA_value
 				End If
 			Case 2
 				oA = data[i].Replace(">_>_>", ",")
