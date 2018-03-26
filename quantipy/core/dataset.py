@@ -1333,7 +1333,7 @@ class DataSet(object):
         return factors
 
     @verify(variables={'name': 'columns'}, categorical='name')
-    def codes_in_data(self, name):
+    def codes_in_data(self, name, condition=None):
         """
         Get a list of codes that exist in data.
         """
@@ -5466,7 +5466,7 @@ class DataSet(object):
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
-                       'recoded_filter']
+                       'recoded_filter', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
@@ -5514,7 +5514,7 @@ class DataSet(object):
         -------
         None
         """
-        valid_props = ['base_text']
+        valid_props = ['base_text', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         prop_update = {prop_name: prop_value}
@@ -5569,6 +5569,22 @@ class DataSet(object):
             for ax in axis:
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
+
+    def _empty_elements(self, name, slicer):
+        pass
+
+    @verify(variables={'name': 'both'})
+    def empty_values(self, name, condition):
+        """
+        """
+        if condition:
+            ds = self.filter(condition)
+        else:
+            ds = self
+        print name
+        print ds.codes_in_data(name)
+        print ds.codes(name)
+        print
 
     @verify(variables={'name': 'masks'})
     def empty_items(self, name, condition=None, by_name=True):
@@ -5626,6 +5642,7 @@ class DataSet(object):
             if len(empty_items) == len(self.sources(n)):
                 w = "All items of array '{}' are hidden! Array summary will fail!"
                 warnings.warn(w.format(n))
+                self.set_property(n, '_no_valid_items', True, True)
             self.hiding(n, empty_items, axis='x', hide_values=False)
         return None
 
