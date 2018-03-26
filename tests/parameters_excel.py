@@ -265,6 +265,7 @@ FORMATS_2 = dict(bold_label=True,
                  text_h_align_header_center=1,
                  bg_color_header_center='#85AD6E',
                  bold_header_title=True,
+                 text_wrap_header_title=True,
                  font_color_header_title='#265E1A',
                  text_h_align_header_title=1,
                  bg_color_header_title='#DFF442',
@@ -286,7 +287,9 @@ ANNOTATIONS_2 = ['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
 SHEET_PROPERTIES_3 = dict(dummy_tests=True,
                           alternate_bg=False,
                           start_row=7,
-                          start_column=2)
+                          start_column=2,
+                          start_row_annotations=4,
+                          start_column_annotations=5)
 
 VIEW_GROUPS_3 = dict(block_normal_counts='block_normal',
                      block_normal_c_pct='block_normal',

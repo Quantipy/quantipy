@@ -1,11 +1,11 @@
 # -* coding: utf-8 -*-
 
-import ctypes
 import numpy as np
 import pandas as pd
 import quantipy as qp
 import cPickle as cp
 
+from PIL import ImageFont
 from excel_formats import ExcelFormats, _Format
 from excel_formats_constants import _DEFAULTS, _VIEWS_GROUPS
 from difflib import SequenceMatcher
@@ -58,6 +58,8 @@ _SHEET_DEFAULTS = dict(alternate_bg             = True,
                        row_height_label         = 12.75,
                        start_column             = 0,
                        start_row                = 0,
+                       start_column_annotations = 0,
+                       start_row_annotations    = 0,
                        stat_0_rep               = '-',
                        y_header_height          = 33.75,
                        y_row_height             = 50)
@@ -122,46 +124,54 @@ class Excel(Workbook):
 
         The following table shows the default sheet properties:
 
-        Property                Default value   Definition
-        ~~~~~~~~                ~~~~~~~~~~~~~   ~~~~~~~~~~
-        ``alternate_bg``        ``True``        Alternate bg_color in freq views
-        ``arrow_color_high``    ``'#2EB08C'``   High arrow color
-        ``arrow_rep_high``      ``u'\u25B2'``   High arrow representation for column
-                                                proportion tests
-        ``arrow_color_low``     ``'#FC8EAC'``   Low arrow color
-        ``arrow_rep_low``       ``u'\u25BC'``   Low arrow representation for column
-                                                proportion tests
-        ``column_width``        ``9``           Column width - column 1, ..., N
-        ``column_width_label``  ``35``          Column width - column 0
-        ``column_width_frame``  ``15``          Column width - Chain.structure
-        ``column_width_specific``  balh blah
-        ``dummy_tests``         ``False``       If column proportion/ mean tests in
-                                                views add dummy test rows for view
-        ``freq_0_rep``          ``'-'``         Representation of zero data in
-                                                frequency views
-        ``img_insert_x``        ``0``           Cell row to insert image
-                                                (zero indexed)
-        ``img_insert_y``        ``0``           Cell column to insert image
-                                                (zero indexed)
-        ``img_size``            ``[130, 130]``  Resize image to [width, height]
-        ``img_x_offset``        ``0``           Offset image by pixels - x axis
-        ``img_y_offset``        ``0``           Offset image by pixels - y axis
-        ``row_height_label``    ``12.75``       Row height for view rows
-        ``start_column``        ``0``           Start column (zero indexed)
-        ``start_row``           ``0``           Start row (zero indexed)
-        ``stat_0_rep``          ``'-'``         Representation of zero data in
-                                                descriptive views
-        ``y_header_height``     ``33.75``       y row hieght - header (pands.DataFrame.index.level #0)
-        ``y_row_height``        ``50``          y row height (pands.DataFrame.index.level #1)
+        Property                     Default value   Definition
+        ~~~~~~~~                     ~~~~~~~~~~~~~   ~~~~~~~~~~
+        ``alternate_bg``             ``True``        Alternate bg_color in freq views
+        ``arrow_color_high``         ``'#2EB08C'``   High arrow color
+        ``arrow_rep_high``           ``u'\u25B2'``   High arrow representation for column
+                                                     proportion tests
+        ``arrow_color_low``          ``'#FC8EAC'``   Low arrow color
+        ``arrow_rep_low``            ``u'\u25BC'``   Low arrow representation for column
+                                                     proportion tests
+        ``column_width``             ``9``           Column width - column 1, ..., N
+        ``column_width_label``       ``35``          Column width - column 0
+        ``column_width_frame``       ``15``          Column width - Chain.structure
+        ``column_width_specific``    ``dict``        Column width - specific column override
+        ``dummy_tests``              ``False``       If column proportion/ mean tests in
+                                                     views add dummy test rows for view
+        ``freq_0_rep``               ``'-'``         Representation of zero data in
+                                                     frequency views
+        ``img_insert_x``             ``0``           Cell row to insert image
+                                                     (zero indexed)
+        ``img_insert_y``             ``0``           Cell column to insert image
+                                                     (zero indexed)
+        ``img_size``                 ``[130, 130]``  Resize image to [width, height]
+        ``img_x_offset``             ``0``           Offset image by pixels - x axis
+        ``img_y_offset``             ``0``           Offset image by pixels - y axis
+        ``row_height_label``         ``12.75``       Row height for view rows
+        ``start_column``             ``0``           Start column (zero indexed)
+        ``start_row``                ``0``           Start row (zero indexed)
+        ``start_column_annotations`` ``0``           Start column for annotations (zero indexed)
+        ``start_row_annotations``    ``0``           Start row for annotations (zero indexed)
+        ``stat_0_rep``               ``'-'``         Representation of zero data in
+                                                     descriptive views
+        ``y_header_height``          ``33.75``       y row hieght - header (pands.DataFrame.index.level #0)
+        ``y_row_height``             ``50``          y row height (pands.DataFrame.index.level #1)
 
         To change the values pass a dict with the property / new value as
         key/ value pair.
+
         To modify a property for a specific sheet, pass a dict to the kwargs
         parameter in the ``quantipy.Excel.add_chains`` method.
+
         When you have a ``quantipy.ChainManager`` with many sheets the kwargs
         dict should contain a key with the sheet name and a value of the sheet
         properties as previously described. Otherwise you are simply updateing
         the property for every sheet.
+
+        If ``start_row_annotations`` + number of annotations is greater than
+        ``start_row`` then the start_row will become the row after the last
+        annotation.
 
     2. ``formats``
 
@@ -498,6 +508,8 @@ class _Sheet(Worksheet):
 
         self._row = self.start_row
         self._column = self.start_column
+        self._row_annotations = self.start_row_annotations
+        self._column_annotations = self.start_column_annotations
         self._formats = None
         self._freeze_loc = None
         self._columns = None
@@ -571,8 +583,12 @@ class _Sheet(Worksheet):
                     format_ = self.excel._add_format(_Format(**format_spec))
                 except ValueError:
                     format_ = self.default_annotation_format
-                write(self._row, self._column, annotation, format_)
-                self._row += 1
+
+                write(self._row_annotations, self._column_annotations,
+                      annotation, format_)
+                self._row_annotations += 1
+            if self._row_annotations > self._row:
+                self._row = self._row_annotations
 
         for i, chain in enumerate(self.chains):
 
@@ -667,45 +683,35 @@ class _Sheet(Worksheet):
             width = self.column_width_specific.get(relative, self.column_width)
             self.set_column(relative, relative, width)
 
-    def set_row(self, row, height, label=None):
+    def set_row(self, row, height, label=None, font_name=None, font_size=None):
         padding = 5
         units_to_pixels = 4.0 / 3.0
 
         if isinstance(label, basestring):
 
-            font_size = self.excel._formats.default_attributes['font_size']
-            font_name = self.excel._formats.default_attributes['font_name']
+            if font_name is None:
+                font_name = self.excel._formats.default_attributes['font_name']
 
-            column_dimensions = self._size_col(self.start_column)
-            label_dimensions = self._label_dimension(label,
-                                                     font_size,
-                                                     font_name)
-            if (label_dimensions[1]  * units_to_pixels) - padding > font_size:
+            if font_size is None:
+                font_size = self.excel._formats.default_attributes['font_size']
+
+            font = ImageFont.truetype('%s.ttf' % font_name.lower(), font_size)
+            dimensions = font.getsize(label)
+
+            if (dimensions[1] * units_to_pixels) - padding > height:
+                raise Exception("...")
                 # text too tall
                 return
 
-            if (label_dimensions[0] + padding) > column_dimensions:
+            print label, dimensions[0], self._size_col(self.start_column),
+            if (dimensions[0] * units_to_pixels) > self._size_col(self.start_column):
                 # text too long
+                print '>>'
                 return
+            else:
+                print dimensions[0] * units_to_pixels
 
         super(_Sheet, self).set_row(row, height)
-
-    def _label_dimension(self, text, points, font):
-
-        class SIZE(ctypes.Structure):
-            _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
-
-        hdc = ctypes.windll.user32.GetDC(0)
-        gdi32 = ctypes.windll.gdi32
-        hfont = gdi32.CreateFontA(points, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  font)
-        hfont_old = gdi32.SelectObject(hdc, hfont)
-        size = SIZE(0, 0)
-        gdi32.GetTextExtentPoint32A(hdc, text, len(text), ctypes.byref(size))
-        gdi32.SelectObject(hdc, hfont_old)
-        gdi32.DeleteObject(hfont)
-
-        return (size.cx, size.cy)
 
     def _set_freeze_loc(self, columns):
         if list(columns.labels[-1]).count(0) == 1:
@@ -1102,20 +1108,25 @@ class _Box(object):
         for name in names:
             anno = getattr(self, name)
             if anno:
+                format_ = self.formats[name]
+                label = anno[0]
                 self.sheet.write(self.sheet._row, self.sheet._column,
-                                 anno[0], self.formats[name])
-                self._format_row(self.formats[name])
+                                 label, format_)
+                self._format_row(format_)
                 self.sheet.set_row(self.sheet._row,
-                                   self.sheet.row_height_label)
+                                   self.sheet.row_height_label,
+                                   label=label,
+                                   font_name=format_.get('font_name'),
+                                   font_size=format_.get('font_size'))
+
                 self.sheet._row += 1
 
     def _format_row(self, format_):
-        value = ''
         write = self.sheet.write
         row = self.sheet._row
         column = self.sheet._column
         for rel_y in xrange(1, self.values.shape[1] + 1):
-            write(row, column + rel_y, value, format_)
+            write(row, column + rel_y, '', format_)
 
     def _alternate_bg(self, name, bg):
         freq_view_group = self.excel.views_groups.get(name, '') == 'freq'
