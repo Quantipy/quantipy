@@ -68,6 +68,7 @@ class ChainManager(object):
         self.stack = stack
         self.__chains = []
         self.source = 'native'
+        self.build_info = {}
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -369,7 +370,8 @@ class ChainManager(object):
         f.close()
         return None
 
-    def load(self, path):
+    @staticmethod
+    def load(path):
         """
         """
         f = open(path, 'rb')

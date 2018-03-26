@@ -515,7 +515,7 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         return None
-     
+
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
                          date_format="DMY", run=True, clean_up=True):
@@ -1381,7 +1381,7 @@ class DataSet(object):
         for text in text_label:
             sub_codes = []
             for c, l in vals:
-                if text in l and not exact:
+                if l and text in l and not exact:
                     sub_codes.append(c)
                 elif l == text:
                     sub_codes.append(c)
