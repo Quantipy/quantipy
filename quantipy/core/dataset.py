@@ -1333,7 +1333,7 @@ class DataSet(object):
         return factors
 
     @verify(variables={'name': 'columns'}, categorical='name')
-    def codes_in_data(self, name, condition=None):
+    def codes_in_data(self, name):
         """
         Get a list of codes that exist in data.
         """
@@ -5577,14 +5577,16 @@ class DataSet(object):
     def empty_values(self, name, condition):
         """
         """
+        hidden = []
         if condition:
-            ds = self.filter(condition)
+            ds = self.filter('emptyiness', condition)
         else:
             ds = self
-        print name
-        print ds.codes_in_data(name)
-        print ds.codes(name)
-        print
+        for n in name:
+            if not ds.codes_in_data(n):
+                hidden.append(n)
+        print len(hidden)
+
 
     @verify(variables={'name': 'masks'})
     def empty_items(self, name, condition=None, by_name=True):
