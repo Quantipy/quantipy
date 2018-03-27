@@ -5571,7 +5571,7 @@ class DataSet(object):
         return None
 
     @verify(variables={'name': 'columns'})
-    def empty(self, name, condition):
+    def empty(self, name, condition=None):
         """
         Check variables for emptiness (opt. restricted by a condition).
 
@@ -5579,7 +5579,7 @@ class DataSet(object):
         ----------
         name : (list of) str
             The mask variable name keyed in ``_meta['columns']``.
-        condition : Quantipy logic expression
+        condition : Quantipy logic expression, default None
             A logical condition expressed as Quantipy logic that determines
             which subset of the case data rows to be considered.
 
@@ -5611,10 +5611,10 @@ class DataSet(object):
         ----------
         name : str
             The mask variable name keyed in ``_meta['masks']``.
-        condition : Quantipy logic expression
+        condition : Quantipy logic expression, default None
             A logical condition expressed as Quantipy logic that determines
             which subset of the case data rows to be considered.
-        by_name : bool, default
+        by_name : bool, default True
             Return array items by their name or their index.
 
         Returns
@@ -5656,8 +5656,11 @@ class DataSet(object):
         for n in name:
             empty_items = self.empty_items(n, condition, False)
             if len(empty_items) == len(self.sources(n)):
-                w = "All items of array '{}' are hidden! Array summary will fail!"
-                warnings.warn(w.format(n))
+                # TODO: DO we have any use for this info? Maybe better have a
+                # property to show all empty-hidden array masks?
+                # ------------------------------------------------------------
+                # w = "All items of array '{}' are hidden! Array summary will fail!"
+                # warnings.warn(w.format(n))
                 self.set_property(n, '_no_valid_items', True, True)
             self.hiding(n, empty_items, axis='x', hide_values=False)
         return None
