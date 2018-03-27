@@ -5602,6 +5602,7 @@ class DataSet(object):
         else:
             return empty
 
+    @modify(to_list='name')
     @verify(variables={'name': 'masks'})
     def empty_items(self, name, condition=None, by_name=True):
         """
@@ -5609,7 +5610,7 @@ class DataSet(object):
 
         Parameters
         ----------
-        name : str
+        name : (list of) str
             The mask variable name keyed in ``_meta['masks']``.
         condition : Quantipy logic expression, default None
             A logical condition expressed as Quantipy logic that determines
@@ -5619,32 +5620,35 @@ class DataSet(object):
 
         Returns
         -------
-        empty_items : list
+        empty : dict
             The list of empty items by their source names or positional index
-            (starting from 1!).
+            (starting from 1!) mapped to their ``parent`` mask name.
         """
+        empty = {}
+        if not isinstance(name, list): name = [name]
         if condition:
-            slicer = self.take(condition)
-            df = self[slicer, name].sum().copy()
+            ds = self.filter('emptiness', condition)
         else:
-            df = self[name].sum().copy()
-        slicer = df == 0
-        empty_items = df.loc[slicer].index.values.tolist()
-        if by_name:
-            return empty_items
-        else:
-            return [self.item_no(i) for i in empty_items]
+            ds = self
+        for n in name:
+            df = ds[n].sum().copy()
+            slicer = df == 0
+            empty_items = df.loc[slicer].index.values.tolist()
+            if empty_items:
+                if by_name: empty_items = [self.item_no(i) for i in empty_items]
+                empty[n] = empty_items
+        return empty
 
-    @modify(to_list='name')
-    @verify(variables={'name': 'masks'})
-    def hide_empty_items(self, name, condition=None):
+    @verify(variables={'arrays': 'masks'})
+    def hide_empty_items(self, condition=None, arrays=None):
         """
         Apply ``rules`` meta to automatically hide empty array items.
 
         Parameters
         ----------
-        name : (list of) str
-            The mask variable names keyed in ``_meta['masks']``.
+        arrays : (list of) str, default None
+            The array mask variable names keyed in ``_meta['masks']``. If not
+            explicitly provided will test all array mask definitions.
         condition : Quantipy logic expression
             A logical condition expressed as Quantipy logic that determines
             which subset of the case data rows to be considered.
@@ -5653,24 +5657,18 @@ class DataSet(object):
         -------
         None
         """
-        for n in name:
-            empty_items = self.empty_items(n, condition, False)
-            if len(empty_items) == len(self.sources(n)):
-                # TODO: DO we have any use for this info? Maybe better have a
-                # property to show all empty-hidden array masks?
-                # ------------------------------------------------------------
-                # w = "All items of array '{}' are hidden! Array summary will fail!"
-                # warnings.warn(w.format(n))
-                self.set_property(n, '_no_valid_items', True, True)
-            self.hiding(n, empty_items, axis='x', hide_values=False)
+        if not arrays: arrays = self.masks()
+        if arrays and not isinstance(arrays, list): arrays = [arrays]
+        empty_items = self.empty_items(arrays, condition, False)
+        if empty_items:
+            for array, items in empty_items.items():
+                if len(items) == len(self.sources(array)):
+                    # TODO: DO we have any use for this info?
+                    # w = "All items of array '{}' are hidden! Array summary will fail!"
+                    # warnings.warn(w.format(n))
+                    self.set_property(array, '_no_valid_items', True, True)
+                self.hiding(array, items, axis='x', hide_values=False)
         return None
-
-    @modify(to_list='name')
-    @verify(variables={'name': 'both'})
-    def hide_empty_values(self, name, condition=None):
-        """
-        """
-        pass
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')

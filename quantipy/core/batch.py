@@ -407,6 +407,10 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    def _clean_empty_summaries(self, arrays):
+        for array in arrays:
+            pass
+
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
     def make_summaries(self, arrays, exclusive=False):
