@@ -699,17 +699,12 @@ class _Sheet(Worksheet):
             dimensions = font.getsize(label)
 
             if (dimensions[1] * units_to_pixels) - padding > height:
-                raise Exception("...")
                 # text too tall
                 return
 
-            print label, dimensions[0], self._size_col(self.start_column),
             if (dimensions[0] * units_to_pixels) > self._size_col(self.start_column):
                 # text too long
-                print '>>'
                 return
-            else:
-                print dimensions[0] * units_to_pixels
 
         super(_Sheet, self).set_row(row, height)
 

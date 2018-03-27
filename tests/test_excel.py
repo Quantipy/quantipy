@@ -343,14 +343,14 @@ class TestExcel:
 
         excel(chain_manager[complexity], sp, vg, il, dt, dc, im, fm, an, pt)
 
-        # zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
+        zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
 
-        # assert zip_got.namelist() == zip_exp.namelist()
+        assert zip_got.namelist() == zip_exp.namelist()
 
-        # for filename in zip_got.namelist():
-        #     xml_got = _read_file(zip_got, filename)
-        #     xml_exp = _read_file(zip_exp, filename)
-        #     err = ' ... %s ...\nGOT: %s\nEXPECTED: %s'
-        #     assert xml_got == xml_exp, err % (filename, xml_got, xml_exp)
+        for filename in zip_got.namelist():
+            xml_got = _read_file(zip_got, filename)
+            xml_exp = _read_file(zip_exp, filename)
+            err = ' ... %s ...\nGOT: %s\nEXPECTED: %s'
+            assert xml_got == xml_exp, err % (filename, xml_got, xml_exp)
 
-        # TestExcel.teardown = True
+        TestExcel.teardown = True
