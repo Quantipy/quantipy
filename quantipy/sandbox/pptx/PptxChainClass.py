@@ -243,29 +243,37 @@ class PptxChain(object):
     This class is a wrapper around Chain() class to prepare for PPTX charting
     """
 
-    def __init__(self, chain, qname_in_qtext=False, crossbreak=None):
+    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None):
+        """
+        :param
+            chain: An instance of Chain class
+            is_varname_in_qtext: Is var name included in the painted chain dataframe (False, True or 'full')
+            crossbreak:
+        """
 
         self.chain = chain
+        self.is_mask_item = chain._is_mask_item
+        self.x_key_name = chain._x_keys[0]
+        self.source = chain.source
+        self._var_name_in_qtext = is_varname_in_qtext
         self.is_grid_summary = False if chain.array_style == -1 else True
         if crossbreak:
             if not isinstance(crossbreak, list):
                 crossbreak = [crossbreak]
             crossbreak = self._check_crossbreaks(chain, crossbreak)
-        self.name = chain.name # TODO PptxChain - Is chain.name the same as question name as named in meta
-        self.short_name = self._get_short_question_name()
+        self.name = chain.name
+        self.x_key_short_name = self._get_short_question_name()
         self.crossbreak = [BASE_COL] if self.is_grid_summary else crossbreak
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes == False else [x[0] for x in self.xbase_indexes]
         self.total_base = ""
         self.chain_df = chain.dataframe if self.is_grid_summary else self._select_crossbreak()
         self.base_description = "" if chain.base_descriptions == None else chain.base_descriptions
-        self.question_text = self.get_question_text(include_qname=qname_in_qtext)
+        self.question_text = self.get_question_text(include_varname=False)
         self.crossbreaks_qtext = []
         self.ybases = self._get_bases()
         self.xkey_levels = chain.dataframe.index.nlevels
         self.ykey_levels = chain.dataframe.columns.nlevels
-        self.xkeys = self._get_xkeys()
-        self.ykeys = self._get_ykeys()
         self.array_style = chain.array_style
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
@@ -369,7 +377,7 @@ class PptxChain(object):
 
     @property
     def ybase_value_labels(self):
-        if not hasattr(self, "_base_value_labels")
+        if not hasattr(self, "_base_value_labels"):
             self._base_value_labels=[x[0] for x in self.ybases]
         return self._base_value_labels
 
@@ -548,31 +556,56 @@ class PptxChain(object):
             chain: the chain instance
         :return: question_name (as string)
         """
-        # Not grid summary
-        if not self.is_grid_summary:
-            if is_grid_slice(self.chain): # Is grid slice
+        if not self.is_grid_summary: # Not grid summary
+            if self.is_mask_item: # Is grid slice
                 pattern = '(?<=\[\{).*(?=\}\])'
-                return re.findall(pattern, self.name)[0]
+                result_list = re.findall(pattern, self.x_key_name)
+                if result_list:
+                    return result_list[0] # TODO Hmm what if more than one level grid
+                else:
+                    return self.x_key_name
 
             else: # Not grid slice
-                return self.name
+                return self.x_key_name
 
         else: # Is grid summary
-            return self.name[:self.name.find('.')]
+            find_period = self.x_key_name.find('.')
+            if find_period > -1:
+                return self.x_key_name[:find_period]
+            else:
+                return self.x_key_name
 
-    def get_question_text(self, include_qname=True):
+    def get_question_text(self, include_varname=False):
         """
-        Retrieves the question text from the dataframe
+        Retrieves the question text from the dataframe.
+        Assumes that self.chain_df has one of the following setups  regarding question name self._var_name_in_qtext:
+            False:  No question name included in question text
+            True:   Question text included in question text, mask items has short question name included.
+            'Full': Question text included in question text, mask items has full question name included.
+
         :param
-            chain: the chain instance
+            include_varname: Include question name in question text (bool)
         :return: question_txt (as string)
         """
 
-        xkey = self.name
-        question_text = self.chain_df.index[0][0][len(xkey) + 2:]
+        # Get variable name
+        var_name = self.x_key_name
+        if self.is_mask_item:
+            if self._var_name_in_qtext == True:
+                var_name = self.x_key_short_name
 
-        if include_qname:
-            question_text = "{}. {}".format(self.short_name, question_text)
+        # Get question text, stripped for variable name
+        question_text = self.chain_df.index[0][0]
+        if self._var_name_in_qtext:
+            question_text = question_text[len(var_name) + 2:]
+
+        # Include the full question text for mask items if missing
+        if self.is_mask_item:
+            question_text = self._mask_question_text(question_text)
+
+        # Add variable name to question text if requested
+        if include_varname:
+            question_text = u'{}. {}'.format(self.x_key_short_name, question_text)
 
         # Remove consecutive line breaks and spaces
         question_text = re.sub('\n+', '\n', question_text)
@@ -580,6 +613,28 @@ class PptxChain(object):
         question_text = re.sub(' +', ' ', question_text)
 
         return question_text.strip()
+
+    def _mask_question_text(self, question_text):
+        """
+        Adds to a mask items question text the array question text
+        if not allready there
+        :param
+            question_text: the question text from the mask item
+        :return:
+            question_text appended the array question text
+        """
+        if self.source == "native":
+            meta=self.chain._meta
+            cols = meta['columns']
+            masks = meta['masks']
+            if self.is_mask_item:
+                parent = cols[self.x_key_name]['parent'].keys()[0].split('@')[-1]
+                m_text = masks[parent]['text']
+                text = m_text.get('x edit', m_text).get(meta['lib']['default text'])
+                if not text.strip() in question_text:
+                    question_text = u'{} - {}'.format(text, question_text)
+
+        return question_text
 
     def _is_base_row(self, row):
         """
@@ -728,26 +783,4 @@ class PptxChain(object):
         chart_df.chart_type = auto_charttype(chart_df, chart_df.array_style)
 
         return chart_df
-
-    def _get_xkeys(self):
-        """
-        The idea is this method should return dataframes index as
-        a list of lists as many as there are levels
-        :param
-            chain: teh chain instance
-        :return:
-        """
-        pass
-        # TODO _get_xkeys - Not sure if needed
-
-    def _get_ykeys(self):
-        """
-        The idea is this method should return dataframes index as
-        a list of lists as many as there are levels
-        :param
-            chain: teh chain instance
-        :return:
-        """
-        pass
-        # TODO _get_ykeys - Not sure if needed
 
