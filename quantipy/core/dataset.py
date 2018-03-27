@@ -5570,23 +5570,37 @@ class DataSet(object):
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
 
-    def _empty_elements(self, name, slicer):
-        pass
+    @verify(variables={'name': 'columns'})
+    def empty(self, name, condition):
+        """
+        Check variables for emptiness (opt. restricted by a condition).
 
-    @verify(variables={'name': 'both'})
-    def empty_values(self, name, condition):
+        Parameters
+        ----------
+        name : (list of) str
+            The mask variable name keyed in ``_meta['columns']``.
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+
+        Returns
+        -------
+        empty : bool
         """
-        """
-        hidden = []
+        empty = []
+        if not isinstance(name, list): name = [name]
+        return_bool = len(name) == 1
         if condition:
-            ds = self.filter('emptyiness', condition)
+            ds = self.filter('emptiness', condition)
         else:
             ds = self
         for n in name:
-            if not ds.codes_in_data(n):
-                hidden.append(n)
-        print len(hidden)
-
+            if ds[n].count() == 0:
+                empty.append(n)
+        if return_bool:
+            return bool(empty)
+        else:
+            return empty
 
     @verify(variables={'name': 'masks'})
     def empty_items(self, name, condition=None, by_name=True):
