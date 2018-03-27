@@ -2,6 +2,7 @@
 
 # Imports from Python-PPTX
 from pptx import Presentation
+from pptx.chart.data import CategoryChartData
 from pptx.util import (
     Emu,
     Pt,
@@ -24,9 +25,87 @@ from enumerations import (
     chart_type_dct
 )
 
-from topy.core.pandas_pptx import ChartData_from_DataFrame
+from defaults_ordered import *
 
-from defaults import *
+# chartdata_from_dataframe taken from topy.core.pandas_pptx.py
+def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
+    """
+    Return a CategoryChartData instance from the given Pandas DataFrame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe instance from which ChartData will be created.
+    number_format : str, default="0%"
+    	The pptx number format for the intended ChartData. See:
+    	http://python-pptx.readthedocs.io/en/latest/api/chart-data.html?highlight=number_format#pptx.chart.data.CategoryChartData.number_format
+    xl_number_format : str, default="0.00%"
+    	The xlsx number format for the Excel sheet behind the intended Chart. See:
+
+    Returns
+    -------
+    cd : pptx.chart.data.CategoryChartData
+        The ChartData instance created from the given dataframe.
+    """
+
+    def get_parent(sub_categories, line, pos):
+        """
+        Return the sub_category's parent given its lineage position.
+        """
+
+        for subcat in sub_categories:
+            if subcat.label == line[pos]:
+                return subcat
+
+    cd = CategoryChartData(number_format=number_format)
+
+    if isinstance(df.index, pd.MultiIndex):
+        cats = []
+        for line in df.index.unique().tolist():
+            for l, lvl in enumerate(line):
+                if l == 0:
+                    if not any([lvl == cat.label for cat in cats]):
+                        cats.append(cd.add_category(lvl))
+                else:
+                    parent = get_parent(cats, line, 0)
+                    if l > 1:
+                        for i in range(1, l):
+                            parent = get_parent(parent.sub_categories, line, i)
+                    sub_categories = parent.sub_categories
+                    seen = [lvl == subcat.label for subcat in sub_categories]
+                    if not any(seen):
+                        parent.add_sub_category(lvl)
+    else:
+        categories = tuple(df.index.values.tolist())
+        cd.categories = categories
+
+    for col in df.columns:
+        values = [
+            value if value == value else None
+            for value in df[col].values.tolist()
+        ]
+        series = (col, tuple(values))
+        cd.add_series(*series, number_format=xl_number_format)
+
+    return cd
+
+# return_slide_layout_by_name is taken from quantipy.core.builds.powerpoint.visual_editor.py
+def return_slide_layout_by_name(pptx, slide_layout_name):
+    '''
+    Loop over the slide layout object and find slide layout by name, return slide layout
+    object.
+
+    example: myslide = get_slide_layout_by_name(prs, 'Inhaltsverzeichnis')
+             slide = prs.slides.add_slide(myslide)
+    '''
+
+    for slide_layout in pptx.slide_layouts:
+        if slide_layout.name == slide_layout_name:
+            return slide_layout
+    else:
+        raise Exception(
+            ('Slide layout: {sld_layout} not found\n').format(
+                sld_layout=slide_layout_name))
 
 
 class PptxPainter(object):
@@ -105,8 +184,10 @@ class PptxPainter(object):
                 To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
         :return: Instance of SlideLayout set to the specified slide layout
         """
-        # TODO PptxPainter - set_slide_layout - Check for existence of specified slide_layout
-        return self.presentation.slide_layouts[slide_layout]
+        if isinstance(slide_layout, int):
+            return self.presentation.slide_layouts[slide_layout]
+        else:
+            return return_slide_layout_by_name(self.presentation, slide_layout)
 
     def add_slide(self, slide_layout=None):
         """
@@ -221,19 +302,19 @@ class PptxPainter(object):
                   chart_style=2,
 
                   # Title
-                      has_chart_title=False,
+                  has_chart_title=False,
                   titletext=None,
                   textframe_kwargs=default_textframe.copy(),
 
                   # Legend properties
-                      has_legend=True,
+                  has_legend=True,
                   legend_position='right',
                   legend_in_layout=False,  # will we ever set this True?
-                      legend_horz_offset=0.1583,
+                  legend_horz_offset=0.1583,
                   legend_font_kwargs=default_font_legend.copy(),
 
                   # Category axis properties
-                      caxis_visible=True,
+                  caxis_visible=True,
                   caxis_tick_label_position='next_to_axis',
                   caxis_tick_labels_offset=730,
                   caxis_has_major_gridlines=False,
@@ -243,7 +324,7 @@ class PptxPainter(object):
                   caxis_font_kwargs=default_font_caxis.copy(),
 
                   # Value axis properties
-                      vaxis_visible=True,
+                  vaxis_visible=True,
                   vaxis_tick_label_position='low',
                   vaxis_has_major_gridlines=True,
                   vaxis_has_minor_gridlines=False,
@@ -258,20 +339,20 @@ class PptxPainter(object):
                   vaxis_font_kwargs=default_font_vaxis.copy(),
 
                   # Datalabel properties
-                      plot_has_data_labels=True,
+                  plot_has_data_labels=True,
                   data_labels_position='center',
                   data_labels_num_format='0%',
                   data_labels_num_format_is_linked=False,
                   data_labels_font_kwargs=default_font_data_label.copy(),
 
                   # Plot properties
-                      plot_vary_by_cat=False,
+                  plot_vary_by_cat=False,
                   plot_gap_width=150,
                   plot_overlap=100,
                   smooth_line=False,
 
                   # Number format
-                      number_format='0.00%',
+                  number_format='0.00%',
                   xl_number_format='0.00%'
                   ):
         """
@@ -337,7 +418,7 @@ class PptxPainter(object):
             dataframe = dataframe[::-1]
 
         # =============================== chart data from pandas dataframe
-        chart_data = ChartData_from_DataFrame(dataframe, number_format=number_format, xl_number_format=number_format)
+        chart_data = chartdata_from_dataframe(dataframe, number_format=number_format, xl_number_format=number_format)
 
         # =============================== Create chart
         # For all chart types
