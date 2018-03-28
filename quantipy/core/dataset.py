@@ -103,8 +103,9 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
-        if self._get_type(name) == 'delimited set' and scalar_insert:
-            val = ';' if np.isnan(val) else '{};'.format(val)
+        if (self._get_type(name) == 'delimited set' and scalar_insert
+            and not np.isnan(val)):
+            val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
         else:
