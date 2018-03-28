@@ -464,7 +464,7 @@ class DataSet(object):
             self._meta['info']['dimensions_comp'] = d_comp
             self.set_dim_suffix()
             self.undimensionize()
-        if d_comp is True: self.dimensionize()
+        if self._dimensions_comp is True: self.dimensionize()
         return None
 
     @verify(text_keys='text_key')

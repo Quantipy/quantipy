@@ -296,7 +296,6 @@ def as_L1(child, parent=None, force_single=False):
 
 
 def get_var_type(var):
-
     mdd_type = MDD_TYPES_MAP[var.get('type')]
     if mdd_type=='categorical':
         if var.get('max')=='1':
@@ -394,7 +393,7 @@ def get_meta_values(xml, column, data, map_values=True):
             if len(byProperty_values) != len(set(byProperty_values)):
                 byProperty = False
                 byProperty_values = []
-                byProperty_key = None                
+                byProperty_key = None
         elif all(['Value' in bpv for bpv in byProperty_values]):
             byProperty_key = 'Value'
             byProperty_values = [bpv['Value'] for bpv in byProperty_values]
@@ -416,6 +415,11 @@ def get_meta_values(xml, column, data, map_values=True):
                 var_name, byProperty_key)
     else:
         values = range(1, len(categories)+1)
+        # print '*' * 60
+        # print var_name
+        # print categories
+        # print values
+
         msg = 'Category values for {} will be taken byPosition'.format(var_name)
         warnings.warn(msg)
 
@@ -457,11 +461,19 @@ def get_meta_values(xml, column, data, map_values=True):
         value_map[ddf_value] = value['value']
         column_values.append(value)
 
+    for v in column_values[:]:
+        if v['value'] not in value_map.values():
+            column_values.remove(v)
+
     return column_values, value_map
 
 
 def remap_values(data, column, value_map):
     if column['type'] in ['single']:
+        try:
+            data[column['name']] = data[column['name']].str.replace(';', '').astype('int')
+        except:
+            pass
         missing = [
             value
             for value in data[column['name']].dropna().unique()
@@ -650,7 +662,6 @@ def get_columns_meta(xml, meta, data, map_values=True):
     columns = {}
 
     for col_name in data.columns[1:]:
-
         if '[{' in col_name:
 
             tmap = re.findall(RE_GRID_SLICES, col_name)
@@ -956,6 +967,16 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
 
     if isinstance(fields, (list, tuple)):
         L1 = L1[['id_HDATA']+fields]
+
+    # TODO: This is some debuggung code to fix the conversion of _some_
+    # Dims. docs. example files...
+    # ------------------------------------------------------------------------
+    # levels = levels.loc[['HDATA'], :]
+    cols = L1.columns
+    for col in cols:
+        if '.' in col or col == 'LevelId':
+            L1.drop(col, axis=1, inplace=True)
+    # ------------------------------------------------------------------------
 
     if grids is None:
         grids = levels.query("ParentName=='HDATA'").index.tolist()
