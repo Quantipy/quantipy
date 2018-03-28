@@ -418,7 +418,7 @@ class Batch(qp.DataSet):
                         empty.append(array)
         if empty:
             msg = "Dropping summaries for  {} - all items hidden!".format(empty)
-            print msg
+            warnings.warn(msg)
         return [array for array in arrays if not array in empty]
 
     @modify(to_list=['arrays'])
@@ -443,7 +443,8 @@ class Batch(qp.DataSet):
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
-        self.summaries = self._clean_empty_summaries(arrays)
+        arrays = self._clean_empty_summaries(arrays)
+        self.summaries = arrays
         if exclusive:
             if isinstance(exclusive, bool):
                 self.skip_items = arrays
