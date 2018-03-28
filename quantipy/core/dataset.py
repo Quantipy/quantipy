@@ -5666,11 +5666,19 @@ class DataSet(object):
         return None
 
     def fully_hidden_arrays(self):
+        """
+        Get all array definitions that contain only hidden items.
+
+        Returns
+        -------
+        hidden : list
+            The list of array mask names.
+        """
         hidden = []
         for m in self.masks():
             invalid = self.get_property(m, '_no_valid_items')
             if invalid: hidden.append(m)
-        return m
+        return hidden
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
