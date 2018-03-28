@@ -408,8 +408,18 @@ class Batch(qp.DataSet):
         return None
 
     def _clean_empty_summaries(self, arrays):
+        empty = []
         for array in arrays:
-            pass
+            if array in self.meta_edits:
+                edits = self.meta_edits[array]
+                props = edits.get('properties', None)
+                if props:
+                    if props.get('_no_valid_items', False):
+                        empty.append(array)
+        if empty:
+            msg = "Dropping summaries for  {} - all items hidden!".format(empty)
+            print msg
+        return [array for array in arrays if not array in empty]
 
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
@@ -433,7 +443,7 @@ class Batch(qp.DataSet):
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
-        self.summaries = arrays
+        self.summaries = self._clean_empty_summaries(arrays)
         if exclusive:
             if isinstance(exclusive, bool):
                 self.skip_items = arrays

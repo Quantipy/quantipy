@@ -5591,7 +5591,7 @@ class DataSet(object):
         if not isinstance(name, list): name = [name]
         return_bool = len(name) == 1
         if condition:
-            ds = self.filter('emptiness', condition)
+            ds = self[self.take(condition), name]
         else:
             ds = self
         for n in name:
@@ -5610,7 +5610,7 @@ class DataSet(object):
 
         Parameters
         ----------
-        name : (list of) str
+        name : str
             The mask variable name keyed in ``_meta['masks']``.
         condition : Quantipy logic expression, default None
             A logical condition expressed as Quantipy logic that determines
@@ -5620,24 +5620,21 @@ class DataSet(object):
 
         Returns
         -------
-        empty : dict
+        empty : list
             The list of empty items by their source names or positional index
-            (starting from 1!) mapped to their ``parent`` mask name.
+            (starting from 1!).
         """
-        empty = {}
-        if not isinstance(name, list): name = [name]
         if condition:
-            ds = self.filter('emptiness', condition)
+            ds = self[self.take(condition), name]
         else:
             ds = self
-        for n in name:
-            df = ds[n].sum().copy()
-            slicer = df == 0
-            empty_items = df.loc[slicer].index.values.tolist()
-            if empty_items:
-                if by_name: empty_items = [self.item_no(i) for i in empty_items]
-                empty[n] = empty_items
-        return empty
+        df = ds.sum().copy()
+        slicer = df == 0
+        empty = df.loc[slicer].index.values.tolist()
+        if by_name:
+            return [self.item_no(i) for i in empty]
+        else:
+            return empty
 
     @verify(variables={'arrays': 'masks'})
     def hide_empty_items(self, condition=None, arrays=None):
@@ -5659,16 +5656,20 @@ class DataSet(object):
         """
         if not arrays: arrays = self.masks()
         if arrays and not isinstance(arrays, list): arrays = [arrays]
-        empty_items = self.empty_items(arrays, condition, False)
-        if empty_items:
-            for array, items in empty_items.items():
-                if len(items) == len(self.sources(array)):
-                    # TODO: DO we have any use for this info?
-                    # w = "All items of array '{}' are hidden! Array summary will fail!"
-                    # warnings.warn(w.format(n))
+        for array in arrays:
+            empty_items = self.empty_items(array, condition, False)
+            if empty_items:
+                if len(empty_items) == len(self.sources(array)):
                     self.set_property(array, '_no_valid_items', True, True)
-                self.hiding(array, items, axis='x', hide_values=False)
+                self.hiding(array, empty_items, axis='x', hide_values=False)
         return None
+
+    def fully_hidden_arrays(self):
+        hidden = []
+        for m in self.masks():
+            invalid = self.get_property(m, '_no_valid_items')
+            if invalid: hidden.append(m)
+        return m
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
