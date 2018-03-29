@@ -103,7 +103,8 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
-        if self._get_type(name) == 'delimited set' and scalar_insert:
+        if (self._get_type(name) == 'delimited set' and scalar_insert
+            and not np.isnan(val)):
             val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
@@ -5466,7 +5467,7 @@ class DataSet(object):
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
-                       'recoded_filter']
+                       'recoded_filter', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
@@ -5514,7 +5515,7 @@ class DataSet(object):
         -------
         None
         """
-        valid_props = ['base_text']
+        valid_props = ['base_text', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         prop_update = {prop_name: prop_value}
@@ -5570,49 +5571,87 @@ class DataSet(object):
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
 
-    @verify(variables={'name': 'masks'})
-    def empty_items(self, name, condition=None, by_name=True):
+    @verify(variables={'name': 'columns'})
+    def empty(self, name, condition=None):
         """
-        Return items without any responses (opt. restricted by a condition).
+        Check variables for emptiness (opt. restricted by a condition).
 
         Parameters
         ----------
-        name : str
-            The mask variable name keyed in ``_meta['masks']``.
-        condition : Quantipy logic expression
+        name : (list of) str
+            The mask variable name keyed in ``_meta['columns']``.
+        condition : Quantipy logic expression, default None
             A logical condition expressed as Quantipy logic that determines
             which subset of the case data rows to be considered.
-        by_name : bool, default
+
+        Returns
+        -------
+        empty : bool
+        """
+        empty = []
+        if not isinstance(name, list): name = [name]
+        return_bool = len(name) == 1
+        if condition:
+            df = self[self.take(condition), name].copy()
+        else:
+            df = self._data.copy()
+        for n in name:
+            if ds[n].count() == 0:
+                empty.append(n)
+        if return_bool:
+            return bool(empty)
+        else:
+            return empty
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'masks'})
+    def empty_items(self, name, condition=None, by_name=True):
+        """
+        Test arrays for item emptiness (opt. restricted by a condition).
+
+        Parameters
+        ----------
+        name : (list of) str
+            The mask variable name keyed in ``_meta['masks']``.
+        condition : Quantipy logic expression, default None
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+        by_name : bool, default True
             Return array items by their name or their index.
 
         Returns
         -------
-        empty_items : list
+        empty : list
             The list of empty items by their source names or positional index
-            (starting from 1!).
+            (starting from 1!, mapped to their parent mask name if more than
+            one).
         """
+        empty = {}
         if condition:
-            slicer = self.take(condition)
-            df = self[slicer, name].sum().copy()
+            df = self[self.take(condition), name].copy()
         else:
-            df = self[name].sum().copy()
-        slicer = df == 0
-        empty_items = df.loc[slicer].index.values.tolist()
-        if by_name:
-            return empty_items
+            df = self._data.copy()
+        for n in name:
+            test_df = df[self.unroll(n)].sum()
+            slicer = test_df == 0
+            empty_items = test_df.loc[slicer].index.values.tolist()
+            if not by_name: empty_items = [self.item_no(i) for i in empty_items]
+            if empty_items: empty[n] = empty_items
+        if empty:
+            return empty[name[0]] if len(name) == 1 else empty
         else:
-            return [self.item_no(i) for i in empty_items]
+            return None
 
-    @modify(to_list='name')
-    @verify(variables={'name': 'masks'})
-    def hide_empty_items(self, name, condition=None):
+    @verify(variables={'arrays': 'masks'})
+    def hide_empty_items(self, condition=None, arrays=None):
         """
         Apply ``rules`` meta to automatically hide empty array items.
 
         Parameters
         ----------
-        name : (list of) str
-            The mask variable names keyed in ``_meta['masks']``.
+        name : (list of) str, default None
+            The array mask variable names keyed in ``_meta['masks']``. If not
+            explicitly provided will test all array mask definitions.
         condition : Quantipy logic expression
             A logical condition expressed as Quantipy logic that determines
             which subset of the case data rows to be considered.
@@ -5621,20 +5660,32 @@ class DataSet(object):
         -------
         None
         """
-        for n in name:
-            empty_items = self.empty_items(n, condition, False)
-            if len(empty_items) == len(self.sources(n)):
-                w = "All items of array '{}' are hidden! Array summary will fail!"
-                warnings.warn(w.format(n))
-            self.hiding(n, empty_items, axis='x', hide_values=False)
+        if not arrays: arrays = self.masks()
+        if arrays and not isinstance(arrays, list): arrays = [arrays]
+        empty_items = self.empty_items(arrays, condition, False)
+        if empty_items:
+            if isinstance(empty_items, list):
+                empty_items = {arrays[0]: empty_items}
+            for arr, items in empty_items.items():
+                if len(items) == len(self.sources(arr)):
+                    self.set_property(arr, '_no_valid_items', True, True)
+                self.hiding(arr, items, axis='x', hide_values=False)
         return None
 
-    @modify(to_list='name')
-    @verify(variables={'name': 'both'})
-    def hide_empty_values(self, name, condition=None):
+    def fully_hidden_arrays(self):
         """
+        Get all array definitions that contain only hidden items.
+
+        Returns
+        -------
+        hidden : list
+            The list of array mask names.
         """
-        pass
+        hidden = []
+        for m in self.masks():
+            invalid = self.get_property(m, '_no_valid_items')
+            if invalid: hidden.append(m)
+        return hidden
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
