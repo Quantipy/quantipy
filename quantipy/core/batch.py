@@ -409,6 +409,12 @@ class Batch(qp.DataSet):
 
     def hide_empty_items(self):
         """
+        Drop empty array items and hide them from summaries.
+
+        Batch version of ``DataSet.hide_empty_items()``. Will automatically
+        inject the Batch filter for the ``condition`` parameter and clean the
+        ``self.summaries`` list from any arrays that end up with no visible items
+        due to them being hidden.
         """
         arrays = [x for x in self.xks if x in self.masks()]
         if self.filter == 'no_filter':
