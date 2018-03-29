@@ -5592,9 +5592,9 @@ class DataSet(object):
         if not isinstance(name, list): name = [name]
         return_bool = len(name) == 1
         if condition:
-            ds = self[self.take(condition), name]
+            df = self[self.take(condition), name].copy()
         else:
-            ds = self
+            df = self._data.copy()
         for n in name:
             if ds[n].count() == 0:
                 empty.append(n)
@@ -5607,11 +5607,11 @@ class DataSet(object):
     @verify(variables={'name': 'masks'})
     def empty_items(self, name, condition=None, by_name=True):
         """
-        Return items without any responses (opt. restricted by a condition).
+        Test arrays for item emptiness (opt. restricted by a condition).
 
         Parameters
         ----------
-        name : str
+        name : (list of) str
             The mask variable name keyed in ``_meta['masks']``.
         condition : Quantipy logic expression, default None
             A logical condition expressed as Quantipy logic that determines
@@ -5623,28 +5623,33 @@ class DataSet(object):
         -------
         empty : list
             The list of empty items by their source names or positional index
-            (starting from 1!).
+            (starting from 1!, mapped to their parent mask name if more than
+            one).
         """
+        empty = {}
         if condition:
-            ds = self[self.take(condition), name]
+            df = self[self.take(condition), name].copy()
         else:
-            ds = self
-        df = ds.sum().copy()
-        slicer = df == 0
-        empty = df.loc[slicer].index.values.tolist()
-        if by_name:
-            return [self.item_no(i) for i in empty]
+            df = self._data.copy()
+        for n in name:
+            test_df = df[self.unroll(n)].sum()
+            slicer = test_df == 0
+            empty_items = test_df.loc[slicer].index.values.tolist()
+            if by_name: empty_items = [self.item_no(i) for i in empty_items]
+            if empty_items: empty[n] = empty_items
+        if empty:
+            return empty[name[0]] if len(name) == 1 else empty
         else:
-            return empty
+            return None
 
     @verify(variables={'arrays': 'masks'})
-    def hide_empty_items(self, condition=None, arrays=None):
+    def hide_empty_items(self, condition=None, arrays=None, ):
         """
         Apply ``rules`` meta to automatically hide empty array items.
 
         Parameters
         ----------
-        arrays : (list of) str, default None
+        name : (list of) str, default None
             The array mask variable names keyed in ``_meta['masks']``. If not
             explicitly provided will test all array mask definitions.
         condition : Quantipy logic expression
@@ -5657,12 +5662,14 @@ class DataSet(object):
         """
         if not arrays: arrays = self.masks()
         if arrays and not isinstance(arrays, list): arrays = [arrays]
-        for array in arrays:
-            empty_items = self.empty_items(array, condition, False)
-            if empty_items:
-                if len(empty_items) == len(self.sources(array)):
-                    self.set_property(array, '_no_valid_items', True, True)
-                self.hiding(array, empty_items, axis='x', hide_values=False)
+        empty_items = self.empty_items(arrays, condition, False)
+        if empty_items:
+            if isinstance(empty_items, list):
+                empty_items = {arrays[0]: empty_items}
+            for arr, items in empty_items.items():
+                if len(items) == len(self.sources(arr)):
+                    self.set_property(arr, '_no_valid_items', True, True)
+                self.hiding(arr, items, axis='x', hide_values=False)
         return None
 
     def fully_hidden_arrays(self):
