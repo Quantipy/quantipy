@@ -407,6 +407,48 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    def hide_empty_items(self):
+        """
+        Drop empty array items and hide them from summaries.
+
+        Batch version of ``DataSet.hide_empty_items()``. Will automatically
+        inject the Batch filter for the ``condition`` parameter and clean the
+        ``self.summaries`` list from any arrays that end up with no visible items
+        due to them being hidden.
+        """
+        arrays = [x for x in self.xks if x in self.masks()]
+        if self.filter == 'no_filter':
+            cond = None
+        else:
+            cond = self.filter.values()[0]
+        emptiness = self.empty_items(arrays, cond, False)
+        if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
+        for array, items in emptiness.items():
+            self.hiding(array, items, axis='x', hide_values=False)
+            sources = self.sources(array)
+            for i in items:
+                iname = sources[i-1]
+                if iname in self.xks: self.xks.remove(iname)
+        self.summaries = self._clean_empty_summaries(self.summaries)
+        self._update()
+        return None
+
+    def _clean_empty_summaries(self, arrays):
+        empty = []
+        for array in arrays:
+            if array in self.meta_edits:
+                edits = self.meta_edits[array]
+                props = edits.get('properties', None)
+                if props:
+                    if props.get('_no_valid_items', False):
+                        empty.append(array)
+        if empty:
+            msg = "Dropping summaries for  {} - all items hidden!".format(empty)
+            warnings.warn(msg)
+        for x in self.xks[:]:
+            if x in empty: self.xks.remove(x)
+        return [array for array in arrays if not array in empty]
+
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
     def make_summaries(self, arrays, exclusive=False):
@@ -429,6 +471,7 @@ class Batch(qp.DataSet):
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
+        arrays = self._clean_empty_summaries(arrays)
         self.summaries = arrays
         if exclusive:
             if isinstance(exclusive, bool):
@@ -825,7 +868,11 @@ class Batch(qp.DataSet):
                     mapping.append((x, ['@']))
                 if not x in self.skip_items:
                     for x2 in self.sources(x):
-                        mapping.append((x2, _get_yks(x2)))
+                        # Added another check because the source could be not
+                        # relevant any longer due to hiding of the variables,
+                        # which removes it from self.xks
+                        if x2 in self.xks:
+                            mapping.append((x2, _get_yks(x2)))
                 if x in self.transposed_arrays:
                     mapping.append(('@', [x]))
             elif self._is_array_item(x) and self._maskname_from_item(x) in self.xks:
