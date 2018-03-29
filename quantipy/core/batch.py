@@ -425,8 +425,10 @@ class Batch(qp.DataSet):
         if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
         for array, items in emptiness.items():
             self.hiding(array, items, axis='x', hide_values=False)
+            sources = self.sources(array)
             for i in items:
-                if i in self.xks: self.xks.remove(i)
+                iname = sources[i-1]
+                if iname in self.xks: self.xks.remove(iname)
         self.summaries = self._clean_empty_summaries(self.summaries)
         self._update()
         return None
@@ -866,7 +868,11 @@ class Batch(qp.DataSet):
                     mapping.append((x, ['@']))
                 if not x in self.skip_items:
                     for x2 in self.sources(x):
-                        mapping.append((x2, _get_yks(x2)))
+                        # Added another check because the source could be not
+                        # relevant any longer due to hiding of the variables,
+                        # which removes it from self.xks
+                        if x2 in self.xks:
+                            mapping.append((x2, _get_yks(x2)))
                 if x in self.transposed_arrays:
                     mapping.append(('@', [x]))
             elif self._is_array_item(x) and self._maskname_from_item(x) in self.xks:
