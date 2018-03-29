@@ -424,6 +424,7 @@ class Batch(qp.DataSet):
         emptiness = self.empty_items(arrays, cond, False)
         if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
         for array, items in emptiness.items():
+            print array, items
             self.hiding(array, items, axis='x', hide_values=False)
             for i in items:
                 if i in self.xks: self.xks.remove(i)

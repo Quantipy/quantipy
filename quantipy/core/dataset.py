@@ -5635,7 +5635,7 @@ class DataSet(object):
             test_df = df[self.unroll(n)].sum()
             slicer = test_df == 0
             empty_items = test_df.loc[slicer].index.values.tolist()
-            if by_name: empty_items = [self.item_no(i) for i in empty_items]
+            if not by_name: empty_items = [self.item_no(i) for i in empty_items]
             if empty_items: empty[n] = empty_items
         if empty:
             return empty[name[0]] if len(name) == 1 else empty
