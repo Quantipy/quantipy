@@ -422,15 +422,16 @@ class Batch(qp.DataSet):
         else:
             cond = self.filter.values()[0]
         emptiness = self.empty_items(arrays, cond, False)
-        if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
-        for array, items in emptiness.items():
-            self.hiding(array, items, axis='x', hide_values=False)
-            sources = self.sources(array)
-            for i in items:
-                iname = sources[i-1]
-                if iname in self.xks: self.xks.remove(iname)
-        self.summaries = self._clean_empty_summaries(self.summaries)
-        self._update()
+        if emptiness:
+            if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
+            for array, items in emptiness.items():
+                self.hiding(array, items, axis='x', hide_values=False)
+                sources = self.sources(array)
+                for i in items:
+                    iname = sources[i-1]
+                    if iname in self.xks: self.xks.remove(iname)
+            self.summaries = self._clean_empty_summaries(self.summaries)
+            self._update()
         return None
 
     def _clean_empty_summaries(self, arrays):
