@@ -407,6 +407,24 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    def hide_empty_items(self):
+        """
+        """
+        arrays = [x for x in self.xks if x in self.masks()]
+        if self.filter == 'no_filter':
+            cond = None
+        else:
+            cond = self.filter.values()[0]
+        emptiness = self.empty_items(arrays, cond, False)
+        if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
+        for array, items in emptiness.items():
+            self.hiding(array, items, axis='x', hide_values=False)
+            for i in items:
+                if i in self.xks: self.xks.remove(i)
+        self._clean_empty_summaries(self.summaries)
+        self._update()
+        return None
+
     def _clean_empty_summaries(self, arrays):
         empty = []
         for array in arrays:

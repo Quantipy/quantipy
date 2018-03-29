@@ -5643,7 +5643,7 @@ class DataSet(object):
             return None
 
     @verify(variables={'arrays': 'masks'})
-    def hide_empty_items(self, condition=None, arrays=None, ):
+    def hide_empty_items(self, condition=None, arrays=None):
         """
         Apply ``rules`` meta to automatically hide empty array items.
 
