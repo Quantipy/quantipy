@@ -427,7 +427,7 @@ class Batch(qp.DataSet):
             self.hiding(array, items, axis='x', hide_values=False)
             for i in items:
                 if i in self.xks: self.xks.remove(i)
-        self._clean_empty_summaries(self.summaries)
+        self.summaries = self._clean_empty_summaries(self.summaries)
         self._update()
         return None
 
@@ -443,6 +443,8 @@ class Batch(qp.DataSet):
         if empty:
             msg = "Dropping summaries for  {} - all items hidden!".format(empty)
             warnings.warn(msg)
+        for x in self.xks[:]:
+            if x in empty: self.xks.remove(x)
         return [array for array in arrays if not array in empty]
 
     @modify(to_list=['arrays'])
