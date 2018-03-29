@@ -1491,9 +1491,6 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
-        self.grouping = None
-        self.sig_test_letters = None
-        self._group_style = None
         self._flag_bases = None
         self._is_mask_item = False
 
@@ -1722,7 +1719,7 @@ class Chain(object):
         if self.sig_test_letters:
             mapped = ''
             group = None
-            i =  0 if (self._frame.columns.nlevels == 3) else 4
+            i =  0 if (self._frame.columns.nlevels == 2) else 4
             for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-i]):
                 if letter == '@':
                     continue
@@ -2674,7 +2671,7 @@ class Chain(object):
             Text
         transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
-        add_base_texts : {False, 'all', 'simple'}, default 'simple'
+        add_base_texts : {False, 'all', 'simple', 'simple-no-items'}, default 'simple'
             Whether or not to include existing ``.base_descriptions`` str
             to the label of the appropriate base view. Selecting ``'simple'``
             will inject the base texts to non-array type Chains only.
@@ -2946,7 +2943,8 @@ class Chain(object):
                 base_value = 'Unweighted effective base'
         else:
             if weighted or (not weighted and not is_multibase):
-                if not bases:
+                if not bases or (bases == 'simple-no-items'
+                                 and self._is_mask_item):
                     return self._transl[tk_transl]['All']
                 key = tk
                 if isinstance(tk, tuple):

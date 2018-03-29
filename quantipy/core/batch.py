@@ -130,6 +130,7 @@ class Batch(qp.DataSet):
             self.set_sigtests(tests)  # self.sigproperties
             self.additional = False
             self.meta_edits = {'lib': {}}
+            self.build_info = {}
             self.set_language(dataset.text_key) # self.language
             self._update()
 
@@ -165,7 +166,7 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map']:
+                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -180,7 +181,7 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map']:
+                     'y_on_y_filter', 'y_filter_map', 'build_info']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
