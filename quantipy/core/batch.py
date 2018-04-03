@@ -28,7 +28,9 @@ def meta_editor(self, dataset_func):
         name = args[0] if args else kwargs['name']
         if not isinstance(name, list): name = [name]
         # create DataSet clone to leave global meta data untouched
-        ds_clone = self.clone()
+        if self.edits_ds is None:
+            self.edits_ds = self.clone()
+        ds_clone = self.edits_ds
         var_edits = []
         for n in name:
             is_array = self.is_array(n)
@@ -54,7 +56,7 @@ def meta_editor(self, dataset_func):
         # use qp.DataSet method to apply the edit
         dataset_func(ds_clone, *args, **kwargs)
         # grab edited meta data and collect via Batch.meta_edits attribute
-        for n in name:
+        for n in self.unroll(name, both='all'):
             if not self.is_array(n):
                 meta = ds_clone._meta['columns'][n]
                 text_edits = ['set_col_text_edit', 'set_val_text_edit']
@@ -92,6 +94,7 @@ class Batch(qp.DataSet):
         meta, data = dataset.split()
         self._meta = meta
         self._data = data.copy()
+        self.edits_ds = None
         self.valid_tks = dataset.valid_tks
         self.text_key = dataset.text_key
         self.sample_size = None
@@ -408,7 +411,7 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
-    def hide_empty_items(self):
+    def hide_empty(self, xks=True, summaries=True):
         """
         Drop empty variables and hide array items from summaries.
 
@@ -426,39 +429,34 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        arrays = [x for x in self.xks if x in self.masks()]
         if self.filter == 'no_filter':
             cond = None
         else:
             cond = self.filter.values()[0]
-        emptiness = self.empty_items(arrays, cond, False)
-        if emptiness:
-            if isinstance(emptiness, list): emptiness = {arrays[0]: emptiness}
-            for array, items in emptiness.items():
-                self.hiding(array, items, axis='x', hide_values=False)
-                sources = self.sources(array)
-                for i in items:
-                    iname = sources[i-1]
-                    if iname in self.xks: self.xks.remove(iname)
-            self.summaries = self._clean_empty_summaries(self.summaries)
-            self._update()
-        return None
-
-    def _clean_empty_summaries(self, arrays):
-        empty = []
-        for array in arrays:
-            if array in self.meta_edits:
-                edits = self.meta_edits[array]
-                props = edits.get('properties', None)
-                if props:
-                    if props.get('_no_valid_items', False):
-                        empty.append(array)
-        if empty:
-            msg = "Dropping summaries for  {} - all items hidden!".format(empty)
-            warnings.warn(msg)
+        removed_sum = []
         for x in self.xks[:]:
-            if x in empty: self.xks.remove(x)
-        return [array for array in arrays if not array in empty]
+            if self.is_array(x):
+                e_items = self.empty_items(x, cond, False)
+                if not e_items: continue
+                sources = self.sources(x)
+                if summaries:
+                    self.hiding(x, e_items, axis='x', hide_values=False)
+                    if len(e_items) == len(sources):
+                        if x in self.xks: self.xks.remove(x)
+                        if x in self.summaries: self.summaries.remove(x)
+                        removed_sum.append(x)
+                if xks:
+                    for i in e_items:
+                        if sources[i-1] in self.xks:
+                            self.xks.remove(sources[i-1])
+            elif not self._is_array_item(x):
+                if self[self.take(cond), x].count() == 0:
+                    self.xks.remove(x)
+        if removed_sum:
+            msg = "Dropping summaries for {} - all items hidden!"
+            warnings.warn(msg.format(removed_sum))
+        self._update()
+        return None
 
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
@@ -482,7 +480,6 @@ class Batch(qp.DataSet):
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
-        arrays = self._clean_empty_summaries(arrays)
         self.summaries = arrays
         if exclusive:
             if isinstance(exclusive, bool):
