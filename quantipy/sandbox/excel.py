@@ -490,7 +490,7 @@ class Excel(Workbook):
         raise NotImplementedError('_write_toc')
 
     @lru_cache()
-    def _add_format(self, format_):
+    def _add_format(self, **format_):
         return self.add_format(format_)
 
 
@@ -539,7 +539,7 @@ class _Sheet(Worksheet):
         format_spec = dict([(k, v)
                             for k, v in _DEFAULTS.iteritems()
                             if k not in exclude_keys])
-        return self.excel._add_format(_Format(**format_spec))
+        return self.excel._add_format(**_Format(**format_spec))
 
     @property
     def column_edges(self):
@@ -555,21 +555,21 @@ class _Sheet(Worksheet):
 
     def write(self, *args):
         if isinstance(args[-1], dict):
-            args = args[:-1] + (self.excel._add_format(args[-1]), )
+            args = args[:-1] + (self.excel._add_format(**args[-1]), )
         super(_Sheet, self).write(*args)
 
     def write_rich_string(self, *args):
         args, rich_text = ((args[0], args[1]), ), args[2:]
         for arg in rich_text:
             if isinstance(arg, dict):
-                args = args + (self.excel._add_format(arg), )
+                args = args + (self.excel._add_format(**arg), )
             else:
                 args = args + (arg, )
         args = (xl_rowcol_to_cell(*args[0]), ) + args[1:]
         super(_Sheet, self).write_rich_string(*args)
 
     def merge_range(self, *args):
-        args = args[:-1] + (self.excel._add_format(args[-1]), )
+        args = args[:-1] + (self.excel._add_format(**args[-1]), )
         super(_Sheet, self).merge_range(*args)
 
     def write_chains(self):
@@ -580,7 +580,7 @@ class _Sheet(Worksheet):
             for annotation in self.annotations:
                 try:
                     annotation, format_spec = annotation
-                    format_ = self.excel._add_format(_Format(**format_spec))
+                    format_ = self.excel._add_format(**_Format(**format_spec))
                 except ValueError:
                     format_ = self.default_annotation_format
 
@@ -638,12 +638,12 @@ class _Sheet(Worksheet):
             write(self._row + 1, self._column + 1, cd, format_)
             if arrow_descriptions:
                 arrow_format = _Format(**{'font_color': self.arrow_color_high})
-                arrow_format = self.excel._add_format(arrow_format)
+                arrow_format = self.excel._add_format(**arrow_format)
                 write_rich_string(self._row + 2, self._column + 1,
                                   arrow_format, self.arrow_rep_high,
                                   format_, cds[1], format_)
                 arrow_format = _Format(**{'font_color': self.arrow_color_low})
-                arrow_format = self.excel._add_format(arrow_format)
+                arrow_format = self.excel._add_format(**arrow_format)
                 write_rich_string(self._row + 3, self._column + 1,
                                   arrow_format, self.arrow_rep_low,
                                   format_, cds[2], format_)
@@ -683,6 +683,12 @@ class _Sheet(Worksheet):
             width = self.column_width_specific.get(relative, self.column_width)
             self.set_column(relative, relative, width)
 
+    @lazy_property
+    def truetype(self):
+        fn = self.excel._formats.default_attributes['font_name']
+        fs = self.excel._formats.default_attributes['font_size']
+        return ImageFont.truetype('%s.ttf' % fn.lower(), fs)
+
     def set_row(self, row, height, label=None, font_name=None, font_size=None):
         padding = 5
         units_to_pixels = 4.0 / 3.0
@@ -695,8 +701,7 @@ class _Sheet(Worksheet):
             if font_size is None:
                 font_size = self.excel._formats.default_attributes['font_size']
 
-            font = ImageFont.truetype('%s.ttf' % font_name.lower(), font_size)
-            dimensions = font.getsize(label)
+            dimensions = self.truetype.getsize(label)
 
             if (dimensions[1] * units_to_pixels) - padding > height:
                 # text too tall
@@ -1224,6 +1229,8 @@ class _Box(object):
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
+        if self.chain.array_style > -1:
+            format_name += '_array_style_%s' % self.sheet.sheet_name
         format_ = self.formats[format_name]
         if kwargs:
             for key, value in kwargs.iteritems():
