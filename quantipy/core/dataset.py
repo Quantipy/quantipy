@@ -5571,7 +5571,6 @@ class DataSet(object):
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
 
-    @verify(variables={'name': 'columns'})
     def empty(self, name, condition=None):
         """
         Check variables for emptiness (opt. restricted by a condition).
@@ -5592,11 +5591,11 @@ class DataSet(object):
         if not isinstance(name, list): name = [name]
         return_bool = len(name) == 1
         if condition:
-            df = self[self.take(condition), name].copy()
+            df = pd.DataFrame(self[self.take(condition), name])
         else:
-            df = self._data.copy()
+            df = self._data
         for n in name:
-            if ds[n].count() == 0:
+            if df[n].count() == 0:
                 empty.append(n)
         if return_bool:
             return bool(empty)
