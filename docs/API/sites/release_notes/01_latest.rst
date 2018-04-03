@@ -21,7 +21,18 @@ returns simply boolean, the latter will list all empty items. If lists are check
 the list of empty items per array name. The ``condition`` parameter of these
 methods takes a ``Quantipy logic`` expression to restrict the test to a subset
 of the data, i.e. to check if variables will be empty if the dataset is filtered
-a certain way.
+a certain way. A very simple example:
+
+>>> dataset.add_meta('test_var', 'int', 'Variable is empty')
+>>> dataset.empty('test_var')
+True
+
+>>> dataset[dataset.take({'gender': 1}), 'test_var'] = 1
+>>> dataset.empty('test_var')
+False
+
+>>> dataset.empty('test_var', {'gender': 2})
+True
 
 The ``DataSet`` method ``hide_empty_items()`` uses the emptiness tests to
 automatically apply a **hiding rule** on all empty items found in the dataset.
