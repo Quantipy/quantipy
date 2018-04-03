@@ -75,42 +75,21 @@ class _ExcelFormats(object):
 
 class ExcelFormats(_ExcelFormats):
 
-    __slots__ = ('_lazy__base',
-                 '_lazy__block_calc_propstest',
-                 '_lazy__block_expanded_propstest',
-                 '_lazy__block_net_propstest',
-                 '_lazy__block_normal_propstest',
-                 '_lazy__bottom',
-                 '_lazy__cell_details',
-                 '_lazy__data_header',
-                 '_lazy__data',
-                 '_lazy__header_left',
-                 '_lazy__header_center',
-                 '_lazy__header_title',
-                 '_lazy__interior',
-                 '_lazy__left',
-                 '_lazy__meanstest',
-                 '_lazy__net_propstest',
-                 '_lazy__notes',
-                 '_lazy__propstest',
-                 '_lazy__right',
-                 '_lazy__top',
-                 '_lazy__ubase',
-                 '_lazy__y',
-                 '_lazy_slots',
-                 '_view_border',
-                 '_format_builder',
-                 '_method',
-                 '_template')
-
     def __init__(self, views_groups, **kwargs):
         super(ExcelFormats, self).__init__(views_groups, **kwargs)
 
     def __getitem__(self, name):
-        return self._format_builder(name)
+        value = getattr(self, name, None)
+        if value is None:
+            value = self._format_builder(name)
+            setattr(self, name, value)
+        return value
 
     def _format_builder(self, name):
         format_ = self._template
+
+        if '_array_style_' in name:
+            name = name.split('_array_style_')[0]
 
         parts = name.split('_no_')
         methods, no = parts[0].split('^'), parts[1:]
@@ -123,7 +102,7 @@ class ExcelFormats(_ExcelFormats):
                 method, alt = item[0], None
 
             if method in ('bottom', 'interior', 'left', 'right', 'top'):
-                updates = getattr(self, '_' + method)
+                updates = getattr(self, '_' + method)()
                 if ('left' in name) and (method == 'right'):
                     updates = {k: v for k, v in updates.iteritems()
                                if k != 'left'}
@@ -134,15 +113,14 @@ class ExcelFormats(_ExcelFormats):
                 except AttributeError:
                     pass
 
-                if '_lazy__' + method in self.slots:
-                    format_.update(getattr(self, '_' + method))
+                if '_' + method in dir(self):
+                    try:
+                        updates = getattr(self, '_' + method)(methods[-1], alt)
+                    except TypeError:
+                        updates = getattr(self, '_' + method)()
+                    format_.update(updates)
 
-                if '_' + method in self.slots:
-                    format_.update(
-                        getattr(self, '_' + method)(methods[-1], alt)
-                    )
-
-            if 'num_format_' + method in self.slots:
+            if 'num_format_' + method in dir(self):
                 format_['num_format'] = getattr(self, 'num_format_' + method)
 
         for attr in no:
@@ -153,9 +131,9 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
-    @lazy_property
-    def slots(self):
-        return self.__slots__ + tuple(super(ExcelFormats, self).__slots__)
+    @property
+    def _template(self):
+        return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
 
     def _method(self, method):
         result = dict(text_wrap=self.text_wrap)
@@ -166,9 +144,11 @@ class ExcelFormats(_ExcelFormats):
                 result[name] = attr
         return result
 
-    @property
-    def _template(self):
-        return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
+    def _view_border(self, name, alt):
+        border = getattr(self, 'view_border_' + name)
+        if border or alt is None:
+            return dict(top=border)
+        return dict(top=getattr(self, 'view_border_' + alt))
 
     @lazy_property
     def _cell_details(self):
@@ -190,7 +170,6 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
-    @lazy_property
     def _header_left(self):
         format_ = self._template
 
@@ -198,7 +177,6 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
-    @lazy_property
     def _header_center(self):
         format_ = self._template
 
@@ -206,7 +184,6 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
-    @lazy_property
     def _header_title(self):
         format_ = self._template
 
@@ -214,7 +191,6 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
-    @lazy_property
     def _notes(self):
         format_ = self._template
 
@@ -234,66 +210,45 @@ class ExcelFormats(_ExcelFormats):
 
         return _Format(**format_)
 
-    @lazy_property
     def _data(self):
         return dict(text_wrap=False)
 
-    @lazy_property
     def _left(self):
         return dict(left=self.border_style_ext)
 
-    @lazy_property
     def _right(self):
         return dict(left=self.border_style_int,
                     right=self.border_style_ext)
 
-    @lazy_property
     def _top(self):
         return dict(top=self.border_style_ext)
 
-    @lazy_property
     def _bottom(self):
         return dict(bottom=self.border_style_ext)
 
-    @lazy_property
     def _interior(self):
         return dict(left=self.border_style_int)
 
-    @lazy_property
     def _propstest(self):
         return dict(font_script=self.font_script_propstest)
 
-    @lazy_property
     def _net_propstest(self):
         return dict(font_script=self.font_script_net_propstest)
 
-    @lazy_property
     def _block_calc_net_propstest(self):
         return dict(font_script=self.font_script_block_calc_net_propstest)
 
-    @lazy_property
     def _block_calc_propstest(self):
         return dict(font_script=self.font_script_block_calc_propstest)
 
-    @lazy_property
     def _block_expanded_propstest(self):
         return dict(font_script=self.font_script_block_expanded_propstest)
 
-    @lazy_property
     def _block_net_propstest(self):
         return dict(font_script=self.font_script_block_net_propstest)
 
-    @lazy_property
     def _block_normal_propstest(self):
         return dict(font_script=self.font_script_block_normal_propstest)
 
-    @lazy_property
     def _meanstest(self):
         return dict(font_script=self.font_script_meanstest)
-
-    def _view_border(self, name, alt):
-        border = getattr(self, 'view_border_' + name)
-        if border or alt is None:
-            return dict(top=border)
-        return dict(top=getattr(self, 'view_border_' + alt))
-
