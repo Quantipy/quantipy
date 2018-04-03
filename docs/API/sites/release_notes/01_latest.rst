@@ -6,6 +6,35 @@
 Upcoming (March)
 ================
 
+**New**: Emptiness handlers in ``DataSet`` and ``Batch`` classes
+
+* ``DataSet.empty(name, condition=None)``
+* ``DataSet.empty_items(name, condition=None, by_name=True)``
+* ``DataSet.hide_empty_items(condition=None, arrays=None)``
+* ``Batch.hide_empty()``
+
+``empty()`` is used to test if regular variables are completely empty,
+``empty_items()`` checks the same for the items of an array mask definition.
+Both can be run on lists of variables. If a single variable is tested, the former
+returns simply boolean, the latter will list all empty items. If lists are checked,
+``empty()`` returns the sublist of empty variables, ``empty_items()`` is mapping
+the list of empty items per array name. The ``condition`` parameter of these
+methods takes a ``Quantipy logic`` expression to restrict the test to a subset
+of the data, i.e. to check if variables will be empty if the dataset is filtered
+a certain way.
+
+The ``DataSet`` method ``hide_empty_items()`` uses the emptiness tests to
+automatically apply a **hiding rule** on all empty items found in the dataset.
+To restrict this to specific arrays only, their names can be provided via the
+``arrays`` argument. ``Batch.hide_empty()`` takes into account the current
+``Batch.filter`` setup and drops/hides *all* relevant empty variables from the
+``xks`` list and summary aggregations. Summaries that would end up without valid
+items because of this are automatically removed from the ``summaries`` collection
+and the user is warned.
+
+
+""""
+
 **Update**: ``Stack.add_stats(..., factor_labels=True, ...)``
 
 The parameter ``factor_labels`` is now also able to take the string ``'()'``,
