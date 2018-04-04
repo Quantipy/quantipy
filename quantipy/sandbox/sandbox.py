@@ -1719,11 +1719,12 @@ class Chain(object):
         if self.sig_test_letters:
             mapped = ''
             group = None
-            i =  0 if (self._frame.columns.nlevels == 2) else 4
+            i =  0 if (self._frame.columns.nlevels in [2, 3]) else 4
+
             for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-i]):
                 if letter == '@':
                     continue
-                if group:
+                if group is not None:
                     if lab == group:
                         mapped += '/' + letter
                     else:
@@ -1732,7 +1733,6 @@ class Chain(object):
                 else:
                     group = lab
                     mapped += letter
-
             test_types = cd['cp']
             if self.sig_levels.get('means'):
                 test_types += ', ' + cd['cm']
@@ -1759,7 +1759,6 @@ class Chain(object):
 
         if against_total:
             cd_str.extend([cd['up'], cd['down']])
-
         return cd_str
 
     def describe(self):
@@ -2500,11 +2499,12 @@ class Chain(object):
         Get the list of letter replacements depending on the y-axis length.
         """
         repeat_alphabet = int(no_of_cols / 26)
+        abc = list(string.ascii_uppercase)
         letters = list(string.ascii_uppercase)
         if repeat_alphabet:
             for r in range(0, repeat_alphabet):
-                letter = letters[r]
-                extend_abc = ['{}{}'.format(letter, l) for l in letters]
+                letter = abc[r]
+                extend_abc = ['{}{}'.format(letter, l) for l in abc]
                 letters.extend(extend_abc)
         if incl_total:
             letters = ['@'] + letters[:no_of_cols-1]
@@ -2538,12 +2538,19 @@ class Chain(object):
             questions = self._y_keys
         all_num = number_codes if not has_total else [0] + number_codes[1:]
         # Set the new column header (ABC, ...)
-        column_letters = self._get_abc_letters(len(number_codes), has_total)
-        df.columns.set_levels(levels=column_letters, level=1, inplace=True)
-        df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
-                              inplace=True)
-        self.sig_test_letters = df.columns.get_level_values(1).tolist()
 
+        column_letters = self._get_abc_letters(len(number_codes), has_total)
+        vals = df.columns.get_level_values(0).tolist()
+        mi = pd.MultiIndex.from_arrays(
+            (vals,
+             column_letters))
+        df.columns = mi
+        # Old version: fails because undwerlying frozenllist dtype is int8
+        # --------------------------------------------------------------------
+        # df.columns.set_levels(levels=column_letters, level=1, inplace=True)
+        # df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
+        #                       inplace=True)
+        self.sig_test_letters = df.columns.get_level_values(1).tolist()
         # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
         for num_idx, col in enumerate(df.columns):
