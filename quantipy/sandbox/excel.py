@@ -924,7 +924,7 @@ class _Box(object):
                     if left == right:
                         level = -(1 + self.has_tests)
                         lowest_label = self.columns.get_level_values(level)[left]
-                        if lowest_label == 'Total':
+                        if lowest_label in ['Total', 'Gesamt']:
                             self.single_columns.append(left)
                     self.column_edges.append(right + 1)
                 if left not in self.single_columns:
