@@ -1233,6 +1233,7 @@ class _Box(object):
             format_name += '_array_style_%s' % self.sheet.sheet_name
         format_ = self.formats[format_name]
         if kwargs:
+            format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
             for key, value in kwargs.iteritems():
                 format_[key] = value
         return format_
