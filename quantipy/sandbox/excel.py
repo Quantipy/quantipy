@@ -691,7 +691,7 @@ class _Sheet(Worksheet):
 
     def set_row(self, row, height, label=None, font_name=None, font_size=None):
         padding = 5
-        units_to_pixels = 4.0 / 3.0
+        units_to_pixels = 1.4213480314960607 # 4/3
 
         if isinstance(label, basestring):
 
