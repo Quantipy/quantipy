@@ -186,7 +186,8 @@ SHEET_PROPERTIES_0 = dict(alternate_bg=True)
 FORMATS_0 = dict(view_border_freq             = None,
                  view_border_net              = None,
                  view_border_block_net        = None,
-                 view_border_block_expanded   = None)
+                 view_border_block_expanded   = None,
+                 text_h_align_data            = 1)
 
 SHEET_PROPERTIES_1 = dict(alternate_bg=True,
                           freq_0_rep=':',
