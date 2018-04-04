@@ -583,10 +583,10 @@ class _Sheet(Worksheet):
                     format_ = self.excel._add_format(**_Format(**format_spec))
                 except ValueError:
                     format_ = self.default_annotation_format
-
                 write(self._row_annotations, self._column_annotations,
                       annotation, format_)
                 self._row_annotations += 1
+
             if self._row_annotations > self._row:
                 self._row = self._row_annotations
 
@@ -1057,6 +1057,7 @@ class _Box(object):
                                 self._italic.append(rel_y)
                             self._columns.append(rel_y)
                 if rel_y in self._italic:
+                    format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
                     format_['italic'] = True
 
             if rel_y and bg_from:
