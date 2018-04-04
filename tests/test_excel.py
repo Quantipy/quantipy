@@ -242,7 +242,7 @@ class Chain_Manager:
     def add_annotations(chain_manager):
         chains = chain_manager.chains
         for i in (0, 4, 5, 6, 7):
-            chains[i].annotations.set('Headder Title aa no reason aa xxxxxxxxxxxxxxxxx aa long text',
+            chains[i].annotations.set('Headder Title -- no reason',
                                       category='header', position='title')
             chains[i].annotations.set('Header Left -- explanation text',
                                       category='header', position='left')

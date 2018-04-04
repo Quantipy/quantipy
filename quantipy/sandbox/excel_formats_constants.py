@@ -187,7 +187,8 @@ _CELLS = ('y',
           'header_left',
           'header_center',
           'header_title',
-          'notes')
+          'notes',
+          'data')
 
 for view in _VIEWS_GROUPS.keys():
     _CELLS += (view, ) if view in _NO_TEXT else (view, view + '_text')
