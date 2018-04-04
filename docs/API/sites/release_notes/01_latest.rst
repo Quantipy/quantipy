@@ -34,6 +34,7 @@ False
 >>> dataset.empty('test_var', {'gender': 2})
 True
 
+
 The ``DataSet`` method ``hide_empty_items()`` uses the emptiness tests to
 automatically apply a **hiding rule** on all empty items found in the dataset.
 To restrict this to specific arrays only, their names can be provided via the
