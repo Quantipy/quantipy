@@ -707,7 +707,7 @@ class _Sheet(Worksheet):
                 # text too tall
                 return
 
-            if (dimensions[0] * units_to_pixels) > self._size_col(self.start_column):
+            if dimensions[0] >= int(self._size_col(self.start_column)/units_to_pixels):
                 # text too long
                 return
 
