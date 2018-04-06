@@ -2308,19 +2308,19 @@ class Stack(defaultdict):
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
 
-            if checking_cluster is not None and not only_recode:
-                if isinstance(checking_cluster, ChainManager):
-                    cc_keys = checking_cluster.folder_names
-                else:
-                    cc_keys = checking_cluster.keys()
-                c_vars = {v: '{}_net'.format(v) for v in on_vars
-                          if not v in meta['sets'] and
-                          not '{}_net'.format(v) in cc_keys}
-                view['net_check'] = view.pop('net')
-                view['net_check']['kwargs']['iterators'].pop('rel_to')
-                for k, net in c_vars.items():
-                    checking_cluster = self._add_checking_chain(dk, checking_cluster,
-                                            net, k, ['@', k], ('net', ['cbase'], view))
+            if checking_cluster in [None, False] or only_recode: continue
+            if isinstance(checking_cluster, ChainManager):
+                cc_keys = checking_cluster.folder_names
+            else:
+                cc_keys = checking_cluster.keys()
+            c_vars = {v: '{}_net'.format(v) for v in on_vars
+                      if not v in meta['sets'] and
+                      not '{}_net'.format(v) in cc_keys}
+            view['net_check'] = view.pop('net')
+            view['net_check']['kwargs']['iterators'].pop('rel_to')
+            for k, net in c_vars.items():
+                checking_cluster = self._add_checking_chain(dk, checking_cluster,
+                                        net, k, ['@', k], ('net', ['cbase'], view))
 
         if recode and 'to_array' in ds._meta['sets']:
             for arr_name, arr_items in ds._meta['sets']['to_array'].items():
