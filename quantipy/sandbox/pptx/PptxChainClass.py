@@ -746,6 +746,7 @@ class PptxChain(object):
 
         # Strip outer level
         df = strip_levels(self.chain_df, rows=0, columns=0)
+        df = strip_levels(df, columns=1)
 
         # Strip HTML TODO Is 'Strip HTML' at all nessecary?
 
