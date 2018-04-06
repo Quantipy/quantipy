@@ -1045,11 +1045,11 @@ class _Box(object):
                                 arr_summ_ital = True
                             else:
                                 arr_summ_ital = False
-                    if arr_summ_ital:
-                        if rel_y not in self._italic:
-                            self._italic.append(rel_y)
-                    elif rel_y in self._italic:
-                        self._italic.remove(rel_y)
+                        if arr_summ_ital:
+                            if rel_y not in self._italic:
+                                self._italic.append(rel_y)
+                        elif rel_y in self._italic:
+                            self._italic.remove(rel_y)
                 else:
                     if rel_y not in self._columns:
                         if base and not x_contents['is_weighted']:
