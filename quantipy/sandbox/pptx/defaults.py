@@ -16,7 +16,7 @@ default_font_name='Trebuchet MS'
 
 default_font = {
     'font_name': default_font_name,
-    'font_size': 12,
+    'font_size': 9,
     'font_bold': False,
     'font_italic': False,
     'font_underline': False,
@@ -27,22 +27,18 @@ default_font = {
 
 # Chart Legend
 default_font_legend = default_font.copy()
-default_font_legend['font_size'] = 10
 
 # Chart Category axis
 default_font_caxis = default_font.copy()
-default_font_caxis['font_size'] = 10
 
 # Chart Value axis
 default_font_vaxis  = default_font.copy()
-default_font_vaxis['font_size'] = 10
 default_font_vaxis['font_bold'] = True
 
 # Chart data labels
 default_font_data_label  = default_font.copy()
-default_font_data_label['font_size'] = 9
+default_font_data_label['font_size'] = 8.5
 default_font_data_label['font_color'] = (0, 0, 0)
-
 
 # ----------------------------------------------------------------------------
 # Textframe defaults
@@ -53,7 +49,7 @@ default_textframe = {
     'margin_right': Cm(0.25),
     'margin_top': Cm(0.13),
     'margin_bottom': Cm(0.13),
-    'vertical_alignment': 'middle',
+    'vertical_alignment': 'top',
     'horizontal_alignment': 'left',
     'font_kwargs': default_font.copy()
 }
@@ -79,7 +75,7 @@ default_textbox = {
 default_chart = {
     'dataframe': pd.DataFrame(),
     'chart_type': 'bar_clustered',
-    'left': Cm(2.31), 'top': Cm(5.82), 'width': Cm(29.23), 'height': Cm(10.20),
+    'left': 838800, 'top': 1476000, 'width': 10515600, 'height': 4140000,
     'chart_style': 2,
     # Title
     'has_chart_title': False,
@@ -142,7 +138,6 @@ default_chart_bar_stacked100['data_labels_position'] = 'center'
 # default_chart_bar_stacked100['plot_vary_by_cat'] = True
 default_chart_bar_stacked100['plot_overlap'] = 100
 
-
 #---------------------------
 # Line
 default_chart_line = default_chart.copy()
@@ -156,7 +151,6 @@ default_chart_line['data_labels_position'] = 'above'
 default_chart_line['plot_overlap'] = 10
 default_chart_line['smooth_line'] = True
 
-
 #----------------------------
 # Column
 default_chart_column = default_chart.copy()
@@ -165,7 +159,6 @@ default_chart_column['chart_type'] =  'column_clustered'
 default_chart_column['caxis_tick_labels_offset'] = 730
 # Plot properties
 default_chart_column['plot_overlap'] = 10
-
 
 #---------------------------
 # Pie
@@ -177,33 +170,29 @@ default_chart_pie['legend_position'] = 'bottom'
 # Plot properties
 default_chart_pie['plot_vary_by_cat'] = True
 
-
 #----------------------------
 # Question_text-dict for default_slide_kwargs
 question_text = default_textbox.copy()
-question_text['left'] = Cm(2.31)
-question_text['top'] = Cm(3.25)
-question_text['width'] = Cm(29.23)
-question_text['height'] = Cm(1.75)
+question_text['left'] = 838800
+question_text['top'] = 1026000
+question_text['width'] = 10515600
+question_text['height'] = 468000
 question_text['textframe_kwargs'] = default_textframe.copy()
 question_text['textframe_kwargs']['font_kwargs'] = default_font.copy()
+question_text['textframe_kwargs']['font_kwargs']['font_size']=11
 question_text['textframe_kwargs']['font_kwargs']['font_bold']=True
 question_text['textframe_kwargs']['font_kwargs']['font_italic']=True
-
 
 #----------------------------
 # Base_description-dict for default_slide_kwargs
 base_desc = default_textbox.copy()
-base_desc['left'] = Cm(2.31)
-base_desc['top'] = Cm(5.01)
-base_desc['width'] = Cm(29.23)
-base_desc['height'] = Cm(0.8)
+base_desc['left'] = 838800
+base_desc['top'] = 5652000
+base_desc['width'] = 10515600
+base_desc['height'] = 396000
 base_desc['textframe_kwargs'] = default_textframe.copy()
 base_desc['textframe_kwargs']['font_kwargs'] = default_font.copy()
-base_desc['textframe_kwargs']['font_kwargs']['font_size']=10
 base_desc['textframe_kwargs']['font_kwargs']['font_bold']=True
-
-
 
 #----------------------------------------------------------------------------------------------
 # Testing a version with dict in dicts 'txtboxes'/'chart' instead of list
@@ -212,36 +201,3 @@ default_slide_kwargs = {
     'charts': {},
 }
 
-
-"""
-#----------------------------------------------------------------------------------------------
-default_slide_kwargs = {
-    'txtboxes': [
-        {
-            'text': 'question_text',
-            'left': Cm(2.31),
-            'top': Cm(3.25),
-            'width': Cm(29.23),
-            'height': Cm(1.75),
-            'rotation': 0,
-            'textbox_fill_solid': False,
-            'textbox_color': (100, 0, 0),
-            'textbox_color_brightness': 0,
-            'textframe_kwargs': default_textframe_qtext.copy(),
-        },
-        {
-            'text': 'base_text',
-            'left': Cm(2.31),
-            'top': Cm(5.01),
-            'width': Cm(29.23),
-            'height': Cm(0.8),
-            'rotation': 0,
-            'textbox_fill_solid': False,
-            'textbox_color': (100, 0, 0),
-            'textbox_color_brightness': 0,
-            'textframe_kwargs': default_textframe_base_desc.copy(),
-        }
-    ],
-    'charts': [],
-}
-"""
