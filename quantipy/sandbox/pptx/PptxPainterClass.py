@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from lxml import etree
+
 # Imports from Python-PPTX
 from pptx import Presentation
 from pptx.chart.data import CategoryChartData
@@ -25,7 +27,7 @@ from enumerations import (
     chart_type_dct
 )
 
-from defaults_ordered import *
+from pptx_defaults_ordered import *
 
 # chartdata_from_dataframe taken from topy.core.pandas_pptx.py
 def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
@@ -429,6 +431,8 @@ class PptxPainter(object):
         chart = graphic_frame.chart
         chart.chart_style = chart_style
 
+        self.fix_yaxis(chart, 'center')
+
         # =============================== Chart title
         # Hmm, added but not sure if ever needed
         # For all chart types
@@ -498,6 +502,24 @@ class PptxPainter(object):
         plot.has_data_labels = plot_has_data_labels
         plot.gap_width = plot_gap_width
         plot.overlap = plot_overlap
+
+
+#        xml = plot.chart.plots._plotArea.xml
+        insert = """<c:layout>
+                        <c:manualLayout>
+                            <c:layoutTarget val="inner"/>
+                            <c:xMode val="edge"/>
+                            <c:yMode val="edge"/>
+                            <c:x val="0.49653581345810033"/>
+                            <c:y val="3.3743961352657004E-2"/>
+                            <c:w val="0.47690621552740692"/>
+                            <c:h val="0.91231714975845413"/>
+                        </c:manualLayout>
+                    </c:layout>"""
+ #       index = xml.find('<c:barChart>')
+ #       plot.chart.plots._plotArea.xml = xml[:index] + insert + xml[index:]
+
+
 
         # ================================= data labels
         # For all chart types
@@ -728,3 +750,26 @@ class PptxPainter(object):
         font.color.brightness = font_color_brightness
 
         return font
+
+    def fix_yaxis(self, chart, fix_point):
+        """
+        Method to fix the vertical axis in a charts plotArea
+        :param
+            chart:      An instance of a Chart object
+            fix_point:  Where to fix the vertical axis
+        :return: None, will edit the plotArea in place
+        """
+        xml_string = """<c:layout xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+        <c:manualLayout>
+        <c:layoutTarget val="inner"/>
+        <c:xMode val="edge"/>
+        <c:yMode val="edge"/>
+        <c:x val="0.41682566853056413"/>
+        <c:y val="3.3743961352657004E-2"/>
+        <c:w val="0.55661636045494312"/>
+        <c:h val="0.89697898550724642"/>
+        </c:manualLayout>
+        </c:layout>"""
+
+        xml_insert = etree.fromstring(xml_string)
+        chart._element.plotArea.append(xml_insert)
