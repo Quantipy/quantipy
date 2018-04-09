@@ -2686,6 +2686,61 @@ class DataSet(object):
         self._data = self._data[column_order]
         return None
 
+    def _mapped_by_substring(self):
+        suffixed = {}
+        suffixed_variables = self.find()
+        if suffixed_variables:
+            for sv in suffixed_variables:
+                for suffix in VAR_SUFFIXES:
+                    if suffix in sv:
+                        origin = sv.split(suffix)[0]
+                        if not origin in suffixed:
+                            suffixed[origin] = [sv]
+                        else:
+                            suffixed[origin].append(sv)
+        return suffixed
+
+    def _mapped_by_meta(self):
+        rec_views = {}
+        for v in self.variables():
+            origin = self.get_property(v, 'recoded_net')
+            if origin:
+                if not origin in rec_views:
+                    rec_views[origin] = [v]
+                else:
+                    rec_views[origin].append(v)
+        return rec_views
+
+    def _map_to_origins(self):
+        by_origins = self._mapped_by_substring()
+        recoded_views = self._mapped_by_meta()
+        varlist = self.variables()
+        for var in varlist:
+            if var in recoded_views:
+                if not var in by_origins:
+                    by_origins[var] = recoded_views[var]
+                else:
+                    for recoded_view in recoded_views[var]:
+                        if recoded_view not in by_origins[var]:
+                            by_origins[var].append(recoded_view)
+        for k, v in by_origins.items():
+            if k not in varlist:
+                    del by_origins[k]
+                    if not v[0] in varlist:
+                        by_origins[v[0]] = v[1:]
+        sort_them = []
+        for k, v in by_origins.items():
+            sort_them.append(k)
+            sort_them.extend(v)
+        grouped = []
+        for v in varlist:
+            if v in by_origins:
+                grouped.append(v)
+                grouped.extend(by_origins[v])
+            else:
+                if not v in sort_them: grouped.append(v)
+        return grouped
+
     @modify(to_list='reposition')
     def order(self, new_order=None, reposition=None, regroup=False):
         """
