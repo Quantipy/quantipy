@@ -48,6 +48,7 @@ from itertools import product, chain
 from collections import OrderedDict
 
 VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR']
+VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
 
 class DataSet(object):
     """
@@ -179,6 +180,9 @@ class DataSet(object):
 
     def strings(self):
         return self._get_columns('string')
+
+    def created(self):
+        return [v for v in self.variables() if self.get_property(v, 'created')]
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -1151,6 +1155,39 @@ class DataSet(object):
             The variables per data type inside the ``DataSet``.
         """
         return self.describe(only_type=types)
+
+    def find(self, str_tags=None, suffixed=False):
+        """
+        Find variables by searching their names for substrings.
+
+        Parameters
+        ----------
+        str_tags : (list of) str
+            The strings tags to look for in the variable names. If not provided,
+            the modules' default global list of substrings from VAR_SUFFIXES
+            will be used.
+        suffixed : bool, default False
+            If set to True, only variable names that end with a given string
+            sequence will qualify.
+
+        Returns
+        -------
+        found : list
+            The list of matching variable names.
+        """
+        if not str_tags:
+            str_tags = VAR_SUFFIXES
+        else:
+            if not isinstance(str_tags, list): str_tags = [str_tags]
+        found = []
+        variables = self.variables()
+        for v in variables:
+            for str_tag in str_tags:
+                if suffixed:
+                    if v.endswith(str_tag): found.append(v)
+                else:
+                    if str_tag in v: found.append(v)
+        return found
 
     def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
@@ -2650,7 +2687,7 @@ class DataSet(object):
         return None
 
     @modify(to_list='reposition')
-    def order(self, new_order=None, reposition=None):
+    def order(self, new_order=None, reposition=None, regroup=False):
         """
         Set the global order of the DataSet variables collection.
 
