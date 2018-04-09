@@ -2724,7 +2724,7 @@ class DataSet(object):
                         if recoded_view not in by_origins[var]:
                             by_origins[var].append(recoded_view)
         for k, v in by_origins.items():
-            if k not in varlist:
+            if not k in varlist:
                 del by_origins[k]
                 if not v[0] in varlist:
                     by_origins[v[0]] = v[1:]
