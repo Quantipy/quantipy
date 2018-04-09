@@ -1226,7 +1226,8 @@ class _Box(object):
         else:
             format_name = self._format_position(rel_x, rel_y, row_max)
             if view_border and 'top' not in format_name:
-                format_name += 'view_border.%s^' % border_from
+                if self.chain.array_style != 0:
+                    format_name += 'view_border.%s^' % border_from
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
