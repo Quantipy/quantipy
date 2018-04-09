@@ -2725,9 +2725,9 @@ class DataSet(object):
                             by_origins[var].append(recoded_view)
         for k, v in by_origins.items():
             if k not in varlist:
-                    del by_origins[k]
-                    if not v[0] in varlist:
-                        by_origins[v[0]] = v[1:]
+                del by_origins[k]
+                if not v[0] in varlist:
+                    by_origins[v[0]] = v[1:]
         sort_them = []
         for k, v in by_origins.items():
             sort_them.append(k)
