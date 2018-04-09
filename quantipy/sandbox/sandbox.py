@@ -2745,7 +2745,7 @@ class Chain(object):
                     pointers = values.split('@')
                     values = self._meta[pointers.pop(0)]
                     while pointers:
-                        valules = values[pointers.pop(0)]
+                        values = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
                     value_mapper = {
                         str(item['value']): item['text'][text_key]
