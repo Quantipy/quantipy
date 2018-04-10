@@ -186,7 +186,8 @@ SHEET_PROPERTIES_0 = dict(alternate_bg=True)
 FORMATS_0 = dict(view_border_freq             = None,
                  view_border_net              = None,
                  view_border_block_net        = None,
-                 view_border_block_expanded   = None)
+                 view_border_block_expanded   = None,
+                 text_h_align_data            = 1)
 
 SHEET_PROPERTIES_1 = dict(alternate_bg=True,
                           freq_0_rep=':',
@@ -286,7 +287,9 @@ ANNOTATIONS_2 = ['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
 SHEET_PROPERTIES_3 = dict(dummy_tests=True,
                           alternate_bg=False,
                           start_row=7,
-                          start_column=2)
+                          start_column=2,
+                          start_row_annotations=4,
+                          start_column_annotations=5)
 
 VIEW_GROUPS_3 = dict(block_normal_counts='block_normal',
                      block_normal_c_pct='block_normal',
