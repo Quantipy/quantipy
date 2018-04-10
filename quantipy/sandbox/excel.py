@@ -1267,7 +1267,7 @@ class _Box(object):
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self._is('test', **self.contents[idx]):
+                    if self._is('test', **self.contents[ndx]):
                         dummy = False
                 else:
                     if group and self._is('test', **self.contents[idx]):
