@@ -4900,11 +4900,19 @@ class DataSet(object):
         new_text_key = None
         for new_tk in reversed(copy_from):
             if new_tk in text_dict.keys():
-                new_text_key = new_tk
+                if new_tk in ['x edits', 'y edits']:
+                    if text_dict[new_tk].get(copy_to):
+                        new_text_key = new_tk
+                else:
+                    new_text_key = new_tk
         if not new_text_key:
             raise ValueError('{} is no existing text_key'.format(copy_from))
         if not copy_to in text_dict.keys() or update_existing:
-            text_dict.update({copy_to: text_dict[new_text_key]})
+            if new_text_key in ['x edits', 'y edits']:
+                text = text_dict[new_text_key][copy_to]
+            else:
+                text = text_dict[new_text_key]
+            text_dict.update({copy_to: text})
 
     @modify(to_list='copy_from')
     @verify(text_keys=['copy_to', 'copy_from'])
