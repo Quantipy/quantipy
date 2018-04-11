@@ -45,7 +45,7 @@ import re
 import time
 import sys
 from itertools import product, chain
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR']
 VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
@@ -1188,6 +1188,40 @@ class DataSet(object):
                 else:
                     if str_tag in v: found.append(v)
         return found
+
+    def names(self):
+        """
+        """
+        all_names = self.variables()
+        lower_names = [n.lower() for n in all_names]
+        multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
+        if not multiple_names: return all_names
+        name_map = OrderedDict()
+        for name in all_names:
+            if name.lower() in multiple_names:
+                if not name.lower() in name_map:
+                    name_map[name.lower()] = [name]
+                else:
+                    name_map[name.lower()].append(name)
+        return pd.DataFrame(name_map)
+
+    def resolve_name(self, name):
+        """
+        """
+        multiples = isinstance(self.names(), pd.DataFrame)
+        in_multiples = multiples and name in self.names().keys()
+        if not name in self or in_multiples:
+            all_names = self.variables()
+            lowered = [v.lower() for v in all_names]
+            resolved = []
+            if name.lower() in lowered:
+                offset = 0
+                while name.lower() in lowered:
+                    pos = lowered.index(name.lower(), offset)
+                    lowered.pop(pos)
+                    resolved.append(all_names[pos + offset])
+                    offset += 1
+            return resolved if len(resolved) > 1 else resolved[0]
 
     def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
