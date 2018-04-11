@@ -911,7 +911,13 @@ class _Box(object):
             data = flat.next()
             while True:
                 next_ = data
-                while data == next_:
+                if (level_id + 1) < nlevels:
+                    while data == next_:
+                        try:
+                            next_ = flat.next()
+                        except StopIteration:
+                            next_ = None
+                else:
                     try:
                         next_ = flat.next()
                     except StopIteration:
