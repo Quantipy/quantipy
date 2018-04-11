@@ -1191,19 +1191,28 @@ class DataSet(object):
 
     def names(self):
         """
+        Find all semi-duplicate variable names that are different only by case.
+
+        .. note:: Will return self.variables() if no semi-duplicates are found.
+
+        Returns
+        -------
+        semi_dupes : pd.DataFrame
+            An overview of case-sensitive spelling differences in otherwise
+            equal variable names.
         """
         all_names = self.variables()
         lower_names = [n.lower() for n in all_names]
         multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
         if not multiple_names: return all_names
-        name_map = OrderedDict()
+        semi_dupes = OrderedDict()
         for name in all_names:
             if name.lower() in multiple_names:
-                if not name.lower() in name_map:
-                    name_map[name.lower()] = [name]
+                if not name.lower() in semi_dupes:
+                    semi_dupes[name.lower()] = [name]
                 else:
-                    name_map[name.lower()].append(name)
-        return pd.DataFrame(name_map)
+                    semi_dupes[name.lower()].append(name)
+        return pd.DataFrame(semi_dupes)
 
     def resolve_name(self, name):
         """
