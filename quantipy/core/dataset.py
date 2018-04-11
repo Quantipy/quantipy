@@ -4045,7 +4045,6 @@ class DataSet(object):
         None
         """
         meta = self._meta
-
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
             raise ValueError('{} does already exist.'.format(name))
@@ -4056,7 +4055,6 @@ class DataSet(object):
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
-
         first = var_list[0]
         subtype = self._get_type(var_list[0])
         if self._has_categorical_data(var_list[0]):
@@ -4293,10 +4291,6 @@ class DataSet(object):
             self._meta['columns'][name].pop('values')
         self._data[name] = self._data[name].astype(str)
         return None
-
-    # ------------------------------------------------------------------------
-    # Editing
-    # ------------------------------------------------------------------------
 
     # renaming
     # ------------------------------------------------------------------------
@@ -4906,11 +4900,19 @@ class DataSet(object):
         new_text_key = None
         for new_tk in reversed(copy_from):
             if new_tk in text_dict.keys():
-                new_text_key = new_tk
+                if new_tk in ['x edits', 'y edits']:
+                    if text_dict[new_tk].get(copy_to):
+                        new_text_key = new_tk
+                else:
+                    new_text_key = new_tk
         if not new_text_key:
             raise ValueError('{} is no existing text_key'.format(copy_from))
         if not copy_to in text_dict.keys() or update_existing:
-            text_dict.update({copy_to: text_dict[new_text_key]})
+            if new_text_key in ['x edits', 'y edits']:
+                text = text_dict[new_text_key][copy_to]
+            else:
+                text = text_dict[new_text_key]
+            text_dict.update({copy_to: text})
 
     @modify(to_list='copy_from')
     @verify(text_keys=['copy_to', 'copy_from'])
