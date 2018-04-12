@@ -4833,7 +4833,7 @@ class DataSet(object):
             ``_meta['masks']``.
         ext_values : list of str or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and maped to the category labels. Alternatively codes can
+            enumerated and mapped to the category labels. Alternatively codes can
             mapped to categorical labels, e.g.:
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
         text_key : str, default None
