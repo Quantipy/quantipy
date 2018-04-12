@@ -1714,6 +1714,11 @@ class DataSet(object):
                     enumerate(categories, start_at)]
         else:
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
+        codes = [v['value'] for v in vals]
+        dupes = [c for c, count in Counter(codes).items() if count > 1]
+        if dupes:
+            err = "Cannot resolve category definition due to code duplicates: {}"
+            raise ValueError(err.format(dupes))
         return vals
 
     def _add_to_datafile_items_set(self, name):
