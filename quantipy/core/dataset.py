@@ -826,6 +826,27 @@ class DataSet(object):
 
         return None
 
+    def _vars_from_batch(self, batchdef, mode='full'):
+        """
+        """
+        xs = self.roll_up(batchdef['xks'])
+        ys = batchdef['yks']
+        if '@' in ys: ys.remove('@')
+        oe = batchdef['verbatim_names']
+
+        if mode in ['batch-full', 'batch-x']:
+            batch_vars = xs
+            if mode == 'batch-full':
+                for y in ys:
+                    if not y in batch_vars: batch_vars.append(y)
+                for verbatim in oe:
+                    if not oe in batch_vars:
+                        batch_vars.append(verbatim)
+
+        print batch_vars
+        raise
+
+
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def from_batch(self, batch_name, include='identity', text_key=[],
