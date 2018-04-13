@@ -980,7 +980,10 @@ class _Box(object):
         nlevels = self.columns.nlevels
         write = self.sheet.write
         merge_range = self.sheet.merge_range
+        sizes = map(lambda x: x[1], self.chain.shapes)
         for level_id in xrange(nlevels):
+            borders = [sum(sizes[:i+1]) for i in xrange(len(sizes))]
+            border = borders.pop(0)
             row = self.sheet._row + level_id
             is_tests =  self.has_tests and (level_id == (nlevels - 1))
             is_values = (level_id % 2) or is_tests
@@ -992,11 +995,15 @@ class _Box(object):
             while True:
                 next_ = data
                 if (level_id + 1) < nlevels:
-                    while data == next_:
+                    while data==next_:
+                        if flat.coords[0] > border:
+                            break
                         try:
                             next_ = flat.next()
                         except StopIteration:
                             next_ = None
+                    if borders:
+                            border = borders.pop(0)
                 else:
                     try:
                         next_ = flat.next()
