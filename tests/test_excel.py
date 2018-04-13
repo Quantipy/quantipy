@@ -71,6 +71,10 @@ class Chain_Manager:
         stack.add_link(x=self.flatten(p.XKEYS_BASIC), y=p.YKEYS_BASIC,
                        views=p.VIEWS_BASIC, weights=p.WEIGHT_BASIC)
 
+        locality = stack[DATA_KEY].meta['columns']['locality']
+        for idx in xrange(1, 4):
+            locality['values'][idx]['text'] = {'en-GB': '.'}
+
         vm = ViewManager(stack)
         vm.get_views(cell_items=p.CELLS_BASIC,
                      weight=p.WEIGHT_BASIC,
@@ -242,7 +246,7 @@ class Chain_Manager:
     def add_annotations(chain_manager):
         chains = chain_manager.chains
         for i in (0, 4, 5, 6, 7):
-            chains[i].annotations.set('Headder Title aa no reason aa xxxxxxxxxxxxxxxxx aa long text',
+            chains[i].annotations.set('Headder Title -- no reason',
                                       category='header', position='title')
             chains[i].annotations.set('Header Left -- explanation text',
                                       category='header', position='left')

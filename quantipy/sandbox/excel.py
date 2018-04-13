@@ -583,10 +583,10 @@ class _Sheet(Worksheet):
                     format_ = self.excel._add_format(**_Format(**format_spec))
                 except ValueError:
                     format_ = self.default_annotation_format
-
                 write(self._row_annotations, self._column_annotations,
                       annotation, format_)
                 self._row_annotations += 1
+
             if self._row_annotations > self._row:
                 self._row = self._row_annotations
 
@@ -691,7 +691,7 @@ class _Sheet(Worksheet):
 
     def set_row(self, row, height, label=None, font_name=None, font_size=None):
         padding = 5
-        units_to_pixels = 4.0 / 3.0
+        units_to_pixels = 1.4213480314960607 # 4/3
 
         if isinstance(label, basestring):
 
@@ -707,7 +707,7 @@ class _Sheet(Worksheet):
                 # text too tall
                 return
 
-            if (dimensions[0] * units_to_pixels) > self._size_col(self.start_column):
+            if dimensions[0] >= int(self._size_col(self.start_column)/units_to_pixels):
                 # text too long
                 return
 
@@ -911,7 +911,13 @@ class _Box(object):
             data = flat.next()
             while True:
                 next_ = data
-                while data == next_:
+                if (level_id + 1) < nlevels:
+                    while data == next_:
+                        try:
+                            next_ = flat.next()
+                        except StopIteration:
+                            next_ = None
+                else:
                     try:
                         next_ = flat.next()
                     except StopIteration:
@@ -924,7 +930,7 @@ class _Box(object):
                     if left == right:
                         level = -(1 + self.has_tests)
                         lowest_label = self.columns.get_level_values(level)[left]
-                        if lowest_label == 'Total':
+                        if lowest_label in ['Total', 'Gesamt']:
                             self.single_columns.append(left)
                     self.column_edges.append(right + 1)
                 if left not in self.single_columns:
@@ -1045,11 +1051,11 @@ class _Box(object):
                                 arr_summ_ital = True
                             else:
                                 arr_summ_ital = False
-                    if arr_summ_ital:
-                        if rel_y not in self._italic:
-                            self._italic.append(rel_y)
-                    elif rel_y in self._italic:
-                        self._italic.remove(rel_y)
+                        if arr_summ_ital:
+                            if rel_y not in self._italic:
+                                self._italic.append(rel_y)
+                        elif rel_y in self._italic:
+                            self._italic.remove(rel_y)
                 else:
                     if rel_y not in self._columns:
                         if base and not x_contents['is_weighted']:
@@ -1057,6 +1063,7 @@ class _Box(object):
                                 self._italic.append(rel_y)
                             self._columns.append(rel_y)
                 if rel_y in self._italic:
+                    format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
                     format_['italic'] = True
 
             if rel_y and bg_from:
@@ -1225,7 +1232,8 @@ class _Box(object):
         else:
             format_name = self._format_position(rel_x, rel_y, row_max)
             if view_border and 'top' not in format_name:
-                format_name += 'view_border.%s^' % border_from
+                if self.chain.array_style != 0:
+                    format_name += 'view_border.%s^' % border_from
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
@@ -1233,6 +1241,7 @@ class _Box(object):
             format_name += '_array_style_%s' % self.sheet.sheet_name
         format_ = self.formats[format_name]
         if kwargs:
+            format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
             for key, value in kwargs.iteritems():
                 format_[key] = value
         return format_
@@ -1264,7 +1273,7 @@ class _Box(object):
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self._is('test', **self.contents[idx]):
+                    if self._is('test', **self.contents[ndx]):
                         dummy = False
                 else:
                     if group and self._is('test', **self.contents[idx]):

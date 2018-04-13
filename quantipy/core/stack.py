@@ -2277,10 +2277,18 @@ class Stack(defaultdict):
             if not _batches and not recode: return None
             meta = self[dk].meta
             data = self[dk].data
-            for v in on_vars:
+            check_on = []
+            for v in on_vars[:]:
                 if v in meta['sets']:
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars)) + items
+                    check_on.append(items[0])
+                elif meta['columns'][v].get('parent'):
+                    msg = 'Nets can not be added to a single array item: {}'
+                    raise ValueError(msg.format(v))
+                else:
+                    check_on.append(v)
+
             if not only_recode:
                 all_batches = copy.deepcopy(meta['sets']['batches'])
                 for n, b in all_batches.items():
@@ -2304,19 +2312,22 @@ class Stack(defaultdict):
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
-            if checking_cluster is not None and not only_recode:
-                if isinstance(checking_cluster, ChainManager):
-                    cc_keys = checking_cluster.folder_names
-                else:
-                    cc_keys = checking_cluster.keys()
-                c_vars = {v: '{}_net'.format(v) for v in on_vars
-                          if not v in meta['sets'] and
-                          not '{}_net'.format(v) in cc_keys}
-                view['net_check'] = view.pop('net')
-                view['net_check']['kwargs']['iterators'].pop('rel_to')
-                for k, net in c_vars.items():
+
+            if checking_cluster in [None, False] or only_recode: continue
+            if isinstance(checking_cluster, ChainManager):
+                cc_keys = checking_cluster.folder_names
+            else:
+                cc_keys = checking_cluster.keys()
+            c_vars = {v: '{}_net'.format(v) for v in check_on
+                      if not v in meta['sets'] and
+                      not '{}_net'.format(v) in cc_keys}
+            view['net_check'] = view.pop('net')
+            view['net_check']['kwargs']['iterators'].pop('rel_to')
+            for v in check_on:
+                v_net = '{}_net'.format(v)
+                if not v_net in cc_keys:
                     checking_cluster = self._add_checking_chain(dk, checking_cluster,
-                                            net, k, ['@', k], ('net', ['cbase'], view))
+                                            v_net, v, ['@', v], ('net', ['cbase'], view))
 
         if recode and 'to_array' in ds._meta['sets']:
             for arr_name, arr_items in ds._meta['sets']['to_array'].items():
