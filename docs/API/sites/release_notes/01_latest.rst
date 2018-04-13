@@ -6,6 +6,56 @@
 Upcoming (May)
 ==============
 
+**New**: Additional variable (names) "getter"-like and resolver methods
+
+* ``DataSet.created()``
+*  ``DataSet.find(str_tags=None, suffixed=False)``
+* ``DataSet.names()``
+* ``DataSet.resolve_name()``
+
+A bunch of new methods enhancing the options of finding and testing for variable
+names have been added. ``created()`` will list all variables that have been added
+to a dataset using core functions, i.e. ``add_meta()`` and ``derive()``, resp.
+all helper methods that use them internally (as ``band()`` or ``categorize()`` do
+for instance).
+
+The ``find()`` method is returning all variable names that contain any of the
+provided substrings in ``str_tags``. To only consider names that end with these
+strings, set ``suffixed=True``. If no ``str_tags`` are passed, the method will
+use a default list of tags including ``['_rc', '_net', ' (categories', ' (NET', '_rec']``.
+
+Sometimes a dataset might contain "semi-duplicated" names, variables that differ
+in respect to case sensitivity but have otherwise identical names. Calling
+``names()`` will report such cases in a ``pd.DataFrame`` that lists all name
+variants under the respective ``str.lower()`` version. If no semi-duplicates
+are found, ``names()`` will simply return ``DataSet.variables()``.
+
+!!! MORE TEXT HERE !!!
+
+""""
+
+**Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
+
+!!! MORE TEXT HERE !!!
+
+""""
+
+**Update**: ``DataSet.from_batch()`` now creating predictable variable orders.
+
+!!! MORE TEXT HERE !!!
+
+""""
+
+**Bugfix**: ``add_meta()`` and duplicated categorical ``values`` codes
+
+Providing duplicated numerical codes while attempting to create new metadata
+using ``add_meta()`` will now correctly raise a ``ValueError`` to prevent
+corrupting the ``DataSet``.
+
+>>> cats = [(1, 'A'), (2, 'B'), (3, 'C'), (3, 'D'), (2, 'AA')]
+>>> dataset.add_meta('test_var', 'single', 'test label', cats)
+ValueError: Cannot resolve category definition due to code duplicates: [2, 3]
+
 ===================
 Latest (04/04/2018)
 ===================
