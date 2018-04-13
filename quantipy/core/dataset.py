@@ -1230,7 +1230,11 @@ class DataSet(object):
                     lowered.pop(pos)
                     resolved.append(all_names[pos + offset])
                     offset += 1
-            return resolved if len(resolved) > 1 else resolved[0]
+                return resolved if len(resolved) > 1 else resolved[0]
+            else:
+                return None
+        else:
+            return name
 
     def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
@@ -2742,10 +2746,25 @@ class DataSet(object):
                 for suffix in VAR_SUFFIXES:
                     if suffix in sv:
                         origin = sv.split(suffix)[0]
-                        if not origin in suffixed:
-                            suffixed[origin] = [sv]
+
+                        # test name...
+                        origin_res = self.resolve_name(origin)
+                        if not origin_res:
+                            origin_res = origin
+                        if isinstance(origin_res, list):
+                            if len(origin_res) > 1:
+                                msg = "Unable to regroup to {}, ".format(origin)
+                                msg += "found semi-duplicate derived names:\n"
+                                msg += "{}".format(origin_res)
+                                warnings.warn(msg)
+                                origin_res = origin
+                            else:
+                                origin_res = origin_res[0]
+
+                        if not origin_res in suffixed:
+                            suffixed[origin_res] = [sv]
                         else:
-                            suffixed[origin].append(sv)
+                            suffixed[origin_res].append(sv)
         return suffixed
 
     def _mapped_by_meta(self):
@@ -2805,23 +2824,36 @@ class DataSet(object):
         reposition : (List of) dict
             Each dict maps one or a list of variables to a reference variable
             name key. The mapped variables are moved before the reference key.
+        regroup : bool, default False
+            Attempt to regroup non-native variables (i.e. created either
+            manually with ``add_meta()``, ``recode()``, ``derive()``, etc.
+            or automatically by manifesting ``qp.View`` objects) with their
+            originating variables.
 
         Returns
         -------
         None
         """
-        if new_order and reposition:
-            err = "Cannot reposition variables if 'new_order' is specified."
+        if (bool(new_order) + bool(reposition) + regroup) > 1:
+            err = "Can only either apply ``new_order``, ``reposition`` or "
+            err += "``regroup`` variables, not perform multiple operations at once."
             raise ValueError(err)
-        if not reposition:
+        if new_order:
             if not sorted(self._variables_from_set('data file')) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
                 raise ValueError(err)
             check = new_order
-        else:
+        elif reposition:
             check = []
             for r in reposition:
                 check.extend(list(r.keys() + r.values()))
+        elif regroup:
+            new_order = self._map_to_origins()
+            check = new_order
+        else:
+            err = "No ``order`` operation provided, select one of "
+            err += "``new_order``, ``regroup``, ``reposition``."
+            raise ValueError(err)
         if not all(self.var_exists(v) for v in check):
             err = "At least one variable named in ordering does not exist."
             raise ValueError(err)
