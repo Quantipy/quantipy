@@ -135,8 +135,10 @@ default_chart = OrderedDict([
 ])
 
 #--------------------------
-# Bar_Clustered 1 series
+# Bar_Clustered
 default_chart_bar = default_chart.copy()
+# fix y axis (False, 'center'), Currently only an option for bar chart, legend is not available if used.
+default_chart_bar['fix_yaxis'] = False
 
 #--------------------------
 # Bar_Stacked_100%

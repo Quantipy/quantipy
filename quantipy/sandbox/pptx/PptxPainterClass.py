@@ -340,6 +340,9 @@ class PptxPainter(object):
                   vaxis_tick_labels_num_format_is_linked=False,
                   vaxis_font_kwargs=default_font_vaxis.copy(),
 
+                  # Fix yaxis (False, 'center', ?). Currently only an option for bar chart
+                  fix_yaxis = False,
+
                   # Datalabel properties
                   plot_has_data_labels=True,
                   data_labels_position='center',
@@ -431,7 +434,9 @@ class PptxPainter(object):
         chart = graphic_frame.chart
         chart.chart_style = chart_style
 
-        self.fix_yaxis(chart, 'center')
+        # =============================== Fixed y axis
+        # TODO Will affect legend, will have to adjust legend manually (mainly a grid summary issue)
+        if fix_yaxis: self.fix_yaxis(chart, 'center')
 
         # =============================== Chart title
         # Hmm, added but not sure if ever needed
@@ -502,24 +507,6 @@ class PptxPainter(object):
         plot.has_data_labels = plot_has_data_labels
         plot.gap_width = plot_gap_width
         plot.overlap = plot_overlap
-
-
-#        xml = plot.chart.plots._plotArea.xml
-        insert = """<c:layout>
-                        <c:manualLayout>
-                            <c:layoutTarget val="inner"/>
-                            <c:xMode val="edge"/>
-                            <c:yMode val="edge"/>
-                            <c:x val="0.49653581345810033"/>
-                            <c:y val="3.3743961352657004E-2"/>
-                            <c:w val="0.47690621552740692"/>
-                            <c:h val="0.91231714975845413"/>
-                        </c:manualLayout>
-                    </c:layout>"""
- #       index = xml.find('<c:barChart>')
- #       plot.chart.plots._plotArea.xml = xml[:index] + insert + xml[index:]
-
-
 
         # ================================= data labels
         # For all chart types
