@@ -1249,6 +1249,7 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
+
         return None
 
     def paint_all(self, *args, **kwargs):
@@ -1493,6 +1494,7 @@ class Chain(object):
         self._has_rules = None
         self._flag_bases = None
         self._is_mask_item = False
+        self._shapes = None
 
     def __str__(self):
         if self.structure is not None:
@@ -1589,6 +1591,12 @@ class Chain(object):
     @property
     def array_style(self):
         return self._array_style
+
+    @property
+    def shapes(self):
+        if self._shapes is None:
+            self._shapes = []
+        return self._shapes
 
     @array_style.setter
     def array_style(self, link):
@@ -2202,8 +2210,10 @@ class Chain(object):
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
 
+                self.shapes.append(x_frames[-1].shape)
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
+
             if self._group_style == 'reduced' and self.array_style >- 1:
                 if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 for view in v) for v in self._given_views):
@@ -2250,7 +2260,6 @@ class Chain(object):
             return new_link
         else:
             return link
-
 
     def _pad_frames(self, frames):
         """ TODO: doc string

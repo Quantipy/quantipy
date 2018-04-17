@@ -849,20 +849,73 @@ class _Box(object):
             self._write_rows()
 
     def _write_data(self):
+
+        def __write_label(index):
+            offset = 2 if (write_index and index == 'column') else 0
+
+            if index == 'index':
+                l = self.sheet._row + left
+                r = self.sheet._row + right
+            else:
+                l = self.sheet._column + left + offset
+                r = self.sheet._column + right + offset
+
+            if merge_columns and (index == 'column'):
+                if left == right:
+                    merge_range(fixed, l, fixed + 1, l, label, format_)
+                else:
+                    write(fixed, l, label, format_)
+            else:
+                if left == right:
+                    if index == 'index':
+                        write(l, fixed, label, format_)
+                    else:
+                        write(fixed, l, label, format_)
+                else:
+                    if index == 'index':
+                        merge_range(l, fixed, r, fixed, label, format_)
+                    else:
+                        merge_range(fixed, l, fixed, r, label, format_)
+
         write = self.sheet.write
         merge_range = self.sheet.merge_range
         format_ = self.formats._data_header
 
-        for rel_y, label in enumerate(self.chain.structure.columns):
-            column = self.sheet._column + rel_y
-            merge_range(self.sheet._row, column,
-                        self.sheet._row + 1, column,
-                        label, format_)
+        frame = self.chain.structure
 
-            width = self.sheet.column_width_specific.get(
-                column,
-                self.sheet.column_width_frame)
+        width = self.sheet.column_width_frame
+
+        merge_columns = int(not isinstance(frame.columns, pd.MultiIndex))
+        write_index = int(isinstance(frame.columns, pd.MultiIndex))
+
+        nlevels = frame.columns.nlevels
+        for level_id in xrange(nlevels):
+            fixed = self.sheet._row + level_id
+            flat = self.columns.get_level_values(level_id).values.flat
+            left = right = flat.coords[0]
+            label = flat.next()
+            while True:
+                try:
+                    next_ = flat.next()
+                    if next_ == label:
+                        right += 1
+                    else:
+                        __write_label('column')
+                        left = right = flat.coords[0] - 1
+                        label = next_
+                except StopIteration:
+                    __write_label('column')
+                    right += 1
+                    break
+
+        for idx in xrange(right):
+            width = self.sheet.column_width_frame
+            column = self.sheet._column + idx
+            if write_index:
+                column += 2
+            width = self.sheet.column_width_specific.get(column, width)
             self.sheet.set_column(column, column, width)
+
         self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
         self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
 
@@ -870,9 +923,31 @@ class _Box(object):
 
         self.sheet._row += 3
 
+        if write_index:
+            nlevels = frame.index.nlevels
+            for level_id in xrange(nlevels):
+                fixed = self.sheet._column + level_id
+                flat = self.index.get_level_values(level_id).values.flat
+                left = right = flat.coords[0]
+                label = flat.next()
+                while True:
+                    try:
+                        next_ = flat.next()
+                        if next_ == label:
+                            right += 1
+                        else:
+                            __write_label('index')
+                            left = right = flat.coords[0] - 1
+                            label = next_
+                    except StopIteration:
+                        __write_label('index')
+                        right += 1
+                        break
+            self.sheet._column += 2
+
         row_max = self.chain.structure.shape[0] - 1
 
-        flat = self.chain.structure.values.flat
+        flat = frame.values.flat
         rel_x, rel_y = flat.coords
         for data in flat:
             name =  'left^right^'
@@ -890,8 +965,13 @@ class _Box(object):
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
-            self.sheet.set_row(self.sheet._row + i,
-                               self.sheet.row_height_label)
+            if write_index:
+                self.sheet.set_row(self.sheet._row + i,
+                                   self.sheet.row_height_label,
+                                   label=frame.index.levels[-1][i])
+            else:
+                self.sheet.set_row(self.sheet._row + i,
+                                   self.sheet.row_height_label)
 
     def _write_columns(self):
         contents = dict()
@@ -900,7 +980,10 @@ class _Box(object):
         nlevels = self.columns.nlevels
         write = self.sheet.write
         merge_range = self.sheet.merge_range
+        sizes = map(lambda x: x[1], self.chain.shapes)
         for level_id in xrange(nlevels):
+            borders = [sum(sizes[:i+1]) for i in xrange(len(sizes))]
+            border = borders.pop(0)
             row = self.sheet._row + level_id
             is_tests =  self.has_tests and (level_id == (nlevels - 1))
             is_values = (level_id % 2) or is_tests
@@ -912,11 +995,15 @@ class _Box(object):
             while True:
                 next_ = data
                 if (level_id + 1) < nlevels:
-                    while data == next_:
+                    while data==next_:
+                        if flat.coords[0] > border:
+                            break
                         try:
                             next_ = flat.next()
                         except StopIteration:
                             next_ = None
+                    if borders:
+                            border = borders.pop(0)
                 else:
                     try:
                         next_ = flat.next()
