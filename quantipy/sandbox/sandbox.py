@@ -1790,16 +1790,13 @@ class Chain(object):
 
     @lazy_property
     def _counts_first(self):
-        if not self.views:
-            return False
-        else:
-            for v in self.views:
-                sname = v.split('|')[-1]
-                if sname in ['counts', 'c%']:
-                    if sname == 'counts':
-                        return True
-                    else:
-                        return False
+        for v in self.views:
+            sname = v.split('|')[-1]
+            if sname in ['counts', 'c%']:
+                if sname == 'counts':
+                    return True
+                else:
+                    return False
 
     @lazy_property
     def _views_per_rows(self):
