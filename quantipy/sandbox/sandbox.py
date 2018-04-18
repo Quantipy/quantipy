@@ -2738,6 +2738,7 @@ class Chain(object):
             if not column in self._meta['columns']: return None
 
             meta = self._meta['columns'][column]
+
             if sep:
                 column_mapper[column] = str_format % (column, meta['text'][text_key])
             else:
@@ -2745,7 +2746,7 @@ class Chain(object):
 
             if meta.get('values'):
                 values = meta['values']
-                if isinstance(values, (str, unicode)):
+                if isinstance(values, basestring):
                     pointers = values.split('@')
                     values = self._meta[pointers.pop(0)]
                     while pointers:

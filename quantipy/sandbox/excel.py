@@ -849,6 +849,35 @@ class _Box(object):
             self._write_rows()
 
     def _write_data(self):
+
+        def __write_label(index):
+            offset = 2 if (write_index and index == 'column') else 0
+
+            if index == 'index':
+                l = self.sheet._row + left
+                r = self.sheet._row + right
+            else:
+                l = self.sheet._column + left + offset
+                r = self.sheet._column + right + offset
+
+            if merge_columns and (index == 'column'):
+                if left == right:
+                    merge_range(fixed, l, fixed + 1, l, label, format_)
+                else:
+                    for column in xrange(l, r+1):
+                      merge_range(fixed, column, fixed + 1, column, label, format_)
+            else:
+                if left == right:
+                    if index == 'index':
+                        write(l, fixed, label, format_)
+                    else:
+                        write(fixed, l, label, format_)
+                else:
+                    if index == 'index':
+                        merge_range(l, fixed, r, fixed, label, format_)
+                    else:
+                        merge_range(fixed, l, fixed, r, label, format_)
+
         write = self.sheet.write
         merge_range = self.sheet.merge_range
         format_ = self.formats._data_header
