@@ -195,7 +195,7 @@ class PptxDataFrame(pd.DataFrame):
         self.__frames = []
         self.chart_type = None # TODO PptxDataFrame - How to do: if a user sets chart_type it is auto checked for correctnes
 
-    def basics_only(self):
+    def get_cpct(self):
         row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
         dont_want = get_indexes_from_list(self.cell_contents, ['net','is_c_pct_sum'], exact=False)
 
@@ -213,9 +213,9 @@ class PptxDataFrame(pd.DataFrame):
 
         return df_copy
 
-    def nets(self):
-        row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['net', 'is_c_pct_sum'], exact=False)
+    def get_nets(self):
+        row_list = get_indexes_from_list(self.cell_contents, 'net', exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest'], exact=False)
 
         for x in dont_want:
             if x in row_list:
@@ -230,6 +230,33 @@ class PptxDataFrame(pd.DataFrame):
         self.chart_type = auto_charttype(df_copy, self.array_style)
 
         return df_copy
+
+    def get(self, cell_types, sort=False):
+        """
+        Method to get specific elements from chains dataframe
+        :param
+            cel_types: A comma separated list of cell types to return. Available types are 'c_pct,net'
+            sort: Sort the elements ascending or decending. Str 'asc', 'dsc' or False
+        :return: df_copy, a Pandas dataframe. Element types will be returned in the order they are requested
+        """
+        method_map = {'c_pct': self.get_cpct,
+                      'net': self.get_nets}
+        # TODO Add methods for 'mean', 'stddev', 'min', 'max', 'median', 't_props', 't_means'
+        available_celltypes = set(method_map.keys())
+        if isinstance(cell_types, basestring):
+            cell_types = re.sub(' +', '', cell_types)
+            cell_types = cell_types.split(',')
+        value_test = set(cell_types).difference(available_celltypes)
+        if value_test:
+            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_celltypes))
+
+        frames = []
+        for cell_type in cell_types:
+            frame = method_map[cell_type]()
+            frames.append(frame)
+            df=pd.concat(frames)
+
+        return df
 
 
     #def sort(self):
@@ -280,16 +307,25 @@ class PptxChain(object):
         self.vals_in_labels = False
 
     def __str__(self):
-        str_format = ('Table: {}'
+        str_format = ('Table name: {}'
+                      '\nX key name: {}'
+                      '\nShort x key name: {}'
+                      '\nGrid summary: {}'
                       '\nQuestion text: {}'
                       '\nBase description: {}'
                       '\nBase label: {}'  
-                      '\nBase size: {}')
+                      '\nBase size: {}'
+                      '\nRequested crossbreak: {}'
+                      '\n')
         return str_format.format(getattr(self, 'name', 'None'),
+                                 getattr(self, 'x_key_name', 'None'),
+                                 getattr(self, 'x_key_short_name', 'None'),
+                                 getattr(self, 'is_grid_summary', 'None'),
                                  getattr(self, 'question_text', 'None'),
                                  getattr(self, 'base_description', 'None'),
                                  getattr(self, 'xbase_labels', 'None'),
-                                 getattr(self, 'ybases', 'None'))
+                                 getattr(self, 'ybases', 'None'),
+                                 getattr(self, 'crossbreak', 'None'))
 
     def __repr__(self):
         return self.__str__()
@@ -435,7 +471,7 @@ class PptxChain(object):
         :return:
         """
         # Base_label
-        base_label = self.xbase_labels[0] #TODO Select correct base
+        base_label = self.xbase_labels[0] #TODO Select correct base label, currently always selecting first
 
         if self.base_description:
             base_label = u"{}{}".format(base_label,base_label_suf)
