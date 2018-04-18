@@ -963,7 +963,11 @@ class DataSet(object):
         else:
             filter_vars = []
 
+        main_vars = self._vars_from_batch(batch)
+        print main_vars
+        raise
         variables = include
+
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
