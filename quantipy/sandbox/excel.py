@@ -864,7 +864,8 @@ class _Box(object):
                 if left == right:
                     merge_range(fixed, l, fixed + 1, l, label, format_)
                 else:
-                    write(fixed, l, label, format_)
+                    for column in xrange(l, r+1):
+                      merge_range(fixed, column, fixed + 1, column, label, format_)
             else:
                 if left == right:
                     if index == 'index':
