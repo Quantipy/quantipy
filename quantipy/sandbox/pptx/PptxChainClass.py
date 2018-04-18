@@ -254,7 +254,7 @@ class PptxDataFrame(pd.DataFrame):
         for cell_type in cell_types:
             frame = method_map[cell_type]()
             frames.append(frame)
-            df=pd.concat(frames)
+        df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
 
         return df
 
@@ -296,6 +296,7 @@ class PptxChain(object):
         self.total_base = ""
         self.chain_df = chain.dataframe if self.is_grid_summary else self._select_crossbreak()
         self.base_description = "" if chain.base_descriptions == None else chain.base_descriptions
+        if self.base_description[0:6] == "Base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
         self.crossbreaks_qtext = []
         self.ybases = self._get_bases()
@@ -490,7 +491,7 @@ class PptxChain(object):
         # Base_description
         base_description = ""
         if self.base_description:
-            if len(self.ybases) > 1 and not self.vals_in_labels:
+            if len(self.ybases) > 1 and not self.vals_in_labels and self.array_style==-1:
                 base_description = u"{}{}".format(self.base_description, base_description_suf)
             else:
                 base_description = u"{} ".format(self.base_description)
