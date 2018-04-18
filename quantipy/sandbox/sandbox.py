@@ -1488,6 +1488,7 @@ class Chain(object):
         self._given_views = None
         self._grp_text_map = []
         self._text_map = None
+        self._custom_texts = {}
         self._transl = qp.core.view.View._metric_name_map()
         self._pad_id = None
         self._frame = None
@@ -2388,6 +2389,12 @@ class Chain(object):
                     oth_src = link[view].has_other_source()
                     no_total_sign = is_descriptive or is_base or is_sum or is_net
 
+                    if link[view]._custom_txt and is_descriptive:
+                        statname = agg['fullname'].split('|')[1].split('.')[1]
+                        if not statname in self._custom_texts:
+                            self._custom_texts[statname] = []
+                        self._custom_texts[statname].append(link[view]._custom_txt)
+
                     if is_descriptive:
                         text = agg['name']
                         try:
@@ -2912,6 +2919,9 @@ class Chain(object):
                         text = self._specify_base(i, text_keys[axis], bases)
                     else:
                         text = self._transl[tk_transl][value]
+                        if self._custom_texts and value in self._custom_texts:
+                            add_text = self._custom_texts[value].pop(0)
+                            text = '{} {}'.format(text, add_text)
                     level_1_text.append(text)
                 elif value == 'All (eff.)':
                     text = self._specify_base(i, text_keys[axis], bases)
