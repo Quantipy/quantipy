@@ -69,6 +69,7 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
         self.build_info = {}
+        self._hidden = []
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -379,6 +380,24 @@ class ChainManager(object):
         f.close()
         return obj
 
+    def hide(self, chains):
+        """
+        """
+        if not isinstance(chains, list): chains = [chains]
+        for chain in chains:
+            if not chain in self._hidden:
+                self._hidden.append(chain)
+        return None
+
+    def unhide(self, chains):
+        """
+        """
+        if not isinstance(chains, list): chains = [chains]
+        for chain in chains:
+            if chain in self._hidden:
+                self._hidden.remove(chain)
+        return None
+
     def merge(self, folders, new_name=None, drop=True):
         """
         Unite the items of two or more folders, optionally providing a new name.
@@ -651,7 +670,7 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
-    def describe(self, by_folder=False):
+    def describe(self, by_folder=False, show_hidden=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
 
@@ -661,6 +680,9 @@ class ChainManager(object):
             If True, only information on ``dict``-structured (folder-like)
             ``qp.Chain`` items is shown, multiindexed by folder names and item
             enumerations.
+        show_hidden : bool, default False
+            If True, the summary will also include elements that have been set
+            hidden using ``self.hide()``.
 
         Returns
         -------
@@ -673,6 +695,7 @@ class ChainManager(object):
         array_sum = []
         sources = []
         item_pos = []
+        hidden = []
         for pos, chains in enumerate(self):
             is_folder = isinstance(chains, dict)
             if is_folder:
@@ -700,27 +723,33 @@ class ChainManager(object):
                 folders.extend(folder_name)
                 array_sum.extend([False])
                 sources.extend(c.source for c in chains)
-
+            if c.name in self._hidden or folder_name[0] in self._hidden:
+                hidden.append(True)
+            else:
+                hidden.append(False)
         df_data = [item_pos,
                    names,
                    folders,
                    folder_items,
                    variables,
                    sources,
-                   array_sum]
+                   array_sum,
+                   hidden]
         df_cols = ['Position',
                    'Name',
                    'Folder',
                    'Item',
                    'Variable',
                    'Source',
-                   'Array']
+                   'Array',
+                   'Hidden']
         df = pd.DataFrame(df_data).T
         df.columns = df_cols
         if by_folder:
-            return df.set_index(['Position', 'Folder', 'Item'])
-        else:
-            return df
+            df =  df.set_index(['Position', 'Folder', 'Item'])
+        if not show_hidden:
+            df = df[df['Hidden'] == False][df.columns[:-1]]
+        return df
 
     def from_mtd(self, mtd_doc, ignore=None, paint=True, flatten=False):
         """
@@ -1327,6 +1356,7 @@ class ChainAnnotations(dict):
         self.footer_center = []
         self.footer_right = []
         self.notes = []
+        self._hidden = False
         for v in VALID_ANNOT_TYPES:
                 self[v] = []
 
