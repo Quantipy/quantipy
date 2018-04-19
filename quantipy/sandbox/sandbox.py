@@ -161,6 +161,20 @@ class ChainManager(object):
         """
         return [s.name for s in self if isinstance(s, Chain)]
 
+    @property
+    def hidden(self):
+        """
+        All ``qp.Chain`` elements that are hidden.
+        """
+        return [c.name for c in self.chains if c.hidden]
+
+    @property
+    def hidden_folders(self):
+        """
+        All hidden folders.
+        """
+        return [n for n in self._hidden if n in self.folder_names]
+
     def _content_structure(self):
         return ['folder' if isinstance(k, dict) else 'single' for k in self]
 
@@ -380,23 +394,62 @@ class ChainManager(object):
         f.close()
         return obj
 
+    def _toggle_vis(self, chains, mode='hide'):
+        if not isinstance(chains, list): chains = [chains]
+        for chain in chains:
+            if chain in self.folder_names:
+                for c in self[chain]:
+                    c.hidden = True if mode == 'hide' else False
+            else:
+                chain.hidden = True if mode == 'hide' else False
+
+            if mode == 'hide':
+                if not chain in self._hidden:
+                    self._hidden.append(chain)
+            else:
+                if chain in self._hidden:
+                    self._hidden.remove(chain)
+        return None
+
     def hide(self, chains):
         """
         """
-        if not isinstance(chains, list): chains = [chains]
-        for chain in chains:
-            if not chain in self._hidden:
-                self._hidden.append(chain)
+        self._toggle_vis(chains, 'hide')
         return None
 
     def unhide(self, chains):
         """
         """
-        if not isinstance(chains, list): chains = [chains]
-        for chain in chains:
-            if chain in self._hidden:
-                self._hidden.remove(chain)
+        self._toggle_vis(chains, 'unhide')
         return None
+
+    # def hide(self, chains):
+    #     """
+    #     """
+    #     if not isinstance(chains, list): chains = [chains]
+    #     for chain in chains:
+    #         if chain in self.folder_names:
+    #             for c in self[chain]:
+    #                 c.hidden = True
+    #         else:
+    #             chain.hidden = True
+    #         if not chain in self._hidden:
+    #             self._hidden.append(chain)
+    #     return None
+
+    # def unhide(self, chains):
+    #     """
+    #     """
+    #     if not isinstance(chains, list): chains = [chains]
+    #     for chain in chains:
+    #         if chain in self.folder_names:
+    #             for c in self[chain]:
+    #                 c.hidden = False
+    #         else:
+    #             chain.hidden = False
+    #         if chain in self._hidden:
+    #             self._hidden.remove(chain)
+    #     return None
 
     def merge(self, folders, new_name=None, drop=True):
         """
@@ -708,6 +761,7 @@ class ChainManager(object):
                 folder_name = [None]
                 folder_items.append(None)
                 item_pos.append(pos)
+
             if chains[0].structure is None:
                 variables.extend([c._x_keys[0] for c in chains])
                 names.extend([c.name for c in chains])
@@ -723,10 +777,11 @@ class ChainManager(object):
                 folders.extend(folder_name)
                 array_sum.extend([False])
                 sources.extend(c.source for c in chains)
-            if c.name in self._hidden or folder_name[0] in self._hidden:
-                hidden.append(True)
-            else:
-                hidden.append(False)
+            for c in chains:
+                if c.hidden:
+                    hidden.append(True)
+                else:
+                    hidden.append(False)
         df_data = [item_pos,
                    names,
                    folders,
@@ -1356,7 +1411,6 @@ class ChainAnnotations(dict):
         self.footer_center = []
         self.footer_right = []
         self.notes = []
-        self._hidden = False
         for v in VALID_ANNOT_TYPES:
                 self[v] = []
 
@@ -1508,6 +1562,7 @@ class Chain(object):
         self.totalize = False
         self.base_descriptions = None
         self.painted = False
+        self.hidden = False
         self.annotations = ChainAnnotations()
         self._array_style = None
         self._group_style = None
