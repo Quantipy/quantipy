@@ -401,7 +401,7 @@ class ChainManager(object):
                 for c in self[chain]:
                     c.hidden = True if mode == 'hide' else False
             else:
-                chain.hidden = True if mode == 'hide' else False
+                self[chain].hidden = True if mode == 'hide' else False
 
             if mode == 'hide':
                 if not chain in self._hidden:
