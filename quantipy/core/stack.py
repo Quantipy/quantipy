@@ -2321,13 +2321,11 @@ class Stack(defaultdict):
                 cc_keys = checking_cluster.folder_names
             else:
                 cc_keys = checking_cluster.keys()
-            c_vars = {v: '{}_net'.format(v) for v in check_on
-                      if not v in meta['sets'] and
-                      not '{}_net'.format(v) in cc_keys}
             view['net_check'] = view.pop('net')
             view['net_check']['kwargs']['iterators'].pop('rel_to')
             for v in check_on:
                 v_net = '{}_net'.format(v)
+                v_net = v_net.split('.')[-1]
                 if not v_net in cc_keys:
                     checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             v_net, v, ['@', v], ('net', ['cbase'], view))
