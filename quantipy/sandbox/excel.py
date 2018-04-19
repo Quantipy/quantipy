@@ -960,9 +960,22 @@ class _Box(object):
             format_ = self.formats[name]
             if data != data:
                 data = ''
+            elif isinstance(data, float):
+                try:
+                    decs = str(data).split('.')[1]
+                    d = len(decs)
+                    if d == 1 and decs == '0':
+                        f = format_
+                    else:
+                        f = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
+                        f['num_format'] = '0.%s' % ('0' * d)
+                except IndexError:
+                    f = format_
+            else:
+                f = format_
             write(self.sheet._row + rel_x,
                   self.sheet._column + rel_y,
-                  data, format_)
+                  data, f)
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
