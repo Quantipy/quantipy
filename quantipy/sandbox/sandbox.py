@@ -429,9 +429,10 @@ class ChainManager(object):
         self._toggle_vis(chains, 'hide')
         return None
 
-    def unhide(self, chains):
+    def unhide(self, chains=None):
         """
         """
+        if not chains: chains = self.folder_names + self.single_names
         self._toggle_vis(chains, 'unhide')
         return None
 
