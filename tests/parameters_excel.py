@@ -5,7 +5,7 @@ PATH_BASIC = './tests/basic.xlsx'
 XKEYS_BASIC = ('q2', 'q2b', 'q3', 'q4',
                ('q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6'),
                'q8', 'q9')
-YKEYS_BASIC = ('@', 'gender', 'locality')
+YKEYS_BASIC = ('@', 'gender', 'gender', 'locality')
 VIEWS_BASIC = ('cbase', 'counts')
 OPENS_BASIC = ('q8a', 'q9a')
 CELLS_BASIC = 'counts'

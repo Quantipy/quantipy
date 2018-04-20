@@ -71,6 +71,10 @@ class Chain_Manager:
         stack.add_link(x=self.flatten(p.XKEYS_BASIC), y=p.YKEYS_BASIC,
                        views=p.VIEWS_BASIC, weights=p.WEIGHT_BASIC)
 
+        locality = stack[DATA_KEY].meta['columns']['locality']
+        for idx in xrange(1, 4):
+            locality['values'][idx]['text'] = {'en-GB': '.'}
+
         vm = ViewManager(stack)
         vm.get_views(cell_items=p.CELLS_BASIC,
                      weight=p.WEIGHT_BASIC,
