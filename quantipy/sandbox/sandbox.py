@@ -397,18 +397,30 @@ class ChainManager(object):
     def _toggle_vis(self, chains, mode='hide'):
         if not isinstance(chains, list): chains = [chains]
         for chain in chains:
-            if chain in self.folder_names:
-                for c in self[chain]:
-                    c.hidden = True if mode == 'hide' else False
+            if isinstance(chain, dict):
+                fname = chain.keys()[0]
+                elements = chain.values()[0]
+                fidx = self._idx_from_name(fname)
+                folder = self[fidx][fname]
+                for c in folder:
+                    if c.name in elements:
+                        c.hidden = True if mode == 'hide' else False
+                        if mode == 'hide' and not c.name in self._hidden:
+                            self._hidden.append(c.name)
+                        if mode == 'unhide' and c.name in self._hidden:
+                            self._hidden.remove(c.name)
             else:
-                self[chain].hidden = True if mode == 'hide' else False
-
-            if mode == 'hide':
-                if not chain in self._hidden:
-                    self._hidden.append(chain)
-            else:
-                if chain in self._hidden:
-                    self._hidden.remove(chain)
+                if chain in self.folder_names:
+                    for c in self[chain]:
+                        c.hidden = True if mode == 'hide' else False
+                else:
+                    self[chain].hidden = True if mode == 'hide' else False
+                if mode == 'hide':
+                    if not chain in self._hidden:
+                        self._hidden.append(chain)
+                else:
+                    if chain in self._hidden:
+                        self._hidden.remove(chain)
         return None
 
     def hide(self, chains):
