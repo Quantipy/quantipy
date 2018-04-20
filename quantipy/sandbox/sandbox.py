@@ -435,34 +435,6 @@ class ChainManager(object):
         self._toggle_vis(chains, 'unhide')
         return None
 
-    # def hide(self, chains):
-    #     """
-    #     """
-    #     if not isinstance(chains, list): chains = [chains]
-    #     for chain in chains:
-    #         if chain in self.folder_names:
-    #             for c in self[chain]:
-    #                 c.hidden = True
-    #         else:
-    #             chain.hidden = True
-    #         if not chain in self._hidden:
-    #             self._hidden.append(chain)
-    #     return None
-
-    # def unhide(self, chains):
-    #     """
-    #     """
-    #     if not isinstance(chains, list): chains = [chains]
-    #     for chain in chains:
-    #         if chain in self.folder_names:
-    #             for c in self[chain]:
-    #                 c.hidden = False
-    #         else:
-    #             chain.hidden = False
-    #         if chain in self._hidden:
-    #             self._hidden.remove(chain)
-    #     return None
-
     def merge(self, folders, new_name=None, drop=True):
         """
         Unite the items of two or more folders, optionally providing a new name.
