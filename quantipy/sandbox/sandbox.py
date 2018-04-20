@@ -425,12 +425,36 @@ class ChainManager(object):
 
     def hide(self, chains):
         """
+        Flag elements as being hidden.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str or dict
+            The ``qp.Chain`` item and/or folder names to hide. To hide *within*
+            a folder use a dict to map the desired Chain names to the belonging
+            folder name.
+
+        Returns
+        -------
+        None
         """
         self._toggle_vis(chains, 'hide')
         return None
 
     def unhide(self, chains=None):
         """
+        Unhide elements that have been hidden.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str or dict, default None
+            The ``qp.Chain`` item and/or folder names to unhide. To unhide *within*
+            a folder use a dict to map the desired Chain names to the belonging
+            folder name. If not provided, all hidden elements will be unhidden.
+
+        Returns
+        -------
+        None
         """
         if not chains: chains = self.folder_names + self.single_names
         self._toggle_vis(chains, 'unhide')
