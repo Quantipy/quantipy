@@ -1333,6 +1333,7 @@ class ChainManager(object):
                     self.__chains.append({folder: [chain]})
                 else:
                     self.__chains.append(chain)
+
         return None
 
     def paint_all(self, *args, **kwargs):
@@ -1576,11 +1577,9 @@ class Chain(object):
         self._pad_id = None
         self._frame = None
         self._has_rules = None
-        self.grouping = None
-        self.sig_test_letters = None
-        self._group_style = None
         self._flag_bases = None
         self._is_mask_item = False
+        self._shapes = None
 
     def __str__(self):
         if self.structure is not None:
@@ -1677,6 +1676,12 @@ class Chain(object):
     @property
     def array_style(self):
         return self._array_style
+
+    @property
+    def shapes(self):
+        if self._shapes is None:
+            self._shapes = []
+        return self._shapes
 
     @array_style.setter
     def array_style(self, link):
@@ -1807,11 +1812,12 @@ class Chain(object):
         if self.sig_test_letters:
             mapped = ''
             group = None
-            i =  0 if (self._frame.columns.nlevels == 3) else 4
+            i =  0 if (self._frame.columns.nlevels in [2, 3]) else 4
+
             for letter, lab in zip(self.sig_test_letters, self._frame.columns.labels[-i]):
                 if letter == '@':
                     continue
-                if group:
+                if group is not None:
                     if lab == group:
                         mapped += '/' + letter
                     else:
@@ -1820,7 +1826,6 @@ class Chain(object):
                 else:
                     group = lab
                     mapped += letter
-
             test_types = cd['cp']
             if self.sig_levels.get('means'):
                 test_types += ', ' + cd['cm']
@@ -1847,7 +1852,6 @@ class Chain(object):
 
         if against_total:
             cd_str.extend([cd['up'], cd['down']])
-
         return cd_str
 
     def describe(self):
@@ -2272,8 +2276,10 @@ class Chain(object):
 
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
 
+                self.shapes.append(x_frames[-1].shape)
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
+
             if self._group_style == 'reduced' and self.array_style >- 1:
                 if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 for view in v) for v in self._given_views):
@@ -2320,7 +2326,6 @@ class Chain(object):
             return new_link
         else:
             return link
-
 
     def _pad_frames(self, frames):
         """ TODO: doc string
@@ -2588,11 +2593,12 @@ class Chain(object):
         Get the list of letter replacements depending on the y-axis length.
         """
         repeat_alphabet = int(no_of_cols / 26)
+        abc = list(string.ascii_uppercase)
         letters = list(string.ascii_uppercase)
         if repeat_alphabet:
             for r in range(0, repeat_alphabet):
-                letter = letters[r]
-                extend_abc = ['{}{}'.format(letter, l) for l in letters]
+                letter = abc[r]
+                extend_abc = ['{}{}'.format(letter, l) for l in abc]
                 letters.extend(extend_abc)
         if incl_total:
             letters = ['@'] + letters[:no_of_cols-1]
@@ -2626,12 +2632,19 @@ class Chain(object):
             questions = self._y_keys
         all_num = number_codes if not has_total else [0] + number_codes[1:]
         # Set the new column header (ABC, ...)
-        column_letters = self._get_abc_letters(len(number_codes), has_total)
-        df.columns.set_levels(levels=column_letters, level=1, inplace=True)
-        df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
-                              inplace=True)
-        self.sig_test_letters = df.columns.get_level_values(1).tolist()
 
+        column_letters = self._get_abc_letters(len(number_codes), has_total)
+        vals = df.columns.get_level_values(0).tolist()
+        mi = pd.MultiIndex.from_arrays(
+            (vals,
+             column_letters))
+        df.columns = mi
+        # Old version: fails because undwerlying frozenllist dtype is int8
+        # --------------------------------------------------------------------
+        # df.columns.set_levels(levels=column_letters, level=1, inplace=True)
+        # df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
+        #                       inplace=True)
+        self.sig_test_letters = df.columns.get_level_values(1).tolist()
         # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
         for num_idx, col in enumerate(df.columns):
@@ -2759,7 +2772,7 @@ class Chain(object):
             Text
         transform_tests : {False, 'full', 'cells'}, default 'cells'
             Text
-        add_base_texts : {False, 'all', 'simple'}, default 'simple'
+        add_base_texts : {False, 'all', 'simple', 'simple-no-items'}, default 'simple'
             Whether or not to include existing ``.base_descriptions`` str
             to the label of the appropriate base view. Selecting ``'simple'``
             will inject the base texts to non-array type Chains only.
@@ -2830,7 +2843,7 @@ class Chain(object):
                     pointers = values.split('@')
                     values = self._meta[pointers.pop(0)]
                     while pointers:
-                        valules = values[pointers.pop(0)]
+                        values = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
                     value_mapper = {
                         str(item['value']): item['text'][text_key]
@@ -3031,7 +3044,8 @@ class Chain(object):
                 base_value = 'Unweighted effective base'
         else:
             if weighted or (not weighted and not is_multibase):
-                if not bases:
+                if not bases or (bases == 'simple-no-items'
+                                 and self._is_mask_item):
                     return self._transl[tk_transl]['All']
                 key = tk
                 if isinstance(tk, tuple):
