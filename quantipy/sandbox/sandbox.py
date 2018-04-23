@@ -443,7 +443,7 @@ class ChainManager(object):
 
     def unhide(self, chains=None):
         """
-        Unhide elements that have been hidden.
+        Unhide elements that have been set as ``hidden``.
 
         Parameters
         ----------
