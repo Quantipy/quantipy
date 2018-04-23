@@ -480,6 +480,8 @@ class ChainManager(object):
         ------
         None
         """
+        if not isinstance(other_cm, ChainManager):
+            raise ValueError("other_cm must be a quantipy.ChainManager instance.")
         if not at == -1:
             before_c = self.__chains[:at]
             after_c = self.__chains[at:]
@@ -489,7 +491,6 @@ class ChainManager(object):
             self.__chains.extend(other_cm.__chains)
         if safe_names: self._uniquify_names()
         return None
-
 
     def merge(self, folders, new_name=None, drop=True):
         """
