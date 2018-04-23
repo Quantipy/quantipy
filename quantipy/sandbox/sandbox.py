@@ -397,59 +397,100 @@ class ChainManager(object):
     def _toggle_vis(self, chains, mode='hide'):
         if not isinstance(chains, list): chains = [chains]
         for chain in chains:
-            if chain in self.folder_names:
-                for c in self[chain]:
-                    c.hidden = True if mode == 'hide' else False
+            if isinstance(chain, dict):
+                fname = chain.keys()[0]
+                elements = chain.values()[0]
+                fidx = self._idx_from_name(fname)
+                folder = self[fidx][fname]
+                for c in folder:
+                    if c.name in elements:
+                        c.hidden = True if mode == 'hide' else False
+                        if mode == 'hide' and not c.name in self._hidden:
+                            self._hidden.append(c.name)
+                        if mode == 'unhide' and c.name in self._hidden:
+                            self._hidden.remove(c.name)
             else:
-                chain.hidden = True if mode == 'hide' else False
-
-            if mode == 'hide':
-                if not chain in self._hidden:
-                    self._hidden.append(chain)
-            else:
-                if chain in self._hidden:
-                    self._hidden.remove(chain)
+                if chain in self.folder_names:
+                    for c in self[chain]:
+                        c.hidden = True if mode == 'hide' else False
+                else:
+                    self[chain].hidden = True if mode == 'hide' else False
+                if mode == 'hide':
+                    if not chain in self._hidden:
+                        self._hidden.append(chain)
+                else:
+                    if chain in self._hidden:
+                        self._hidden.remove(chain)
         return None
 
     def hide(self, chains):
         """
+        Flag elements as being hidden.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str or dict
+            The ``qp.Chain`` item and/or folder names to hide. To hide *within*
+            a folder use a dict to map the desired Chain names to the belonging
+            folder name.
+
+        Returns
+        -------
+        None
         """
         self._toggle_vis(chains, 'hide')
         return None
 
-    def unhide(self, chains):
+    def unhide(self, chains=None):
         """
+        Unhide elements that have been set as ``hidden``.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str or dict, default None
+            The ``qp.Chain`` item and/or folder names to unhide. To unhide *within*
+            a folder use a dict to map the desired Chain names to the belonging
+            folder name. If not provided, all hidden elements will be unhidden.
+
+        Returns
+        -------
+        None
         """
+        if not chains: chains = self.folder_names + self.single_names
         self._toggle_vis(chains, 'unhide')
         return None
 
-    # def hide(self, chains):
-    #     """
-    #     """
-    #     if not isinstance(chains, list): chains = [chains]
-    #     for chain in chains:
-    #         if chain in self.folder_names:
-    #             for c in self[chain]:
-    #                 c.hidden = True
-    #         else:
-    #             chain.hidden = True
-    #         if not chain in self._hidden:
-    #             self._hidden.append(chain)
-    #     return None
+    def combine(self, other_cm, at=-1, safe_names=False):
+        """
+        Add elements from another ``ChainManager`` instance to self.
 
-    # def unhide(self, chains):
-    #     """
-    #     """
-    #     if not isinstance(chains, list): chains = [chains]
-    #     for chain in chains:
-    #         if chain in self.folder_names:
-    #             for c in self[chain]:
-    #                 c.hidden = False
-    #         else:
-    #             chain.hidden = False
-    #         if chain in self._hidden:
-    #             self._hidden.remove(chain)
-    #     return None
+        Parameters
+        ----------
+        other_cm : ``quantipy.ChainManager``
+            A ChainManager instance to draw the elements from.
+        at : int, default -1
+            The positional index after which new elements will be added.
+            Defaults to -1, i.e. elements are appended at the end.
+        safe_names : bool, default False
+            If True and any duplicated element names are found after the
+            operation, names will be made unique (by appending '_1', '_2', '_3',
+            etc.).
+
+        Returns
+        ------
+        None
+        """
+        if not isinstance(other_cm, ChainManager):
+            raise ValueError("other_cm must be a quantipy.ChainManager instance.")
+        if not at == -1:
+            before_c = self.__chains[:at]
+            after_c = self.__chains[at:]
+            new_chains = before_c + other_cm.__chains + after_c
+            self.__chains = new_chains
+        else:
+            self.__chains.extend(other_cm.__chains)
+        if safe_names: self._uniquify_names()
+        return None
 
     def merge(self, folders, new_name=None, drop=True):
         """
