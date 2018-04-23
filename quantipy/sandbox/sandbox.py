@@ -460,6 +460,37 @@ class ChainManager(object):
         self._toggle_vis(chains, 'unhide')
         return None
 
+    def combine(self, other_cm, at=-1, safe_names=False):
+        """
+        Add elements from another ``ChainManager`` instance to self.
+
+        Parameters
+        ----------
+        other_cm : ``quantipy.ChainManager``
+            A ChainManager instance to draw the elements from.
+        at : int, default -1
+            The positional index after which new elements will be added.
+            Defaults to -1, i.e. elements are appended at the end.
+        safe_names : bool, default False
+            If True and any duplicated element names are found after the
+            operation, names will be made unique (by appending '_1', '_2', '_3',
+            etc.).
+
+        Returns
+        ------
+        None
+        """
+        if not at == -1:
+            before_c = self.__chains[:at]
+            after_c = self.__chains[at:]
+            new_chains = before_c + other_cm.__chains + after_c
+            self.__chains = new_chains
+        else:
+            self.__chains.extend(other_cm.__chains)
+        if safe_names: self._uniquify_names()
+        return None
+
+
     def merge(self, folders, new_name=None, drop=True):
         """
         Unite the items of two or more folders, optionally providing a new name.
