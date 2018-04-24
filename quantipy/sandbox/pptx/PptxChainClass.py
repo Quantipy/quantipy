@@ -270,14 +270,14 @@ class PptxChain(object):
     This class is a wrapper around Chain() class to prepare for PPTX charting
     """
 
-    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None):
+    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, verbose=True):
         """
         :param
             chain: An instance of Chain class
             is_varname_in_qtext: Is var name included in the painted chain dataframe (False, True or 'full')
             crossbreak:
         """
-
+        self.verbose = verbose
         self.chain = chain
         self.is_mask_item = chain._is_mask_item
         self.x_key_name = chain._x_keys[0]
@@ -288,6 +288,8 @@ class PptxChain(object):
             if not isinstance(crossbreak, list):
                 crossbreak = [crossbreak]
             crossbreak = self._check_crossbreaks(chain, crossbreak)
+        else:
+            crossbreak = [BASE_COL]
         self.name = chain.name
         self.x_key_short_name = self._get_short_question_name()
         self.crossbreak = [BASE_COL] if self.is_grid_summary else crossbreak
@@ -418,7 +420,7 @@ class PptxChain(object):
             self._base_value_labels=[x[0] for x in self.ybases]
         return self._base_value_labels
 
-    def place_vals_in_labels(self, base_position=0, orientation='side', drop_base=False, values=None, sep=" ", prefix="n=", circumfix="()"):
+    def place_vals_in_labels(self, base_position=0, orientation='side', drop_base=False, values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
         Takes values from a given column or row and inserts it to the df's row or column labels.
         Can be used to insert base values in side labels for a grid summary
@@ -429,12 +431,23 @@ class PptxChain(object):
             Add base to row or column labels.
         drop_base: Bool, Default True
             Removes the base column/row just added to labels
+        values: list
+            the list of values to insert
+        sep: str
+            the string to use to separate the value from the label
+        prefix: str
+            A string to insert as a prefix to the label
+        circumfix: str
+            A character couple to surround the value
+        setup: str
+            A string telling when to insert value ('always', 'if_differs', 'never')
         """
+        if setup=='never': return
 
         circumfix = list(circumfix)
 
         if self.is_grid_summary:
-            if len(uniquify(self.ybase_values))>1:
+            if (len(uniquify(self.ybase_values))>1 and setup=='if_differs') or setup=='always':
 
                 # grab row labels
                 index_labels = self.chain_df.index.get_level_values(-1)
@@ -578,13 +591,14 @@ class PptxChain(object):
             for cb in crossbreaks:
                 if cb not in chain.axes[1]:
                     crossbreaks.remove(cb)
-                    msg = 'Requested crossbreak: \'{}\' is not found for \'{}\' and will be ignored'.format(cb, chain.name)
-                    warnings.warn(msg)
+                    if self.verbose:
+                        msg = 'Requested crossbreak: \'{}\' is not found for chain \'{}\' and will be ignored'.format(cb, chain.name)
+                        warnings.warn(msg)
             if crossbreaks == []: crossbreaks = None
         else:
             crossbreaks = None
 
-        return uniquify(crossbreaks) if crossbreaks<>None else None
+        return uniquify(crossbreaks) if crossbreaks is not None else [BASE_COL]
 
     def _get_short_question_name(self):
         """
