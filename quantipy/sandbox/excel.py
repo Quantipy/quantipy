@@ -1007,17 +1007,18 @@ class _Box(object):
             left = flat.coords[0]
             data = flat.next()
             while True:
+                if borders:
+                    if left >= border:
+                        border = borders.pop(0)
                 next_ = data
-                if (level_id + 1) < nlevels:
-                    while data==next_:
-                        if flat.coords[0] > border:
-                            break
+                if (level_id + 1) < (nlevels - int(self.has_tests)):
+                    while data == next_:
                         try:
                             next_ = flat.next()
+                            if flat.coords[0] > border:
+                                break
                         except StopIteration:
                             next_ = None
-                    if borders:
-                            border = borders.pop(0)
                 else:
                     try:
                         next_ = flat.next()
