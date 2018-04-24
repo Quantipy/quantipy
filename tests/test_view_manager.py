@@ -392,3 +392,4 @@ class TestViewManager(unittest.TestCase):
                      'before', True)
         vm_views = vm.views
         self.assertEqual(vm_views, E['p_b_n_s_t_w_both'])
+

@@ -23,9 +23,11 @@ temp.chain
 tests/Example Data (A).cache
 *.css
 *.ttf
+*.js
 *.eot
 *.svg
 *.woff
+
 *.js
 
 docs/API/_build/

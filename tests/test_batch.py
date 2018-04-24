@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 30)
+		self.assertEqual(len(_get_meta(batch1).keys()), 31)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])

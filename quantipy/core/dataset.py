@@ -45,9 +45,11 @@ import re
 import time
 import sys
 from itertools import product, chain
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
-VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR']
+VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR',
+             'ar-AR', 'es-ES', 'it-IT']
+VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
 
 class DataSet(object):
     """
@@ -179,6 +181,9 @@ class DataSet(object):
 
     def strings(self):
         return self._get_columns('string')
+
+    def created(self):
+        return [v for v in self.variables() if self.get_property(v, 'created')]
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -822,6 +827,27 @@ class DataSet(object):
 
         return None
 
+    def _vars_from_batch(self, batchdef, mode='full'):
+        """
+        """
+        xs = self.roll_up(batchdef['xks'])
+        ys = batchdef['yks']
+        if '@' in ys: ys.remove('@')
+        oe = batchdef['verbatim_names']
+
+        if mode in ['batch-full', 'batch-x']:
+            batch_vars = xs
+            if mode == 'batch-full':
+                for y in ys:
+                    if not y in batch_vars: batch_vars.append(y)
+                for verbatim in oe:
+                    if not oe in batch_vars:
+                        batch_vars.append(verbatim)
+
+        print batch_vars
+        raise
+
+
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def from_batch(self, batch_name, include='identity', text_key=[],
@@ -1151,6 +1177,86 @@ class DataSet(object):
             The variables per data type inside the ``DataSet``.
         """
         return self.describe(only_type=types)
+
+    def find(self, str_tags=None, suffixed=False):
+        """
+        Find variables by searching their names for substrings.
+
+        Parameters
+        ----------
+        str_tags : (list of) str
+            The strings tags to look for in the variable names. If not provided,
+            the modules' default global list of substrings from VAR_SUFFIXES
+            will be used.
+        suffixed : bool, default False
+            If set to True, only variable names that end with a given string
+            sequence will qualify.
+
+        Returns
+        -------
+        found : list
+            The list of matching variable names.
+        """
+        if not str_tags:
+            str_tags = VAR_SUFFIXES
+        else:
+            if not isinstance(str_tags, list): str_tags = [str_tags]
+        found = []
+        variables = self.variables()
+        for v in variables:
+            for str_tag in str_tags:
+                if suffixed:
+                    if v.endswith(str_tag): found.append(v)
+                else:
+                    if str_tag in v: found.append(v)
+        return found
+
+    def names(self):
+        """
+        Find all semi-duplicate variable names that are different only by case.
+
+        .. note:: Will return self.variables() if no semi-duplicates are found.
+
+        Returns
+        -------
+        semi_dupes : pd.DataFrame
+            An overview of case-sensitive spelling differences in otherwise
+            equal variable names.
+        """
+        all_names = self.variables()
+        lower_names = [n.lower() for n in all_names]
+        multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
+        if not multiple_names: return all_names
+        semi_dupes = OrderedDict()
+        for name in all_names:
+            if name.lower() in multiple_names:
+                if not name.lower() in semi_dupes:
+                    semi_dupes[name.lower()] = [name]
+                else:
+                    semi_dupes[name.lower()].append(name)
+        return pd.DataFrame(semi_dupes)
+
+    def resolve_name(self, name):
+        """
+        """
+        multiples = isinstance(self.names(), pd.DataFrame)
+        in_multiples = multiples and name in self.names().keys()
+        if not name in self or in_multiples:
+            all_names = self.variables()
+            lowered = [v.lower() for v in all_names]
+            resolved = []
+            if name.lower() in lowered:
+                offset = 0
+                while name.lower() in lowered:
+                    pos = lowered.index(name.lower(), offset)
+                    lowered.pop(pos)
+                    resolved.append(all_names[pos + offset])
+                    offset += 1
+                return resolved if len(resolved) > 1 else resolved[0]
+            else:
+                return None
+        else:
+            return name
 
     def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
@@ -1634,6 +1740,11 @@ class DataSet(object):
                     enumerate(categories, start_at)]
         else:
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
+        codes = [v['value'] for v in vals]
+        dupes = [c for c, count in Counter(codes).items() if count > 1]
+        if dupes:
+            err = "Cannot resolve category definition due to code duplicates: {}"
+            raise ValueError(err.format(dupes))
         return vals
 
     def _add_to_datafile_items_set(self, name):
@@ -2649,8 +2760,78 @@ class DataSet(object):
         self._data = self._data[column_order]
         return None
 
+    def _mapped_by_substring(self):
+        suffixed = {}
+        suffixed_variables = self.find()
+        if suffixed_variables:
+            for sv in suffixed_variables:
+                for suffix in VAR_SUFFIXES:
+                    if suffix in sv:
+                        origin = sv.split(suffix)[0]
+
+                        # test name...
+                        origin_res = self.resolve_name(origin)
+                        if not origin_res:
+                            origin_res = origin
+                        if isinstance(origin_res, list):
+                            if len(origin_res) > 1:
+                                msg = "Unable to regroup to {}, ".format(origin)
+                                msg += "found semi-duplicate derived names:\n"
+                                msg += "{}".format(origin_res)
+                                warnings.warn(msg)
+                                origin_res = origin
+                            else:
+                                origin_res = origin_res[0]
+
+                        if not origin_res in suffixed:
+                            suffixed[origin_res] = [sv]
+                        else:
+                            suffixed[origin_res].append(sv)
+        return suffixed
+
+    def _mapped_by_meta(self):
+        rec_views = {}
+        for v in self.variables():
+            origin = self.get_property(v, 'recoded_net')
+            if origin:
+                if not origin in rec_views:
+                    rec_views[origin] = [v]
+                else:
+                    rec_views[origin].append(v)
+        return rec_views
+
+    def _map_to_origins(self):
+        by_origins = self._mapped_by_substring()
+        recoded_views = self._mapped_by_meta()
+        varlist = self.variables()
+        for var in varlist:
+            if var in recoded_views:
+                if not var in by_origins:
+                    by_origins[var] = recoded_views[var]
+                else:
+                    for recoded_view in recoded_views[var]:
+                        if recoded_view not in by_origins[var]:
+                            by_origins[var].append(recoded_view)
+        for k, v in by_origins.items():
+            if not k in varlist:
+                del by_origins[k]
+                if not v[0] in varlist:
+                    by_origins[v[0]] = v[1:]
+        sort_them = []
+        for k, v in by_origins.items():
+            sort_them.append(k)
+            sort_them.extend(v)
+        grouped = []
+        for v in varlist:
+            if v in by_origins:
+                grouped.append(v)
+                grouped.extend(by_origins[v])
+            else:
+                if not v in sort_them: grouped.append(v)
+        return grouped
+
     @modify(to_list='reposition')
-    def order(self, new_order=None, reposition=None):
+    def order(self, new_order=None, reposition=None, regroup=False):
         """
         Set the global order of the DataSet variables collection.
 
@@ -2665,23 +2846,36 @@ class DataSet(object):
         reposition : (List of) dict
             Each dict maps one or a list of variables to a reference variable
             name key. The mapped variables are moved before the reference key.
+        regroup : bool, default False
+            Attempt to regroup non-native variables (i.e. created either
+            manually with ``add_meta()``, ``recode()``, ``derive()``, etc.
+            or automatically by manifesting ``qp.View`` objects) with their
+            originating variables.
 
         Returns
         -------
         None
         """
-        if new_order and reposition:
-            err = "Cannot reposition variables if 'new_order' is specified."
+        if (bool(new_order) + bool(reposition) + regroup) > 1:
+            err = "Can only either apply ``new_order``, ``reposition`` or "
+            err += "``regroup`` variables, not perform multiple operations at once."
             raise ValueError(err)
-        if not reposition:
+        if new_order:
             if not sorted(self._variables_from_set('data file')) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
                 raise ValueError(err)
             check = new_order
-        else:
+        elif reposition:
             check = []
             for r in reposition:
                 check.extend(list(r.keys() + r.values()))
+        elif regroup:
+            new_order = self._map_to_origins()
+            check = new_order
+        else:
+            err = "No ``order`` operation provided, select one of "
+            err += "``new_order``, ``regroup``, ``reposition``."
+            raise ValueError(err)
         if not all(self.var_exists(v) for v in check):
             err = "At least one variable named in ordering does not exist."
             raise ValueError(err)
@@ -4044,7 +4238,6 @@ class DataSet(object):
         None
         """
         meta = self._meta
-
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
             raise ValueError('{} does already exist.'.format(name))
@@ -4055,7 +4248,6 @@ class DataSet(object):
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
-
         first = var_list[0]
         subtype = self._get_type(var_list[0])
         if self._has_categorical_data(var_list[0]):
@@ -4292,10 +4484,6 @@ class DataSet(object):
             self._meta['columns'][name].pop('values')
         self._data[name] = self._data[name].astype(str)
         return None
-
-    # ------------------------------------------------------------------------
-    # Editing
-    # ------------------------------------------------------------------------
 
     # renaming
     # ------------------------------------------------------------------------
@@ -4693,7 +4881,7 @@ class DataSet(object):
             ``_meta['masks']``.
         ext_values : list of str or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and maped to the category labels. Alternatively codes can
+            enumerated and mapped to the category labels. Alternatively codes can
             mapped to categorical labels, e.g.:
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
         text_key : str, default None
@@ -4905,11 +5093,19 @@ class DataSet(object):
         new_text_key = None
         for new_tk in reversed(copy_from):
             if new_tk in text_dict.keys():
-                new_text_key = new_tk
+                if new_tk in ['x edits', 'y edits']:
+                    if text_dict[new_tk].get(copy_to):
+                        new_text_key = new_tk
+                else:
+                    new_text_key = new_tk
         if not new_text_key:
             raise ValueError('{} is no existing text_key'.format(copy_from))
         if not copy_to in text_dict.keys() or update_existing:
-            text_dict.update({copy_to: text_dict[new_text_key]})
+            if new_text_key in ['x edits', 'y edits']:
+                text = text_dict[new_text_key][copy_to]
+            else:
+                text = text_dict[new_text_key]
+            text_dict.update({copy_to: text})
 
     @modify(to_list='copy_from')
     @verify(text_keys=['copy_to', 'copy_from'])

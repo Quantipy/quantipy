@@ -1,11 +1,11 @@
 # -* coding: utf-8 -*-
 
-import ctypes
 import numpy as np
 import pandas as pd
 import quantipy as qp
 import cPickle as cp
 
+from PIL import ImageFont
 from excel_formats import ExcelFormats, _Format
 from excel_formats_constants import _DEFAULTS, _VIEWS_GROUPS
 from difflib import SequenceMatcher
@@ -58,6 +58,8 @@ _SHEET_DEFAULTS = dict(alternate_bg             = True,
                        row_height_label         = 12.75,
                        start_column             = 0,
                        start_row                = 0,
+                       start_column_annotations = 0,
+                       start_row_annotations    = 0,
                        stat_0_rep               = '-',
                        y_header_height          = 33.75,
                        y_row_height             = 50)
@@ -122,46 +124,54 @@ class Excel(Workbook):
 
         The following table shows the default sheet properties:
 
-        Property                Default value   Definition
-        ~~~~~~~~                ~~~~~~~~~~~~~   ~~~~~~~~~~
-        ``alternate_bg``        ``True``        Alternate bg_color in freq views
-        ``arrow_color_high``    ``'#2EB08C'``   High arrow color
-        ``arrow_rep_high``      ``u'\u25B2'``   High arrow representation for column
-                                                proportion tests
-        ``arrow_color_low``     ``'#FC8EAC'``   Low arrow color
-        ``arrow_rep_low``       ``u'\u25BC'``   Low arrow representation for column
-                                                proportion tests
-        ``column_width``        ``9``           Column width - column 1, ..., N
-        ``column_width_label``  ``35``          Column width - column 0
-        ``column_width_frame``  ``15``          Column width - Chain.structure
-        ``column_width_specific``  balh blah
-        ``dummy_tests``         ``False``       If column proportion/ mean tests in
-                                                views add dummy test rows for view
-        ``freq_0_rep``          ``'-'``         Representation of zero data in
-                                                frequency views
-        ``img_insert_x``        ``0``           Cell row to insert image
-                                                (zero indexed)
-        ``img_insert_y``        ``0``           Cell column to insert image
-                                                (zero indexed)
-        ``img_size``            ``[130, 130]``  Resize image to [width, height]
-        ``img_x_offset``        ``0``           Offset image by pixels - x axis
-        ``img_y_offset``        ``0``           Offset image by pixels - y axis
-        ``row_height_label``    ``12.75``       Row height for view rows
-        ``start_column``        ``0``           Start column (zero indexed)
-        ``start_row``           ``0``           Start row (zero indexed)
-        ``stat_0_rep``          ``'-'``         Representation of zero data in
-                                                descriptive views
-        ``y_header_height``     ``33.75``       y row hieght - header (pands.DataFrame.index.level #0)
-        ``y_row_height``        ``50``          y row height (pands.DataFrame.index.level #1)
+        Property                     Default value   Definition
+        ~~~~~~~~                     ~~~~~~~~~~~~~   ~~~~~~~~~~
+        ``alternate_bg``             ``True``        Alternate bg_color in freq views
+        ``arrow_color_high``         ``'#2EB08C'``   High arrow color
+        ``arrow_rep_high``           ``u'\u25B2'``   High arrow representation for column
+                                                     proportion tests
+        ``arrow_color_low``          ``'#FC8EAC'``   Low arrow color
+        ``arrow_rep_low``            ``u'\u25BC'``   Low arrow representation for column
+                                                     proportion tests
+        ``column_width``             ``9``           Column width - column 1, ..., N
+        ``column_width_label``       ``35``          Column width - column 0
+        ``column_width_frame``       ``15``          Column width - Chain.structure
+        ``column_width_specific``    ``dict``        Column width - specific column override
+        ``dummy_tests``              ``False``       If column proportion/ mean tests in
+                                                     views add dummy test rows for view
+        ``freq_0_rep``               ``'-'``         Representation of zero data in
+                                                     frequency views
+        ``img_insert_x``             ``0``           Cell row to insert image
+                                                     (zero indexed)
+        ``img_insert_y``             ``0``           Cell column to insert image
+                                                     (zero indexed)
+        ``img_size``                 ``[130, 130]``  Resize image to [width, height]
+        ``img_x_offset``             ``0``           Offset image by pixels - x axis
+        ``img_y_offset``             ``0``           Offset image by pixels - y axis
+        ``row_height_label``         ``12.75``       Row height for view rows
+        ``start_column``             ``0``           Start column (zero indexed)
+        ``start_row``                ``0``           Start row (zero indexed)
+        ``start_column_annotations`` ``0``           Start column for annotations (zero indexed)
+        ``start_row_annotations``    ``0``           Start row for annotations (zero indexed)
+        ``stat_0_rep``               ``'-'``         Representation of zero data in
+                                                     descriptive views
+        ``y_header_height``          ``33.75``       y row hieght - header (pands.DataFrame.index.level #0)
+        ``y_row_height``             ``50``          y row height (pands.DataFrame.index.level #1)
 
         To change the values pass a dict with the property / new value as
         key/ value pair.
+
         To modify a property for a specific sheet, pass a dict to the kwargs
         parameter in the ``quantipy.Excel.add_chains`` method.
+
         When you have a ``quantipy.ChainManager`` with many sheets the kwargs
         dict should contain a key with the sheet name and a value of the sheet
         properties as previously described. Otherwise you are simply updateing
         the property for every sheet.
+
+        If ``start_row_annotations`` + number of annotations is greater than
+        ``start_row`` then the start_row will become the row after the last
+        annotation.
 
     2. ``formats``
 
@@ -480,7 +490,7 @@ class Excel(Workbook):
         raise NotImplementedError('_write_toc')
 
     @lru_cache()
-    def _add_format(self, format_):
+    def _add_format(self, **format_):
         return self.add_format(format_)
 
 
@@ -498,6 +508,8 @@ class _Sheet(Worksheet):
 
         self._row = self.start_row
         self._column = self.start_column
+        self._row_annotations = self.start_row_annotations
+        self._column_annotations = self.start_column_annotations
         self._formats = None
         self._freeze_loc = None
         self._columns = None
@@ -527,7 +539,7 @@ class _Sheet(Worksheet):
         format_spec = dict([(k, v)
                             for k, v in _DEFAULTS.iteritems()
                             if k not in exclude_keys])
-        return self.excel._add_format(_Format(**format_spec))
+        return self.excel._add_format(**_Format(**format_spec))
 
     @property
     def column_edges(self):
@@ -543,21 +555,21 @@ class _Sheet(Worksheet):
 
     def write(self, *args):
         if isinstance(args[-1], dict):
-            args = args[:-1] + (self.excel._add_format(args[-1]), )
+            args = args[:-1] + (self.excel._add_format(**args[-1]), )
         super(_Sheet, self).write(*args)
 
     def write_rich_string(self, *args):
         args, rich_text = ((args[0], args[1]), ), args[2:]
         for arg in rich_text:
             if isinstance(arg, dict):
-                args = args + (self.excel._add_format(arg), )
+                args = args + (self.excel._add_format(**arg), )
             else:
                 args = args + (arg, )
         args = (xl_rowcol_to_cell(*args[0]), ) + args[1:]
         super(_Sheet, self).write_rich_string(*args)
 
     def merge_range(self, *args):
-        args = args[:-1] + (self.excel._add_format(args[-1]), )
+        args = args[:-1] + (self.excel._add_format(**args[-1]), )
         super(_Sheet, self).merge_range(*args)
 
     def write_chains(self):
@@ -568,11 +580,15 @@ class _Sheet(Worksheet):
             for annotation in self.annotations:
                 try:
                     annotation, format_spec = annotation
-                    format_ = self.excel._add_format(_Format(**format_spec))
+                    format_ = self.excel._add_format(**_Format(**format_spec))
                 except ValueError:
                     format_ = self.default_annotation_format
-                write(self._row, self._column, annotation, format_)
-                self._row += 1
+                write(self._row_annotations, self._column_annotations,
+                      annotation, format_)
+                self._row_annotations += 1
+
+            if self._row_annotations > self._row:
+                self._row = self._row_annotations
 
         for i, chain in enumerate(self.chains):
 
@@ -622,12 +638,12 @@ class _Sheet(Worksheet):
             write(self._row + 1, self._column + 1, cd, format_)
             if arrow_descriptions:
                 arrow_format = _Format(**{'font_color': self.arrow_color_high})
-                arrow_format = self.excel._add_format(arrow_format)
+                arrow_format = self.excel._add_format(**arrow_format)
                 write_rich_string(self._row + 2, self._column + 1,
                                   arrow_format, self.arrow_rep_high,
                                   format_, cds[1], format_)
                 arrow_format = _Format(**{'font_color': self.arrow_color_low})
-                arrow_format = self.excel._add_format(arrow_format)
+                arrow_format = self.excel._add_format(**arrow_format)
                 write_rich_string(self._row + 3, self._column + 1,
                                   arrow_format, self.arrow_rep_low,
                                   format_, cds[2], format_)
@@ -667,45 +683,35 @@ class _Sheet(Worksheet):
             width = self.column_width_specific.get(relative, self.column_width)
             self.set_column(relative, relative, width)
 
-    def set_row(self, row, height, label=None):
+    @lazy_property
+    def truetype(self):
+        fn = self.excel._formats.default_attributes['font_name']
+        fs = self.excel._formats.default_attributes['font_size']
+        return ImageFont.truetype('%s.ttf' % fn.lower(), fs)
+
+    def set_row(self, row, height, label=None, font_name=None, font_size=None):
         padding = 5
-        units_to_pixels = 4.0 / 3.0
+        units_to_pixels = 1.4213480314960607 # 4/3
 
         if isinstance(label, basestring):
 
-            font_size = self.excel._formats.default_attributes['font_size']
-            font_name = self.excel._formats.default_attributes['font_name']
+            if font_name is None:
+                font_name = self.excel._formats.default_attributes['font_name']
 
-            column_dimensions = self._size_col(self.start_column)
-            label_dimensions = self._label_dimension(label,
-                                                     font_size,
-                                                     font_name)
-            if (label_dimensions[1]  * units_to_pixels) - padding > font_size:
+            if font_size is None:
+                font_size = self.excel._formats.default_attributes['font_size']
+
+            dimensions = self.truetype.getsize(label)
+
+            if (dimensions[1] * units_to_pixels) - padding > height:
                 # text too tall
                 return
 
-            if (label_dimensions[0] + padding) > column_dimensions:
+            if dimensions[0] >= int(self._size_col(self.start_column)/units_to_pixels):
                 # text too long
                 return
 
         super(_Sheet, self).set_row(row, height)
-
-    def _label_dimension(self, text, points, font):
-
-        class SIZE(ctypes.Structure):
-            _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
-
-        hdc = ctypes.windll.user32.GetDC(0)
-        gdi32 = ctypes.windll.gdi32
-        hfont = gdi32.CreateFontA(points, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  font)
-        hfont_old = gdi32.SelectObject(hdc, hfont)
-        size = SIZE(0, 0)
-        gdi32.GetTextExtentPoint32A(hdc, text, len(text), ctypes.byref(size))
-        gdi32.SelectObject(hdc, hfont_old)
-        gdi32.DeleteObject(hfont)
-
-        return (size.cx, size.cy)
 
     def _set_freeze_loc(self, columns):
         if list(columns.labels[-1]).count(0) == 1:
@@ -843,20 +849,74 @@ class _Box(object):
             self._write_rows()
 
     def _write_data(self):
+
+        def __write_label(index):
+            offset = 2 if (write_index and index == 'column') else 0
+
+            if index == 'index':
+                l = self.sheet._row + left
+                r = self.sheet._row + right
+            else:
+                l = self.sheet._column + left + offset
+                r = self.sheet._column + right + offset
+
+            if merge_columns and (index == 'column'):
+                if left == right:
+                    merge_range(fixed, l, fixed + 1, l, label, format_)
+                else:
+                    for column in xrange(l, r+1):
+                      merge_range(fixed, column, fixed + 1, column, label, format_)
+            else:
+                if left == right:
+                    if index == 'index':
+                        write(l, fixed, label, format_)
+                    else:
+                        write(fixed, l, label, format_)
+                else:
+                    if index == 'index':
+                        merge_range(l, fixed, r, fixed, label, format_)
+                    else:
+                        merge_range(fixed, l, fixed, r, label, format_)
+
         write = self.sheet.write
         merge_range = self.sheet.merge_range
         format_ = self.formats._data_header
 
-        for rel_y, label in enumerate(self.chain.structure.columns):
-            column = self.sheet._column + rel_y
-            merge_range(self.sheet._row, column,
-                        self.sheet._row + 1, column,
-                        label, format_)
+        frame = self.chain.structure
 
-            width = self.sheet.column_width_specific.get(
-                column,
-                self.sheet.column_width_frame)
+        width = self.sheet.column_width_frame
+
+        merge_columns = int(not isinstance(frame.columns, pd.MultiIndex))
+        write_index = int(isinstance(frame.columns, pd.MultiIndex))
+
+        nlevels = frame.columns.nlevels
+        for level_id in xrange(nlevels):
+            fixed = self.sheet._row + level_id
+            flat = self.columns.get_level_values(level_id).values.flat
+            left = right = flat.coords[0]
+            label = flat.next()
+            while True:
+                try:
+                    next_ = flat.next()
+                    if next_ == label:
+                        right += 1
+                    else:
+                        __write_label('column')
+                        left = right = flat.coords[0] - 1
+                        label = next_
+                except StopIteration:
+                    __write_label('column')
+                    right += 1
+                    break
+
+        for idx in xrange(right):
+            width = self.sheet.column_width_frame
+            column = self.sheet._column + idx
+            if write_index:
+                column += 2
+            width = self.sheet.column_width_specific.get(column, width)
             self.sheet.set_column(column, column, width)
+
         self.sheet.set_row(self.sheet._row, self.sheet.y_header_height)
         self.sheet.set_row(self.sheet._row + 1, self.sheet.y_row_height)
 
@@ -864,9 +924,31 @@ class _Box(object):
 
         self.sheet._row += 3
 
+        if write_index:
+            nlevels = frame.index.nlevels
+            for level_id in xrange(nlevels):
+                fixed = self.sheet._column + level_id
+                flat = self.index.get_level_values(level_id).values.flat
+                left = right = flat.coords[0]
+                label = flat.next()
+                while True:
+                    try:
+                        next_ = flat.next()
+                        if next_ == label:
+                            right += 1
+                        else:
+                            __write_label('index')
+                            left = right = flat.coords[0] - 1
+                            label = next_
+                    except StopIteration:
+                        __write_label('index')
+                        right += 1
+                        break
+            self.sheet._column += 2
+
         row_max = self.chain.structure.shape[0] - 1
 
-        flat = self.chain.structure.values.flat
+        flat = frame.values.flat
         rel_x, rel_y = flat.coords
         for data in flat:
             name =  'left^right^'
@@ -878,14 +960,32 @@ class _Box(object):
             format_ = self.formats[name]
             if data != data:
                 data = ''
+            elif isinstance(data, float):
+                try:
+                    decs = str(data).split('.')[1]
+                    d = len(decs)
+                    if d == 1 and decs == '0':
+                        f = format_
+                    else:
+                        f = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
+                        f['num_format'] = '0.%s' % ('0' * d)
+                except IndexError:
+                    f = format_
+            else:
+                f = format_
             write(self.sheet._row + rel_x,
                   self.sheet._column + rel_y,
-                  data, format_)
+                  data, f)
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
-            self.sheet.set_row(self.sheet._row + i,
-                               self.sheet.row_height_label)
+            if write_index:
+                self.sheet.set_row(self.sheet._row + i,
+                                   self.sheet.row_height_label,
+                                   label=frame.index.levels[-1][i])
+            else:
+                self.sheet.set_row(self.sheet._row + i,
+                                   self.sheet.row_height_label)
 
     def _write_columns(self):
         contents = dict()
@@ -894,7 +994,10 @@ class _Box(object):
         nlevels = self.columns.nlevels
         write = self.sheet.write
         merge_range = self.sheet.merge_range
+        sizes = map(lambda x: x[1], self.chain.shapes)
         for level_id in xrange(nlevels):
+            borders = [sum(sizes[:i+1]) for i in xrange(len(sizes))]
+            border = borders.pop(0)
             row = self.sheet._row + level_id
             is_tests =  self.has_tests and (level_id == (nlevels - 1))
             is_values = (level_id % 2) or is_tests
@@ -905,7 +1008,17 @@ class _Box(object):
             data = flat.next()
             while True:
                 next_ = data
-                while data == next_:
+                if (level_id + 1) < nlevels:
+                    while data==next_:
+                        if flat.coords[0] > border:
+                            break
+                        try:
+                            next_ = flat.next()
+                        except StopIteration:
+                            next_ = None
+                    if borders:
+                            border = borders.pop(0)
+                else:
                     try:
                         next_ = flat.next()
                     except StopIteration:
@@ -918,7 +1031,7 @@ class _Box(object):
                     if left == right:
                         level = -(1 + self.has_tests)
                         lowest_label = self.columns.get_level_values(level)[left]
-                        if lowest_label == 'Total':
+                        if lowest_label in ['Total', 'Gesamt']:
                             self.single_columns.append(left)
                     self.column_edges.append(right + 1)
                 if left not in self.single_columns:
@@ -1039,11 +1152,11 @@ class _Box(object):
                                 arr_summ_ital = True
                             else:
                                 arr_summ_ital = False
-                    if arr_summ_ital:
-                        if rel_y not in self._italic:
-                            self._italic.append(rel_y)
-                    elif rel_y in self._italic:
-                        self._italic.remove(rel_y)
+                        if arr_summ_ital:
+                            if rel_y not in self._italic:
+                                self._italic.append(rel_y)
+                        elif rel_y in self._italic:
+                            self._italic.remove(rel_y)
                 else:
                     if rel_y not in self._columns:
                         if base and not x_contents['is_weighted']:
@@ -1051,6 +1164,7 @@ class _Box(object):
                                 self._italic.append(rel_y)
                             self._columns.append(rel_y)
                 if rel_y in self._italic:
+                    format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
                     format_['italic'] = True
 
             if rel_y and bg_from:
@@ -1102,20 +1216,25 @@ class _Box(object):
         for name in names:
             anno = getattr(self, name)
             if anno:
+                format_ = self.formats[name]
+                label = anno[0]
                 self.sheet.write(self.sheet._row, self.sheet._column,
-                                 anno[0], self.formats[name])
-                self._format_row(self.formats[name])
+                                 label, format_)
+                self._format_row(format_)
                 self.sheet.set_row(self.sheet._row,
-                                   self.sheet.row_height_label)
+                                   self.sheet.row_height_label,
+                                   label=label,
+                                   font_name=format_.get('font_name'),
+                                   font_size=format_.get('font_size'))
+
                 self.sheet._row += 1
 
     def _format_row(self, format_):
-        value = ''
         write = self.sheet.write
         row = self.sheet._row
         column = self.sheet._column
         for rel_y in xrange(1, self.values.shape[1] + 1):
-            write(row, column + rel_y, value, format_)
+            write(row, column + rel_y, '', format_)
 
     def _alternate_bg(self, name, bg):
         freq_view_group = self.excel.views_groups.get(name, '') == 'freq'
@@ -1214,12 +1333,16 @@ class _Box(object):
         else:
             format_name = self._format_position(rel_x, rel_y, row_max)
             if view_border and 'top' not in format_name:
-                format_name += 'view_border.%s^' % border_from
+                if self.chain.array_style != 0:
+                    format_name += 'view_border.%s^' % border_from
             format_name += name
         if not bg:
             format_name += '_no_bg_color'
+        if self.chain.array_style > -1:
+            format_name += '_array_style_%s' % self.sheet.sheet_name
         format_ = self.formats[format_name]
         if kwargs:
+            format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
             for key, value in kwargs.iteritems():
                 format_[key] = value
         return format_
@@ -1251,7 +1374,7 @@ class _Box(object):
                 if next_ == '':
                     if not group:
                         group = data
-                    elif self._is('test', **self.contents[idx]):
+                    if self._is('test', **self.contents[ndx]):
                         dummy = False
                 else:
                     if group and self._is('test', **self.contents[idx]):

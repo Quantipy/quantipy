@@ -8,9 +8,450 @@
 Archived release notes
 ======================
 
--------------------
-Latest (31/08/2017)
--------------------
+---------------
+sd (27/02/2018)
+---------------
+
+**New**: ``DataSet._dimensions_suffix``
+
+``DataSet`` has a new attribute ``_dimensions_suffix``, which is used as mask
+suffix while running ``DataSet.dimensionize()``. The default is ``_grid`` and
+it can be modified with ``DataSet.set_dim_suffix()``.
+
+""""
+
+**Update**: ``Stack._get_chain()`` (old chain)
+
+The method is speeded-up. If a filter is already included in the Stack, it is
+not calculated from scratch anymore. Additionally the method has a new parameter
+``described``, which takes a describing dataframe of the Stack, so it no longer
+needs to be calculated in each loop.
+
+""""
+**Update**: ``Stack.add_nets()`` (recoded ``Views``)
+
+Nets that are applied on array variables will now also create a new recoded
+array that reflects the net definitions if ``recoded`` is used. The
+method has been creating only the item versions before.
+
+""""
+
+**Update**: ``Stack.add_stats()``
+
+The method will now create a new metadata property called ``'factor'`` for each
+variable it is applied on. You can only have one factor assigned to one
+categorical value, so for multiple statistic definitions (exclusions, etc.)
+it will get overwritten.
+
+""""
+
+**Update**: ``DataSet.from_batch()`` (``additions`` parameter)
+
+The ``additions`` parameter has been updated to also be able to create recoded
+variables from existing "additional" Batches that are attached to a parent one.
+Filter variables will get the new meta ``'properties'`` tag ``'recoded_filter'``
+and only have one category (``1``, ``'active'``). They are named simply
+``'filter_1'``, ``'filter_2'`` and so on. The new possible values of the
+parameters are now:
+
+  * ``None``: ``as_addition()``-Batches are not considered.
+  * ``'variables'``: Only cross- and downbreak variables are considered.
+  * ``'filters'``: Only filters are recoded.
+  * ``'full'``: ``'variables'`` + ``'filters'``
+
+""""
+
+**Bugfix**: ``ViewManager._request_views()``
+
+Cumulative sums are only requested if they are included in the belonging
+``Stack``. Additionally the correct related sig-tests are now taken for
+cumulative sums.
+
+---------------
+sd (12/01/2018)
+---------------
+
+**New**: ``Audit``
+
+``Audit`` is a new class which takes ``DataSet`` instances, compares and aligns
+them.
+
+The class compares/ reports/ aligns the following aspects:
+
+  * datasets are valid (``DataSet.validate()``)
+  * mismatches (variables are not included in all datasets)
+  * different types (variables are in more than one dataset, but have different types)
+  * labels (variables are in more than one dataset, but have different labels for the same text_key)
+  * value codes (variables are in more than one dataset, but have different value codes)
+  * value texts (variables are in more than one dataset, but have different value texts)
+  * array items (arrays are in more than one dataset, but have different items)
+  * item labels (arrays are in more than one dataset, but their items have different labels)
+
+This is the first draft of the class, so it will need some testing and probably
+adjustments.
+
+""""
+
+**New**: ``DataSet.reorder_items(name, new_order)``
+
+The new method reorders the items of the included array. The ints in the
+``new_order`` list match up to the number of the items
+(``DataSet.item_no('item_name')``), not to the position.
+
+""""
+
+**New**: ``DataSet.valid_tks``, Arabic
+
+Arabic (``ar-AR``) is included as default valid text-key.
+
+""""
+
+**New**: ``DataSet.extend_items(name, ext_items, text_key=None)``
+
+The new method extends the items of an existing array.
+
+""""
+
+**Update**: ``DataSet.set_missings()``
+
+The method is now limited to ``DataSet``, ``Batch`` does not inherit it.
+
+""""
+
+**Update**: ``DataSet``
+
+The whole class is reordered and cleaned up. Some new deprecation warnings
+will appear.
+
+""""
+
+**Update**: ``DataSet.add_meta()`` / ``DataSet.derive()``
+
+Both methods will now raise a ``ValueError: Duplicated codes provided. Value codes must be unique!``
+if categorical ``values`` definitions try to apply duplicated codes.
+
+""""
+
+---------------
+sd (18/12/2017)
+---------------
+
+
+**New**: ``Batch.remove_filter()``
+
+Removes all defined (global + extended) filters from a Batch instance.
+
+""""
+
+**Update**: ``Batch.add_filter()``
+
+It's now possible to extend the global filter of a Batch instance. These options
+are possible.
+
+Add first filter::
+
+  >>> batch.filter, batch.filter_names
+  'no_filter', ['no_filter']
+  >>> batch.add_filter('filter1', logic1)
+  >>> batch.filter, batch.filter_names
+  {'filter1': logic1}, ['filter1']
+
+Extend filter::
+
+  >>> batch.filter, batch.filter_names
+  {'filter1': logic}, ['filter1']
+  >>> batch.add_filter('filter2', logic2)
+  >>> batch.filter, batch.filter_names
+  {'filter1' + 'filter2': intersection([logic1, logic2])}, ['filter1' + 'filter2']
+
+Replace filter::
+
+  >>> batch.filter, batch.filter_names
+  {'filter1': logic}, ['filter1']
+  >>> batch.add_filter('filter1', logic2)
+  >>> batch.filter, batch.filter_names
+  {'filter1': logic2}, ['filter1']
+
+""""
+
+**Update**: ``Stack.add_stats(..., recode)``
+
+The new parameter ``recode`` defines if a new numerical variable is created which
+satisfies the stat definitions.
+
+""""
+
+**Update**: ``DataSet.populate()``
+
+A progress tracker is added to this method.
+
+""""
+
+**Bugfix**: ``Batch.add_open_ends()``
+
+``=`` is removed from all responsess in the included variables, as it causes
+errors in the Excel-Painter.
+
+""""
+
+**Bugfix**: ``Batch.extend_x()`` and ``Batch.extend_y()``
+
+Check if included variables exist and unroll included masks.
+
+""""
+
+**Bugfix**: ``Stack.add_nets(..., calc)``
+
+If the operator in calc is ``div``/ ``/``, the calculation is now performed
+correctly.
+
+""""
+
+---------------
+sd (28/11/2017)
+---------------
+
+**New** ``DataSet.from_batch()``
+
+Creates a new ``DataSet`` instance out of ``Batch`` definitions (xks, yks,
+filter, weight, language, additions, edits).
+
+""""
+
+**New**: ``Batch.add_total()``
+
+Defines if total column ``@`` should be included in the downbreaks (yks).
+
+""""
+
+**New**: ``Batch.set_unwgt_counts()``
+
+If cellitems are ``cp`` and a weight is provided, it is possible to request
+unweighted count views (percentages are still weighted).
+
+""""
+
+**Update**: ``Batch.add_y_on_y(name, y_filter=None, main_filter='extend')``
+
+Multiple ``y_on_y`` aggregations can now be added to a ``Batch`` instance
+and each can have an own filter. The y_on_y-filter can ``extend`` or ``replace``
+the main_filter of the ``Batch``.
+
+""""
+
+**Update**: ``Stack.add_nets(..., recode)``
+
+The new parameter ``recode`` defines if a new variable is created which
+satisfies the net definitions. Different options for ``recode`` are:
+
+   * ``'extend_codes'``: The new variable contains all codes of the original
+     variable and all nets as new categories.
+   * ``'drop_codes'``: The new variable contains only all nets as new categories.
+   * ``'collect_codes'`` or ``'collect_codes@cat_name'``: The new variable contains
+     all nets as new categories and another new category which sums all cases that
+     are not in any net. The new category text can be defined by adding ``@cat_name``
+     to ``collect_codes``. If none is provided ``Other`` is used as default.
+
+""""
+
+**Update**: ``Stack.add_nets()``
+
+If a variable in the ``Stack`` already has a net_view, it gets overwritten
+if a new net is added.
+
+""""
+
+**Update**: ``DataSet.set_missings(..., missing_map)``
+
+The parameter ``missing_map`` can also handle lists now. All included
+codes are be flagged as ``'exclude'``.
+
+""""
+
+**Update**: ``request_views(..., sums='mid')`` (``ViewManager``/``query.py``)
+
+Allow different positions for sums in the view-order. They can be placed in
+the middle (``'mid'``) between the basics/ nets and the stats or at the
+``'bottom'`` after the stats.
+
+""""
+
+**Update/ New**: ``write_dimensions()``
+
+Converting qp data to mdd and ddf files by using ``write_dimensions()`` is
+updated now. A bug regarding encoding texts is fixed and additionally all
+included ``text_keys`` in the meta are transferred into the mdd. Therefore
+two new classes are included: ``DimLabels`` and ``DimLabel``.
+
+---------------
+sd (13/11/2017)
+---------------
+
+**New** ``DataSet.to_delimited_set(name, label, variables,
+                           from_dichotomous=True, codes_from_name=True)``
+
+Creates a new delimited set variable out of other variables. If the input-
+variables are dichotomous (``from_dichotomous``), the new value-codes can be
+taken from the variable-names or from the order of the variables
+(``codes_from_name``).
+
+""""
+
+**Update** ``Stack.aggregate(..., bases={})``
+
+A dictionary in form of::
+
+   bases = {
+      'cbase': {
+         'wgt': True,
+         'unwgt': False},
+      'cbase_gross': {
+         'wgt': True,
+         'unwgt': True},
+      'ebase': {
+         'wgt': False,
+         'unwgt': False}
+         }
+
+defines what kind of bases will be aggregated. If ``bases`` is provided the
+old parameter ``unweighted_base`` and any bases in the parameter ``views``
+will be ignored. If bases is not provided and any base is included in ``views``,
+a dictionary is automatically created out of ``views`` and ``unweighted_base``.
+
+---------------
+sd (17/10/2017)
+---------------
+
+
+**New**: ``del DataSet['var_name']`` and ``'var_name' in DataSet`` syntax support
+
+It is now possible to test membership of a variable name simply using the ``in``
+operator instead of ``DataSet.var_exists('var_name')`` and delete a variable definition
+from ``DataSet`` using the ``del`` keyword inplace of the ``drop('var_name')``
+method.
+
+""""
+
+**New**: ``DataSet.is_single(name)``, ``.is_delimited_set(name)``, ``.is_int(name)``, ``.is_float(name)``, ``.is_string(name)``, ``.is_date(name)``, ``.is_array(name)``
+
+These new methods make testing a variable's type easy.
+
+""""
+
+**Update**: ``DataSet.singles(array_items=True)`` and all other non-``array`` type iterators
+
+It is now possible to exclude ``array`` items from ``singles()``, ``delimited_sets()``,
+``ints()`` and ``floats()`` variable lists by setting the new ``array_items``
+parameter to ``False``.
+
+""""
+
+**Update**: ``Batch.set_sigtests(..., flags=None, test_total=None)``, ``Batch.sigproperties``
+
+The significancetest-settings for flagging and testing against total, can now
+be modified by the two parameters ``flags`` and ``test_total``. The ``Batch``
+attribute ``siglevels`` is removed, instead all sig-settings are stored
+in ``Batch.sigproperties``.
+
+""""
+
+**Update**: ``Batch.make_summaries(..., exclusive=False)``, ``Batch.skip_items``
+
+The new parameter ``exclusive`` can take a list of arrays or a boolean. If a list
+is included, these arrays are added to ``Batch.skip_items``, if it is True all
+variables from ``Batch.summaries`` are added to ``Batch.skip_items``
+
+""""
+
+**Update**: ``quantipy.sandbox.sandbox.Chain.paint(..., totalize=True)``
+
+If ``totalize`` is ``True``, ``@``-Total columns of a (x-oriented) ``Chain.dataframe``
+will be painted as ``'Total'`` instead of showing the corresponsing ``x``-variables
+question text.
+
+""""
+
+**Update**: ``quantipy.core.weights.Rim.Rake``
+
+The weighting algorithm's ``generate_report()`` method can be caught up in a
+``MemoryError`` for complex weight schemes run on very large sample sizes. This
+is now prevented to ensure the weight factors are computed with priority and
+the algorithm is able to terminate correctly. A warning is raised::
+
+   UserWarning: OOM: Could not finish writing report...
+
+""""
+
+**Update**: ``Batch.replace_y()``
+
+Conditional replacements of y-variables of a ``Batch`` will now always also
+automatically add the ``@``-Total indicator if not provided.
+
+""""
+
+**Bugfix**: ``DataSet.force_texts(...,  overwrite=True)``
+
+Forced overwriting of existing ``text_key`` meta data was failing for ``array``
+``mask`` objects. This is now solved.
+
+""""
+
+---------------
+sd (15/09/2017)
+---------------
+
+**New**: ``DataSet.meta_to_json(key=None, collection=None)``
+
+The new method allows saving parts of the metadata as a json file. The parameters
+``key`` and ``collection`` define the metaobject which will be saved.
+
+""""
+
+**New**: ``DataSet.save()`` and ``DataSet.revert()``
+
+These two new methods are useful in interactive sessions like **Ipython** or
+**Jupyter** notebooks. ``save()`` will make a temporary (only im memory, not
+written to disk) copy of the ``DataSet`` and store its current state. You can
+then use ``revert()`` to rollback to that snapshot of the data at a later
+stage (e.g. a complex recode operation went wrong, reloading from the physical files takes
+too long...).
+
+""""
+
+**New**: ``DataSet.by_type(types=None)``
+
+The ``by_type()`` method is replacing the soon to be deprecated implementation
+of ``variables()`` (see below). It provides the same functionality
+(``pd.DataFrame`` summary of variable types) as the latter.
+
+""""
+
+**Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
+
+In conjunction with the addition of ``by_type()``, ``variables()`` is
+replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
+
+""""
+
+**Update**: ``Batch.as_addition()``
+
+The possibility to add multiple cell item iterations of one ``Batch`` definition
+via that method has been reintroduced (it was working by accident in previous
+versions with subtle side effects and then removed). Have fun!
+
+""""
+
+**Update**: ``Batch.add_open_ends()``
+
+The method will now raise an ``Exception`` if called on a ``Batch`` that has
+been added to a parent one via ``as_addition()`` to warn the user and prevent
+errors at the build stage::
+
+   NotImplementedError: Cannot add open end DataFrames to as_addition()-Batches!
+
+---------------
+sd (31/08/2017)
+---------------
 
 **New**: ``DataSet.code_from_label(..., exact=True)``
 
@@ -54,7 +495,7 @@ of the additional ``yks``.
 
 """"
 
-**Update**: ``Batch.add_open_ends(... replacements)``
+**Update**: ``Batch.add_open_ends(..., replacements)``
 
 The new parameter ``replacements`` is implemented. The method loops over the
 whole pd.DataFrame and replaces all keys of the included ``dict``
