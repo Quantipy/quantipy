@@ -460,7 +460,7 @@ class ChainManager(object):
         self._toggle_vis(chains, 'unhide')
         return None
 
-    def Insert(self, other_cm, index=-1, safe_names=False):
+    def insert(self, other_cm, index=-1, safe_names=False):
         """
         Add elements from another ``ChainManager`` instance to self.
 
