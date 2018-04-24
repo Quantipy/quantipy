@@ -460,7 +460,7 @@ class ChainManager(object):
         self._toggle_vis(chains, 'unhide')
         return None
 
-    def combine(self, other_cm, at=-1, safe_names=False):
+    def insert(self, other_cm, index=-1, safe_names=False):
         """
         Add elements from another ``ChainManager`` instance to self.
 
@@ -468,9 +468,9 @@ class ChainManager(object):
         ----------
         other_cm : ``quantipy.ChainManager``
             A ChainManager instance to draw the elements from.
-        at : int, default -1
+        index : int, default -1
             The positional index after which new elements will be added.
-            Defaults to -1, i.e. elements are appended at the end.
+            Defaults to -1, i.e. elements are appended index the end.
         safe_names : bool, default False
             If True and any duplicated element names are found after the
             operation, names will be made unique (by appending '_1', '_2', '_3',
@@ -482,9 +482,9 @@ class ChainManager(object):
         """
         if not isinstance(other_cm, ChainManager):
             raise ValueError("other_cm must be a quantipy.ChainManager instance.")
-        if not at == -1:
-            before_c = self.__chains[:at]
-            after_c = self.__chains[at:]
+        if not index == -1:
+            before_c = self.__chains[:index+1]
+            after_c = self.__chains[index+1:]
             new_chains = before_c + other_cm.__chains + after_c
             self.__chains = new_chains
         else:

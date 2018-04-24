@@ -371,7 +371,7 @@ class Batch(qp.DataSet):
         self.xks = self.unroll(clean_xks, both='all')
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
-        self.make_summaries(masks, [])
+        self.make_summaries(masks, [], _verbose=False)
         return None
 
     @modify(to_list=['ext_xks'])
@@ -460,7 +460,7 @@ class Batch(qp.DataSet):
 
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
-    def make_summaries(self, arrays, exclusive=False):
+    def make_summaries(self, arrays, exclusive=False, _verbose=None):
         """
         Summary tables are created for defined arrays.
 
@@ -477,6 +477,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        if _verbose is None: _verbose = self._verbose_infos
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
@@ -492,7 +493,7 @@ class Batch(qp.DataSet):
             msg = 'Array summaries setup: Creating {}.'.format(arrays)
         else:
             msg = 'Array summaries setup: Creating no summaries!'
-        if self._verbose_infos:
+        if _verbose:
             print msg
         for t_array in self.transposed_arrays.keys():
             if not t_array in arrays:
