@@ -2138,8 +2138,12 @@ class Chain(object):
             multiple_conditions = len(conditions) > 2
             expand = '+{' in parts[2] or '}+' in parts[2]
             complete = '*:' in parts[2]
-            if multiple_conditions or expand or complete:
+            if expand or complete:
                 return True
+            if multiple_conditions:
+                if self.__has_operator_expr(parts):
+                    return True
+                return False
             return False
         return False
 
@@ -2152,8 +2156,8 @@ class Chain(object):
     # non-meta relevant helpers
     def __has_operator_expr(self, parts):
         e = parts[2]
-        for syntax in ['[+{', '}+]', ']*:']:
-            if syntax in e: e.remove(syntax)
+        for syntax in [']*:', '[+{', '}+']:
+            if syntax in e: e = e.replace(syntax, '')
         ops = ['+', '-', '*', '/']
         return any(len(e.split(op)) > 1 for op in ops)
 
