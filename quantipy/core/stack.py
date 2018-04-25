@@ -2295,14 +2295,20 @@ class Stack(defaultdict):
                     if not n in _batches: all_batches.pop(n)
                 languages = list(set(b['language'] for n, b in all_batches.items()))
                 netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
-                if calc: calc = _check_and_update_calc(calc, languages)
+                if calc:
+                    calc = _check_and_update_calc(calc, languages)
+                    calc_only = calc.get('calc_only', False)
+                else:
+                    calc_only = False
                 view = qp.ViewMapper()
                 view.make_template('frequency', {'rel_to': [None, 'y']})
+
                 options = {'logic': netdef,
                            'axis': 'x',
                            'expand': expand if expand in ['after', 'before'] else None,
                            'complete': True if expand else False,
-                           'calc': calc}
+                           'calc': calc,
+                           'calc_only': calc_only}
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
