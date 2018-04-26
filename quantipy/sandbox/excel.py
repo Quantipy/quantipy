@@ -964,18 +964,14 @@ class _Box(object):
                 try:
                     decs = str(data).split('.')[1]
                     d = len(decs)
-                    if d == 1 and decs == '0':
-                        f = format_
-                    else:
-                        f = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
-                        f['num_format'] = '0.%s' % ('0' * d)
+                    if not(d == 1 and decs == '0'):
+                        format_ = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
+                        format_['num_format'] = '0.%s' % ('0' * d)
                 except IndexError:
-                    f = format_
-            else:
-                f = format_
+                    pass
             write(self.sheet._row + rel_x,
                   self.sheet._column + rel_y,
-                  data, f)
+                  data, format_)
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
