@@ -2094,6 +2094,7 @@ class Stack(defaultdict):
                 cluster.add_chain(chain)
         return cluster
 
+
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
                  checking_cluster=None, _batches='all', recode=None, verbose=True):
