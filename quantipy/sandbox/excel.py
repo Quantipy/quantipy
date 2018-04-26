@@ -597,7 +597,7 @@ class _Sheet(Worksheet):
 
                 # make y-axis writing availbale to all chains
                 if i == 0:
-                    self._set_freeze_loc(columns)
+                    self._set_freeze_loc(columns, chain.array_style == 0)
                     self._set_column(columns)
 
             except AttributeError:
@@ -713,12 +713,12 @@ class _Sheet(Worksheet):
 
         super(_Sheet, self).set_row(row, height)
 
-    def _set_freeze_loc(self, columns):
+    def _set_freeze_loc(self, columns, arr_style_0):
         if list(columns.labels[-1]).count(0) == 1:
             offset = 1
         else:
             offset = 0
-        self._freeze_loc = ((self._row + columns.nlevels),
+        self._freeze_loc = ((self._row + columns.nlevels - arr_style_0),
                             (self._column + offset + 1))
 
 
@@ -864,7 +864,8 @@ class _Box(object):
                 if left == right:
                     merge_range(fixed, l, fixed + 1, l, label, format_)
                 else:
-                    write(fixed, l, label, format_)
+                    for column in xrange(l, r+1):
+                      merge_range(fixed, column, fixed + 1, column, label, format_)
             else:
                 if left == right:
                     if index == 'index':
@@ -959,9 +960,22 @@ class _Box(object):
             format_ = self.formats[name]
             if data != data:
                 data = ''
+            elif isinstance(data, float):
+                try:
+                    decs = str(data).split('.')[1]
+                    d = len(decs)
+                    if d == 1 and decs == '0':
+                        f = format_
+                    else:
+                        f = cp.loads(cp.dumps(format_, cp.HIGHEST_PROTOCOL))
+                        f['num_format'] = '0.%s' % ('0' * d)
+                except IndexError:
+                    f = format_
+            else:
+                f = format_
             write(self.sheet._row + rel_x,
                   self.sheet._column + rel_y,
-                  data, format_)
+                  data, f)
             rel_x, rel_y = flat.coords
 
         for i in xrange(rel_x):
@@ -980,8 +994,10 @@ class _Box(object):
         nlevels = self.columns.nlevels
         write = self.sheet.write
         merge_range = self.sheet.merge_range
+        arr_style_0 = self.chain.array_style == 0
         sizes = map(lambda x: x[1], self.chain.shapes)
         for level_id in xrange(nlevels):
+            write_labels = not (arr_style_0 and level_id == 0)
             borders = [sum(sizes[:i+1]) for i in xrange(len(sizes))]
             border = borders.pop(0)
             row = self.sheet._row + level_id
@@ -993,17 +1009,18 @@ class _Box(object):
             left = flat.coords[0]
             data = flat.next()
             while True:
+                if borders:
+                    if left >= border:
+                        border = borders.pop(0)
                 next_ = data
-                if (level_id + 1) < nlevels:
-                    while data==next_:
-                        if flat.coords[0] > border:
-                            break
+                if (level_id + 1) < (nlevels - int(self.has_tests)):
+                    while data == next_:
                         try:
                             next_ = flat.next()
+                            if flat.coords[0] > border:
+                                break
                         except StopIteration:
                             next_ = None
-                    if borders:
-                            border = borders.pop(0)
                 else:
                     try:
                         next_ = flat.next()
@@ -1024,16 +1041,20 @@ class _Box(object):
                     if group_sizes and not is_values:
                         r = 0
                         while r != right:
-                            merge_range(row, column + group_sizes[0][0],
-                                        row, column + group_sizes[0][1],
-                                        data, format_)
+                            if write_labels:
+                                merge_range(row, column + group_sizes[0][0],
+                                            row, column + group_sizes[0][1],
+                                            data, format_)
                             _, r = group_sizes.pop(0)
                     elif left == right:
-                        write(row, column + left, data, format_)
+                        if write_labels:
+                            write(row - int(arr_style_0), column + left,
+                                  data, format_)
                     else:
-                        merge_range(row, column + left,
-                                    row, column + right,
-                                    data, format_)
+                        if write_labels:
+                            merge_range(row - int(arr_style_0), column + left,
+                                        row - int(arr_style_0), column + right,
+                                        data, format_)
                     if is_values:
                         group_sizes.append((left, right))
                 data = next_
@@ -1044,19 +1065,23 @@ class _Box(object):
             has_tests = self.has_tests
             if not has_tests or (((level_id + 1) != nlevels) and has_tests):
                 if (row % 2) == 0:
-                    self.sheet.set_row(row, self.sheet.y_header_height)
+                    if write_labels:
+                        self.sheet.set_row(row, self.sheet.y_header_height)
                 else:
-                    self.sheet.set_row(row, self.sheet.y_row_height)
+                    self.sheet.set_row(row - int(arr_style_0), self.sheet.y_row_height)
 
         for cindex in self.single_columns:
             level = -(1 + self.has_tests)
             data = self._cell(self.columns.get_level_values(level)[cindex],
                               **contents)
-            merge_range(row - nlevels + 1, column + cindex,
-                        row, column + cindex,
-                        data, format_)
+            if write_labels:
+                merge_range(row - nlevels + 1  - int(arr_style_0),
+                            column + cindex,
+                            row - int(arr_style_0),
+                            column + cindex,
+                            data, format_)
 
-        self.sheet._row = row + 1
+        self.sheet._row = row + 1 - int(arr_style_0)
 
     def _write_rows(self):
         write = self.sheet.write
@@ -1116,7 +1141,10 @@ class _Box(object):
             else:
                 x_contents = contents[rel_x]
 
-            name = self._row_format_name(**x_contents)
+            if rel_y == 0 and self.chain.array_style == 0:
+                name = 'counts'
+            else:
+                name = self._row_format_name(**x_contents)
 
             if rel_y == 0:
                 if data == '':
@@ -1375,8 +1403,7 @@ class _Box(object):
                 if group and dummy:
                     append(ndx + len(dummy_idx) + 1)
                 break
-        dummy_arr = np.array([[u'' for _ in xrange(len(values[0]))]],
-                             dtype=str)
+        dummy_arr = np.array([[np.NaN for _ in xrange(len(values[0]))]])
         for idx in dummy_idx:
             try:
                 index = np.insert(index, idx, u'')

@@ -760,7 +760,6 @@ class Stack(defaultdict):
         for dk in data_keys:
             self._verify_key_exists(dk)
             for filter_def, logic in filters.items():
-
                 # qp.OPTIONS-based hack to allow faster stack filters
                 # ------------------------------------------------------
                 if qp.OPTIONS['fast_stack_filters']:
@@ -800,8 +799,6 @@ class Stack(defaultdict):
                             f_dataset = dataset.filter(filter_def, logic, inplace=False)
                             self[dk][filter_def].data = f_dataset._data
                             self[dk][filter_def].meta = f_dataset._meta
-
-
                 fdata = self[dk][filter_def].data
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
@@ -2298,14 +2295,20 @@ class Stack(defaultdict):
                     if not n in _batches: all_batches.pop(n)
                 languages = list(set(b['language'] for n, b in all_batches.items()))
                 netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
-                if calc: calc = _check_and_update_calc(calc, languages)
+                if calc:
+                    calc = _check_and_update_calc(calc, languages)
+                    calc_only = calc.get('calc_only', False)
+                else:
+                    calc_only = False
                 view = qp.ViewMapper()
                 view.make_template('frequency', {'rel_to': [None, 'y']})
+
                 options = {'logic': netdef,
                            'axis': 'x',
                            'expand': expand if expand in ['after', 'before'] else None,
                            'complete': True if expand else False,
-                           'calc': calc}
+                           'calc': calc,
+                           'calc_only': calc_only}
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
@@ -2677,5 +2680,6 @@ class Stack(defaultdict):
                             del_prop = props and 't.props' in vk
                             del_mean = means and 't.means' in vk
                             if del_prop or del_mean:
+                                del self[dk][fk][xk][yk][vk]
                                 del self[dk][fk][xk][yk][vk]
         return None

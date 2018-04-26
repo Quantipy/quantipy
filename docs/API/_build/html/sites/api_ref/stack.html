@@ -89,9 +89,17 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (15/09/2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (May)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-04-04-2018">Latest (04/04/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#latest-31-08-2017">Latest (31/08/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-13-11-2017">sd (13/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-10-2017">sd (17/10/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-15-09-2017">sd (15/09/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-31-08-2017">sd (31/08/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-08-06-2017">sd (08/06/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
@@ -419,7 +427,7 @@ process. Weight variables must be of type <code class="docutils literal"><span c
 
 <dl class="method">
 <dt id="quantipy.Stack.add_nets">
-<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>checking_cluster=None</em>, <em>_batches='all'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_nets</code><span class="sig-paren">(</span><em>on_vars</em>, <em>net_map</em>, <em>expand=None</em>, <em>calc=None</em>, <em>text_prefix='Net:'</em>, <em>checking_cluster=None</em>, <em>_batches='all'</em>, <em>recode=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.add_nets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a net-like view to a specified collection of x keys of the stack.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -459,6 +467,13 @@ with &#8216;Net: &#8216;. Toggle by passing None (or an empty str, &#8216;&#8217
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</li>
 <li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</li>
+<li><strong>recode</strong> ({&#8216;extend_codes&#8217;, &#8216;drop_codes&#8217;, &#8216;collect_codes&#8217;, <a class="reference external" href="mailto:'collect_codes&#37;&#52;&#48;cat_name">'collect_codes<span>&#64;</span>cat_name</a>&#8216;},) &#8211; default None
+Adds variable with nets as codes to DataSet/Stack. If &#8216;extend_codes&#8217;,
+codes are extended with nets. If &#8216;drop_codes&#8217;, new variable only
+contains nets as codes. If &#8216;collect_codes&#8217; or <a class="reference external" href="mailto:'collect_codes&#37;&#52;&#48;cat_name">'collect_codes<span>&#64;</span>cat_name</a>&#8216;
+the variable contains nets and another category that summarises all
+codes which are not included in any net. If no cat_name is provided,
+&#8216;Other&#8217; is taken as default</li>
 </ul>
 </td>
 </tr>
@@ -474,7 +489,7 @@ instances views are added.</li>
 
 <dl class="method">
 <dt id="quantipy.Stack.add_stats">
-<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, _batches='all', verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_stats</code><span class="sig-paren">(</span><em>on_vars, stats=['mean'], other_source=None, rescale=None, drop=True, exclude=None, factor_labels=True, custom_text=None, checking_cluster=None, _batches='all', recode=False, verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.add_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a descriptives view to a specified collection of xks of the stack.</p>
 <p>Valid descriptives views: {&#8216;mean&#8217;, &#8216;stddev&#8217;, &#8216;min&#8217;, &#8216;max&#8217;, &#8216;median&#8217;, &#8216;sem&#8217;}</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -491,14 +506,17 @@ of a different variable to a Link definition.</li>
 <li><strong>drop</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If <code class="docutils literal"><span class="pre">rescale</span></code> is provided all codes that are not mapped will be
 ignored in the computation.</li>
 <li><strong>exclude</strong> (<em>list</em>) &#8211; Codes/values to ignore in the computation.</li>
-<li><strong>factor_lables</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, will write the (rescaled) factor values next to the
-category text label.</li>
+<li><strong>factor_labels</strong> (<em>bool / str</em><em>, </em><em>default True</em>) &#8211; Writes the (rescaled) factor values next to the category text label.
+If True, square-brackets are used. If &#8216;()&#8217;, normal brackets are used.</li>
 <li><strong>custom_text</strong> (<em>str</em><em>, </em><em>default None</em>) &#8211; A custom string affix to put at the end of the requested statistics&#8217;
 names.</li>
 <li><strong>checking_cluster</strong> (<a class="reference internal" href="Cluster.html#quantipy.Cluster" title="quantipy.Cluster"><em>quantipy.Cluster</em></a><em>, </em><em>default None</em>) &#8211; When provided, an automated checking aggregation will be added to the
 <code class="docutils literal"><span class="pre">Cluster</span></code> instance.</li>
 <li><strong>_batches</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Only for <code class="docutils literal"><span class="pre">qp.Links</span></code> that are defined in this <code class="docutils literal"><span class="pre">qp.Batch</span></code>
 instances views are added.</li>
+<li><strong>recode</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; Create a new variable that contains only the values
+which are needed for the stat computation. The values and the included
+data will be rescaled.</li>
 </ul>
 </td>
 </tr>
@@ -534,7 +552,7 @@ instances views are added.</td>
 
 <dl class="method">
 <dt id="quantipy.Stack.aggregate">
-<code class="descname">aggregate</code><span class="sig-paren">(</span><em>views</em>, <em>unweighted_base=True</em>, <em>categorize=[]</em>, <em>batches='all'</em>, <em>xs=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.aggregate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">aggregate</code><span class="sig-paren">(</span><em>views</em>, <em>unweighted_base=True</em>, <em>categorize=[]</em>, <em>batches='all'</em>, <em>xs=None</em>, <em>bases={}</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.aggregate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add views to all defined <code class="docutils literal"><span class="pre">qp.Link</span></code> in <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -542,7 +560,9 @@ instances views are added.</td>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>views</strong> (<em>str</em><em> or </em><em>list of str</em><em> or </em><em>qp.ViewMapper</em>) &#8211; <code class="docutils literal"><span class="pre">views</span></code> that are added.</li>
-<li><strong>unweighted_base</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, unweighted &#8216;cbase&#8217; is added to all non-arrays.</li>
+<li><strong>unweighted_base</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, unweighted &#8216;cbase&#8217; is added to all non-arrays.
+This parameter will be deprecated in future, please use bases
+instead.</li>
 <li><strong>categorize</strong> (<em>str</em><em> or </em><em>list of str</em>) &#8211; Determines how numerical data is handled: If provided, the
 variables will get counts and percentage aggregations
 (<code class="docutils literal"><span class="pre">'counts'</span></code>, <code class="docutils literal"><span class="pre">'c%'</span></code>) alongside the <code class="docutils literal"><span class="pre">'cbase'</span></code> view. If False,
@@ -550,6 +570,7 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 <li><strong>batches</strong> (<em>str/ list of str</em><em>, </em><em>default 'all'</em>) &#8211; Name(s) of <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance(s) that are used to aggregate the
 <code class="docutils literal"><span class="pre">qp.Stack</span></code>.</li>
 <li><strong>xs</strong> (<em>list of str</em>) &#8211; Names of variable, for which views are added.</li>
+<li><strong>bases</strong> (<em>dict</em>) &#8211; Defines which bases should be aggregated, weighted or unweighted.</li>
 </ul>
 </td>
 </tr>
@@ -557,6 +578,28 @@ only <code class="docutils literal"><span class="pre">'cbase'</span></code> view
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">None, modify <code class="docutils literal"><span class="pre">qp.Stack</span></code> inplace</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.Stack.apply_meta_edits">
+<code class="descname">apply_meta_edits</code><span class="sig-paren">(</span><em>batch_name</em>, <em>data_key</em>, <em>filter_key=None</em>, <em>freeze=False</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.apply_meta_edits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take over meta_edits from Batch definitions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>batch_name</strong> (<em>str</em>) &#8211; Name of the Batch whose meta_edits are taken.</li>
+<li><strong>data_key</strong> (<em>str</em>) &#8211; Accessing this metadata: <code class="docutils literal"><span class="pre">self[data_key].meta</span></code>
+Batch definitions are takes from here and this metadata is modified.</li>
+<li><strong>filter_key</strong> (<em>str</em><em>, </em><em>default None</em>) &#8211; Currently not implemented!
+Accessing this metadata: <code class="docutils literal"><span class="pre">self[data_key][filter_key].meta</span></code>
+Batch definitions are takes from here and this metadata is modified.</li>
+</ul>
 </td>
 </tr>
 </tbody>
@@ -610,6 +653,25 @@ up into their components.</li>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.Stack.freeze_master_meta">
+<code class="descname">freeze_master_meta</code><span class="sig-paren">(</span><em>data_key</em>, <em>filter_key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.freeze_master_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save <code class="docutils literal"><span class="pre">.meta</span></code> in <code class="docutils literal"><span class="pre">.master_meta</span></code> for a defined data_key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data_key</strong> (<em>str</em>) &#8211; Using: <code class="docutils literal"><span class="pre">self[data_key]</span></code></li>
+<li><strong>filter_key</strong> (<em>str</em><em>, </em><em>default None</em>) &#8211; Currently not implemented!
+Using: <code class="docutils literal"><span class="pre">self[data_key][filter_key]</span></code></li>
+</ul>
 </td>
 </tr>
 </tbody>
@@ -743,6 +805,26 @@ the original meta definition found for the data key will be used.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="quantipy.Stack.restore_meta">
+<code class="descname">restore_meta</code><span class="sig-paren">(</span><em>data_key</em>, <em>filter_key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Stack.restore_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restore the <code class="docutils literal"><span class="pre">.master_meta</span></code> for a defined data_key if it exists.</p>
+<p>Undo self.apply_meta_edits()</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data_key</strong> (<em>str</em>) &#8211; Accessing this metadata: <code class="docutils literal"><span class="pre">self[data_key].meta</span></code></li>
+<li><strong>filter_key</strong> (<em>str</em><em>, </em><em>default None</em>) &#8211; Currently not implemented!
+Accessing this metadata: <code class="docutils literal"><span class="pre">self[data_key][filter_key].meta</span></code></li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>

@@ -507,7 +507,10 @@ def add_bar_chart(
                 series_line_width=None,
 
                 #Excel table
-                excel_num_format='0.00%'
+                excel_num_format='0.00%',
+                
+                #Color for separator
+                separator_color=(255,255,255)
                 ):
     #-------------------------------------------------------------------------
     """Adds single or multi series bar chart to a given slide and set it's properties.
@@ -712,6 +715,48 @@ def add_bar_chart(
             data_labels.number_format = data_labels_num_format
         data_labels.number_format_is_linked = data_labels_num_format_is_linked
 
+    # Show Net settings
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    net_separator = ['net_separator']
+    category_labels = [i.label for i in chart_data.categories]
+    if net_separator[0] in category_labels:
+        pos_net_separator = [category_labels.index(i) for i in net_separator]
+        # Delete the net separator text
+        category_labels[pos_net_separator[0]] = ''
+        chart_data.categories = category_labels
+        chart.replace_data(chart_data)
+
+        # Add fill to the separator
+        bar = chart.series[0].points
+        for x in pos_net_separator:
+
+            point = bar[x]
+            fill = point.format.fill
+            fill.solid()
+            fill.fore_color.rgb = RGBColor(*separator_color)
+
+        # Hide data label
+        chart_values = get_chart_values(chart)
+
+        for s, series in enumerate(chart_values):
+            values = [
+                value for value in series.values()[0]
+            ]
+
+        for v, value in enumerate(values):
+            point = chart.series[s].points[v]
+            #point.format.line.color.rgb = RGBColor(0,0,0)
+            frame = point.data_label.text_frame
+            frame.text = '' if value == 1.01 else str(int(round(float(value) * 100))) + "%"
+            run = frame.paragraphs[0].runs
+            for point_label in run:
+                point_label.font.size = Pt(data_labels_font_size)
+                point_label.font.name = data_labels_font_name
+                point_label.font.bold = data_labels_font_bold
+                point_label.font.italic = data_labels_font_italic
+                point_label.font.color.rgb = RGBColor(*data_labels_font_color)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
     if series_color_order and len(dataframe.columns) > 1:
         ser_colors_list = color_setter(len(dataframe.columns), series_color_order)
 
@@ -1547,6 +1592,149 @@ def add_table(
     paragraph.alignment = question_box_para_alignment
 
     cell.text = question_text
+
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+
+def add_net(
+            slide,
+            df,
+            left=Cm(27.55), top=Cm(3.69), width=Cm(1.8), # width for 1 column
+            height=Cm(10.68),
+            margin_left=0.0,
+            margin_right=0.0,
+            margin_top=0.0,
+            margin_bottom=0.0,
+
+            # side_member_font_size=8,
+            # side_member_font_name='Trebuchet MS',
+            # side_member_font_bold=False,
+            # side_member_font_italic=False,
+            # side_member_font_color=(109,111,113),
+            # side_member_font_para_alignment=PP_ALIGN.LEFT,
+            # side_member_vert_alignment=MSO_ANCHOR.MIDDLE,
+            # sidemember_shading=True,
+            # sidemember_shading_color=(255,255,255),
+
+            top_member_font_size=8,
+            top_member_font_name='Trebuchet MS',
+            top_member_font_bold=False,
+            top_member_font_italic=False,
+            top_member_font_color=(0,0,0),
+            top_member_font_para_alignment=PP_ALIGN.CENTER,
+            top_member_vert_alignment=MSO_ANCHOR.MIDDLE,
+            top_member_shading=True,
+            top_member_shading_color=(255,255,255),
+
+            values_font_size=8,
+            values_font_name='Trebuchet MS',
+            values_font_bold=False,
+            values_font_italic=False,
+            values_font_color=(0,0,0),
+            values_font_para_alignment=PP_ALIGN.CENTER,
+            values_vert_alignment=MSO_ANCHOR.TOP,
+            values_shading=True,
+            values_shading_shading_color=(255,255,255),
+            ):
+    #-------------------------------------------------------------------------
+
+    rows = len(df.index)
+    cols = len(df.columns)
+
+    # Height of table and rows
+    header_row_height = Cm(1.7)
+    if rows == 1:
+        top = top + int(round(height * (0.3 / rows)) - header_row_height)
+    else:
+        top = top + int(round(height* (0.45/rows)) - header_row_height)
+    plot_area = int(round(height * 0.9)) - Cm(0.4)
+    value_row_height = int(round(plot_area / rows))
+    height = header_row_height + rows * value_row_height
+
+    # Width of table
+    width = width * cols
+
+    shapes = slide.shapes
+    table = shapes.add_table(rows+1, cols, left, top, width, height).table
+    table.horz_banding = True
+    #isolate seperate sections of a table
+    row_labels = list(df.index)
+    col_labels = list(df.columns)
+    table_values = df.values
+    #question_label = df.index.get_level_values(level=0)[0]
+
+    #table specific properties
+    for i in range(0, rows + 1):
+        if i == 0:
+            table.rows[i].height = header_row_height
+        else:
+            table.rows[i].height = value_row_height
+
+        for x in range(0, cols):
+
+            cell = table.cell(i, x)
+
+            cell.margin_left= Cm(margin_left)
+            cell.margin_right = Cm(margin_right)
+            cell.margin_top = Cm(margin_top)
+            cell.margin_bottom = Cm(margin_bottom)
+
+    #add col labels
+    for idx, col_label in enumerate(col_labels):
+
+        #table.columns[0].width = Emu(first_column_width)
+
+        cell = table.cell(0, idx)
+        cell.vertical_anchor = top_member_vert_alignment
+
+        if top_member_shading:
+            if top_member_shading_color == "No fill":
+                fill = cell.fill
+                fill.background()
+            else:
+                cfill = cell.fill
+                cfill.solid()
+                cfill.fore_color.rgb = RGBColor(*top_member_shading_color)
+                #cfill.fore_color.brightness = textbox_color_brightness
+
+        textframe = cell.text_frame
+        paragraph = textframe.paragraphs[0]
+        paragraph.font.size = Pt(top_member_font_size)
+        paragraph.font.name = top_member_font_name
+        paragraph.font.bold = top_member_font_bold
+        paragraph.font.italic = top_member_font_italic
+        paragraph.font.color.rgb = RGBColor(*top_member_font_color)
+        paragraph.alignment = top_member_font_para_alignment
+
+        cell.text = col_label
+
+    #add values
+    for i, val in enumerate(table_values):
+        for x, subval in enumerate(val):
+
+            cell = table.cell(i+1, x)
+            cell.vertical_anchor = values_vert_alignment
+            cell.margin_top = Cm(0.1)
+
+            if values_shading:
+                if values_shading_shading_color == "No fill":
+                    fill = cell.fill
+                    fill.background()
+                else:
+                    cfill = cell.fill
+                    cfill.solid()
+                    cfill.fore_color.rgb = RGBColor(*values_shading_shading_color)
+
+            textframe = cell.text_frame
+            paragraph = textframe.paragraphs[0]
+            paragraph.font.size = Pt(values_font_size)
+            paragraph.font.name = values_font_name
+            paragraph.font.bold = values_font_bold
+            paragraph.font.italic = values_font_italic
+            paragraph.font.color.rgb = RGBColor(*values_font_color)
+            paragraph.alignment = values_font_para_alignment
+            #paragraph.line_spacing = Pt(6)
+            cell.text = str(subval)
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'

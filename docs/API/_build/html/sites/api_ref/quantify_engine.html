@@ -92,9 +92,16 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (September 2017)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-31-08-2017">Latest (31/08/2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (March)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-27-02-2018">Latest (27/02/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-13-11-2017">sd (13/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-10-2017">sd (17/10/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-15-09-2017">sd (15/09/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-31-08-2017">sd (31/08/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-08-06-2017">sd (08/06/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
@@ -363,7 +370,7 @@ of statistical calculations.</p>
 
 <dl class="method">
 <dt id="quantipy.Quantity.count">
-<code class="descname">count</code><span class="sig-paren">(</span><em>axis=None</em>, <em>raw_sum=False</em>, <em>cum_sum=False</em>, <em>margin=True</em>, <em>as_df=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.count" title="Permalink to this definition">¶</a></dt>
+<code class="descname">count</code><span class="sig-paren">(</span><em>axis=None</em>, <em>raw_sum=False</em>, <em>cum_sum=False</em>, <em>effective=False</em>, <em>margin=True</em>, <em>as_df=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.count" title="Permalink to this definition">¶</a></dt>
 <dd><p>Count entries over all cells or per axis margin.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -379,6 +386,8 @@ axis parameter. This ignores net counting of qualifying answers in
 favour of summing over all answers given when considering margins.</li>
 <li><strong>cum_sum</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True a cumulative sum of the elements along the given axis is
 returned.</li>
+<li><strong>effective</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True, compute effective counts instead of traditional (weighted)
+counts.</li>
 <li><strong>margin</strong> (<em>bool</em><em>, </em><em>deafult True</em>) &#8211; Controls whether the margins of the aggregation result are shown.
 This also applies to margin aggregations themselves, since they
 contain a margin in (form of the total number of cases) as well.</li>

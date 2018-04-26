@@ -69,6 +69,7 @@ class ChainManager(object):
         self.__chains = []
         self.source = 'native'
         self.build_info = {}
+        self._hidden = []
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -159,6 +160,20 @@ class ChainManager(object):
         The ``qp.Chain`` instances' names.
         """
         return [s.name for s in self if isinstance(s, Chain)]
+
+    @property
+    def hidden(self):
+        """
+        All ``qp.Chain`` elements that are hidden.
+        """
+        return [c.name for c in self.chains if c.hidden]
+
+    @property
+    def hidden_folders(self):
+        """
+        All hidden folders.
+        """
+        return [n for n in self._hidden if n in self.folder_names]
 
     def _content_structure(self):
         return ['folder' if isinstance(k, dict) else 'single' for k in self]
@@ -378,6 +393,104 @@ class ChainManager(object):
         obj = cPickle.load(f)
         f.close()
         return obj
+
+    def _toggle_vis(self, chains, mode='hide'):
+        if not isinstance(chains, list): chains = [chains]
+        for chain in chains:
+            if isinstance(chain, dict):
+                fname = chain.keys()[0]
+                elements = chain.values()[0]
+                fidx = self._idx_from_name(fname)
+                folder = self[fidx][fname]
+                for c in folder:
+                    if c.name in elements:
+                        c.hidden = True if mode == 'hide' else False
+                        if mode == 'hide' and not c.name in self._hidden:
+                            self._hidden.append(c.name)
+                        if mode == 'unhide' and c.name in self._hidden:
+                            self._hidden.remove(c.name)
+            else:
+                if chain in self.folder_names:
+                    for c in self[chain]:
+                        c.hidden = True if mode == 'hide' else False
+                else:
+                    self[chain].hidden = True if mode == 'hide' else False
+                if mode == 'hide':
+                    if not chain in self._hidden:
+                        self._hidden.append(chain)
+                else:
+                    if chain in self._hidden:
+                        self._hidden.remove(chain)
+        return None
+
+    def hide(self, chains):
+        """
+        Flag elements as being hidden.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str or dict
+            The ``qp.Chain`` item and/or folder names to hide. To hide *within*
+            a folder use a dict to map the desired Chain names to the belonging
+            folder name.
+
+        Returns
+        -------
+        None
+        """
+        self._toggle_vis(chains, 'hide')
+        return None
+
+    def unhide(self, chains=None):
+        """
+        Unhide elements that have been set as ``hidden``.
+
+        Parameters
+        ----------
+        chains : (list) of int and/or str or dict, default None
+            The ``qp.Chain`` item and/or folder names to unhide. To unhide *within*
+            a folder use a dict to map the desired Chain names to the belonging
+            folder name. If not provided, all hidden elements will be unhidden.
+
+        Returns
+        -------
+        None
+        """
+        if not chains: chains = self.folder_names + self.single_names
+        self._toggle_vis(chains, 'unhide')
+        return None
+
+    def insert(self, other_cm, index=-1, safe_names=False):
+        """
+        Add elements from another ``ChainManager`` instance to self.
+
+        Parameters
+        ----------
+        other_cm : ``quantipy.ChainManager``
+            A ChainManager instance to draw the elements from.
+        index : int, default -1
+            The positional index after which new elements will be added.
+            Defaults to -1, i.e. elements are appended index the end.
+        safe_names : bool, default False
+            If True and any duplicated element names are found after the
+            operation, names will be made unique (by appending '_1', '_2', '_3',
+            etc.).
+
+        Returns
+        ------
+        None
+        """
+        if not isinstance(other_cm, ChainManager):
+            raise ValueError("other_cm must be a quantipy.ChainManager instance.")
+        if not index == -1:
+            before_c = self.__chains[:index+1]
+            after_c = self.__chains[index+1:]
+            new_chains = before_c + other_cm.__chains + after_c
+            self.__chains = new_chains
+        else:
+            self.__chains.extend(other_cm.__chains)
+        if safe_names: self._uniquify_names()
+        return None
 
     def merge(self, folders, new_name=None, drop=True):
         """
@@ -651,7 +764,7 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
-    def describe(self, by_folder=False):
+    def describe(self, by_folder=False, show_hidden=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
 
@@ -661,6 +774,9 @@ class ChainManager(object):
             If True, only information on ``dict``-structured (folder-like)
             ``qp.Chain`` items is shown, multiindexed by folder names and item
             enumerations.
+        show_hidden : bool, default False
+            If True, the summary will also include elements that have been set
+            hidden using ``self.hide()``.
 
         Returns
         -------
@@ -673,6 +789,7 @@ class ChainManager(object):
         array_sum = []
         sources = []
         item_pos = []
+        hidden = []
         for pos, chains in enumerate(self):
             is_folder = isinstance(chains, dict)
             if is_folder:
@@ -685,6 +802,7 @@ class ChainManager(object):
                 folder_name = [None]
                 folder_items.append(None)
                 item_pos.append(pos)
+
             if chains[0].structure is None:
                 variables.extend([c._x_keys[0] for c in chains])
                 names.extend([c.name for c in chains])
@@ -700,27 +818,34 @@ class ChainManager(object):
                 folders.extend(folder_name)
                 array_sum.extend([False])
                 sources.extend(c.source for c in chains)
-
+            for c in chains:
+                if c.hidden:
+                    hidden.append(True)
+                else:
+                    hidden.append(False)
         df_data = [item_pos,
                    names,
                    folders,
                    folder_items,
                    variables,
                    sources,
-                   array_sum]
+                   array_sum,
+                   hidden]
         df_cols = ['Position',
                    'Name',
                    'Folder',
                    'Item',
                    'Variable',
                    'Source',
-                   'Array']
+                   'Array',
+                   'Hidden']
         df = pd.DataFrame(df_data).T
         df.columns = df_cols
         if by_folder:
-            return df.set_index(['Position', 'Folder', 'Item'])
-        else:
-            return df
+            df =  df.set_index(['Position', 'Folder', 'Item'])
+        if not show_hidden:
+            df = df[df['Hidden'] == False][df.columns[:-1]]
+        return df
 
     def from_mtd(self, mtd_doc, ignore=None, paint=True, flatten=False):
         """
@@ -1479,6 +1604,7 @@ class Chain(object):
         self.totalize = False
         self.base_descriptions = None
         self.painted = False
+        self.hidden = False
         self.annotations = ChainAnnotations()
         self._array_style = None
         self._group_style = None
@@ -1488,6 +1614,7 @@ class Chain(object):
         self._given_views = None
         self._grp_text_map = []
         self._text_map = None
+        self._custom_texts = {}
         self._transl = qp.core.view.View._metric_name_map()
         self._pad_id = None
         self._frame = None
@@ -1789,6 +1916,16 @@ class Chain(object):
         return description
 
     @lazy_property
+    def _counts_first(self):
+        for v in self.views:
+            sname = v.split('|')[-1]
+            if sname in ['counts', 'c%']:
+                if sname == 'counts':
+                    return True
+                else:
+                    return False
+
+    @lazy_property
     def _views_per_rows(self):
         """
         """
@@ -1875,9 +2012,15 @@ class Chain(object):
                 for row in range(0, dims[0]):
                     if ci == 'counts_colpct' and self.grouping:
                         if row % 2 == 0:
-                            vc = counts
+                            if self._counts_first:
+                                vc = counts
+                            else:
+                                vc = colpcts
                         else:
-                            vc = colpcts
+                            if not self._counts_first:
+                                vc = counts
+                            else:
+                                vc = colpcts
                     else:
                         vc = counts if ci == 'counts' else colpcts
                     metrics.append({col: vc[col] for col in range(0, dims[1])})
@@ -1995,8 +2138,12 @@ class Chain(object):
             multiple_conditions = len(conditions) > 2
             expand = '+{' in parts[2] or '}+' in parts[2]
             complete = '*:' in parts[2]
-            if multiple_conditions or expand or complete:
+            if expand or complete:
                 return True
+            if multiple_conditions:
+                if self.__has_operator_expr(parts):
+                    return True
+                return False
             return False
         return False
 
@@ -2009,8 +2156,8 @@ class Chain(object):
     # non-meta relevant helpers
     def __has_operator_expr(self, parts):
         e = parts[2]
-        for syntax in ['[+{', '}+]', ']*:']:
-            if syntax in e: e.remove(syntax)
+        for syntax in [']*:', '[+{', '}+']:
+            if syntax in e: e = e.replace(syntax, '')
         ops = ['+', '-', '*', '/']
         return any(len(e.split(op)) > 1 for op in ops)
 
@@ -2371,6 +2518,12 @@ class Chain(object):
                     is_net = link[view].is_net()
                     oth_src = link[view].has_other_source()
                     no_total_sign = is_descriptive or is_base or is_sum or is_net
+
+                    if link[view]._custom_txt and is_descriptive:
+                        statname = agg['fullname'].split('|')[1].split('.')[1]
+                        if not statname in self._custom_texts:
+                            self._custom_texts[statname] = []
+                        self._custom_texts[statname].append(link[view]._custom_txt)
 
                     if is_descriptive:
                         text = agg['name']
@@ -2747,6 +2900,7 @@ class Chain(object):
             if not column in self._meta['columns']: return None
 
             meta = self._meta['columns'][column]
+
             if sep:
                 column_mapper[column] = str_format % (column, meta['text'][text_key])
             else:
@@ -2754,7 +2908,7 @@ class Chain(object):
 
             if meta.get('values'):
                 values = meta['values']
-                if isinstance(values, (str, unicode)):
+                if isinstance(values, basestring):
                     pointers = values.split('@')
                     values = self._meta[pointers.pop(0)]
                     while pointers:
@@ -2895,6 +3049,9 @@ class Chain(object):
                         text = self._specify_base(i, text_keys[axis], bases)
                     else:
                         text = self._transl[tk_transl][value]
+                        if self._custom_texts and value in self._custom_texts:
+                            add_text = self._custom_texts[value].pop(0)
+                            text = '{} {}'.format(text, add_text)
                     level_1_text.append(text)
                 elif value == 'All (eff.)':
                     text = self._specify_base(i, text_keys[axis], bases)

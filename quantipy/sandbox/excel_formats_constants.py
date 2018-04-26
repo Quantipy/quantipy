@@ -122,7 +122,8 @@ _DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2,
                       text_v_align_text=2, text_h_align_text=3)
 
 _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color',
-                    'font_name', 'font_size', 'italic')
+                    'font_name', 'font_size', 'italic',
+                    'text_wrap')
 
 _VIEWS_GROUPS = dict(default='default',
                      label='label',

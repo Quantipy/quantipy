@@ -2,62 +2,127 @@
 	:maxdepth: 5
 	:includehidden:
 
-==================
-Upcoming (October)
-==================
+==============
+Upcoming (May)
+==============
+
+**New**: Additional variable (names) "getter"-like and resolver methods
+
+* ``DataSet.created()``
+*  ``DataSet.find(str_tags=None, suffixed=False)``
+* ``DataSet.names()``
+* ``DataSet.resolve_name()``
+
+A bunch of new methods enhancing the options of finding and testing for variable
+names have been added. ``created()`` will list all variables that have been added
+to a dataset using core functions, i.e. ``add_meta()`` and ``derive()``, resp.
+all helper methods that use them internally (as ``band()`` or ``categorize()`` do
+for instance).
+
+The ``find()`` method is returning all variable names that contain any of the
+provided substrings in ``str_tags``. To only consider names that end with these
+strings, set ``suffixed=True``. If no ``str_tags`` are passed, the method will
+use a default list of tags including ``['_rc', '_net', ' (categories', ' (NET', '_rec']``.
+
+Sometimes a dataset might contain "semi-duplicated" names, variables that differ
+in respect to case sensitivity but have otherwise identical names. Calling
+``names()`` will report such cases in a ``pd.DataFrame`` that lists all name
+variants under the respective ``str.lower()`` version. If no semi-duplicates
+are found, ``names()`` will simply return ``DataSet.variables()``.
+
+!!! MORE TEXT HERE !!!
+
+""""
+
+**Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
+
+!!! MORE TEXT HERE !!!
+
+""""
+
+**Update**: ``DataSet.from_batch()`` now creating predictable variable orders.
+
+!!! MORE TEXT HERE !!!
+
+""""
+
+**Bugfix**: ``add_meta()`` and duplicated categorical ``values`` codes
+
+Providing duplicated numerical codes while attempting to create new metadata
+using ``add_meta()`` will now correctly raise a ``ValueError`` to prevent
+corrupting the ``DataSet``.
+
+>>> cats = [(1, 'A'), (2, 'B'), (3, 'C'), (3, 'D'), (2, 'AA')]
+>>> dataset.add_meta('test_var', 'single', 'test label', cats)
+ValueError: Cannot resolve category definition due to code duplicates: [2, 3]
 
 ===================
-Latest (15/09/2017)
+Latest (04/04/2018)
 ===================
 
-**New**: ``DataSet.save()`` and ``DataSet.revert()``
+**New**: Emptiness handlers in ``DataSet`` and ``Batch`` classes
 
-These two new methods are useful in interactive sessions like **Ipython** or
-**Jupyter** notebooks. ``save()`` will make a temporary (only im memory, not
-written to disk) copy of the ``DataSet`` and store its current state. You can
-then use ``revert()`` to rollback to that snapshot of the data at a later
-stage (e.g. a complex recode operation went wrong, reloading from the physical files takes
-too long...).
+* ``DataSet.empty(name, condition=None)``
+* ``DataSet.empty_items(name, condition=None, by_name=True)``
+* ``DataSet.hide_empty_items(condition=None, arrays=None)``
+* ``Batch.hide_empty(xks=True, summaries=True)``
 
-""""
+``empty()`` is used to test if regular variables are completely empty,
+``empty_items()`` checks the same for the items of an array mask definition.
+Both can be run on lists of variables. If a single variable is tested, the former
+returns simply boolean, the latter will list all empty items. If lists are checked,
+``empty()`` returns the sublist of empty variables, ``empty_items()`` is mapping
+the list of empty items per array name. The ``condition`` parameter of these
+methods takes a ``Quantipy logic`` expression to restrict the test to a subset
+of the data, i.e. to check if variables will be empty if the dataset is filtered
+a certain way. A very simple example:
 
-**New**: ``DataSet.meta_to_json(key=None, collection=None)``
+>>> dataset.add_meta('test_var', 'int', 'Variable is empty')
+>>> dataset.empty('test_var')
+True
 
-The new method allows saving parts of the metadata as a json file. The parameters
-``key`` and ``collection`` define the metaobject which will be saved.
+>>> dataset[dataset.take({'gender': 1}), 'test_var'] = 1
+>>> dataset.empty('test_var')
+False
 
-""""
-
-**New**: ``DataSet.by_type(types=None)``
-
-The ``by_type()`` method is replacing the soon to be deprecated implementation
-of ``variables()`` (see below). It provides the same functionality
-(``pd.DataFrame`` summary of variable types) as the latter.
+>>> dataset.empty('test_var', {'gender': 2})
+True
 
 
-""""
-
-**Update**: ``DataSet.variables()`` absorbs ``list_variables()`` and ``variables_from_set()``
-
-In conjunction with the addition of ``by_type()``, ``variables()`` is
-replacing the related ``list_variables()`` and ``variables_from_set()`` methods in order to offer a unified solution for querying the ``DataSet``\'s (main) variable collection.
-
-""""
-
-**Update**: ``Batch.as_addition()``
-
-The possibility to add multiple cell item iterations of one ``Batch`` definition
-via that method has been reintroduced (it was working by accident in previous
-versions with subtle side effects and then removed). Have fun!
+The ``DataSet`` method ``hide_empty_items()`` uses the emptiness tests to
+automatically apply a **hiding rule** on all empty items found in the dataset.
+To restrict this to specific arrays only, their names can be provided via the
+``arrays`` argument. ``Batch.hide_empty()`` takes into account the current
+``Batch.filter`` setup and by drops/hides *all* relevant empty variables from the
+``xks`` list and summary aggregations by default. Summaries that would end up without valid
+items because of this are automatically removed from the ``summaries`` collection
+and the user is warned.
 
 """"
 
-**Update**: ``Batch.add_open_ends()``
+**New**: ``qp.set_option('fast_stack_filters', True)``
 
-The method will now raise an ``Exception`` if called on a ``Batch`` that has
-been added to a parent one via ``as_addition()`` to warn the user and prevent
-errors at the build stage::
-
-   NotImplementedError: Cannot add open end DataFrames to as_addition()-Batches!
+A new option to enable a more efficient test for already existing filters
+inside the ``qp.Stack`` object has been added. Set the ``'fast_stack_filters'``
+option to ``True`` to use it, the default is ``False`` to ensure compatibility
+in different versions of production DP template workspaces.
 
 """"
+
+**Update**: ``Stack.add_stats(..., factor_labels=True, ...)``
+
+The parameter ``factor_labels`` is now also able to take the string ``'()'``,
+then factors are written in the normal brackets next to the label (instead
+of ``[]``).
+
+In the new version factor_labels are also just added if there are none included
+before, except new scales are used.
+
+""""
+
+**Bugfix**: ``DataSet`` ``np.NaN`` insertion to ``delimited_set`` variables
+
+``np.NaN`` was incorrectly transformed when inserted into ``delimited_set``
+before, leading to either ``numpy`` type conflicts or type casting exceptions.
+This is now fixed.
+

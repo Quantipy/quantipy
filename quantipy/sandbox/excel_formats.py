@@ -136,11 +136,11 @@ class ExcelFormats(_ExcelFormats):
         return dict([(a, getattr(self, a)) for a in _Format.__attributes__])
 
     def _method(self, method):
-        result = dict(text_wrap=self.text_wrap)
-        for name in ('bold', 'bg_color', 'font_color', 'font_name',
-                     'font_size', 'italic', 'text_v_align', 'text_h_align'):
+        result = dict()
+        for name in ('bold', 'bg_color', 'font_color', 'font_name', 'font_size',
+                     'italic', 'text_v_align', 'text_h_align', 'text_wrap'):
             attr = getattr(self, name + '_' + method, None)
-            if attr:
+            if attr is not None:
                 result[name] = attr
         return result
 
