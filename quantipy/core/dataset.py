@@ -1061,7 +1061,7 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = (u'DataSet: {}\nrows: {} - columns: {}\n'
-                     u'Dimensions compatibility mode: {}')
+                     u'Dimensions compatibility mode: {}').encode('utf-8')
         if not self.path: self.path = '/'
         file_name = os.path.join(self.path, self.name)
         print file_spec.format(file_name, len(self._data.index),
