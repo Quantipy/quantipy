@@ -302,7 +302,7 @@ def create_ddf(master_input, path_dms, CRLF, date_format):
     dms_dummy_path = os.path.dirname(__file__)
     dms = open(os.path.join(dms_dummy_path, '_create_ddf.dms'), 'r')
     header = [
-        '#define MASTER_INPUT "{}"'.format(master_input),
+        u'#define MASTER_INPUT "{}"'.format(master_input).encode('utf-8'),
         '#define DATE_FORMAT "{}"'.format(date_format),
         '#define CRLF "{}"'.format(CRLF),
     ]
