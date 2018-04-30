@@ -1061,11 +1061,15 @@ class DataSet(object):
 
     def _show_file_info(self):
         file_spec = (u'DataSet: {}\nrows: {} - columns: {}\n'
-                     u'Dimensions compatibility mode: {}').encode('utf-8')
+                     u'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
         file_name = os.path.join(self.path, self.name)
-        print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1, self._dimensions_comp)
+        print file_spec.format(
+            file_name,
+            len(self._data.index),
+            len(self._data.columns)-1,
+            self._dimensions_comp
+        ).encode('utf-8')
         return None
 
     # ------------------------------------------------------------------------
