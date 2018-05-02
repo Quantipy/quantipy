@@ -828,14 +828,20 @@ class DataSet(object):
 
         return None
 
-    def _vars_from_batch(self, batchdef, mode='full'):
+    def _vars_from_batch(self, batchdef, mode='batch-full'):
         """
         """
         xs = self.roll_up(batchdef['xks'])
         ys = batchdef['yks']
+        for add_y_coll in ['extended_yks_per_x', 'exclusive_yks_per_x']:
+            if batchdef[add_y_coll]:
+                for y in batchdef[add_y_coll].values:
+                    if not y in ys: ys.append(y)
         if '@' in ys: ys.remove('@')
         oe = batchdef['verbatim_names']
-
+        w = batchdef['weights']
+        if None in w:
+            w.remove(None)
         if mode in ['batch-full', 'batch-x']:
             batch_vars = xs
             if mode == 'batch-full':
@@ -844,9 +850,43 @@ class DataSet(object):
                 for verbatim in oe:
                     if not oe in batch_vars:
                         batch_vars.append(verbatim)
+        if w: batch_vars.extend(w)
+        return batch_vars
 
-        print batch_vars
-        raise
+
+    @modify(to_list=['text_key', 'include'])
+    @verify(text_keys='text_key', variables={'include': 'both'})
+    def _from_batch(self, batch_name, include='identity', text_key=[],
+                    apply_edits=True, additions='variables'):
+        """
+        """
+        # get the main batch definition to construct a dataset from...
+        batch_def = self._meta['sets']['batches'][batch_name]
+        # filter it if needed:
+        if batch_def['filter'] == 'no_filter':
+            b_ds = self.clone()
+        else:
+            b_ds = self.filter(batch_name, batch_def['filter'].values()[0])
+        # build the variable collection based in Batch setup & requirements:
+        main_variables = b_ds._vars_from_batch(batch_def, 'batch-full')
+        if additions in ['full', 'filters']:
+            print 'manifest_filters() needed, add filters to list...'
+            pass
+        if additions in ['full', 'variables']:
+            if batch_def['additions']:
+                for add_batch in batch_def['additions']:
+                    add_batch_def = b_ds._meta['sets']['batches'][add_batch]
+                    add_vars = b_ds._vars_from_batch(add_batch_def)
+                    add_vars = [v for v in add_vars if not v in main_variables]
+                    main_variables.extend(add_vars)
+        # add any custom variables...
+        if include:
+            include = [v for v in include if not v in main_variables]
+            main_variables = include + main_variables
+        # subset the dataset variables...
+        b_ds.subset(main_variables, inplace=True)
+        b_ds.order(main_variables)
+        return b_ds
 
 
     @modify(to_list=['text_key', 'include'])
@@ -869,7 +909,7 @@ class DataSet(object):
             meta_edits and rules are used as/ applied on global meta of the
             new DataSet instance.
         additions: {'variables', 'filters', 'full', None}
-            Extend included variables by the xks, yks and open ends of the
+            Extend included variables by the xks, yks and weights of the
             additional batches if set to 'variables', 'filters' will create
             new 1/0-coded variables that reflect any filters defined. Selecting
             'full' will do both, ``None`` will ignore additional Batches completely.
@@ -966,6 +1006,7 @@ class DataSet(object):
             filter_vars = []
 
         variables = include
+
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
