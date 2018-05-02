@@ -1969,16 +1969,21 @@ class Stack(defaultdict):
             if not xs:
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
             else:
-                xs = [x for x in xs if x in x_in_stack]
+                xs = [x for x in xs if x in x_in_stack or isinstance(x, tuple)]
             v_typ = self.variable_types(dk, verbose=False)
             numerics = v_typ['int'] + v_typ['float']
-            skipped = [x for x in xs if (x in numerics and not x in categorize)]
+            skipped = [x for x in xs if (x in numerics and not x in categorize)
+                       and not isinstance(x, tuple)]
             total_len = len(xs)
             # loop over map and aggregate views
             if total_len == 0:
                 msg = "Cannot aggregate, 'xs' contains no valid variables."
                 raise ValueError(msg)
             for idx, x in enumerate(xs, start=1):
+                y_trans = None
+                if isinstance(x, tuple):
+                    y_trans = x[1]
+                    x = x[0]
                 if not x in x_y_f_w_map.keys():
                     msg = "Cannot find {} in qp.Stack for ``qp.Batch`` '{}'"
                     raise KeyError(msg.format(x, batches))
@@ -1987,6 +1992,7 @@ class Stack(defaultdict):
                     f = f_dict.pop('f')
                     f_key = f.keys()[0] if isinstance(f, dict) else f
                     for weight, y in f_dict.items():
+                        if y_trans: y = y_trans
                         w = list(weight) if weight else None
                         # add bases
                         for ba, weights in new_bases.items():
@@ -1999,7 +2005,7 @@ class Stack(defaultdict):
                                 if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                                     self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
                         # remove existing nets for link if new view is a net
-                        if isinstance(v, ViewMapper) and v.get('net'):
+                        if isinstance(v, ViewMapper) and v.get('net') and not y_trans:
                             for ys in y:
                                 link = self[dk][f_key][x][ys]
                                 for view in link.keys():
@@ -2289,9 +2295,9 @@ class Stack(defaultdict):
                     raise ValueError(msg.format(v))
                 else:
                     check_on.append(v)
-            if any(v in meta['sets']['batches'][b]['transposed_arrays']
-                   for b in _batches for v in on_vars):
-                on_vars += ['@']
+                if any(v in meta['sets']['batches'][b]['transposed_arrays']
+                       for b in _batches):
+                    on_vars += [('@', v)]
 
             if not only_recode:
                 all_batches = copy.deepcopy(meta['sets']['batches'])
@@ -2546,10 +2552,9 @@ class Stack(defaultdict):
                     check_on = list(set(check_on + [items[0]]))
                 else:
                     check_on = list(set(check_on + [v]))
-
-            if any(v in meta['sets']['batches'][b]['transposed_arrays']
-                   for b in _batches for v in on_vars):
-                on_vars += ['@']
+                if any(v in meta['sets']['batches'][b]['transposed_arrays']
+                       for b in _batches):
+                    on_vars += [('@', v)]
 
             ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
             ds.from_stack(self, dk)
