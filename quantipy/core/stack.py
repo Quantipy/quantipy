@@ -1989,9 +1989,10 @@ class Stack(defaultdict):
                     raise KeyError(msg.format(x, batches))
                 v = [] if x in skipped else views
                 for f_dict in x_y_f_w_map[x].values():
-                    f = f_dict.pop('f')
+                    f = f_dict['f']
                     f_key = f.keys()[0] if isinstance(f, dict) else f
                     for weight, y in f_dict.items():
+                        if weight == 'f': continue
                         if y_trans: y = y_trans
                         w = list(weight) if weight else None
                         # add bases
