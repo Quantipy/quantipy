@@ -70,7 +70,7 @@ class Rules(object):
                 df = df.loc[self.x_slicer]
 
         if 'x' in viable_axes and self.transposed_summary and self.y_slicer:
-            df = df.loc[self.rules_y_slicer]
+            df = df.loc[self.y_slicer]
 
         if 'y' in viable_axes and not self.y_slicer is None:
             df = df[self.y_slicer]
