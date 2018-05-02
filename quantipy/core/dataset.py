@@ -4258,20 +4258,25 @@ class DataSet(object):
 
         return None
 
-    def to_array(self, name, variables, label):
+    def to_array(self, name, variables, label, safe=True):
         """
         Combines column variables with same ``values`` meta into an array.
 
         Parameters
         ----------
-        name: str
+        name : str
             Name of new grid.
-        variables: list of str or list of dicts
+        variables : list of str or list of dicts
             Variable names that become items of the array. New item labels can
             be added as dict. Example:
             variables = ['q1_1', {'q1_2': 'shop 2'}, {'q1_3': 'shop 3'}]
-        label: str
+        label : str
             Text label for the mask itself.
+        safe : bool, default True
+            If True, the method will raise a ``ValueError`` if the provided
+            variable name is already present in self. Select ``False`` to
+            forcefully overwrite an existing variable with the same name
+            (independent of its type).
 
         Returns
         -------
@@ -4281,7 +4286,8 @@ class DataSet(object):
 
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
-            raise ValueError('{} does already exist.'.format(name))
+            if safe:
+                raise ValueError('{} does already exist.'.format(name))
         var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
         if not all(self.var_exists(v) for v in var_list):

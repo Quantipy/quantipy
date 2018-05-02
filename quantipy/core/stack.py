@@ -2325,7 +2325,7 @@ class Stack(defaultdict):
         if recode and 'to_array' in ds._meta['sets']:
             for arr_name, arr_items in ds._meta['sets']['to_array'].items():
                 dims_name = ds._dims_compat_arr_name(arr_name)
-                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]))
+                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]), False)
                 sorter = list(enumerate(arr_items[2], start=1))
                 sorter.sort(key = lambda x: x[1])
                 sorter = [s[0] for s in sorter]
