@@ -2253,7 +2253,7 @@ class Stack(defaultdict):
                     for pname, props in dataset._meta['columns'][var]['properties'].items():
                         dataset._meta['columns'][name]['properties'][pname] = props
                 if _is_simple_net(net_map):
-                    _add_simple_expr_property(dataset, var, net_map)
+                    _add_simple_expr_property(dataset, name, net_map)
 
                 if verbose:
                     print 'Created: {}'. format(name)

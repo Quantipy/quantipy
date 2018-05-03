@@ -5710,7 +5710,8 @@ class DataSet(object):
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
-                       'recoded_filter', '_no_valid_items', '_no_valid_values']
+                       'recoded_filter', '_no_valid_items', '_no_valid_values',
+                       'simple_org_expr']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
