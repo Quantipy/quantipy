@@ -2151,6 +2151,21 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
+        def _is_simple_net(net_map):
+            return all(isinstance(net.values()[0], list) for net in net_map)
+
+        def _strip_simple_net(net_map):
+            simplified = []
+            for net in net_map:
+                simplified.append((net.keys()[0], net.values()[0]))
+            return simplified
+
+        def _add_simple_expr_property(dataset, var, net_map):
+            simplified = _strip_simple_net(net_map)
+            props = dataset._meta['columns'][var]['properties']
+            props.update({'simple_org_expr': simplified})
+            return None
+
         def _netdef_from_map(net_map, expand, prefix, text_key):
             netdef = []
             for no, net in enumerate(net_map, start=1):
@@ -2228,13 +2243,18 @@ class Stack(defaultdict):
                     qtype = 'delimited set'
                 else:
                     qtype = 'single'
+
                 dataset.derive(name, qtype, dataset.text(var), mapper)
+
                 if not dataset._meta['columns'][name].get('properties'):
                     dataset._meta['columns'][name]['properties'] = {}
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
                 if 'properties' in dataset._meta['columns'][var]:
                     for pname, props in dataset._meta['columns'][var]['properties'].items():
                         dataset._meta['columns'][name]['properties'][pname] = props
+                if _is_simple_net(net_map):
+                    _add_simple_expr_property(dataset, var, net_map)
+
                 if verbose:
                     print 'Created: {}'. format(name)
                 if 'collect_codes' in recode:
@@ -2353,6 +2373,10 @@ class Stack(defaultdict):
                 for org, new in zip(org_items, new_items):
                     for p, v in ds._meta['columns'][org]['properties'].items():
                         ds._meta['columns'][new]['properties'][p] = v
+                if _is_simple_net(net_map):
+                    arr_p = ds._meta['masks'][dims_name]['properties']
+                    ai_p = ds._meta['columns'][new_items[0]]['properties']
+                    arr_p.update({'simple_org_expr': ai_p['simple_org_expr']})
                 if verbose: print msg.format(dims_name)
             del ds._meta['sets']['to_array']
 
