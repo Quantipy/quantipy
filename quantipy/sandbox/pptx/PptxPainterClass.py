@@ -112,7 +112,7 @@ def return_slide_layout_by_name(pptx, slide_layout_name):
 
 class PptxPainter(object):
     """
-    A convenience wrapper around the python-pptx library
+    A convenience YG-wrapper around the python-pptx library
     """
 
     def __init__(self, path_to_presentation, slide_layout=None):
@@ -150,21 +150,21 @@ class PptxPainter(object):
 
     # TODO Make a method that output all defaults
 
-    def init_charts(self):
+    def clear_charts(self):
         """
         Initilalize the slide_kwargs "charts" dict
         :return: None, removes all keys from self.slide_kwargs['charts']
         """
-        self._init('charts')
+        self.clear_queue('charts')
 
-    def init_textboxes(self):
+    def clear_textboxes(self):
         """
         Initilalize the slide_kwargs "txtboxes" dict
         :return: None, removes all keys from self.slide_kwargs['txtboxes']
         """
-        self._init('textboxs')
+        self.clear_queue('textboxs')
 
-    def _init(self, key):
+    def clear_queue(self, key):
         """
         Internal for initializing the shape dicts in slide_kwargs
         :param key: String ('all', 'charts', textboxes')
@@ -210,9 +210,9 @@ class PptxPainter(object):
         else:
             slide_layout = self.set_slide_layout(slide_layout=slide_layout)
 
-        self.slide = self.presentation.slides.add_slide(slide_layout)
+        return self.presentation.slides.add_slide(slide_layout)
 
-    def add_auto_slide(self, slide_layout=None, **kwargs):
+    def add_slide_from_queue(self, slide_layout=None, **kwargs):
         """
         Method that creates a Slide instance and inserts
         textboxes and charts as requested in **kwargs
@@ -227,21 +227,24 @@ class PptxPainter(object):
 
         :return: None - sets the self.slide property
         """
-        self.add_slide(slide_layout=slide_layout)
-        for shape in kwargs:
+        slide= self.add_slide(slide_layout=slide_layout)
+        kwargs = self.slide_kwargs
+        for _type, draft in kwargs.iteritems():
             # Add text boxes
-            if shape == 'textboxs':
+            if _type == 'textboxs':
                 #print "Shape= ", shape
-                for txtbox_kwargs in kwargs[shape]:
+                for name, settings in draft.iteritems():
                     #print "txtbox_kwargs: ", txtbox_kwargs
-                    self.add_textbox(self.slide, **kwargs[shape][txtbox_kwargs])
+                    textbox=self.add_textbox(slide, **settings)
             # Add charts
-            if shape == 'charts':
-                for chart_kwargs in kwargs[shape]:
+            if _type == 'charts':
+                for name, settings in draft.iteritems():
                     #print chart_kwargs
-                    self.add_chart(self.slide, **kwargs[shape][chart_kwargs])
+                    chart=self.add_chart(slide, **settings)
 
-    def set_chart(self, dataframe, chart_type):
+        return slide
+
+    def draft_chart(self, dataframe, chart_type):
         """
         Sets self.chart['chart_type'] and self.chart['dataframe']
         :param
@@ -250,7 +253,7 @@ class PptxPainter(object):
         :return:
             None, sets self.chart
         """
-        # TODO PptxPainter - set_chart - check for correct chart_type input
+        # TODO PptxPainter - draft_chart - check for correct chart_type input
         if chart_type == 'pie':
             self.chart = self.chart_pie.copy()
         elif chart_type == 'bar_clustered':
@@ -262,40 +265,37 @@ class PptxPainter(object):
 
         self.chart['dataframe'] = dataframe
 
-    def _add(self, shape, dict, init=True, name=None):
+    def _add(self, shape, attrib, name=None):
         """
         Internal for adding a new shape (textbox or chart) to self.slide_kwargs
         :param
             shape: String ('chart' or 'textbox')
-            dict: A dictionary of settings
-            init: Boolean. If True the specified shape dict in self.slide_kwargs will be cleared
+            attrib: A dictionary of settings
+            init: Boolean. If True the specified shape attrib in self.slide_kwargs will be cleared
             name:
         :return:
         """
 
         shapes='{}s'.format(shape)
 
-        if init:
-            self._init(shapes)
-
         if name is None:
             name='{}{}'.format(shape, len(self.slide_kwargs[shapes]) + 1)
 
-        self.slide_kwargs[shapes][name] = dict.copy()
+        self.slide_kwargs[shapes][name] = attrib.copy()
 
-    def add_auto_chart(self, chart_dict=None, init=True, name=None):
+    def queue_chart(self, settings=None, name=None):
         """
         Will add a chart to the Slide properties Dict
         :param
-            chart_dict: A dictionary of chart settings, default is self.chart
+            settings: A dictionary of chart settings, default is self.chart
             init: Boolean. If True self.slide_kwargs['charts'] will be cleared before adding chart
             name: Optionally give the chart a name. If none the chart will be named 'chart[n]'
         :return:
             None, Adds a key to self.slide_kwargs['charts']
         """
-        if chart_dict is None:
-            chart_dict = self.chart.copy()
-        self._add('chart', chart_dict, init=init, name=name)
+        if settings is None:
+            settings = self.chart.copy()
+        self._add('chart', settings, name=name)
 
     def add_chart(self, slide,
                   dataframe=None,
@@ -529,16 +529,17 @@ class PptxPainter(object):
 
         return chart
 
-    def set_textbox(self, dict, text=''):
+    def draft_textbox(self, attrib, text=''):
         """
-        Sets self.textbox
+        Sets attribute self.textbox
         :param
-            dict: A dict of settings
+            attrib: A attrib of textbox settings
             text: Text to show in textbox
-        :return: None, sets self.textbox
+        :return: self.textbox
         """
-        self.textbox = dict.copy()
+        self.textbox = attrib.copy()
         self.textbox['text'] = text
+        return self.textbox
 
     def add_text(self, text):
         """
@@ -549,20 +550,20 @@ class PptxPainter(object):
         """
         self.textbox['text'] = text
 
-    def add_auto_textbox(self, textbox_dict=None, init=True, name=None):
+    def queue_textbox(self, settings=None, name=None):
         """
         Will add a textbox to the Slide properties Dict
         :param
-            textbox_dict:  A dictionary of textbox settings, deafult is self.textbox
+            settings:  A dictionary of textbox settings, deafult is self.textbox
             init: Boolean. Should self.slide_kwargs['textboxes'] be initialized before adding chart
             name: Optionally give the textbox a name. If none the textbox will be named 'textbox[n]'
         :return:
             None, adds a key to self.slide_kwargs['textboxes']
         """
-        if textbox_dict is None:
-            textbox_dict = self.textbox.copy()
+        if settings is None:
+            settings = self.textbox.copy()
 
-        self._add('textbox', textbox_dict, init=init, name=name)
+        self._add('textbox', settings, name=name)
 
     @staticmethod
     def add_textbox(slide,
