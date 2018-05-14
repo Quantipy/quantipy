@@ -3244,6 +3244,27 @@ class DataSet(object):
             vals = [int(i) for i in vals]
         return vals
 
+    def drop_duplicates(self, unique_id='identity', keep='first'):
+        """
+        Drop duplicated cases from self._data.
+
+        Parameters
+        ----------
+        unique_id : str
+            Variable name that gets scanned for duplicates.
+        keep : str, {'first', 'last'}
+            Keep first or last of the duplicates.
+        """
+        if self.duplicates(unique_id):
+            cases_before = self._data.shape[0]
+            self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
+            if self._verbose_infos:
+                cases_after = self._data.shape[0]
+                droped_cases = cases_before - cases_after
+                msg = '%s duplicated case(s) dropped, %s cases remaining'
+                print msg % (droped_cases, cases_after)
+        return None
+
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
     def _make_unique_key(self, id_key_name, multiplier):
         """
