@@ -27,7 +27,7 @@ from enumerations import (
     chart_type_dct
 )
 
-from pptx_defaults_ordered import *
+from pptx_defaults import *
 
 # chartdata_from_dataframe taken from topy.core.pandas_pptx.py
 def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
@@ -256,7 +256,7 @@ class PptxPainter(object):
         # TODO PptxPainter - draft_chart - check for correct chart_type input
         if chart_type == 'pie':
             self.chart = self.chart_pie.copy()
-        elif chart_type == 'bar_clustered':
+        elif chart_type == 'bar_clustered' or chart_type == 'bar':
             self.chart = self.chart_bar.copy()
             if len(dataframe.columns) > 1:
                 self.chart['has_legend'] = True
