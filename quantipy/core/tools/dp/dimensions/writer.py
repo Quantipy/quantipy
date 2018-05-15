@@ -246,7 +246,7 @@ def mask_to_mrs(meta, name, text_key):
     mask = meta['masks'][name]
     mtype = mask['subtype']
     mask_name = name.split('.')[0]
-    field_name = '{}_grid'.format(mask_name)
+    field_name = '{}{}'.format(mask_name, meta['info']['dimensions_suffix'])
 
     mask_code = [
         section_break(20),
@@ -359,7 +359,7 @@ def _datastore_csv(meta, data, columns):
             datastore[col] = replace_comma_in_string(datastore[col])
             datastore[col] = remove_newlines_in_string(datastore[col])
             datastore[col].replace('nan', '', inplace=True)
-    
+
     return datastore
 
 def _extract_grid_element_name(gridslice):
@@ -421,7 +421,7 @@ def convert_categorical(categorical):
         cat = cat.apply(lambda x: x.replace("'", '').replace(', ', ';'))
     return cat
 
-def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None, 
+def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
                              CRLF="CR", date_format='DMY', run=True, clean_up=True):
     """
     DESCP
