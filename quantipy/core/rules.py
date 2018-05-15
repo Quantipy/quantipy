@@ -530,19 +530,21 @@ class Rules(object):
             return df
 
         name_x = df.index.levels[0][0]
-        slicer = [(name_x, value) for value in values]
+        slicer = [(name_x, value) for value in values
+                  if (name_x, value) in df.index]
 
-        if not all([s in df.index for s in slicer]):
-            raise KeyError (
-                "Some of of the values from the list %s cannot be dropped"
-                " from the dataframe because they were not found in %s."
-                " Be careful that you are not both slicing and/or sorting"
-                " any values that you are also trying to drop." % (
-                    values,
-                    df.index.tolist()
-                )
-            )
-        df = df.drop(slicer)
+        # if not all([s in df.index for s in slicer]):
+        #     raise KeyError (
+        #         "Some of of the values from the list %s cannot be dropped"
+        #         " from the dataframe because they were not found in %s."
+        #         " Be careful that you are not both slicing and/or sorting"
+        #         " any values that you are also trying to drop." % (
+        #             values,
+        #             df.index.tolist()
+        #         )
+        #     )
+        if slicer:
+            df = df.drop(slicer)
         return df
 
 
