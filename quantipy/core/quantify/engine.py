@@ -1465,7 +1465,8 @@ class Quantity(object):
                 self.y_agg_vals = self.current_agg
         # can this made smarter WITHOUT 1000000 IF-ELSEs above?:
         ignore = ['freq', 'cbase', 'x_sum', 'summary', 'calc', 'ebase']
-        if ((self.current_agg in ignore or self._res_is_stat()) and not self.type == 'array'):
+        if ((self.current_agg in ignore or self._res_is_stat()) and
+             not self.type == 'array'):
             if self.y == '@' or self.x == '@':
                 self.y_agg_vals = '@'
         df = pd.DataFrame(self.result)

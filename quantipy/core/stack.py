@@ -760,7 +760,28 @@ class Stack(defaultdict):
         for dk in data_keys:
             self._verify_key_exists(dk)
             for filter_def, logic in filters.items():
-                if not filter_def in self[dk].keys():
+                # qp.OPTIONS-based hack to allow faster stack filters
+                # ------------------------------------------------------
+                if qp.OPTIONS['fast_stack_filters']:
+                    if not filter_def in self[dk].keys():
+                        if filter_def=='no_filter':
+                            self[dk][filter_def].data = self[dk].data
+                            self[dk][filter_def].meta = self[dk].meta
+                        else:
+                            if not qplogic_filter:
+                                try:
+                                    self[dk][filter_def].data = self[dk].data.query(logic)
+                                    self[dk][filter_def].meta = self[dk].meta
+                                except Exception, ex:
+                                    raise UserWarning('A filter definition is invalid and will be skipped: {filter_def}'.format(filter_def=filter_def))
+                                    continue
+                            else:
+                                dataset = qp.DataSet('stack')
+                                dataset.from_components(self[dk].data, self[dk].meta)
+                                f_dataset = dataset.filter(filter_def, logic, inplace=False)
+                                self[dk][filter_def].data = f_dataset._data
+                                self[dk][filter_def].meta = f_dataset._meta
+                else:
                     if filter_def=='no_filter':
                         self[dk][filter_def].data = self[dk].data
                         self[dk][filter_def].meta = self[dk].meta
@@ -778,7 +799,6 @@ class Stack(defaultdict):
                             f_dataset = dataset.filter(filter_def, logic, inplace=False)
                             self[dk][filter_def].data = f_dataset._data
                             self[dk][filter_def].meta = f_dataset._meta
-
                 fdata = self[dk][filter_def].data
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
@@ -1949,24 +1969,31 @@ class Stack(defaultdict):
             if not xs:
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
             else:
-                xs = [x for x in xs if x in x_in_stack]
+                xs = [x for x in xs if x in x_in_stack or isinstance(x, tuple)]
             v_typ = self.variable_types(dk, verbose=False)
             numerics = v_typ['int'] + v_typ['float']
-            skipped = [x for x in xs if (x in numerics and not x in categorize)]
+            skipped = [x for x in xs if (x in numerics and not x in categorize)
+                       and not isinstance(x, tuple)]
             total_len = len(xs)
             # loop over map and aggregate views
             if total_len == 0:
                 msg = "Cannot aggregate, 'xs' contains no valid variables."
                 raise ValueError(msg)
             for idx, x in enumerate(xs, start=1):
+                y_trans = None
+                if isinstance(x, tuple):
+                    y_trans = x[1]
+                    x = x[0]
                 if not x in x_y_f_w_map.keys():
                     msg = "Cannot find {} in qp.Stack for ``qp.Batch`` '{}'"
                     raise KeyError(msg.format(x, batches))
                 v = [] if x in skipped else views
                 for f_dict in x_y_f_w_map[x].values():
-                    f = f_dict.pop('f')
+                    f = f_dict['f']
                     f_key = f.keys()[0] if isinstance(f, dict) else f
                     for weight, y in f_dict.items():
+                        if weight == 'f': continue
+                        if y_trans: y = y_trans
                         w = list(weight) if weight else None
                         # add bases
                         for ba, weights in new_bases.items():
@@ -1979,7 +2006,7 @@ class Stack(defaultdict):
                                 if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
                                     self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
                         # remove existing nets for link if new view is a net
-                        if isinstance(v, ViewMapper) and v.get('net'):
+                        if isinstance(v, ViewMapper) and v.get('net') and not y_trans:
                             for ys in y:
                                 link = self[dk][f_key][x][ys]
                                 for view in link.keys():
@@ -2074,6 +2101,7 @@ class Stack(defaultdict):
                 cluster.add_chain(chain)
         return cluster
 
+
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
                  checking_cluster=None, _batches='all', recode=None, verbose=True):
@@ -2130,6 +2158,21 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
+        def _is_simple_net(net_map):
+            return all(isinstance(net.values()[0], list) for net in net_map)
+
+        def _strip_simple_net(net_map):
+            simplified = []
+            for net in net_map:
+                simplified.append((net.keys()[0], net.values()[0]))
+            return simplified
+
+        def _add_simple_expr_property(dataset, var, net_map):
+            simplified = _strip_simple_net(net_map)
+            props = dataset._meta['columns'][var]['properties']
+            props.update({'simple_org_expr': simplified})
+            return None
+
         def _netdef_from_map(net_map, expand, prefix, text_key):
             netdef = []
             for no, net in enumerate(net_map, start=1):
@@ -2171,12 +2214,26 @@ class Stack(defaultdict):
                 suffix = '_rc'
                 for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
                     suf = suffix + s
-                    name = '{}{}'.format(var, suf)
+                    name = '{}{}'.format(dataset._dims_free_arr_item_name(var), suf)
                     if dataset.var_exists(name):
                         if dataset._meta['columns'][name]['properties'].get('recoded_net'):
                             break
                     else:
                         break
+
+                if dataset._is_array_item(var):
+                    if not 'to_array' in dataset._meta['sets']:
+                        dataset._meta['sets']['to_array'] = {}
+                    to_array_set = dataset._meta['sets']['to_array']
+                    parent = dataset.parents(var)[0].split('@')[-1]
+                    arr_name = dataset._dims_free_arr_name(parent) + suf
+                    no = dataset.item_no(var)
+                    if not arr_name in to_array_set:
+                        to_array_set[arr_name] = [parent, [name], [no]]
+                    else:
+                        to_array_set[arr_name][1].append(name)
+                        to_array_set[arr_name][2].append(no)
+
                 mapper = []
                 if recode == 'extend_codes':
                     mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
@@ -2193,10 +2250,18 @@ class Stack(defaultdict):
                     qtype = 'delimited set'
                 else:
                     qtype = 'single'
+
                 dataset.derive(name, qtype, dataset.text(var), mapper)
+
                 if not dataset._meta['columns'][name].get('properties'):
                     dataset._meta['columns'][name]['properties'] = {}
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
+                if 'properties' in dataset._meta['columns'][var]:
+                    for pname, props in dataset._meta['columns'][var]['properties'].items():
+                        dataset._meta['columns'][name]['properties'][pname] = props
+                if _is_simple_net(net_map):
+                    _add_simple_expr_property(dataset, name, net_map)
+
                 if verbose:
                     print 'Created: {}'. format(name)
                 if 'collect_codes' in recode:
@@ -2231,6 +2296,7 @@ class Stack(defaultdict):
                                 codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
                     dataset.remove_values(name, remove)
                     dataset.reorder_values(name, codes)
+
             return None
 
         for dk in self.keys():
@@ -2239,55 +2305,105 @@ class Stack(defaultdict):
             if not _batches and not recode: return None
             meta = self[dk].meta
             data = self[dk].data
+            check_on = []
+            for v in on_vars[:]:
+                if v in meta['sets']:
+                    items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
+                    on_vars = list(set(on_vars)) + items
+                    check_on.append(items[0])
+                elif meta['columns'][v].get('parent'):
+                    msg = 'Nets can not be added to a single array item: {}'
+                    raise ValueError(msg.format(v))
+                else:
+                    check_on.append(v)
+                if any(v in meta['sets']['batches'][b]['transposed_arrays']
+                       for b in _batches):
+                    on_vars += [('@', v)]
+
             if not only_recode:
-                for v in on_vars:
-                    if v in meta['sets']:
-                        items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
-                        on_vars = list(set(on_vars + items))
                 all_batches = copy.deepcopy(meta['sets']['batches'])
                 for n, b in all_batches.items():
                     if not n in _batches: all_batches.pop(n)
                 languages = list(set(b['language'] for n, b in all_batches.items()))
                 netdef = _netdef_from_map(net_map, expand, text_prefix, languages)
-                if calc: calc = _check_and_update_calc(calc, languages)
+                if calc:
+                    calc = _check_and_update_calc(calc, languages)
+                    calc_only = calc.get('calc_only', False)
+                else:
+                    calc_only = False
                 view = qp.ViewMapper()
                 view.make_template('frequency', {'rel_to': [None, 'y']})
+
                 options = {'logic': netdef,
                            'axis': 'x',
                            'expand': expand if expand in ['after', 'before'] else None,
                            'complete': True if expand else False,
-                           'calc': calc}
+                           'calc': calc,
+                           'calc_only': calc_only}
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
             if recode and any(rec in recode
                               for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
-                ds = qp.DataSet(dk)
+                ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
 
-            if checking_cluster is not None and not only_recode:
-                if isinstance(checking_cluster, ChainManager):
-                    cc_keys = checking_cluster.folder_names
-                else:
-                    cc_keys = checking_cluster.keys()
-                c_vars = {v: '{}_net'.format(v) for v in on_vars
-                          if not v in meta['sets'] and
-                          not '{}_net'.format(v) in cc_keys}
-                view['net_check'] = view.pop('net')
-                view['net_check']['kwargs']['iterators'].pop('rel_to')
-                for k, net in c_vars.items():
+            if checking_cluster in [None, False] or only_recode: continue
+            if isinstance(checking_cluster, ChainManager):
+                cc_keys = checking_cluster.folder_names
+            else:
+                cc_keys = checking_cluster.keys()
+            view['net_check'] = view.pop('net')
+            view['net_check']['kwargs']['iterators'].pop('rel_to')
+            for v in check_on:
+                v_net = '{}_net'.format(v)
+                v_net = v_net.split('.')[-1]
+                if not v_net in cc_keys:
                     checking_cluster = self._add_checking_chain(dk, checking_cluster,
-                                            net, k, ['@', k], ('net', ['cbase'], view))
+                                            v_net, v, ['@', v], ('net', ['cbase'], view))
+
+        if recode and 'to_array' in ds._meta['sets']:
+            for arr_name, arr_items in ds._meta['sets']['to_array'].items():
+                dims_name = ds._dims_compat_arr_name(arr_name)
+                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]), False)
+                sorter = list(enumerate(arr_items[2], start=1))
+                sorter.sort(key = lambda x: x[1])
+                sorter = [s[0] for s in sorter]
+                ds.reorder_items(dims_name, sorter)
+                msg = "Array {} built from recoded view variables!"
+                prop = ds._meta['masks'][dims_name]['properties']
+                prop['recoded_net'] = arr_items[0]
+                if 'properties' in ds._meta['masks'][arr_items[0]]:
+                    for p, v in ds._meta['masks'][arr_items[0]]['properties'].items():
+                        prop[p] = v
+                org_items = ds.sources(arr_items[0])
+                new_items = ds.sources(dims_name)
+                for org, new in zip(org_items, new_items):
+                    for p, v in ds._meta['columns'][org]['properties'].items():
+                        ds._meta['columns'][new]['properties'][p] = v
+                if _is_simple_net(net_map):
+                    arr_p = ds._meta['masks'][dims_name]['properties']
+                    ai_p = ds._meta['columns'][new_items[0]]['properties']
+                    arr_p.update({'simple_org_expr': ai_p['simple_org_expr']})
+                if verbose: print msg.format(dims_name)
+            del ds._meta['sets']['to_array']
+
         return None
 
     @staticmethod
-    def _factor_labs(values, rescale, drop, exclude, axis=['x']):
+    def _factor_labs(values, axis, rescale, drop, exclude, factor_labels,
+                     has_factors):
         if not rescale: rescale = {}
         ignore = [v['value'] for v in values if v['value'] in exclude or
                   (not v['value'] in rescale.keys() and drop)]
-
+        if factor_labels == '()':
+            new_lab = '{} ({})'
+            split = ('(', ')')
+        else:
+            new_lab = '{} [{}]'
+            split = ('[', ']')
         factors_mapped = {}
         for v in values:
             if v['value'] in ignore: continue
@@ -2304,10 +2420,35 @@ class Stack(defaultdict):
                         t = v['text']['{} edits'.format(ax)][tk]
                     except:
                         t = text
-                    new_lab = '{} [{}]'.format(t, factor)
-                    v['text']['{} edits'.format(ax)][tk] = new_lab
+                    if has_factors:
+                        fac = t.split(split[0])[-1].replace(split[1], '')
+                        if fac == str(factor): continue
+                    v['text']['{} edits'.format(ax)][tk] = new_lab.format(t, factor)
         return values
 
+    @staticmethod
+    def _add_factor_meta(dataset, var, options):
+        if not dataset._has_categorical_data(var):
+            return None
+        rescale = options[0]
+        drop = options[1]
+        exclude = options[2]
+        dataset.clear_factors(var)
+        all_codes = dataset.codes(var)
+        if rescale:
+            fm = rescale
+        else:
+            fm = {c: c for c in all_codes}
+        if not drop and rescale:
+            for c in all_codes:
+                if not c in fm:
+                    fm[c] = c
+        if exclude:
+            for e in exclude:
+                if e in fm:
+                    del fm[e]
+        dataset.set_factors(var, fm)
+        return None
 
     @modify(to_list=['on_vars', 'stats', 'exclude', '_batches'])
     def add_stats(self, on_vars, stats=['mean'], other_source=None, rescale=None,
@@ -2335,9 +2476,9 @@ class Stack(defaultdict):
             ignored in the computation.
         exclude : list
             Codes/values to ignore in the computation.
-        factor_lables : bool, default True
-            If True, will write the (rescaled) factor values next to the
-            category text label.
+        factor_labels : bool / str, default True
+            Writes the (rescaled) factor values next to the category text label.
+            If True, square-brackets are used. If '()', normal brackets are used.
         custom_text : str, default None
             A custom string affix to put at the end of the requested statistics'
             names.
@@ -2387,6 +2528,26 @@ class Stack(defaultdict):
                 dataset._meta['columns'][name]['properties'].update({'recoded_stat': var})
             return None
 
+        def _add_factors(v, meta, values, args):
+            if isinstance(values, basestring):
+                p = values.split('@')[-1]
+                p_meta = meta.get('masks', meta)[p]
+                p_lib = meta['lib'].get('values', meta['lib'])
+                has_factors = p_meta.get('properties', {}).get('factor_labels', False)
+                v_args = args + [has_factors]
+                values = p_lib[p]
+                p_lib[p] = self._factor_labs(values, ['x', 'y'], *v_args)
+                if not p_meta.get('properties'): p_meta['properties'] = {}
+                p_meta['properties'].update({'factor_labels': True})
+            else:
+                v_meta = meta.get('columns', meta)[v]
+                has_factors = v_meta.get('properties', {}).get('factor_labels')
+                v_args = args + [has_factors]
+                v_meta['values'] = self._factor_labs(values, ['x'], *v_args)
+                if not v_meta.get('properties'): v_meta['properties'] = {}
+                v_meta['properties'].update({'factor_labels': True})
+            return None
+
         if other_source and not isinstance(other_source, str):
             raise ValueError("'other_source' must be a str!")
         if not rescale: drop = False
@@ -2397,7 +2558,6 @@ class Stack(defaultdict):
                    'drop': drop, 'exclude': exclude,
                    'axis': 'x',
                    'text': '' if not custom_text else custom_text}
-
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
             if not _batches: return None
@@ -2417,6 +2577,16 @@ class Stack(defaultdict):
                     check_on = list(set(check_on + [items[0]]))
                 else:
                     check_on = list(set(check_on + [v]))
+                if any(v in meta['sets']['batches'][b]['transposed_arrays']
+                       for b in _batches):
+                    on_vars += [('@', v)]
+
+            ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
+            ds.from_stack(self, dk)
+
+            self._add_factor_meta(ds, v, (rescale, drop, exclude))
+
+
             view = qp.ViewMapper()
             view.make_template('descriptives')
             for stat in stats:
@@ -2427,16 +2597,16 @@ class Stack(defaultdict):
             if recode:
                 if other_source:
                     raise ValueError('Cannot recode if other_source is provided.')
-                ds = qp.DataSet(dk)
+                ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 _recode_from_stat_def(ds, on_vars, rescale, drop, exclude, verbose)
 
             if factor_labels:
+                args = [rescale, drop, exclude, factor_labels]
                 all_batches = meta['sets']['batches'].keys()
                 if not _batches: _batches = all_batches
                 batches = [b for b in all_batches if b in _batches]
-
                 for v in check_on:
                     globally = False
                     for b in batches:
@@ -2444,37 +2614,15 @@ class Stack(defaultdict):
                         values = batch_me.get(v, {}).get('values', [])
                         if not values:
                             globally = True
-                        elif not isinstance(values, list):
-                            p = values.split('@')[-1]
-                            values = batch_me['lib'][p]
-                            batch_me['lib'][p] = self._factor_labs(values, rescale,
-                                                                   drop, exclude,
-                                                                   ['x', 'y'])
                         else:
-                            batch_me[v]['values'] = self._factor_labs(values, rescale,
-                                                                      drop, exclude,
-                                                                      ['x'])
+                            _add_factors(v, batch_me, values, args)
                     if globally:
                         values = meta['columns'][v]['values']
-                        if not isinstance(values, list):
-                            p = values.split('@')[-1]
-                            values = meta['lib']['values'][p]
-                            meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
-                                                                         exclude, ['x', 'y'])
-                        else:
-                            meta['columns'][v]['values'] = self._factor_labs(values, rescale,
-                                                                        drop, exclude, ['x'])
+                        _add_factors(v, meta, values, args)
                     if isinstance(checking_cluster, ChainManager):
                         cm_meta = checking_cluster.stack['checks'].meta
                         values = cm_meta['columns'][v]['values']
-                        if not isinstance(values, list):
-                            p = values.split('@')[-1]
-                            values = cm_meta['lib']['values'][p]
-                            cm_meta['lib']['values'][p] = self._factor_labs(values, rescale, drop,
-                                                                            exclude, ['x', 'y'])
-                        else:
-                            cm_meta['columns'][v]['values'] = self._factor_labs(values, rescale,
-                                                                                drop, exclude, ['x'])
+                        _add_factors(v, cm_meta, values, args)
             if checking_cluster and 'mean' in stats and check_on:
 
                 options['stats'] = 'mean'
@@ -2570,5 +2718,6 @@ class Stack(defaultdict):
                             del_prop = props and 't.props' in vk
                             del_mean = means and 't.means' in vk
                             if del_prop or del_mean:
+                                del self[dk][fk][xk][yk][vk]
                                 del self[dk][fk][xk][yk][vk]
         return None

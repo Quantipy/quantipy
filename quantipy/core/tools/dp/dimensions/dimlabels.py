@@ -16,7 +16,11 @@ qp_dim_languages = {
 	'fi-FI': 'FIN',
 	'nb-NO': 'NOR',
 	'de-DE': 'DEU',
-	'fr-FR': 'FRA'
+	'fr-FR': 'FRA',
+	'zh-CN': 'CHS',
+	'id-ID': 'IND',
+	'ms-MY': 'MSL',
+	'th-TH': 'THA'
 }
 
 

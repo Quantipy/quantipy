@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 30)
+		self.assertEqual(len(_get_meta(batch1).keys()), 31)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -79,7 +79,7 @@ class TestBatch(unittest.TestCase):
 		batch2.add_x('q1')
 		batch2.add_y('Wave')
 		batch2.as_addition('test1')
-		n_ds = ds.from_batch('test1', 'RecordNo', 'de-DE', True, True)
+		n_ds = ds.from_batch('test1', 'RecordNo', 'de-DE', True, 'variables')
 		self.assertEqual(n_ds.codes('q1'), [7, 6, 5, 4])
 		self.assertEqual(n_ds.variables(), [u'age', u'gender', u'q1', u'q2',
 		                  					u'q6', u'q8a', u'q9a', u'Wave',

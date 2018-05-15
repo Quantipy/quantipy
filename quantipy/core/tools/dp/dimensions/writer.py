@@ -302,7 +302,7 @@ def create_ddf(master_input, path_dms, CRLF, date_format):
     dms_dummy_path = os.path.dirname(__file__)
     dms = open(os.path.join(dms_dummy_path, '_create_ddf.dms'), 'r')
     header = [
-        '#define MASTER_INPUT "{}"'.format(master_input),
+        u'#define MASTER_INPUT "{}"'.format(master_input).encode('utf-8'),
         '#define DATE_FORMAT "{}"'.format(date_format),
         '#define CRLF "{}"'.format(CRLF),
     ]
@@ -436,10 +436,10 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
     name = path_mdd.split('/')[-1].split('.')[0]
     path =  '/'.join(path_mdd.split('/')[:-1])
     if '/' in path_mdd: path = path + '/'
-    path_mrs = '{}create_mdd [{}].mrs'.format(path, name)
-    path_dms = '{}create_ddf [{}].dms'.format(path, name)
-    path_paired_csv = '{}{}_paired.csv'.format(path, name)
-    path_datastore = '{}{}_datastore.csv'.format(path, name)
+    path_mrs = u'{}create_mdd [{}].mrs'.format(path, name)
+    path_dms = u'{}create_ddf [{}].dms'.format(path, name)
+    path_paired_csv = u'{}{}_paired.csv'.format(path, name)
+    path_datastore = u'{}{}_datastore.csv'.format(path, name)
     all_paths = (path_dms, path_mrs, path_datastore, path_paired_csv)
 
     if not text_key: text_key = meta['lib']['default text']

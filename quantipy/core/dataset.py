@@ -44,10 +44,13 @@ import warnings
 import re
 import time
 import sys
+import os
 from itertools import product, chain
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
-VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR']
+VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR',
+             'ar-AR', 'es-ES', 'it-IT']
+VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
 
 class DataSet(object):
     """
@@ -103,7 +106,8 @@ class DataSet(object):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
                 raise ValueError(msg.format(val, name, self.codes(name)))
-        if self._get_type(name) == 'delimited set' and scalar_insert:
+        if (self._get_type(name) == 'delimited set' and scalar_insert
+            and not np.isnan(val)):
             val = '{};'.format(val)
         if sliced_insert:
             self._data.loc[slicer, name] = val
@@ -178,6 +182,9 @@ class DataSet(object):
 
     def strings(self):
         return self._get_columns('string')
+
+    def created(self):
+        return [v for v in self.variables() if self.get_property(v, 'created')]
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -515,7 +522,7 @@ class DataSet(object):
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         return None
-     
+
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
                          date_format="DMY", run=True, clean_up=True):
@@ -564,13 +571,13 @@ class DataSet(object):
         if path_ddf is None and path_mdd is None:
             path = ds_clone.path
             name = ds_clone.name
-            path_mdd = '{}/{}.mdd'.format(path, name)
-            path_ddf = '{}/{}.ddf'.format(path, name)
+            path_mdd = os.path.join(path, ''.join([name, '.mdd']))
+            path_ddf = os.path.join(path, ''.join([name, '.ddf']))
         elif path_ddf is not None and path_mdd is not None:
             if not path_mdd.endswith('.mdd'):
-                path_mdd = '{}.mdd'.format(path_mdd)
+                path_mdd = ''.join([path_mdd, '.mdd'])
             if not path_ddf.endswith('.ddf'):
-                path_ddf = '{}.ddf'.format(path_ddf)
+                path_ddf = ''.join([path_ddf, '.ddf'])
         else:
             msg = "Must either specify or omit both 'path_mdd' and 'path_ddf'!"
             raise ValueError(msg)
@@ -578,7 +585,7 @@ class DataSet(object):
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
                      date_format=date_format, run=run, clean_up=clean_up)
-        file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
+        file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
         return None
 
@@ -609,13 +616,13 @@ class DataSet(object):
         if path_data is None and path_meta is None:
             path = self.path
             name = self.name
-            path_meta = '{}/{}.json'.format(path, name)
-            path_data = '{}/{}.csv'.format(path, name)
+            path_meta = os.path.join(path, ''.join([name, '.json']))
+            path_data = os.path.join(path, ''.join([name, '.csv']))
         elif path_data is not None and path_meta is not None:
             if not path_meta.endswith('.json'):
-                path_meta = '{}.json'.format(path_meta)
+                path_meta = ''.join([path_meta, '.json'])
             if not path_data.endswith('.csv'):
-                path_data = '{}.csv'.format(path_data)
+                path_data = ''.join([path_data, '.csv'])
         else:
             msg = "Must either specify or omit both 'path_meta' and 'path_data'!"
             raise ValueError(msg)
@@ -664,10 +671,10 @@ class DataSet(object):
         meta, data = self._meta, self._data
         if not text_key: text_key = self.text_key
         if not path_sav:
-            path_sav = '{}/{}.sav'.format(self.path, self.name)
+            path_sav = os.path.join(self.path, ''.join([self.name, '.sav']))
         else:
             if not path_sav.endswith('.sav'):
-                path_sav = '{}.sav'.format(path_sav)
+                path_sav = ''.join([path_sav, '.sav'])
         w_spss(path_sav, meta, data, index=index, text_key=text_key,
                mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
                from_set=from_set, verbose=verbose)
@@ -712,10 +719,10 @@ class DataSet(object):
             name = '{}{}'.format(collection, '_{}'.format(key.split('.')[0])
                                  if key else '')
         ds_path = '../' if self.path == '/' else self.path
-        path = '{}{}_{}.json'.format(ds_path, self.name, name)
+        path = os.path.join(ds_path, ''.json([self.name, '_', name, '.json']))
         with open(path, 'w') as file:
             json.dump(obj, file)
-        print 'create: {}'.format(path)
+        print u'create: {}'.format(path)
         return None
 
     @verify(text_keys='text_key')
@@ -821,10 +828,71 @@ class DataSet(object):
 
         return None
 
+    def _vars_from_batch(self, batchdef, mode='batch-full'):
+        """
+        """
+        xs = self.roll_up(batchdef['xks'])
+        ys = batchdef['yks']
+        for add_y_coll in ['extended_yks_per_x', 'exclusive_yks_per_x']:
+            if batchdef[add_y_coll]:
+                for y in batchdef[add_y_coll].values:
+                    if not y in ys: ys.append(y)
+        if '@' in ys: ys.remove('@')
+        oe = batchdef['verbatim_names']
+        w = batchdef['weights']
+        if None in w:
+            w.remove(None)
+        if mode in ['batch-full', 'batch-x']:
+            batch_vars = xs
+            if mode == 'batch-full':
+                for y in ys:
+                    if not y in batch_vars: batch_vars.append(y)
+                for verbatim in oe:
+                    if not oe in batch_vars:
+                        batch_vars.append(verbatim)
+        if w: batch_vars.extend(w)
+        return batch_vars
+
+
+    @modify(to_list=['text_key', 'include'])
+    @verify(text_keys='text_key', variables={'include': 'both'})
+    def _from_batch(self, batch_name, include='identity', text_key=[],
+                    apply_edits=True, additions='variables'):
+        """
+        """
+        # get the main batch definition to construct a dataset from...
+        batch_def = self._meta['sets']['batches'][batch_name]
+        # filter it if needed:
+        if batch_def['filter'] == 'no_filter':
+            b_ds = self.clone()
+        else:
+            b_ds = self.filter(batch_name, batch_def['filter'].values()[0])
+        # build the variable collection based in Batch setup & requirements:
+        main_variables = b_ds._vars_from_batch(batch_def, 'batch-full')
+        if additions in ['full', 'filters']:
+            print 'manifest_filters() needed, add filters to list...'
+            pass
+        if additions in ['full', 'variables']:
+            if batch_def['additions']:
+                for add_batch in batch_def['additions']:
+                    add_batch_def = b_ds._meta['sets']['batches'][add_batch]
+                    add_vars = b_ds._vars_from_batch(add_batch_def)
+                    add_vars = [v for v in add_vars if not v in main_variables]
+                    main_variables.extend(add_vars)
+        # add any custom variables...
+        if include:
+            include = [v for v in include if not v in main_variables]
+            main_variables = include + main_variables
+        # subset the dataset variables...
+        b_ds.subset(main_variables, inplace=True)
+        b_ds.order(main_variables)
+        return b_ds
+
+
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def from_batch(self, batch_name, include='identity', text_key=[],
-                   apply_edits=True, additions=True):
+                   apply_edits=True, additions='variables'):
         """
         Get a filtered subset of the DataSet using qp.Batch definitions.
 
@@ -840,10 +908,11 @@ class DataSet(object):
         apply_edits: bool, default True
             meta_edits and rules are used as/ applied on global meta of the
             new DataSet instance.
-        additions: bool, default True
-            Extend included variables by the xks, yks and open ends of the
-            additional batches. Filters/ meta edits are ignored (/ taken from
-            the main Batch).
+        additions: {'variables', 'filters', 'full', None}
+            Extend included variables by the xks, yks and weights of the
+            additional batches if set to 'variables', 'filters' will create
+            new 1/0-coded variables that reflect any filters defined. Selecting
+            'full' will do both, ``None`` will ignore additional Batches completely.
 
         Returns
         -------
@@ -888,6 +957,28 @@ class DataSet(object):
                                 ds._meta['columns'][name].pop('rules')
                         return None
 
+        def _manifest_filters(ds, batch_name):
+            all_batches = ds._meta['sets']['batches']
+            add_batches = ds._meta['sets']['batches'][batch_name]['additions']
+            if not adds: return None
+            filters = []
+            for add_batch in add_batches:
+                if all_batches[add_batch]['filter'] != 'no_filter':
+                    filters.append((add_batch, all_batches[add_batch]['filter']))
+            if not filters: return None
+            cats = [(1, 'active')]
+            fnames = []
+            for no, f in enumerate(filters, start=1):
+                fname = 'filter_{}'.format(no)
+                fnames.append(fname)
+                source = f[0]
+                flogic = f[1].values()[0]
+                flabel = f[1].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats)
+                ds._meta['columns'][fname]['properties']['recoded_filter'] = source
+                ds[ds.take(flogic), fname] = 1
+            return fnames
+
         batches = self._meta['sets'].get('batches', {})
         if not batch_name in batches:
             msg = 'No Batch named "{}" is included in DataSet.'
@@ -905,16 +996,23 @@ class DataSet(object):
             b_ds = self.filter(batch_name, batch['filter'].values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
-        if additions:
+        if additions in ['full', 'variables']:
             adds = batch['additions']
         else:
             adds = []
+        if additions in ['full', 'filters']:
+            filter_vars = _manifest_filters(b_ds, batch_name)
+        else:
+            filter_vars = []
+
         variables = include
+
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
+        if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
@@ -1003,12 +1101,16 @@ class DataSet(object):
         return None
 
     def _show_file_info(self):
-        file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
-                     'Dimensions compatibility mode: {}')
+        file_spec = (u'DataSet: {}\nrows: {} - columns: {}\n'
+                     u'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
-        file_name = '{}{}'.format(self.path, self.name)
-        print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1, self._dimensions_comp)
+        file_name = os.path.join(self.path, self.name)
+        print file_spec.format(
+            file_name,
+            len(self._data.index),
+            len(self._data.columns)-1,
+            self._dimensions_comp
+        ).encode('utf-8')
         return None
 
     # ------------------------------------------------------------------------
@@ -1121,6 +1223,86 @@ class DataSet(object):
             The variables per data type inside the ``DataSet``.
         """
         return self.describe(only_type=types)
+
+    def find(self, str_tags=None, suffixed=False):
+        """
+        Find variables by searching their names for substrings.
+
+        Parameters
+        ----------
+        str_tags : (list of) str
+            The strings tags to look for in the variable names. If not provided,
+            the modules' default global list of substrings from VAR_SUFFIXES
+            will be used.
+        suffixed : bool, default False
+            If set to True, only variable names that end with a given string
+            sequence will qualify.
+
+        Returns
+        -------
+        found : list
+            The list of matching variable names.
+        """
+        if not str_tags:
+            str_tags = VAR_SUFFIXES
+        else:
+            if not isinstance(str_tags, list): str_tags = [str_tags]
+        found = []
+        variables = self.variables()
+        for v in variables:
+            for str_tag in str_tags:
+                if suffixed:
+                    if v.endswith(str_tag): found.append(v)
+                else:
+                    if str_tag in v: found.append(v)
+        return found
+
+    def names(self):
+        """
+        Find all semi-duplicate variable names that are different only by case.
+
+        .. note:: Will return self.variables() if no semi-duplicates are found.
+
+        Returns
+        -------
+        semi_dupes : pd.DataFrame
+            An overview of case-sensitive spelling differences in otherwise
+            equal variable names.
+        """
+        all_names = self.variables()
+        lower_names = [n.lower() for n in all_names]
+        multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
+        if not multiple_names: return all_names
+        semi_dupes = OrderedDict()
+        for name in all_names:
+            if name.lower() in multiple_names:
+                if not name.lower() in semi_dupes:
+                    semi_dupes[name.lower()] = [name]
+                else:
+                    semi_dupes[name.lower()].append(name)
+        return pd.DataFrame(semi_dupes)
+
+    def resolve_name(self, name):
+        """
+        """
+        multiples = isinstance(self.names(), pd.DataFrame)
+        in_multiples = multiples and name in self.names().keys()
+        if not name in self or in_multiples:
+            all_names = self.variables()
+            lowered = [v.lower() for v in all_names]
+            resolved = []
+            if name.lower() in lowered:
+                offset = 0
+                while name.lower() in lowered:
+                    pos = lowered.index(name.lower(), offset)
+                    lowered.pop(pos)
+                    resolved.append(all_names[pos + offset])
+                    offset += 1
+                return resolved if len(resolved) > 1 else resolved[0]
+            else:
+                return None
+        else:
+            return name
 
     def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
         """
@@ -1280,6 +1462,29 @@ class DataSet(object):
         """
         return self._get_valuemap(name, non_mapped='codes')
 
+    @verify(variables={'name': 'both'})
+    def factors(self, name):
+        """
+        Get categorical data's stat. factor values.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        factors : OrderedDict
+            A ``{value: factor}`` mapping.
+        """
+        val_loc = self._get_value_loc(name)
+        factors = OrderedDict()
+        for val in val_loc:
+            f = val.get('factor', None)
+            if f: factors[val['value']] = f
+        return factors
+
     @verify(variables={'name': 'columns'}, categorical='name')
     def codes_in_data(self, name):
         """
@@ -1329,7 +1534,7 @@ class DataSet(object):
         for text in text_label:
             sub_codes = []
             for c, l in vals:
-                if text in l and not exact:
+                if l and text in l and not exact:
                     sub_codes.append(c)
                 elif l == text:
                     sub_codes.append(c)
@@ -1581,6 +1786,11 @@ class DataSet(object):
                     enumerate(categories, start_at)]
         else:
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
+        codes = [v['value'] for v in vals]
+        dupes = [c for c, count in Counter(codes).items() if count > 1]
+        if dupes:
+            err = "Cannot resolve category definition due to code duplicates: {}"
+            raise ValueError(err.format(dupes))
         return vals
 
     def _add_to_datafile_items_set(self, name):
@@ -1599,6 +1809,13 @@ class DataSet(object):
         mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
         mapper[old] = new
         return mapper
+
+    @classmethod
+    def _dims_free_arr_item_name(cls, item_name):
+        if '[' in item_name:
+            return item_name.split('[{')[1].split('}]')[0]
+        else:
+            return item_name
 
     @classmethod
     def _dims_free_arr_name(cls, arr_name):
@@ -1929,10 +2146,11 @@ class DataSet(object):
         Update value meta for array items. Workaround for badly converted meta.
         """
         for m in self.masks():
-            lib_vals = 'lib@values@{}'.format(m)
-            self._meta['masks'][m]['values'] = lib_vals
-            for s in self.sources(m):
-                self._meta['columns'][s]['values'] = lib_vals
+            if self._has_categorical_data(m):
+                lib_vals = 'lib@values@{}'.format(m)
+                self._meta['masks'][m]['values'] = lib_vals
+                for s in self.sources(m):
+                    self._meta['columns'][s]['values'] = lib_vals
         return None
 
     def _clean_datafile_set(self):
@@ -2504,6 +2722,44 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
+    @modify(to_list=['varlist'])
+    @verify(variables={'varlist': 'both'})
+    def roll_up(self, varlist, ignore_arrays=None):
+        """
+        Replace any array items with their parent mask variable definition name.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of meta ``'columns'`` and/or ``'masks'`` names.
+        ignore_arrays : (list of) str
+            A list of array mask names that should not be rolled up if their
+            items are found inside ``varlist``.
+        Returns
+        -------
+        rolled_up : list
+            The modified ``varlist``.
+        """
+        if ignore_arrays:
+            if not isinstance(ignore_arrays, list):
+                ignore_arrays = [ignore_arrays]
+        else:
+            ignore_arrays = []
+        arrays_defs = {arr: self.sources(arr) for arr in self.masks()
+                       if not arr in ignore_arrays}
+        item_map = {}
+        for k, v in arrays_defs.items():
+            for item in v:
+                item_map[item] = k
+        rolled_up = []
+        for v in varlist:
+            if not self.is_array(v):
+                if v in item_map:
+                    if not item_map[v] in rolled_up:
+                        rolled_up.append(item_map[v])
+                else:
+                    rolled_up.append(v)
+        return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
     @verify(variables={'varlist': 'both', 'keep': 'masks'})
@@ -2550,8 +2806,78 @@ class DataSet(object):
         self._data = self._data[column_order]
         return None
 
+    def _mapped_by_substring(self):
+        suffixed = {}
+        suffixed_variables = self.find()
+        if suffixed_variables:
+            for sv in suffixed_variables:
+                for suffix in VAR_SUFFIXES:
+                    if suffix in sv:
+                        origin = sv.split(suffix)[0]
+
+                        # test name...
+                        origin_res = self.resolve_name(origin)
+                        if not origin_res:
+                            origin_res = origin
+                        if isinstance(origin_res, list):
+                            if len(origin_res) > 1:
+                                msg = "Unable to regroup to {}, ".format(origin)
+                                msg += "found semi-duplicate derived names:\n"
+                                msg += "{}".format(origin_res)
+                                warnings.warn(msg)
+                                origin_res = origin
+                            else:
+                                origin_res = origin_res[0]
+
+                        if not origin_res in suffixed:
+                            suffixed[origin_res] = [sv]
+                        else:
+                            suffixed[origin_res].append(sv)
+        return suffixed
+
+    def _mapped_by_meta(self):
+        rec_views = {}
+        for v in self.variables():
+            origin = self.get_property(v, 'recoded_net')
+            if origin:
+                if not origin in rec_views:
+                    rec_views[origin] = [v]
+                else:
+                    rec_views[origin].append(v)
+        return rec_views
+
+    def _map_to_origins(self):
+        by_origins = self._mapped_by_substring()
+        recoded_views = self._mapped_by_meta()
+        varlist = self.variables()
+        for var in varlist:
+            if var in recoded_views:
+                if not var in by_origins:
+                    by_origins[var] = recoded_views[var]
+                else:
+                    for recoded_view in recoded_views[var]:
+                        if recoded_view not in by_origins[var]:
+                            by_origins[var].append(recoded_view)
+        for k, v in by_origins.items():
+            if not k in varlist:
+                del by_origins[k]
+                if not v[0] in varlist:
+                    by_origins[v[0]] = v[1:]
+        sort_them = []
+        for k, v in by_origins.items():
+            sort_them.append(k)
+            sort_them.extend(v)
+        grouped = []
+        for v in varlist:
+            if v in by_origins:
+                grouped.append(v)
+                grouped.extend(by_origins[v])
+            else:
+                if not v in sort_them: grouped.append(v)
+        return grouped
+
     @modify(to_list='reposition')
-    def order(self, new_order=None, reposition=None):
+    def order(self, new_order=None, reposition=None, regroup=False):
         """
         Set the global order of the DataSet variables collection.
 
@@ -2566,23 +2892,36 @@ class DataSet(object):
         reposition : (List of) dict
             Each dict maps one or a list of variables to a reference variable
             name key. The mapped variables are moved before the reference key.
+        regroup : bool, default False
+            Attempt to regroup non-native variables (i.e. created either
+            manually with ``add_meta()``, ``recode()``, ``derive()``, etc.
+            or automatically by manifesting ``qp.View`` objects) with their
+            originating variables.
 
         Returns
         -------
         None
         """
-        if new_order and reposition:
-            err = "Cannot reposition variables if 'new_order' is specified."
+        if (bool(new_order) + bool(reposition) + regroup) > 1:
+            err = "Can only either apply ``new_order``, ``reposition`` or "
+            err += "``regroup`` variables, not perform multiple operations at once."
             raise ValueError(err)
-        if not reposition:
+        if new_order:
             if not sorted(self._variables_from_set('data file')) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
                 raise ValueError(err)
             check = new_order
-        else:
+        elif reposition:
             check = []
             for r in reposition:
                 check.extend(list(r.keys() + r.values()))
+        elif regroup:
+            new_order = self._map_to_origins()
+            check = new_order
+        else:
+            err = "No ``order`` operation provided, select one of "
+            err += "``new_order``, ``regroup``, ``reposition``."
+            raise ValueError(err)
         if not all(self.var_exists(v) for v in check):
             err = "At least one variable named in ordering does not exist."
             raise ValueError(err)
@@ -2904,6 +3243,27 @@ class DataSet(object):
         if not qtype == 'string':
             vals = [int(i) for i in vals]
         return vals
+
+    def drop_duplicates(self, unique_id='identity', keep='first'):
+        """
+        Drop duplicated cases from self._data.
+
+        Parameters
+        ----------
+        unique_id : str
+            Variable name that gets scanned for duplicates.
+        keep : str, {'first', 'last'}
+            Keep first or last of the duplicates.
+        """
+        if self.duplicates(unique_id):
+            cases_before = self._data.shape[0]
+            self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
+            if self._verbose_infos:
+                cases_after = self._data.shape[0]
+                droped_cases = cases_before - cases_after
+                msg = '%s duplicated case(s) dropped, %s cases remaining'
+                print msg % (droped_cases, cases_after)
+        return None
 
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
     def _make_unique_key(self, id_key_name, multiplier):
@@ -3350,7 +3710,7 @@ class DataSet(object):
         else:
             finalized = True
         if finalized:
-            #reduce the meta/data?
+            # reduce the meta/data?
             if copy_not:
                 remove = [c for c in self.codes(copy_name) if c in copy_not]
                 self.remove_values(copy_name, remove)
@@ -3925,30 +4285,35 @@ class DataSet(object):
 
         return None
 
-    def to_array(self, name, variables, label):
+    def to_array(self, name, variables, label, safe=True):
         """
         Combines column variables with same ``values`` meta into an array.
 
         Parameters
         ----------
-        name: str
+        name : str
             Name of new grid.
-        variables: list of str or list of dicts
+        variables : list of str or list of dicts
             Variable names that become items of the array. New item labels can
             be added as dict. Example:
             variables = ['q1_1', {'q1_2': 'shop 2'}, {'q1_3': 'shop 3'}]
-        label: str
+        label : str
             Text label for the mask itself.
+        safe : bool, default True
+            If True, the method will raise a ``ValueError`` if the provided
+            variable name is already present in self. Select ``False`` to
+            forcefully overwrite an existing variable with the same name
+            (independent of its type).
 
         Returns
         -------
         None
         """
         meta = self._meta
-
         newname = self._dims_compat_arr_name(name)
         if self.var_exists(newname):
-            raise ValueError('{} does already exist.'.format(name))
+            if safe:
+                raise ValueError('{} does already exist.'.format(name))
         var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
         if not all(self.var_exists(v) for v in var_list):
@@ -3956,7 +4321,6 @@ class DataSet(object):
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
-
         first = var_list[0]
         subtype = self._get_type(var_list[0])
         if self._has_categorical_data(var_list[0]):
@@ -4193,10 +4557,6 @@ class DataSet(object):
             self._meta['columns'][name].pop('values')
         self._data[name] = self._data[name].astype(str)
         return None
-
-    # ------------------------------------------------------------------------
-    # Editing
-    # ------------------------------------------------------------------------
 
     # renaming
     # ------------------------------------------------------------------------
@@ -4594,7 +4954,7 @@ class DataSet(object):
             ``_meta['masks']``.
         ext_values : list of str or tuples in form of (int, str), default None
             When a list of str is given, the categorical values will simply be
-            enumerated and maped to the category labels. Alternatively codes can
+            enumerated and mapped to the category labels. Alternatively codes can
             mapped to categorical labels, e.g.:
             [(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]
         text_key : str, default None
@@ -4806,11 +5166,19 @@ class DataSet(object):
         new_text_key = None
         for new_tk in reversed(copy_from):
             if new_tk in text_dict.keys():
-                new_text_key = new_tk
+                if new_tk in ['x edits', 'y edits']:
+                    if text_dict[new_tk].get(copy_to):
+                        new_text_key = new_tk
+                else:
+                    new_text_key = new_tk
         if not new_text_key:
             raise ValueError('{} is no existing text_key'.format(copy_from))
         if not copy_to in text_dict.keys() or update_existing:
-            text_dict.update({copy_to: text_dict[new_text_key]})
+            if new_text_key in ['x edits', 'y edits']:
+                text = text_dict[new_text_key][copy_to]
+            else:
+                text = text_dict[new_text_key]
+            text_dict.update({copy_to: text})
 
     @modify(to_list='copy_from')
     @verify(text_keys=['copy_to', 'copy_from'])
@@ -5289,6 +5657,75 @@ class DataSet(object):
             self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
 
+    @verify(variables={'name': 'both'})
+    def clear_factors(self, name):
+        """
+        Remove all factors set in the variable's ``'values'`` object.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+
+        Returns
+        -------
+        None
+        """
+        val_loc = self._get_value_loc(name)
+        for value in val_loc:
+            value['factor'] = None
+        return None
+
+    @verify(variables={'name': 'both'})
+    def set_factors(self, name, factormap, safe=False):
+        """
+        Apply numerical factors to (``single``-type categorical) variables.
+
+        Factors can be read while aggregating descrp. stat. ``qp.Views``.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        factormap : dict
+            A mapping of ``{value: factor}`` (``int`` to ``int``).
+        safe : bool, default False
+            Set to ``True`` to prevent setting factors to the ``values`` meta
+            data of non-``single`` type variables.
+
+        Returns
+        -------
+        None
+        """
+        e = False
+        if name in self.masks():
+            if self._get_subtype(name) != 'single':
+                e = True
+        else:
+            if self._get_type(name) != 'single':
+                e = True
+        if e:
+            if safe:
+                err = "Can only set factors to 'single' type categorical variables!"
+                raise TypeError(err)
+            else:
+                return None
+        vals = self.codes(name)
+        facts = factormap.keys()
+        val_loc = self._get_value_loc(name)
+        if not all(f in vals for f in facts):
+            err = 'At least one factor is mapped to a code that does not exist '
+            err += 'in the values object of "{}"!'
+            raise ValueError(err.format(name))
+        for value in val_loc:
+            if value['value'] in factormap:
+                value['factor'] = factormap[value['value']]
+            else:
+                value['factor'] = None
+        return None
+
     # rules and properties
     # ------------------------------------------------------------------------
     @verify(variables={'name': 'both'})
@@ -5298,8 +5735,9 @@ class DataSet(object):
         mask_ref = self._meta['masks']
         col_ref = self._meta['columns']
         if not text_key: text_key = self.text_key
-        valid_props = ['base_text']
-
+        valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
+                       'recoded_filter', '_no_valid_items', '_no_valid_values',
+                       'simple_org_expr']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
@@ -5315,7 +5753,10 @@ class DataSet(object):
             p = meta_ref['properties'].get(prop_name, None)
             if p:
                 if prop_name == 'base_text' and isinstance(p, dict):
-                    p = p[text_key]
+                    try:
+                        p = p[text_key]
+                    except:
+                        p = p[self.text_key]
             return p
         else:
             return None
@@ -5344,7 +5785,7 @@ class DataSet(object):
         -------
         None
         """
-        valid_props = ['base_text']
+        valid_props = ['base_text', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         prop_update = {prop_name: prop_value}
@@ -5399,6 +5840,121 @@ class DataSet(object):
             for ax in axis:
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
+
+    def empty(self, name, condition=None):
+        """
+        Check variables for emptiness (opt. restricted by a condition).
+
+        Parameters
+        ----------
+        name : (list of) str
+            The mask variable name keyed in ``_meta['columns']``.
+        condition : Quantipy logic expression, default None
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+
+        Returns
+        -------
+        empty : bool
+        """
+        empty = []
+        if not isinstance(name, list): name = [name]
+        return_bool = len(name) == 1
+        if condition:
+            df = pd.DataFrame(self[self.take(condition), name])
+        else:
+            df = self._data
+        for n in name:
+            if df[n].count() == 0:
+                empty.append(n)
+        if return_bool:
+            return bool(empty)
+        else:
+            return empty
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'masks'})
+    def empty_items(self, name, condition=None, by_name=True):
+        """
+        Test arrays for item emptiness (opt. restricted by a condition).
+
+        Parameters
+        ----------
+        name : (list of) str
+            The mask variable name keyed in ``_meta['masks']``.
+        condition : Quantipy logic expression, default None
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+        by_name : bool, default True
+            Return array items by their name or their index.
+
+        Returns
+        -------
+        empty : list
+            The list of empty items by their source names or positional index
+            (starting from 1!, mapped to their parent mask name if more than
+            one).
+        """
+        empty = {}
+        if condition:
+            df = self[self.take(condition), name].copy()
+        else:
+            df = self._data.copy()
+        for n in name:
+            test_df = df[self.unroll(n)].sum()
+            slicer = test_df == 0
+            empty_items = test_df.loc[slicer].index.values.tolist()
+            if not by_name: empty_items = [self.item_no(i) for i in empty_items]
+            if empty_items: empty[n] = empty_items
+        if empty:
+            return empty[name[0]] if len(name) == 1 else empty
+        else:
+            return None
+
+    @verify(variables={'arrays': 'masks'})
+    def hide_empty_items(self, condition=None, arrays=None):
+        """
+        Apply ``rules`` meta to automatically hide empty array items.
+
+        Parameters
+        ----------
+        name : (list of) str, default None
+            The array mask variable names keyed in ``_meta['masks']``. If not
+            explicitly provided will test all array mask definitions.
+        condition : Quantipy logic expression
+            A logical condition expressed as Quantipy logic that determines
+            which subset of the case data rows to be considered.
+
+        Returns
+        -------
+        None
+        """
+        if not arrays: arrays = self.masks()
+        if arrays and not isinstance(arrays, list): arrays = [arrays]
+        empty_items = self.empty_items(arrays, condition, False)
+        if empty_items:
+            if isinstance(empty_items, list):
+                empty_items = {arrays[0]: empty_items}
+            for arr, items in empty_items.items():
+                if len(items) == len(self.sources(arr)):
+                    self.set_property(arr, '_no_valid_items', True, True)
+                self.hiding(arr, items, axis='x', hide_values=False)
+        return None
+
+    def fully_hidden_arrays(self):
+        """
+        Get all array definitions that contain only hidden items.
+
+        Returns
+        -------
+        hidden : list
+            The list of array mask names.
+        """
+        hidden = []
+        for m in self.masks():
+            invalid = self.get_property(m, '_no_valid_items')
+            if invalid: hidden.append(m)
+        return hidden
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
@@ -5771,8 +6327,8 @@ class DataSet(object):
         ds._data = ds._data[cols]
 
         # save ``DataSet`` instance as json and csv
-        path_json = '{}/{}.json'.format(ds.path, ds.name)
-        path_csv = '{}/{}.csv'.format(ds.path, ds.name)
+        path_json = os.path.join(ds.path, ''.join([ds.name, '.json']))
+        path_csv = os.path.join(ds.path, ''.join([ds.name,  '.csv']))
         ds.write_quantipy(path_json, path_csv)
 
         return ds

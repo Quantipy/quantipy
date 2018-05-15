@@ -28,7 +28,9 @@ def meta_editor(self, dataset_func):
         name = args[0] if args else kwargs['name']
         if not isinstance(name, list): name = [name]
         # create DataSet clone to leave global meta data untouched
-        ds_clone = self.clone()
+        if self.edits_ds is None:
+            self.edits_ds = self.clone()
+        ds_clone = self.edits_ds
         var_edits = []
         for n in name:
             is_array = self.is_array(n)
@@ -54,7 +56,7 @@ def meta_editor(self, dataset_func):
         # use qp.DataSet method to apply the edit
         dataset_func(ds_clone, *args, **kwargs)
         # grab edited meta data and collect via Batch.meta_edits attribute
-        for n in name:
+        for n in self.unroll(name, both='all'):
             if not self.is_array(n):
                 meta = ds_clone._meta['columns'][n]
                 text_edits = ['set_col_text_edit', 'set_val_text_edit']
@@ -92,6 +94,7 @@ class Batch(qp.DataSet):
         meta, data = dataset.split()
         self._meta = meta
         self._data = data.copy()
+        self.edits_ds = None
         self.valid_tks = dataset.valid_tks
         self.text_key = dataset.text_key
         self.sample_size = None
@@ -130,10 +133,12 @@ class Batch(qp.DataSet):
             self.set_sigtests(tests)  # self.sigproperties
             self.additional = False
             self.meta_edits = {'lib': {}}
+            self.build_info = {}
             self.set_language(dataset.text_key) # self.language
             self._update()
 
         # DECORATED / OVERWRITTEN DataSet methods
+        # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
@@ -164,7 +169,7 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map']:
+                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -179,7 +184,7 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map']:
+                     'y_on_y_filter', 'y_filter_map', 'build_info']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -366,7 +371,7 @@ class Batch(qp.DataSet):
         self.xks = self.unroll(clean_xks, both='all')
         self._update()
         masks = [x for x in self.xks if x in self.masks()]
-        self.make_summaries(masks, [])
+        self.make_summaries(masks, [], _verbose=False)
         return None
 
     @modify(to_list=['ext_xks'])
@@ -406,9 +411,56 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    def hide_empty(self, xks=True, summaries=True):
+        """
+        Drop empty variables and hide array items from summaries.
+
+        Parametes
+        ---------
+        xks : bool, default True
+            Controls dropping "regular" variables and array items due to being
+            empty.
+        summaries : bool, default True
+            Controls whether or not empty array items are hidden (by applying
+            rules) in summary aggregations. Summaries that would end up with
+            no valid items are automatically dropped altogether.
+
+        Returns
+        -------
+        None
+        """
+        if self.filter == 'no_filter':
+            cond = None
+        else:
+            cond = self.filter.values()[0]
+        removed_sum = []
+        for x in self.xks[:]:
+            if self.is_array(x):
+                e_items = self.empty_items(x, cond, False)
+                if not e_items: continue
+                sources = self.sources(x)
+                if summaries:
+                    self.hiding(x, e_items, axis='x', hide_values=False)
+                    if len(e_items) == len(sources):
+                        if x in self.xks: self.xks.remove(x)
+                        if x in self.summaries: self.summaries.remove(x)
+                        removed_sum.append(x)
+                if xks:
+                    for i in e_items:
+                        if sources[i-1] in self.xks:
+                            self.xks.remove(sources[i-1])
+            elif not self._is_array_item(x):
+                if self[self.take(cond), x].count() == 0:
+                    self.xks.remove(x)
+        if removed_sum:
+            msg = "Dropping summaries for {} - all items hidden!"
+            warnings.warn(msg.format(removed_sum))
+        self._update()
+        return None
+
     @modify(to_list=['arrays'])
     @verify(variables={'arrays': 'masks'})
-    def make_summaries(self, arrays, exclusive=False):
+    def make_summaries(self, arrays, exclusive=False, _verbose=None):
         """
         Summary tables are created for defined arrays.
 
@@ -418,13 +470,14 @@ class Batch(qp.DataSet):
             List of arrays for which summary tables are created. Summary tables
             can only be created for arrays that are included in ``self.xks``.
         exclusive: bool/ list, default False
-            If True only summaries are created and items skipped. Exclusive
-            property can be provided for a selection of arrays. Example::
+            If True only summaries are created and items skipped. ``exclusive``
+            parameter can be provided for a selection of arrays. Example::
             >>> b.make_summaries(['array1', 'array2'], exclusive = ['array2'])
         Returns
         -------
         None
         """
+        if _verbose is None: _verbose = self._verbose_infos
         if any(a not in self.xks for a in arrays):
             msg = '{} not defined as xks.'.format([a for a in arrays if not a in self.xks])
             raise ValueError(msg)
@@ -440,7 +493,7 @@ class Batch(qp.DataSet):
             msg = 'Array summaries setup: Creating {}.'.format(arrays)
         else:
             msg = 'Array summaries setup: Creating no summaries!'
-        if self._verbose_infos:
+        if _verbose:
             print msg
         for t_array in self.transposed_arrays.keys():
             if not t_array in arrays:
@@ -547,9 +600,10 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        filter_name = filter_name.encode('utf-8', errors='ignore')
         if not (filter_name in self.filter_names or self.filter == 'no_filter'):
             old_name = self.filter.keys()[0]
-            n_filter = old_name + filter_name
+            n_filter = old_name + ' - ' + filter_name
             n_logic  = intersection([self.filter.values()[0], filter_logic])
             self.filter = {n_filter: n_logic}
             self.filter_names.remove(old_name)
@@ -823,7 +877,11 @@ class Batch(qp.DataSet):
                     mapping.append((x, ['@']))
                 if not x in self.skip_items:
                     for x2 in self.sources(x):
-                        mapping.append((x2, _get_yks(x2)))
+                        # Added another check because the source could be not
+                        # relevant any longer due to hiding of the variables,
+                        # which removes it from self.xks
+                        if x2 in self.xks:
+                            mapping.append((x2, _get_yks(x2)))
                 if x in self.transposed_arrays:
                     mapping.append(('@', [x]))
             elif self._is_array_item(x) and self._maskname_from_item(x) in self.xks:

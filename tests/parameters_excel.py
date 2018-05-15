@@ -1,15 +1,44 @@
 
-# BASIC 
+# BASIC
 # -----------------------------------------------------------------------------
 PATH_BASIC = './tests/basic.xlsx'
 XKEYS_BASIC = ('q2', 'q2b', 'q3', 'q4',
                ('q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6'),
                'q8', 'q9')
-YKEYS_BASIC = ('@', 'gender', 'locality')
+YKEYS_BASIC = ('@', 'gender', 'gender', 'locality')
 VIEWS_BASIC = ('cbase', 'counts')
 OPENS_BASIC = ('q8a', 'q9a')
 CELLS_BASIC = 'counts'
 WEIGHT_BASIC = None
+
+tab_names = ('q2b', 'q3', 'FOLDER_4', 'q8', 'q9')
+SHEET_PROPERTIES_BASIC = dict([(tab, dict(alternate_bg=True))
+                               for tab in tab_names])
+
+tab_names = ('q2', 'Open Ends')
+widths = {0: 15, 5: 5, 10: 40}
+SHEET_PROPERTIES_BASIC.update(dict([(tab, dict(column_width_specific=widths))
+                                    for tab in tab_names]))
+
+SHEET_PROPERTIES_EXCEL_BASIC = dict(dummy_tests           = True,
+                                    stat_0_rep            = '-',
+                                    column_width          = 10,
+                                    column_width_label    = 20,
+                                    column_width_frame    = 50,
+                                    alternate_bg          = False)
+
+FORMATS_BASIC = dict(view_border_freq        = None,
+                     view_border_net         = None,
+                     bold_u_base_text        = True,
+                     bold_base_text          = True,
+                     bold_label              = True,
+                     bold_y                  = True,
+                     font_size               = 8,
+                     font_color_u_base_text  = '#551A8B',
+                     font_color_u_base       = '#551A8B',
+                     font_color_base         = '#066B06',
+                     font_color_base_text    = '#066B06',
+                     bg_color_freq           = 'yellow')
 # -----------------------------------------------------------------------------
 
 # COMPLEX 1
@@ -76,7 +105,7 @@ VIEWS_COMPLEX_MAIN = ('x|f|x:|||cbase',
                       (
                           'x|f.c:f|x:||weight_a|counts_sum',
                           'x|f.c:f|x:|y|weight_a|c%_sum'
-                      )) 
+                      ))
 
 VIEWS_COMPLEX_WAVE = ('x|f|x:|||cbase',
                       'x|f|x:||weight_a|cbase',
@@ -151,6 +180,14 @@ VIEWS_COMPLEX_MEAN = ('x|f|x:|||cbase',
                       'x|d.sem|x:||weight_a|stat',
                       'x|d.lower_q|x:||weight_a|stat',
                       'x|d.upper_q|x:||weight_a|stat')
+
+SHEET_PROPERTIES_0 = dict(alternate_bg=True)
+
+FORMATS_0 = dict(view_border_freq             = None,
+                 view_border_net              = None,
+                 view_border_block_net        = None,
+                 view_border_block_expanded   = None,
+                 text_h_align_data            = 1)
 
 SHEET_PROPERTIES_1 = dict(alternate_bg=True,
                           freq_0_rep=':',
@@ -250,7 +287,9 @@ ANNOTATIONS_2 = ['Ann. 1', 'Ann. 2', 'Ann. 3', 'Ann. 4']
 SHEET_PROPERTIES_3 = dict(dummy_tests=True,
                           alternate_bg=False,
                           start_row=7,
-                          start_column=2)
+                          start_column=2,
+                          start_row_annotations=4,
+                          start_column_annotations=5)
 
 VIEW_GROUPS_3 = dict(block_normal_counts='block_normal',
                      block_normal_c_pct='block_normal',
@@ -853,7 +892,7 @@ FORMATS_3 = {'bold_y': True,
 annotations_spec = ((
                         'Main',
                         [(
-                             'Main. 1', 
+                             'Main. 1',
                              dict(font_size=8,
                                   font_color='yellow',
                                   bg_color='gray')

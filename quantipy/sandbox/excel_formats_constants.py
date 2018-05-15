@@ -96,6 +96,9 @@ _DEFAULT_GENERAL = dict(
     num_format_block_normal_counts=_DEFAULTS['num_format_counts'],
     num_format_block_normal_c_pct=_DEFAULTS['num_format_c_pct'],
     num_format_block_normal_r_pct=_DEFAULTS['num_format_c_pct'],
+    num_format_block_calc_normal_counts=_DEFAULTS['num_format_counts'],
+    num_format_block_calc_normal_c_pct=_DEFAULTS['num_format_c_pct'],
+    num_format_block_calc_normal_r_pct=_DEFAULTS['num_format_c_pct'],
     num_format_mean=_DEFAULTS['num_format_mean'],
     num_format_stddev=_DEFAULTS['num_format_mean'],
     num_format_min=_DEFAULTS['num_format_mean'],
@@ -122,7 +125,8 @@ _DEFAULT_ALIGN = dict(text_v_align=2, text_h_align=2,
                       text_v_align_text=2, text_h_align_text=3)
 
 _CELL_ATTRIBUTES = ('bg_color', 'bold', 'font_color',
-                    'font_name', 'font_size', 'italic')
+                    'font_name', 'font_size', 'italic',
+                    'text_wrap')
 
 _VIEWS_GROUPS = dict(default='default',
                      label='label',
@@ -143,6 +147,10 @@ _VIEWS_GROUPS = dict(default='default',
                      block_normal_c_pct='freq',
                      block_normal_r_pct='freq',
                      block_normal_propstest='freq',
+                     block_calc_normal_counts='freq',
+                     block_calc_normal_c_pct='freq',
+                     block_calc_normal_r_pct='freq',
+                     block_calc_normal_propstest='freq',
                      propstest='freq',
                      net_counts='net',
                      net_c_pct='net',
@@ -187,7 +195,8 @@ _CELLS = ('y',
           'header_left',
           'header_center',
           'header_title',
-          'notes')
+          'notes',
+          'data')
 
 for view in _VIEWS_GROUPS.keys():
     _CELLS += (view, ) if view in _NO_TEXT else (view, view + '_text')

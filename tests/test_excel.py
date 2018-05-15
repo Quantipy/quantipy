@@ -9,6 +9,7 @@ import numpy as np
 import quantipy as qp
 from quantipy.sandbox.sandbox import ChainManager
 from quantipy.sandbox.excel import Excel
+from quantipy.sandbox.excel_formats_constants import _DEFAULT_ATTRIBUTES
 from quantipy.core.view_generators.view_specs import ViewManager
 
 import parameters_excel as p
@@ -69,6 +70,10 @@ class Chain_Manager:
     def basic_chain_manager(self, stack):
         stack.add_link(x=self.flatten(p.XKEYS_BASIC), y=p.YKEYS_BASIC,
                        views=p.VIEWS_BASIC, weights=p.WEIGHT_BASIC)
+
+        locality = stack[DATA_KEY].meta['columns']['locality']
+        for idx in xrange(1, 4):
+            locality['values'][idx]['text'] = {'en-GB': '.'}
 
         vm = ViewManager(stack)
         vm.get_views(cell_items=p.CELLS_BASIC,
@@ -269,7 +274,7 @@ def stack(dataset):
 
 @pytest.fixture(scope='function')
 def excel(chain_manager, sheet_properties, views_groups, italicise_level,
-          details, decimals, image, formats, annotations):
+          details, decimals, image, formats, annotations, properties):
     kwargs = formats if formats else dict()
     x = Excel('tmp.xlsx',
               views_groups=views_groups,
@@ -278,9 +283,9 @@ def excel(chain_manager, sheet_properties, views_groups, italicise_level,
               decimals=decimals,
               image=image,
               annotations=annotations,
+              sheet_properties=properties if properties else dict(),
               **kwargs)
-    kwargs = sheet_properties if sheet_properties else dict()
-    x.add_chains(chain_manager, **kwargs)
+    x.add_chains(chain_manager, **(sheet_properties if sheet_properties else dict()))
     x.close()
 
 @pytest.fixture(scope='class')
@@ -292,24 +297,25 @@ def chain_manager(stack):
     params=[
         (
            'basic', p.PATH_BASIC,
-           None, None, None, False, None, None, None, None
+           p.SHEET_PROPERTIES_BASIC, None, None, False, None, None,
+           p.FORMATS_BASIC, None, p.SHEET_PROPERTIES_EXCEL_BASIC
         ),
         (
-           'complex', p.PATH_COMPLEX_0,
-           None, None, None, False, None, None, None, None
+            'complex', p.PATH_COMPLEX_0, None, None, None, False, None,
+            None, p.FORMATS_0,  None, None
         ),
         (
-           'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
-           None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1, None
+            'complex', p.PATH_COMPLEX_1, p.SHEET_PROPERTIES_1, p.VIEW_GROUPS_1,
+            None, False, p.DECIMALS_1, p.IMAGE_1, p.FORMATS_1, None, None
         ),
         (
             'complex', p.PATH_COMPLEX_2, p.SHEET_PROPERTIES_2, p.VIEW_GROUPS_2,
-            None, False, None, None, p.FORMATS_2, p.ANNOTATIONS_2
+            None, False, None, None, p.FORMATS_2, p.ANNOTATIONS_2, None
         ),
         (
            'complex', p.PATH_COMPLEX_3, p.SHEET_PROPERTIES_3, p.VIEW_GROUPS_3,
            p.ITALICISE_LEVEL_3 , p.DETAILS_3, p.DECIMALS_3, None, p.FORMATS_3,
-           p.ANNOTATIONS_3
+           p.ANNOTATIONS_3, None
         )
     ]
 )
@@ -337,9 +343,9 @@ class TestExcel:
 
     def test_structure(self, chain_manager, params):
 
-        complexity, path_expected, sp, vg, il, dt, dc, im, fm, an = params
+        complexity, path_expected, sp, vg, il, dt, dc, im, fm, an, pt = params
 
-        excel(chain_manager[complexity], sp, vg, il, dt, dc, im, fm, an)
+        excel(chain_manager[complexity], sp, vg, il, dt, dc, im, fm, an, pt)
 
         zip_got, zip_exp = _load_zip('tmp.xlsx'), _load_zip(path_expected)
 

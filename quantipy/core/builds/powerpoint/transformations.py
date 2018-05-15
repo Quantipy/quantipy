@@ -38,8 +38,11 @@ def case_insensitive_matcher(check_these, against_this):
     performs the case-insensitive search of given list of items against df rows or columns and pulls out
     matched items from the df.
     '''
-
-    matched = [v for x,d in enumerate(check_these) for i,v in enumerate(against_this) if v.lower() == d.lower()]
+    matched = [v
+               for x,d in enumerate(check_these)
+                   for i,v in enumerate(against_this)
+                        if v.lower() == d.lower()
+                        ]
     return matched
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -403,7 +406,7 @@ def validate_cluster_orientations(cluster):
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
-def get_base(df, base_description):
+def get_base(df, base_description, is_mask):
     '''
     Constructs base text for any kind of chart, single, multiple, grid.
 
@@ -450,10 +453,12 @@ def get_base(df, base_description):
         # if all_same(base_values[0]):
         #     base_text = base_text_format(base_description, base_values[0][0])
         # else:
-        it = zip(top_members, base_values[0])
-        base_texts = ', '.join([base_text_format(x, y) for x, y in it])
-        base_text = ' - '.join([base_description, base_texts])
-
+        if not is_mask:
+            it = zip(top_members, base_values[0])
+            base_texts = ', '.join([base_text_format(x, y) for x, y in it])
+            base_text = ' - '.join([base_description, base_texts])
+        else:
+            base_text = base_text_format(base_description, base_values[0][0])
     return base_text
 
 
