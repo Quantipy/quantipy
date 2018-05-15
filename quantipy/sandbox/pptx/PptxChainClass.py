@@ -195,26 +195,40 @@ class PptxDataFrame(pd.DataFrame):
         self.__frames = []
         self.chart_type = None # TODO PptxDataFrame - How to do: if a user sets chart_type it is auto checked for correctnes
 
+    def make_copy(self, data=None, index=None, columns=None):
+
+        val = data if isinstance(data, (np.ndarray)) else self.values
+        idx = index if isinstance(index, (pd.Index, pd.Int64Index, pd.MultiIndex)) else self.index
+        col = columns if isinstance(columns, (pd.Index, pd.Int64Index, pd.MultiIndex)) else self.columns
+        df_copy = PptxDataFrame(data=val, index=idx, columns=col)
+        df_copy.cell_contents = self.cell_contents
+        df_copy.array_style = self.array_style
+        df_copy.chart_type = self.chart_type
+
+        return df_copy
+
     def get_cpct(self):
         row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['net','is_c_pct_sum'], exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, ['is_net','net','is_c_pct_sum'], exact=False)
 
         for x in dont_want:
             if x in row_list:
                 row_list.remove(x)
 
         if self.array_style == -1:
-            df_copy = self.iloc[row_list].copy()
+            df_copy=self.iloc[row_list]
         else:
-            # print "row_list: ", row_list
-            df_copy = self.iloc[:,row_list].copy()
+            df_copy = self.iloc[:,row_list]
 
-        self.chart_type = auto_charttype(df_copy, self.array_style)
+        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
+        cell_contents = pptx_df_copy.cell_contents
+        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
 
-        return df_copy
+        return pptx_df_copy
 
     def get_nets(self):
-        row_list = get_indexes_from_list(self.cell_contents, 'net', exact=False)
+        row_list = get_indexes_from_list(self.cell_contents, ['is_net','net'], exact=False)
         dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest'], exact=False)
 
         for x in dont_want:
@@ -222,14 +236,16 @@ class PptxDataFrame(pd.DataFrame):
                 row_list.remove(x)
 
         if self.array_style == -1:
-            df_copy = self.iloc[row_list].copy()
+            df_copy = self.iloc[row_list]
         else:
-            # print "row_list: ", row_list
-            df_copy = self.iloc[:, row_list].copy()
+            df_copy = self.iloc[:, row_list]
 
-        self.chart_type = auto_charttype(df_copy, self.array_style)
+        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
+        cell_contents = pptx_df_copy.cell_contents
+        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
 
-        return df_copy
+        return pptx_df_copy
 
     def get(self, cell_types, sort=False):
         """
@@ -251,18 +267,18 @@ class PptxDataFrame(pd.DataFrame):
             raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_celltypes))
 
         frames = []
+        cell_contents = []
         for cell_type in cell_types:
             frame = method_map[cell_type]()
             frames.append(frame)
-        df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
+            cell_contents += frame.cell_contents
+        new_df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
 
-        return df
+        pptx_df = self.make_copy(data=new_df.values, index=new_df.index, columns=new_df.columns)
+        pptx_df.chart_type = auto_charttype(pptx_df, pptx_df.array_style)
+        pptx_df.cell_contents = cell_contents
 
-
-    #def sort(self):
-     #   pass
-        # TODO Class PptxDataFrame - Sort
-        #data_sorted = data.sort_values(['ApplicantIncome', 'CoapplicantIncome'], ascending=False)
+        return pptx_df
 
 
 class PptxChain(object):
@@ -274,15 +290,17 @@ class PptxChain(object):
         """
         :param
             chain: An instance of Chain class
-            is_varname_in_qtext: Is var name included in the painted chain dataframe (False, True or 'full')
+            is_varname_in_qtext: Is var name included in the painted chain dataframe? (False, True, 'full', 'ignore')
             crossbreak:
         """
         self.verbose = verbose
         self.chain = chain
+        self.index_map = self._index_map()
         self.is_mask_item = chain._is_mask_item
         self.x_key_name = chain._x_keys[0]
         self.source = chain.source
         self._var_name_in_qtext = is_varname_in_qtext
+        self.array_style = chain.array_style
         self.is_grid_summary = False if chain.array_style == -1 else True
         if crossbreak:
             if not isinstance(crossbreak, list):
@@ -304,7 +322,6 @@ class PptxChain(object):
         self.ybases = self._get_bases()
         self.xkey_levels = chain.dataframe.index.nlevels
         self.ykey_levels = chain.dataframe.columns.nlevels
-        self.array_style = chain.array_style
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
@@ -340,43 +357,56 @@ class PptxChain(object):
         """
 
         cell_contents = self.chain.describe()
+        if self.array_style == 0: cell_contents = cell_contents[0]
 
-        if not self.is_grid_summary:
+        # Find base rows
+        base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        # Show error if no base elements found
+        if not base_indexes:
+            msg = "No 'Base' element found, base size will be set to None"
+            warnings.warn(msg)
+            self.xbase_indexes = False
+            return None
 
-            # Find base rows
-            base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
-
-            # Show error if no base elements found
-            if not base_indexes:
-                msg = "No 'Base' element found in X-keys, base size will be set to None"
-                warnings.warn(msg)
-                self.xbase_indexes = False
-                return None
+        if self.array_style == -1 or self.array_style == 1:
 
             xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
 
         else:
 
-            base_indexes = get_indexes_from_list(cell_contents[0], BASE_ROW, exact=False)
-
-            if not base_indexes:
-                msg = "No 'Base' element found in Summary, base size will be set to None"
-                warnings.warn(msg)
-                self.xbase_indexes = False
-                return None
-
             xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
 
-        #print xlabels
+        if self.verbose:
+                print "xlabels", xlabels
+                print "base_indexes", base_indexes
+
         return zip(xlabels, base_indexes)
 
+    def _index_map(self):
+        """
+        Map not painted index with painted index into a dictionary
+        :return:
+        """
+        if self.chain.painted:  # UnPaint if painted
+            self.chain.toggle_labels()
+        if self.chain.array_style == -1:
+            unpainted_index = self.chain.dataframe.index.get_level_values(-1).tolist()
+        else:
+            unpainted_index = self.chain.dataframe.columns.get_level_values(-1).tolist()
+        if not self.chain.painted:  # Paint if not painted
+            self.chain.toggle_labels()
+        if self.chain.array_style == -1:
+            painted_index = self.chain.dataframe.index.get_level_values(-1).tolist()
+        else:
+            painted_index = self.chain.dataframe.columns.get_level_values(-1).tolist()
+
+        return dict(zip(unpainted_index, painted_index))
 
     def _select_crossbreak(self):
         """
         Takes self.chain.dataframe and returns only the columns stated in self.crossbreak
         :return:
         """
-
 
         if not self.is_grid_summary:
             # Keep only requested columns
@@ -472,7 +502,6 @@ class PptxChain(object):
 
             self.chain_df.rename(columns=new_labels_list, inplace=True)
             self.vals_in_labels = True
-
 
     def base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", "):
         """
