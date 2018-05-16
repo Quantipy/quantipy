@@ -597,11 +597,17 @@ class _Sheet(Worksheet):
 
                 # make y-axis writing availbale to all chains
                 if i == 0:
-                    self._set_freeze_loc(columns, chain.array_style == 0)
-                    self._set_column(columns)
+                    levels = columns.nlevels
+                    self._set_freeze_loc(chain.shapes, columns.nlevels,
+                                         chain.structure,
+                                         chain.array_style == 0)
+                    if chain.structure is None:
+                        self._set_column(columns)
 
             except AttributeError:
                 columns = chain.structure.columns
+                self._set_freeze_loc(chain.shapes, columns.nlevels,
+                                     chain.structure, chain.array_style == 0)
 
             # write frame
             box = _Box(self, chain, self._row, self._column)
@@ -713,13 +719,17 @@ class _Sheet(Worksheet):
 
         super(_Sheet, self).set_row(row, height)
 
-    def _set_freeze_loc(self, columns, arr_style_0):
-        if list(columns.labels[-1]).count(0) == 1:
-            offset = 1
+    def _set_freeze_loc(self, shapes, nlevels, structure, arr_style_0):
+        offset = 0
+        if shapes:
+            if shapes[0][1] == 1:
+                offset = 1
+        if structure is not None:
+            self._freeze_loc = ((self._row + nlevels + 1),
+                                (self._column + offset))
         else:
-            offset = 0
-        self._freeze_loc = ((self._row + columns.nlevels - arr_style_0),
-                            (self._column + offset + 1))
+            self._freeze_loc = ((self._row + nlevels - arr_style_0),
+                                (self._column + offset + 1))
 
 
 class _Box(object):

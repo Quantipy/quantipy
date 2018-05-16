@@ -44,6 +44,7 @@ import warnings
 import re
 import time
 import sys
+import os
 from itertools import product, chain
 from collections import OrderedDict, Counter
 
@@ -570,13 +571,13 @@ class DataSet(object):
         if path_ddf is None and path_mdd is None:
             path = ds_clone.path
             name = ds_clone.name
-            path_mdd = '{}/{}.mdd'.format(path, name)
-            path_ddf = '{}/{}.ddf'.format(path, name)
+            path_mdd = os.path.join(path, ''.join([name, '.mdd']))
+            path_ddf = os.path.join(path, ''.join([name, '.ddf']))
         elif path_ddf is not None and path_mdd is not None:
             if not path_mdd.endswith('.mdd'):
-                path_mdd = '{}.mdd'.format(path_mdd)
+                path_mdd = ''.join([path_mdd, '.mdd'])
             if not path_ddf.endswith('.ddf'):
-                path_ddf = '{}.ddf'.format(path_ddf)
+                path_ddf = ''.join([path_ddf, '.ddf'])
         else:
             msg = "Must either specify or omit both 'path_mdd' and 'path_ddf'!"
             raise ValueError(msg)
@@ -584,7 +585,7 @@ class DataSet(object):
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
                      date_format=date_format, run=run, clean_up=clean_up)
-        file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
+        file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
         return None
 
@@ -615,13 +616,13 @@ class DataSet(object):
         if path_data is None and path_meta is None:
             path = self.path
             name = self.name
-            path_meta = '{}/{}.json'.format(path, name)
-            path_data = '{}/{}.csv'.format(path, name)
+            path_meta = os.path.join(path, ''.join([name, '.json']))
+            path_data = os.path.join(path, ''.join([name, '.csv']))
         elif path_data is not None and path_meta is not None:
             if not path_meta.endswith('.json'):
-                path_meta = '{}.json'.format(path_meta)
+                path_meta = ''.join([path_meta, '.json'])
             if not path_data.endswith('.csv'):
-                path_data = '{}.csv'.format(path_data)
+                path_data = ''.join([path_data, '.csv'])
         else:
             msg = "Must either specify or omit both 'path_meta' and 'path_data'!"
             raise ValueError(msg)
@@ -670,10 +671,10 @@ class DataSet(object):
         meta, data = self._meta, self._data
         if not text_key: text_key = self.text_key
         if not path_sav:
-            path_sav = '{}/{}.sav'.format(self.path, self.name)
+            path_sav = os.path.join(self.path, ''.join([self.name, '.sav']))
         else:
             if not path_sav.endswith('.sav'):
-                path_sav = '{}.sav'.format(path_sav)
+                path_sav = ''.join([path_sav, '.sav'])
         w_spss(path_sav, meta, data, index=index, text_key=text_key,
                mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
                from_set=from_set, verbose=verbose)
@@ -718,10 +719,10 @@ class DataSet(object):
             name = '{}{}'.format(collection, '_{}'.format(key.split('.')[0])
                                  if key else '')
         ds_path = '../' if self.path == '/' else self.path
-        path = '{}{}_{}.json'.format(ds_path, self.name, name)
+        path = os.path.join(ds_path, ''.json([self.name, '_', name, '.json']))
         with open(path, 'w') as file:
             json.dump(obj, file)
-        print 'create: {}'.format(path)
+        print u'create: {}'.format(path)
         return None
 
     @verify(text_keys='text_key')
@@ -1100,12 +1101,16 @@ class DataSet(object):
         return None
 
     def _show_file_info(self):
-        file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
-                     'Dimensions compatibility mode: {}')
+        file_spec = (u'DataSet: {}\nrows: {} - columns: {}\n'
+                     u'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
-        file_name = '{}{}'.format(self.path, self.name)
-        print file_spec.format(file_name, len(self._data.index),
-                               len(self._data.columns)-1, self._dimensions_comp)
+        file_name = os.path.join(self.path, self.name)
+        print file_spec.format(
+            file_name,
+            len(self._data.index),
+            len(self._data.columns)-1,
+            self._dimensions_comp
+        ).encode('utf-8')
         return None
 
     # ------------------------------------------------------------------------
@@ -3238,6 +3243,27 @@ class DataSet(object):
         if not qtype == 'string':
             vals = [int(i) for i in vals]
         return vals
+
+    def drop_duplicates(self, unique_id='identity', keep='first'):
+        """
+        Drop duplicated cases from self._data.
+
+        Parameters
+        ----------
+        unique_id : str
+            Variable name that gets scanned for duplicates.
+        keep : str, {'first', 'last'}
+            Keep first or last of the duplicates.
+        """
+        if self.duplicates(unique_id):
+            cases_before = self._data.shape[0]
+            self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
+            if self._verbose_infos:
+                cases_after = self._data.shape[0]
+                droped_cases = cases_before - cases_after
+                msg = '%s duplicated case(s) dropped, %s cases remaining'
+                print msg % (droped_cases, cases_after)
+        return None
 
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
     def _make_unique_key(self, id_key_name, multiplier):
@@ -6301,8 +6327,8 @@ class DataSet(object):
         ds._data = ds._data[cols]
 
         # save ``DataSet`` instance as json and csv
-        path_json = '{}/{}.json'.format(ds.path, ds.name)
-        path_csv = '{}/{}.csv'.format(ds.path, ds.name)
+        path_json = os.path.join(ds.path, ''.join([ds.name, '.json']))
+        path_csv = os.path.join(ds.path, ''.join([ds.name,  '.csv']))
         ds.write_quantipy(path_json, path_csv)
 
         return ds

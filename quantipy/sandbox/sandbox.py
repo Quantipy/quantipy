@@ -2926,17 +2926,13 @@ class Chain(object):
                                     .unstack())
                     first = series[series.columns[0]]
                     rest = [series[c] for c in series.columns[1:]]
-                    self.structure[column] = (first
-                                              .str.cat(rest,
-                                                       sep=', ',
-                                                       na_rep='')
-                                              .str.slice(0, -2)
-                                              .replace(to_replace=pattern,
-                                                       value='',
-                                                       regex=True)
-                                              .replace(to_replace='',
-                                                       value=na_rep)
-                                             )
+                    self.structure[column] = (
+                        first
+                            .str.cat(rest, sep=', ', na_rep='')
+                            .str.slice(0, -2)
+                            .replace(to_replace=pattern, value='', regex=True)
+                            .replace(to_replace='', value=na_rep)
+                    )
                 else:
                     value_mapper = {
                         item['value']: item['text'][text_key]
