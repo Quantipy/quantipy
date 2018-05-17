@@ -4573,8 +4573,6 @@ class DataSet(object):
             or ``meta['masks']``.
         new_name : str
             The new variable name.
-        verify_name : bool, default True
-            If False the ``new_name`` will not be matched agaist any Dimensions
 
         Returns
         -------
@@ -4591,11 +4589,15 @@ class DataSet(object):
             self.undimensionize([name] + self.sources(name))
             name = self._dims_free_arr_name(name)
 
-        for s in self.sources(name):
-            new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
+        for no, s in enumerate(self.sources(name), start=1):
+            if '_' in s and s.split('_')[-1].isdigit():
+                new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
+            else:
+                new_s_name = '{}_{}'.format(new_name, no)
             self._add_all_renames_to_mapper(renames, s, new_s_name)
 
         self._add_all_renames_to_mapper(renames, name, new_name)
+
         self.rename_from_mapper(renames)
 
         if self._dimensions_comp and not self._dimensions_comp == 'ignore':
