@@ -4577,8 +4577,8 @@ class DataSet(object):
         Returns
         -------
         None
-            DataSet is modified inplace. The new name reference is placed into
-            both the data and meta component.
+            DataSet is modified inplace. The new name reference replaces the
+            original one.
         """
         renames = {}
         if new_name in self._data.columns:
