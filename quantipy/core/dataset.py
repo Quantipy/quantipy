@@ -5492,7 +5492,7 @@ class DataSet(object):
                         p_obj.update({tk: p_text})
             n_items = []
             for item in self._meta['masks'][parent]['items']:
-                if name in item['source']:
+                if name == item['source']:
                     i_textobj = item['text']
                     for tk in text_key:
                         if axis_edit:
