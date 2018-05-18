@@ -286,7 +286,7 @@ class PptxChain(object):
     This class is a wrapper around Chain() class to prepare for PPTX charting
     """
 
-    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, verbose=True):
+    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', verbose=True):
         """
         :param
             chain: An instance of Chain class
@@ -301,7 +301,7 @@ class PptxChain(object):
         self.source = chain.source
         self._var_name_in_qtext = is_varname_in_qtext
         self.array_style = chain.array_style
-        self.is_grid_summary = False if chain.array_style == -1 else True
+        self.is_grid_summary = True if chain.array_style in [0,1] else False
         if crossbreak:
             if not isinstance(crossbreak, list):
                 crossbreak = [crossbreak]
@@ -313,7 +313,10 @@ class PptxChain(object):
         self.crossbreak = [BASE_COL] if self.is_grid_summary else crossbreak
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes == False else [x[0] for x in self.xbase_indexes]
-        self.total_base = ""
+        self.xbase_count = ""
+        self.xbase_label = ""
+        self.xbase_index = 0
+        self.select_base(base_type=base_type)
         self.chain_df = chain.dataframe if self.is_grid_summary else self._select_crossbreak()
         self.base_description = "" if chain.base_descriptions == None else chain.base_descriptions
         if self.base_description[0:6] == "Base: ": self.base_description = self.base_description[6:]
@@ -350,6 +353,35 @@ class PptxChain(object):
     def __repr__(self):
         return self.__str__()
 
+    def select_base(self,base_type='weighted'):
+        """
+        Sets self.xbase_label and self.xbase_count
+        :param base_type: str
+        :return: None set self
+        """
+        if not self.xbase_indexes:
+            msg = "No 'Base' element found"
+            warnings.warn(msg)
+            return None
+
+        if base_type: base_type = base_type.lower()
+        if not base_type in ['unweighted','weighted']:
+            raise TypeError('base_type misspelled, choose weighted or unweighted')
+
+        cell_contents = [x[2] for x in self.xbase_indexes]
+        if base_type == 'weighted':
+            index = [x for x, items in enumerate(cell_contents) if 'is_weighted' in items]
+        else:
+            index = [x for x, items in enumerate(cell_contents) if not 'is_weighted' in items]
+
+        if not index: index=[0]
+
+        # print "self.xbase_indexes: ", self.xbase_indexes
+        total_base = self.xbase_indexes[index[0]][3]
+        self.xbase_count = float2String(total_base)
+        self.xbase_label = self.xbase_labels[index[0]]
+        self.xbase_index = self.xbase_indexes[index[0]][1]
+
     def _base_indexes(self):
         """
         Returns label and index of bases found in x keys as list
@@ -363,24 +395,24 @@ class PptxChain(object):
         base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
         # Show error if no base elements found
         if not base_indexes:
-            msg = "No 'Base' element found, base size will be set to None"
-            warnings.warn(msg)
+            #msg = "No 'Base' element found, base size will be set to None"
+            #warnings.warn(msg)
             self.xbase_indexes = False
             return None
+
+        cell_contents = [cell_contents[x] for x in base_indexes]
 
         if self.array_style == -1 or self.array_style == 1:
 
             xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain.dataframe.iloc[base_indexes, 0]
 
         else:
 
             xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain.dataframe.iloc[0,base_indexes]
 
-        if self.verbose:
-                print "xlabels", xlabels
-                print "base_indexes", base_indexes
-
-        return zip(xlabels, base_indexes)
+        return zip(xlabels, base_indexes, cell_contents, base_counts)
 
     def _index_map(self):
         """
@@ -416,10 +448,6 @@ class PptxChain(object):
             all_columns = self.chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of the not painted column values for outer level
             if self.chain.axes[1].index(BASE_COL) == 0:
                 all_columns[0] = BASE_COL # Need '@' as the outer column label
-                # Save Total base before dropping '@' if not requested as crossbreak
-                if self.xbase_indexes:
-                    total_base = self.chain.dataframe.iloc[self.xbase_indexes[0][1],0] # TODO select the correct row base
-                    self.total_base = float2String(total_base)
 
             column_selection = []
             for cb in self.crossbreak:
@@ -514,7 +542,7 @@ class PptxChain(object):
         :return:
         """
         # Base_label
-        base_label = self.xbase_labels[0] #TODO Select correct base label, currently always selecting first
+        base_label = self.xbase_label
 
         if self.base_description:
             base_label = u"{}{}".format(base_label,base_label_suf)
@@ -555,7 +583,7 @@ class PptxChain(object):
                     base_value_text = base_value_text[len(base_value_label_sep):]
             else:
                 if not self.is_grid_summary:
-                    base_value_text = u"({})".format(self.total_base)
+                    base_value_text = u"({})".format(self.xbase_count)
 
         # Final base text
         if not self.is_grid_summary:
@@ -736,10 +764,9 @@ class PptxChain(object):
         :return: ybases - list of tuples [(base label, base size)]
         """
 
-        if not self.is_grid_summary:
+        base_index = self.xbase_index
 
-            # Pick the right base row, according to specs - TODO
-            base_index = self.xbase_indexes[0][1]
+        if not self.is_grid_summary:
 
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.iloc[base_index, :].values.tolist()
@@ -749,9 +776,6 @@ class PptxChain(object):
 
         else: # Array summary
             # Find base columns
-
-            # Pick the right base row, according to specs - TODO
-            base_index = self.xbase_indexes[0][1]
 
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.T.iloc[base_index,:].values.tolist()
