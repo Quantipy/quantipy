@@ -436,7 +436,11 @@ class PptxPainter(object):
 
         # =============================== Fixed y axis
         # TODO Will affect legend, will have to adjust legend manually (mainly a grid summary issue)
-        if fix_yaxis: self.fix_yaxis(chart, 'center')
+        if fix_yaxis:
+            if has_legend:
+                self.fix_yaxis(chart, 'center', legend=legend_position)
+            else:
+                self.fix_yaxis(chart, 'center')
 
         # =============================== Chart title
         # Hmm, added but not sure if ever needed
@@ -739,25 +743,39 @@ class PptxPainter(object):
 
         return font
 
-    def fix_yaxis(self, chart, fix_point):
+    def fix_yaxis(self, chart, fix_point, legend=None):
         """
         Method to fix the vertical axis in a charts plotArea
         :param
             chart:      An instance of a Chart object
-            fix_point:  Where to fix the vertical axis
+            fix_point:  Where to fix the vertical axis (Not implemented - TODO)
         :return: None, will edit the plotArea in place
         """
-        xml_string = """<c:layout xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
-        <c:manualLayout>
-        <c:layoutTarget val="inner"/>
-        <c:xMode val="edge"/>
-        <c:yMode val="edge"/>
-        <c:x val="0.41682566853056413"/>
-        <c:y val="3.3743961352657004E-2"/>
-        <c:w val="0.55661636045494312"/>
-        <c:h val="0.89697898550724642"/>
-        </c:manualLayout>
-        </c:layout>"""
+
+        if legend=='right':
+            xml_string = """<c:layout xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+            <c:manualLayout>
+            <c:layoutTarget val="inner"/>
+            <c:xMode val="edge"/>
+            <c:yMode val="edge"/>
+            <c:x val="0.41682566853056413"/>
+            <c:y val="3.3743961352657004E-2"/>
+            <c:w val="0.45661636045494312"/>
+            <c:h val="0.89697898550724642"/>
+            </c:manualLayout>
+            </c:layout>"""
+        else:
+            xml_string = """<c:layout xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+            <c:manualLayout>
+            <c:layoutTarget val="inner"/>
+            <c:xMode val="edge"/>
+            <c:yMode val="edge"/>
+            <c:x val="0.41682566853056413"/>
+            <c:y val="3.3743961352657004E-2"/>
+            <c:w val="0.55661636045494312"/>
+            <c:h val="0.89697898550724642"/>
+            </c:manualLayout>
+            </c:layout>"""
 
         xml_insert = etree.fromstring(xml_string)
         chart._element.plotArea.append(xml_insert)
