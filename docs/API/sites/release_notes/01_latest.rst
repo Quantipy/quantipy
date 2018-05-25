@@ -34,6 +34,22 @@ are found, ``names()`` will simply return ``DataSet.variables()``.
 
 """"
 
+**Update**: Handling verbatims in ``qp.Batch``
+
+Instead of holding the well prepared open-end dataframe in ``batch.verbatims``,
+the attribute is now filled by ``batch.add_open_ends()`` with instructions to
+create the open-end dataframe. It is easier to to modify/ overwrite existing
+verbatims. Therefore also a new parameter is included ``overwrite=True``.
+
+""""
+
+**Update**: ``Batch.copy(..., b_filter=None, as_addition=False)``
+
+It is now possible to define an additional filter for a copied batch and also
+to set it as addition to the master batch.
+
+""""
+
 **Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
 
 !!! MORE TEXT HERE !!!
