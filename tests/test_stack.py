@@ -1116,7 +1116,7 @@ class TestStackObject(unittest.TestCase):
         b2.add_x(['q1', 'q6'])
         b2.add_y(['gender', 'q2'])
         b2.set_weights('weight_b')
-        b2.transpose_arrays('q6')
+        b2.transpose_arrays('q6', True)
         b3.add_x(['q1', 'q7'])
         b3.add_y(['q2b'])
         b3.add_y_on_y('y_on_y')
