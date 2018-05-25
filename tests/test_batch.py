@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 31)
+		self.assertEqual(len(_get_meta(batch1).keys()), 30)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -61,7 +61,7 @@ class TestBatch(unittest.TestCase):
 		attr = ['xks', 'yks', 'filter', 'filter_names',
 				'x_y_map', 'x_filter_map', 'y_on_y',
 				'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
-				'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
+				'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 				'cell_items', 'weights', 'sigproperties', 'additional',
 				'sample_size', 'language', 'name', 'total']
@@ -131,12 +131,14 @@ class TestBatch(unittest.TestCase):
 						  True, False, True, 'open ends', None)
 		batch.add_filter('men only', {'gender': 1})
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
-		b_meta = _get_meta(batch)
-		self.assertEqual(b_meta['verbatims']['open ends'].shape, (40, 3))
-		self.assertEqual(b_meta['verbatim_names'], ['q8a', 'q9a'])
+		verbatims = _get_meta(batch)['verbatims'][0]
+		self.assertEqual(len(verbatims['idx']), 118)
+		self.assertEqual(verbatims['columns'], ['RecordNo', 'q8a', 'q9a'])
+		self.assertEqual(verbatims['title'], 'open ends')
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', split=True,
-							title=['open ends', 'open ends2'])
-		self.assertEqual(b_meta['verbatims'].keys(), ['open ends', 'open ends2'])
+							title=['open ends', 'open ends2'], overwrite=True)
+		verbatims = _get_meta(batch)['verbatims']
+		self.assertEqual(len(verbatims), 2)
 
 	def test_add_filter(self):
 		batch, ds = _get_batch('test', full=True)
@@ -162,6 +164,7 @@ class TestBatch(unittest.TestCase):
 	def test_copy(self):
 		batch1, ds = _get_batch('test', full=True)
 		batch2 = batch1.copy('test_copy')
+		batch3 = batch1.copy('test_copy2', as_addition=True)
 		attributes = ['xks', 'yks', 'filter', 'filter_names', 'x_y_map',
 				      'x_filter_map', 'y_on_y', 'forced_names', 'summaries',
 					  'transposed_arrays', 'extended_yks_global', 'extended_yks_per_x',
@@ -172,8 +175,8 @@ class TestBatch(unittest.TestCase):
 			value = batch1.__dict__[a]
 			value2 = batch2.__dict__[a]
 			self.assertEqual(value, value2)
-		self.assertEqual(batch2.verbatims, OrderedDict())
-		self.assertEqual(batch2.verbatim_names, [])
+		self.assertEqual(batch3.verbatims, [])
+		self.assertEqual(batch3.additional, True)
 		self.assertEqual(_get_meta(batch2)['name'], 'test_copy')
 
 	def test_as_addition(self):
@@ -183,8 +186,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(_get_meta(batch1)['additions'], ['test2'])
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['additional'], True)
-		self.assertEqual(b_meta['verbatims'], {})
-		self.assertEqual(b_meta['verbatim_names'], [])
+		self.assertEqual(b_meta['verbatims'], [])
 		self.assertEqual(b_meta['y_on_y'], [])
 
 	def test_set_cell_items(self):
