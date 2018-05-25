@@ -609,6 +609,12 @@ class Batch(qp.DataSet):
         None
         """
         filter_name = filter_name.encode('utf-8', errors='ignore')
+        if any(filter_name in b['filter_names'] and
+               not b['filter'][filter_name] == filter_logic
+               for b in self._meta['sets']['batches'].values()
+               if not b['name'] == self.name):
+            msg = "filter_name is already used in an other batch with an other logic"
+            raise ValueError(msg)
         if not (filter_name in self.filter_names or self.filter == 'no_filter'):
             old_name = self.filter.keys()[0]
             n_filter = old_name + ' - ' + filter_name
