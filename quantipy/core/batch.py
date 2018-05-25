@@ -511,7 +511,7 @@ class Batch(qp.DataSet):
 
     @modify(to_list='arrays')
     @verify(variables={'arrays': 'masks'})
-    def transpose_arrays(self, arrays, replace=True):
+    def transpose_arrays(self, arrays, replace=False):
         """
         Transposed summary tables are created for defined arrays.
 

@@ -216,7 +216,7 @@ class TestBatch(unittest.TestCase):
 		batch.make_summaries(None)
 		self.assertEqual(b_meta['summaries'], [])
 		batch.transpose_arrays(['q5', 'q6'], False)
-		batch.transpose_arrays(['q14_2', 'q14_3'])
+		batch.transpose_arrays(['q14_2', 'q14_3'], True)
 		self.assertEqual(b_meta['summaries'], ['q5', 'q6', 'q14_2', 'q14_3'])
 		t_a = {'q14_2': True, 'q14_3': True, 'q5': False, 'q6': False}
 		self.assertEqual(b_meta['transposed_arrays'], t_a)
