@@ -432,7 +432,7 @@ class PptxChain(object):
         else:
             painted_index = self.chain.dataframe.columns.get_level_values(-1).tolist()
 
-        return dict(zip(unpainted_index, painted_index))
+        return zip(unpainted_index, painted_index)
 
     def _select_crossbreak(self):
         """
