@@ -156,7 +156,6 @@ class Batch(qp.DataSet):
         self.remove_items = not_implemented(qp.DataSet.remove_items.__func__)
         self.set_missings = not_implemented(qp.DataSet.set_missings.__func__)
 
-
     def _update(self):
         """
         Update Batch metadata with Batch attributes.
@@ -229,6 +228,28 @@ class Batch(qp.DataSet):
             batch_copy.as_addition(self.name)
         batch_copy._update()
         return batch_copy
+
+    def remove(self):
+        """
+        Remove instance from meta object.
+        """
+        name = self.name
+        del(self._meta['sets']['batches'][name])
+        self = None
+        print "Batch '%s' is removed from meta-object." % name
+        return None
+
+    def rename(self, new_name):
+        """
+        Rename instance.
+        """
+        if new_name in self._meta['sets']['batches']:
+            raise KeyError("'%s' is already included!" % new_name)
+        batches = self._meta['sets']['batches']
+        batches[new_name] = batches.pop(self.name)
+        self.name = new_name
+        self._update()
+        return None
 
     @modify(to_list='ci')
     def set_cell_items(self, ci):
