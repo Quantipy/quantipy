@@ -236,7 +236,8 @@ class Batch(qp.DataSet):
         name = self.name
         del(self._meta['sets']['batches'][name])
         self = None
-        print "Batch '%s' is removed from meta-object." % name
+        if self._verbose_infos:
+            print "Batch '%s' is removed from meta-object." % name
         return None
 
     def rename(self, new_name):
