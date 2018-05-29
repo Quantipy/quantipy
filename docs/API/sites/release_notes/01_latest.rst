@@ -34,6 +34,21 @@ are found, ``names()`` will simply return ``DataSet.variables()``.
 
 """"
 
+**New**: ``Batch.remove()``
+
+Not needed batches can be removed from ``meta``, so they are not aggregated
+anymore.
+
+""""
+
+**New**: ``Batch.rename(new_name)``
+
+Sometimes standard batches have long/ complex names. They can now be changed
+into a custom name. Please take into account, that for most hubs the name of
+omnibus batches should look like 'client ~ topic'.
+
+""""
+
 **Update**: Handling verbatims in ``qp.Batch``
 
 Instead of holding the well prepared open-end dataframe in ``batch.verbatims``,
@@ -49,6 +64,7 @@ It is now possible to define an additional filter for a copied batch and also
 to set it as addition to the master batch.
 
 """"
+
 
 **Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
 
