@@ -310,7 +310,7 @@ class PptxChain(object):
             crossbreak = [BASE_COL]
         self.name = chain.name
         self.x_key_short_name = self._get_short_question_name()
-        self.crossbreak = [BASE_COL] if self.is_grid_summary else crossbreak
+        self.crossbreak = crossbreak
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes == False else [x[0] for x in self.xbase_indexes]
         self.xbase_count = ""
@@ -416,7 +416,7 @@ class PptxChain(object):
 
     def _index_map(self):
         """
-        Map not painted index with painted index into a dictionary
+        Map not painted index with painted index into a list of tuples (notpainted, painted)
         :return:
         """
         if self.chain.painted:  # UnPaint if painted
@@ -521,7 +521,7 @@ class PptxChain(object):
         else:
 
             # grab row labels
-            index_labels = self.chain_df.columns.get_level_values(-1)
+            index_labels = self.chain_df.columns.get_level_values('Values')
 
             # Edit labels
             new_labels_list = {}
@@ -771,7 +771,7 @@ class PptxChain(object):
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.iloc[base_index, :].values.tolist()
             base_values = float2String(base_values)
-            base_labels = list(self.chain_df.columns.get_level_values(-1))
+            base_labels = list(self.chain_df.columns.get_level_values('Values'))
             bases = zip(base_labels, base_values)
 
         else: # Array summary
