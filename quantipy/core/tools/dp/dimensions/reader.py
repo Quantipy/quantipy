@@ -362,8 +362,7 @@ def get_meta_values(xml, column, data, map_values=True):
     byProperty_values = []
     for cat in categories:
         cat_name = cat.get('name')
-        mapped_value = re.search('a[0-9]+$', cat_name)
-        print '---', column, mapped_value
+        mapped_value = re.search('a(minus)?[0-9]+$', cat_name)
         if mapped_value is None:
             byName = False
         else:
@@ -384,7 +383,7 @@ def get_meta_values(xml, column, data, map_values=True):
         if len(byName_values) != len(set(byName_values)):
             byName = False
         try:
-            byName_values = [int(v) for v in byName_values]
+            byName_values = [int(v.replace('minus', '-')) for v in byName_values]
         except:
             byName = False
 
