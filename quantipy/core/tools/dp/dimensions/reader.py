@@ -363,6 +363,7 @@ def get_meta_values(xml, column, data, map_values=True):
     for cat in categories:
         cat_name = cat.get('name')
         mapped_value = re.search('a[0-9]+$', cat_name)
+        print '---', column, mapped_value
         if mapped_value is None:
             byName = False
         else:
