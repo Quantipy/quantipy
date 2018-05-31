@@ -415,7 +415,7 @@ def convert_categorical(categorical):
     if not cat.dtype == 'object':
         cat = cat.apply(lambda x:
                         '{}{}'.format(resp_prefix, 
-                                      int(x) if int(x) > 0 else
+                                      int(x) if int(x) > -1 else
                                       'minus{}'.format(-1 * int(x)))
                         if not np.isnan(x) else np.NaN)
     else:
