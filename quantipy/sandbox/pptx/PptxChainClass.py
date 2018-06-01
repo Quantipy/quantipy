@@ -645,7 +645,7 @@ class PptxChain(object):
         :return:
         """
         if not self.is_grid_summary:
-            for cb in crossbreaks:
+            for cb in crossbreaks[:]:
                 if cb not in chain.axes[1]:
                     crossbreaks.remove(cb)
                     if self.verbose:
@@ -653,7 +653,8 @@ class PptxChain(object):
                         warnings.warn(msg)
             if crossbreaks == []: crossbreaks = None
         else:
-            crossbreaks = None
+            pass # just ignore checking if Grid Summary
+            #crossbreaks = None
 
         return uniquify(crossbreaks) if crossbreaks is not None else [BASE_COL]
 
