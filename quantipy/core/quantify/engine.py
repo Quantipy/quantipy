@@ -2242,6 +2242,8 @@ class Test(object):
                 values = [np.NaN]
             if self.no_diffs and not self.no_pairs:
                 values[:] = np.NaN
+            if self.test_total and not self.no_pairs:
+                values = values[:, 1:]
         return  pd.DataFrame(values,
                              index=self.multiindex[0],
                              columns=self.multiindex[1])
