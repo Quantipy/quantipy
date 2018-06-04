@@ -30,7 +30,6 @@ in respect to case sensitivity but have otherwise identical names. Calling
 variants under the respective ``str.lower()`` version. If no semi-duplicates
 are found, ``names()`` will simply return ``DataSet.variables()``.
 
-
 Lastly, ``resolve_name()`` can be used to return the "proper", existing representation(s) of a given variable name's spelling.
 
 """"
@@ -53,8 +52,9 @@ to set it as addition to the master batch.
 
 **Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
 
-!!! MORE TEXT HERE !!!
-
+A new parameter called ``regroup`` will instruct reordering all newly created
+variables into their logical position of the datasets main variable order, i.e.
+attempting to place *derived* variables after the originating *parent* ones.
 
 """"
 
