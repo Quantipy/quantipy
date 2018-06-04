@@ -30,7 +30,8 @@ in respect to case sensitivity but have otherwise identical names. Calling
 variants under the respective ``str.lower()`` version. If no semi-duplicates
 are found, ``names()`` will simply return ``DataSet.variables()``.
 
-!!! MORE TEXT HERE !!!
+
+Lastly, ``resolve_name()`` can be used to return the "proper", existing representation(s) of a given variable name's spelling.
 
 """"
 
@@ -54,11 +55,6 @@ to set it as addition to the master batch.
 
 !!! MORE TEXT HERE !!!
 
-""""
-
-**Update**: ``DataSet.from_batch()`` now creating predictable variable orders.
-
-!!! MORE TEXT HERE !!!
 
 """"
 
