@@ -2010,7 +2010,10 @@ class Stack(defaultdict):
                             for ys in y:
                                 link = self[dk][f_key][x][ys]
                                 for view in link.keys():
-                                    if view.split('|')[-1] == 'net':
+                                    is_net = view.split('|')[-1] == 'net'
+                                    has_w = view.split('|')[-2]
+                                    if not has_w: has_w = None
+                                    if is_net and has_w in f_dict.keys():
                                         del link[view]
                         # add unweighted views for counts/ nets
                         if unwgt_c and counts_nets and not None in w:
@@ -2029,7 +2032,6 @@ class Stack(defaultdict):
                                     for view in [pct, counts]:
                                         if view in link:
                                             del link[view]
-
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',

@@ -30,19 +30,46 @@ in respect to case sensitivity but have otherwise identical names. Calling
 variants under the respective ``str.lower()`` version. If no semi-duplicates
 are found, ``names()`` will simply return ``DataSet.variables()``.
 
-!!! MORE TEXT HERE !!!
+Lastly, ``resolve_name()`` can be used to return the "proper", existing representation(s) of a given variable name's spelling.
+
+""""
+
+**New**: ``Batch.remove()``
+
+Not needed batches can be removed from ``meta``, so they are not aggregated
+anymore.
+
+""""
+
+**New**: ``Batch.rename(new_name)``
+
+Sometimes standard batches have long/ complex names. They can now be changed
+into a custom name. Please take into account, that for most hubs the name of
+omnibus batches should look like 'client ~ topic'.
+
+""""
+
+**Update**: Handling verbatims in ``qp.Batch``
+
+Instead of holding the well prepared open-end dataframe in ``batch.verbatims``,
+the attribute is now filled by ``batch.add_open_ends()`` with instructions to
+create the open-end dataframe. It is easier to to modify/ overwrite existing
+verbatims. Therefore also a new parameter is included ``overwrite=True``.
+
+""""
+
+**Update**: ``Batch.copy(..., b_filter=None, as_addition=False)``
+
+It is now possible to define an additional filter for a copied batch and also
+to set it as addition to the master batch.
 
 """"
 
 **Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
 
-!!! MORE TEXT HERE !!!
-
-""""
-
-**Update**: ``DataSet.from_batch()`` now creating predictable variable orders.
-
-!!! MORE TEXT HERE !!!
+A new parameter called ``regroup`` will instruct reordering all newly created
+variables into their logical position of the dataset's main variable order, i.e.
+attempting to place *derived* variables after the *originating* ones.
 
 """"
 

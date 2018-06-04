@@ -17,7 +17,7 @@ from quantipy.core.tools.view.logic import (
     not_any, not_all, not_count,
     is_lt, is_ne, is_gt,
     is_le, is_eq, is_ge,
-    union, intersection)
+    union, intersection, get_logic_index)
 
 def meta_editor(self, dataset_func):
     """
@@ -69,6 +69,8 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
+    if dataset_func.func_name in ['hiding', 'slicing']:
+        self._update()
     return edit
 
 def not_implemented(dataset_func):
@@ -101,6 +103,9 @@ class Batch(qp.DataSet):
         self._verbose_errors = dataset._verbose_errors
         self._verbose_infos = dataset._verbose_infos
 
+        # RENAMED DataSet methods
+        self._dsfilter = qp.DataSet.filter.__func__
+
         if sets['batches'].get(name):
             if self._verbose_infos:
                 print "Load Batch '{}'.".format(name)
@@ -125,8 +130,8 @@ class Batch(qp.DataSet):
             self.summaries = []
             self.transposed_arrays = {}
             self.skip_items = []
-            self.verbatims = OrderedDict()
-            self.verbatim_names = []
+            self.verbatims = []
+            # self.verbatim_names = []
             self.set_cell_items(ci)   # self.cell_items
             self.unwgt_counts = False
             self.set_weights(weights) # self.weights
@@ -145,14 +150,11 @@ class Batch(qp.DataSet):
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
         self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
         self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
-        # RENAMED DataSet methods
-        self._dsfilter = qp.DataSet.filter.__func__
         # UNALLOWED DataSet methods
         self.add_meta = not_implemented(qp.DataSet.add_meta.__func__)
         self.derive = not_implemented(qp.DataSet.derive.__func__)
         self.remove_items = not_implemented(qp.DataSet.remove_items.__func__)
         self.set_missings = not_implemented(qp.DataSet.set_missings.__func__)
-
 
     def _update(self):
         """
@@ -165,7 +167,7 @@ class Batch(qp.DataSet):
         for attr in ['xks', 'yks', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
-                     'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
+                     'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
@@ -180,7 +182,7 @@ class Batch(qp.DataSet):
         for attr in ['xks', 'yks', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
-                     'verbatim_names', 'extended_yks_global', 'extended_yks_per_x',
+                     'extended_yks_global', 'extended_yks_per_x',
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
@@ -188,7 +190,7 @@ class Batch(qp.DataSet):
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
-    def copy(self, name):
+    def copy(self, name, b_filter=None, as_addition=False):
         """
         Create a copy of Batch instance.
 
@@ -196,6 +198,11 @@ class Batch(qp.DataSet):
         ----------
         name: str
             Name of the Batch instance that is copied.
+        b_filter: tuple (str, dict/ complex logic)
+            Filter logic which is applied on the new batch.
+            (filtername, filterlogic)
+        as_addition: bool, default False
+            If True, the new batch is added as addition to the master batch.
 
         Returns
         -------
@@ -209,17 +216,41 @@ class Batch(qp.DataSet):
         batch_copy = self.get_batch(name)
         self.set_verbose_infomsg(verbose)
         batch_copy.set_verbose_infomsg(verbose)
-        if len(batch_copy.verbatims):
-            batch_copy.verbatims = {}
-            batch_copy.verbatim_names = []
-            if self._verbose_infos:
-                warning = ("Copied Batch '{}' contains open end data summaries...\n"
-                           "Any filters added to the copy will not persist "
-                           "on verbatims so they have been removed! "
-                           "Please add them again!")
-                warnings.warn(warning.format(name))
+        if b_filter:
+            batch_copy.add_filter(b_filter[0], b_filter[1])
+        if batch_copy.verbatims and b_filter and not as_addition:
+            for oe in batch_copy.verbatims:
+                data = self._data.copy()
+                series_data = data['@1'].copy()[pd.Index(oe['idx'])]
+                slicer, _ = get_logic_index(series_data, b_filter[1], data)
+                oe['idx'] = slicer.tolist()
+        if as_addition:
+            batch_copy.as_addition(self.name)
         batch_copy._update()
         return batch_copy
+
+    def remove(self):
+        """
+        Remove instance from meta object.
+        """
+        name = self.name
+        del(self._meta['sets']['batches'][name])
+        if self._verbose_infos:
+            print "Batch '%s' is removed from meta-object." % name
+        self = None
+        return None
+
+    def rename(self, new_name):
+        """
+        Rename instance.
+        """
+        if new_name in self._meta['sets']['batches']:
+            raise KeyError("'%s' is already included!" % new_name)
+        batches = self._meta['sets']['batches']
+        batches[new_name] = batches.pop(self.name)
+        self.name = new_name
+        self._update()
+        return None
 
     @modify(to_list='ci')
     def set_cell_items(self, ci):
@@ -340,8 +371,7 @@ class Batch(qp.DataSet):
         """
         self._meta['sets']['batches'][batch_name]['additions'].append(self.name)
         self.additional = True
-        self.verbatims = {}
-        self.verbatim_names = []
+        self.verbatims = []
         self.y_on_y = []
         self.y_on_y_filter = {}
         if self._verbose_infos:
@@ -503,7 +533,7 @@ class Batch(qp.DataSet):
 
     @modify(to_list='arrays')
     @verify(variables={'arrays': 'masks'})
-    def transpose_arrays(self, arrays, replace=True):
+    def transpose_arrays(self, arrays, replace=False):
         """
         Transposed summary tables are created for defined arrays.
 
@@ -601,6 +631,12 @@ class Batch(qp.DataSet):
         None
         """
         filter_name = filter_name.encode('utf-8', errors='ignore')
+        if any(filter_name in b['filter_names'] and
+               not b['filter'][filter_name] == filter_logic
+               for b in self._meta['sets']['batches'].values()
+               if not b['name'] == self.name):
+            msg = "filter_name is already used in an other batch with an other logic"
+            raise ValueError(msg)
         if not (filter_name in self.filter_names or self.filter == 'no_filter'):
             old_name = self.filter.keys()[0]
             n_filter = old_name + ' - ' + filter_name
@@ -624,12 +660,11 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
-
     @modify(to_list=['oe', 'break_by', 'title'])
     @verify(variables={'oe': 'columns', 'break_by': 'columns'})
     def add_open_ends(self, oe, break_by=None, drop_empty=True, incl_nan=False,
                       replacements=None, split=False, title='open ends',
-                      filter_by=None):
+                      filter_by=None, overwrite=True):
         """
         Create respondent level based listings of open-ended text data.
 
@@ -656,6 +691,9 @@ class Batch(qp.DataSet):
             An additional logical filter that should be applied to the case data.
             Any ``filter`` provided by a ``batch`` will be respected
             automatically.
+        overwrite : bool, default False
+            If True and used title is already existing in self.verbatims, then
+            it gets overwritten
 
         Returns
         -------
@@ -664,34 +702,34 @@ class Batch(qp.DataSet):
         if self.additional:
             err_msg = "Cannot add open end DataFrames to as_addition()-Batches!"
             raise NotImplementedError(err_msg)
-        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by):
-            columns = break_by + oe
-            oe_data = self._data.copy()
+        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
             if self.filter != 'no_filter':
-                ds = qp.DataSet('open_ends')
-                ds.from_components(oe_data, self._meta, reset=False)
-                slicer = ds.take(self.filter.values()[0])
-                oe_data = oe_data.loc[slicer, :]
-            if filter_by:
-                ds = qp.DataSet('open_ends')
-                ds.from_components(oe_data, self._meta, reset=False)
-                slicer = ds.take(filter_by)
-                oe_data = oe_data.loc[slicer, :]
-            oe_data = oe_data[columns]
-            if replacements:
-                for target, repl in replacements.items():
-                    oe_data.replace(target, repl, inplace=True)
-            for col in columns:
-                oe_data[col] = oe_data[col].map(lambda x:
-                                                x if isinstance(x, (int, long, float)) else
-                                                str(x).replace('=',''))
-            if drop_empty:
-                oe_data.dropna(subset=oe, how='all', inplace=True)
-            if not incl_nan:
-                for col in oe:
-                    oe_data[col].replace(np.NaN, '', inplace=True)
-            self.verbatims[title] = oe_data
-            self.verbatim_names.extend(oe)
+                ds = qp.DataSet('open_end')
+                ds.from_components(self._data, self._meta, reset=False)
+                f = self.filter.values()[0]
+                if filter_by: f = intersection([f, filter_by])
+                slicer = ds.take(f).tolist()
+            elif filter_by:
+                f = filter_by
+                slicer = ds.take(f).tolist()
+            else:
+                slicer = self._data.index.tolist()
+            if any(oe['title'] == title for oe in self.verbatims) and not overwrite:
+                print 'Cannot include %s, as it is already included' % title
+                return None
+            oe = {
+                'title': title,
+                'idx': slicer,
+                'columns': break_by + oe,
+                'incl_nan': incl_nan,
+                'drop_empty': drop_empty,
+                'replace': replacements}
+            if any(o['title'] == title for o in self.verbatims):
+                for x, o in enumerate(self.verbatims):
+                    if o['title'] == title:
+                        self.verbatims[x] = oe
+            else:
+                self.verbatims.append(oe)
 
         if split:
             if not len(oe) == len(title):
@@ -699,9 +737,9 @@ class Batch(qp.DataSet):
                 raise ValueError(msg)
             for t, open_end in zip(title, oe):
                 open_end = [open_end]
-                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by)
+                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite)
         else:
-            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by)
+            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite)
         self._update()
         return None
 
@@ -876,11 +914,14 @@ class Batch(qp.DataSet):
                 if x in self.summaries and not self.transposed_arrays.get(x):
                     mapping.append((x, ['@']))
                 if not x in self.skip_items:
+                    try:
+                        hiding = self.meta_edits[x]['rules']['x']['dropx']['values']
+                    except:
+                        hiding = self._get_rules(x).get('dropx', {}).get('values', [])
                     for x2 in self.sources(x):
-                        # Added another check because the source could be not
-                        # relevant any longer due to hiding of the variables,
-                        # which removes it from self.xks
-                        if x2 in self.xks:
+                        if x2 in hiding:
+                            continue
+                        elif x2 in self.xks:
                             mapping.append((x2, _get_yks(x2)))
                 if x in self.transposed_arrays:
                     mapping.append(('@', [x]))

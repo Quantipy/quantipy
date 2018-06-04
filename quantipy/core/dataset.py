@@ -838,7 +838,10 @@ class DataSet(object):
                 for y in batchdef[add_y_coll].values:
                     if not y in ys: ys.append(y)
         if '@' in ys: ys.remove('@')
-        oe = batchdef['verbatim_names']
+        oe = []
+        for verbatim in batchdef['verbatims']:
+            oe += verbatim['columns']
+        oe = list(set(oe))
         w = batchdef['weights']
         if None in w:
             w.remove(None)
@@ -1009,7 +1012,10 @@ class DataSet(object):
 
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
-            variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
+            variables += ba['xks'] + ba['yks']
+            for oe in ba['verbatims']:
+                variables += oe['columns']
+            variables += ba['weights']
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
         if filter_vars: variables += filter_vars
@@ -4573,14 +4579,12 @@ class DataSet(object):
             or ``meta['masks']``.
         new_name : str
             The new variable name.
-        verify_name : bool, default True
-            If False the ``new_name`` will not be matched agaist any Dimensions
 
         Returns
         -------
         None
-            DataSet is modified inplace. The new name reference is placed into
-            both the data and meta component.
+            DataSet is modified inplace. The new name reference replaces the
+            original one.
         """
         renames = {}
         if new_name in self._data.columns:
@@ -4591,11 +4595,15 @@ class DataSet(object):
             self.undimensionize([name] + self.sources(name))
             name = self._dims_free_arr_name(name)
 
-        for s in self.sources(name):
-            new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
+        for no, s in enumerate(self.sources(name), start=1):
+            if '_' in s and s.split('_')[-1].isdigit():
+                new_s_name = '{}_{}'.format(new_name, s.split('_')[-1])
+            else:
+                new_s_name = '{}_{}'.format(new_name, no)
             self._add_all_renames_to_mapper(renames, s, new_s_name)
 
         self._add_all_renames_to_mapper(renames, name, new_name)
+
         self.rename_from_mapper(renames)
 
         if self._dimensions_comp and not self._dimensions_comp == 'ignore':
@@ -5490,7 +5498,7 @@ class DataSet(object):
                         p_obj.update({tk: p_text})
             n_items = []
             for item in self._meta['masks'][parent]['items']:
-                if name in item['source']:
+                if name == item['source'].split('@')[-1]:
                     i_textobj = item['text']
                     for tk in text_key:
                         if axis_edit:
@@ -6192,8 +6200,9 @@ class DataSet(object):
         """
         meta = self._meta
         new_meta = self.start_meta(self.text_key)
-        new_meta['info']['name'] = '{}_derotate'.format(meta['info']['name'])
-
+        new_meta['info']['dataset'] = {'name': ''}
+        dname = '{}_derotate'.format(meta['info']['dataset']['name'])
+        new_meta['info']['dataset']['name'] = dname
         for var in other:
             new_meta = self._assume_meta(new_meta, var, var)
 
