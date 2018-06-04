@@ -65,12 +65,11 @@ to set it as addition to the master batch.
 
 """"
 
-
 **Update**: Regrouping the variable list using ``DataSet.order(..., regroup=True)``
 
 A new parameter called ``regroup`` will instruct reordering all newly created
-variables into their logical position of the datasets main variable order, i.e.
-attempting to place *derived* variables after the originating *parent* ones.
+variables into their logical position of the dataset's main variable order, i.e.
+attempting to place *derived* variables after the *originating* ones.
 
 """"
 
