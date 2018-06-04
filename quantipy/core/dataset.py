@@ -838,7 +838,10 @@ class DataSet(object):
                 for y in batchdef[add_y_coll].values:
                     if not y in ys: ys.append(y)
         if '@' in ys: ys.remove('@')
-        oe = batchdef['verbatim_names']
+        oe = []
+        for verbatim in batchdef['verbatims']:
+            oe += verbatim['columns']
+        oe = list(set(oe))
         w = batchdef['weights']
         if None in w:
             w.remove(None)
@@ -1009,7 +1012,10 @@ class DataSet(object):
 
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
-            variables += ba['xks'] + ba['yks'] + ba['verbatim_names'] + ba['weights']
+            variables += ba['xks'] + ba['yks']
+            for oe in ba['verbatims']:
+                variables += oe['columns']
+            variables += ba['weights']
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
         if filter_vars: variables += filter_vars
