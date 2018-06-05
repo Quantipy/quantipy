@@ -720,7 +720,8 @@ class Batch(qp.DataSet):
             oe = {
                 'title': title,
                 'idx': slicer,
-                'columns': break_by + oe,
+                'columns': oe,
+                'break_by': break_by,
                 'incl_nan': incl_nan,
                 'drop_empty': drop_empty,
                 'replace': replacements}
