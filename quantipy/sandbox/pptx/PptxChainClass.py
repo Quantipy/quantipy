@@ -336,7 +336,7 @@ class PptxChain(object):
                       '\nGrid summary: {}'
                       '\nQuestion text: {}'
                       '\nBase description: {}'
-                      '\nBase label: {}'  
+                      '\nBase label: {}'
                       '\nBase size: {}'
                       '\nRequested crossbreak: {}'
                       '\n')
@@ -515,7 +515,7 @@ class PptxChain(object):
                 for x, y in zip(index_labels, values):
                     new_labels_list.update({x: x + sep + circumfix[0]+ prefix + str(y) + circumfix[1]})
 
-                self.chain_df.rename(index=new_labels_list, inplace=True)
+                self.chain_df = self.chain_df.rename(columns=new_labels_list)
                 self.vals_in_labels = True
 
         else:
@@ -528,7 +528,7 @@ class PptxChain(object):
             for x, y in zip(index_labels, values):
                 new_labels_list.update({x: x + sep + circumfix[0] + prefix + str(y) + circumfix[1]})
 
-            self.chain_df.rename(columns=new_labels_list, inplace=True)
+            self.chain_df = self.chain_df.rename(columns=new_labels_list)
             self.vals_in_labels = True
 
     def base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", "):
