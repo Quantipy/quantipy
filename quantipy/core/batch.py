@@ -703,9 +703,9 @@ class Batch(qp.DataSet):
             err_msg = "Cannot add open end DataFrames to as_addition()-Batches!"
             raise NotImplementedError(err_msg)
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
+            ds = qp.DataSet('open_end')
+            ds.from_components(self._data, self._meta, reset=False)
             if self.filter != 'no_filter':
-                ds = qp.DataSet('open_end')
-                ds.from_components(self._data, self._meta, reset=False)
                 f = self.filter.values()[0]
                 if filter_by: f = intersection([f, filter_by])
                 slicer = ds.take(f).tolist()
