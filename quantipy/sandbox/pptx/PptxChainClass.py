@@ -515,7 +515,7 @@ class PptxChain(object):
                 for x, y in zip(index_labels, values):
                     new_labels_list.update({x: x + sep + circumfix[0]+ prefix + str(y) + circumfix[1]})
 
-                self.chain_df = self.chain_df.rename(columns=new_labels_list)
+                self.chain_df = self.chain_df.rename(index=new_labels_list)
                 self.vals_in_labels = True
 
         else:
