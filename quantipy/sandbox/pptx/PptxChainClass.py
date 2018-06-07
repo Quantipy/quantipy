@@ -286,7 +286,7 @@ class PptxChain(object):
     This class is a wrapper around Chain() class to prepare for PPTX charting
     """
 
-    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', verbose=True):
+    def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', decimals=2, verbose=True):
         """
         :param
             chain: An instance of Chain class
@@ -294,6 +294,7 @@ class PptxChain(object):
             crossbreak:
         """
         self.verbose = verbose
+        self.decimals = decimals
         self.chain = chain
         self.index_map = self._index_map()
         self.is_mask_item = chain._is_mask_item
@@ -311,13 +312,13 @@ class PptxChain(object):
         self.name = chain.name
         self.x_key_short_name = self._get_short_question_name()
         self.crossbreak = crossbreak
+        self.chain_df = self._select_crossbreak()
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes == False else [x[0] for x in self.xbase_indexes]
         self.xbase_count = ""
         self.xbase_label = ""
         self.xbase_index = 0
         self.select_base(base_type=base_type)
-        self.chain_df = chain.dataframe if self.is_grid_summary else self._select_crossbreak()
         self.base_description = "" if chain.base_descriptions == None else chain.base_descriptions
         if self.base_description[0:6] == "Base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
@@ -378,6 +379,7 @@ class PptxChain(object):
 
         # print "self.xbase_indexes: ", self.xbase_indexes
         total_base = self.xbase_indexes[index[0]][3]
+        total_base = np.around(total_base, decimals=self.decimals)
         self.xbase_count = float2String(total_base)
         self.xbase_label = self.xbase_labels[index[0]]
         self.xbase_index = self.xbase_indexes[index[0]][1]
@@ -463,8 +465,11 @@ class PptxChain(object):
 
             # Slice the dataframes columns based on requested crossbreaks
             df = self.chain.dataframe.iloc[:, column_selection]
+        else:
+            df = self.chain.dataframe
 
-        return df
+        df_rounded = np.around(df, decimals=self.decimals, out=None)
+        return df_rounded
 
     @property
     def ybase_values(self):
@@ -771,6 +776,7 @@ class PptxChain(object):
 
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.iloc[base_index, :].values.tolist()
+            base_values = np.around(base_values, decimals=self.decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.columns.get_level_values('Values'))
             bases = zip(base_labels, base_values)
@@ -780,6 +786,7 @@ class PptxChain(object):
 
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.T.iloc[base_index,:].values.tolist()
+            base_values = np.around(base_values, decimals=self.decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.index.get_level_values(-1))
             bases = zip(base_labels, base_values)
