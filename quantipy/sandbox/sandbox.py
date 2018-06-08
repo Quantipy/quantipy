@@ -673,6 +673,38 @@ class ChainManager(object):
         else:
             return cm
 
+    def cut(self, values, axis='x', painted=True):
+        """
+        TEXT
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        None
+        """
+        idx = pd.IndexSlice
+        if not isinstance(values, list): values = [values]
+        for c in self.chains:
+            if c.painted: c.toggle_labels()
+            if axis == 'y':
+                c._frame = c._frame.sort_index(axis=1).loc[:, idx[:, values]]
+            else:
+                c._frame = c._frame = c._frame.sort_index(axis=0).loc[idx[:, values], :]
+            if painted: c.paint()
+            for v in c.views.copy():
+                for value in values:
+                    if value == 'All':
+                        check_tag = 'cbase'
+                    else:
+                        check_tag = value
+                    if not check_tag in v:
+                        del c.views[v]
+        return None
+
+
+
     def reorder(self, order, folder=None, inplace=True):
         """
         Reorder (folders of) ``qp.Chain`` items by providing a list of new
