@@ -675,10 +675,18 @@ class ChainManager(object):
 
     def cut(self, values, axis='x', painted=True):
         """
-        TEXT
+        Isolate selected axis values in the ``Chain.dataframe``.
 
         Parameters
         ----------
+        values : (list of) str
+            EXPL
+
+        axis : {'x', 'y'}, default 'x'
+            The axis to target.
+
+        painted : bool, default True
+            whether or not to (re)build a "painted" ``Chain.dataframe``.
 
         Returns
         -------
@@ -702,8 +710,6 @@ class ChainManager(object):
                     if not check_tag in v and v in c.views:
                         del c.views[v]
         return None
-
-
 
     def reorder(self, order, folder=None, inplace=True):
         """
