@@ -710,6 +710,19 @@ class ChainManager(object):
                         del c.views[v]
         return None
 
+    def concat(self, x_label='auto', y_label='auto', pos=None, drop=True):
+        """
+        Concatenate **all** ``qp.Chain```elements, merging into single x-axis.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        None
+        """
+        pass
+
     def reorder(self, order, folder=None, inplace=True):
         """
         Reorder (folders of) ``qp.Chain`` items by providing a list of new
