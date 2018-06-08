@@ -460,6 +460,12 @@ class ChainManager(object):
         self._toggle_vis(chains, 'unhide')
         return None
 
+    def clone(self):
+        """
+        Return a full (deep) copy of self.
+        """
+        return copy.deepcopy(self)
+
     def insert(self, other_cm, index=-1, safe_names=False):
         """
         Add elements from another ``ChainManager`` instance to self.
@@ -624,7 +630,7 @@ class ChainManager(object):
         self.__chains = start + items + end
         return None
 
-    def remove(self, chains, folder=None):
+    def remove(self, chains, folder=None, inplace=True):
         """
         Remove (folders of) ``qp.Chain`` items by providing a list of  indices
         or names.
@@ -637,27 +643,37 @@ class ChainManager(object):
         folder : str, default None
             If a folder name is provided, items will be dropped within that
             folder only instead of removing all found instances.
+        inplace : bool, default True
+            By default the new order is applied inplace, set to ``False`` to
+            return a new object instead.
 
         Returns
         -------
         None
         """
+        if inplace:
+            cm = self
+        else:
+            cm = self.clone()
         if folder:
-            org_chains, org_index = self._set_to_folderitems(folder)
+            org_chains, org_index = cm._set_to_folderitems(folder)
         if not isinstance(chains, list): chains = [chains]
-        remove_idxs= [c if isinstance(c, int) else self._idx_from_name(c)
+        remove_idxs= [c if isinstance(c, int) else cm._idx_from_name(c)
                       for c in chains]
-        if self._dupes_in_chainref(remove_idxs):
+        if cm._dupes_in_chainref(remove_idxs):
             err = "Cannot remove with duplicate chain references: {}"
             raise ValueError(err.format(remove_idxs))
         new_items = []
-        for pos, c in enumerate(self):
+        for pos, c in enumerate(cm):
             if not pos in remove_idxs: new_items.append(c)
-        self.__chains = new_items
-        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
-        return None
+        cm.__chains = new_items
+        if folder: cm._rebuild_org_folder(folder, org_chains, org_index)
+        if inplace:
+            return None
+        else:
+            return cm
 
-    def reorder(self, order, folder=None):
+    def reorder(self, order, folder=None, inplace=True):
         """
         Reorder (folders of) ``qp.Chain`` items by providing a list of new
         indices or names.
@@ -672,11 +688,18 @@ class ChainManager(object):
             If a folder name is provided, items will be sorted within that
             folder instead of applying the sorting to the general items
             collection.
+        inplace : bool, default True
+            By default the new order is applied inplace, set to ``False`` to
+            return a new object instead.
 
         Returns
         -------
         None
         """
+        if inplace:
+            cm = self
+        else:
+            cm = self.clone()
         if folder:
             org_chains, org_index = self._set_to_folderitems(folder)
         if not isinstance(order, list):
@@ -688,13 +711,16 @@ class ChainManager(object):
                 new_idx_order.append(o)
             else:
                 new_idx_order.append(self._idx_from_name(o))
-        if self._dupes_in_chainref(new_idx_order):
+        if cm._dupes_in_chainref(new_idx_order):
             err = "Cannot reorder from duplicate qp.Chain references: {}"
             raise ValueError(err.format(new_idx_order))
         items = [self.__chains[idx] for idx in new_idx_order]
-        self.__chains = items
-        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
-        return None
+        cm.__chains = items
+        if folder: cm._rebuild_org_folder(folder, org_chains, org_index)
+        if inplace:
+            return None
+        else:
+            return cm
 
     def rename(self, names, folder=None):
         """
