@@ -712,7 +712,7 @@ class ChainManager(object):
 
     def concat(self, x_label='auto', y_label='auto', pos=None, drop=True):
         """
-        Concatenate **all** ``qp.Chain```elements, merging into single x-axis.
+        Concatenate **all** ``qp.Chain```elements, merging to a single x-axis.
 
         Parameters
         ----------
