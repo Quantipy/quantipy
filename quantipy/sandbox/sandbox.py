@@ -680,11 +680,10 @@ class ChainManager(object):
         Parameters
         ----------
         values : (list of) str
-            EXPL
-
+            The string must indicate the raw (i.e. the unpainted) second level
+            axis value, e.g. ``'mean'``, ``'net_1'``, etc.
         axis : {'x', 'y'}, default 'x'
             The axis to target.
-
         painted : bool, default True
             whether or not to (re)build a "painted" ``Chain.dataframe``.
 
