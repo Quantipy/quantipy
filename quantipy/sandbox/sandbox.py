@@ -699,7 +699,7 @@ class ChainManager(object):
                         check_tag = 'cbase'
                     else:
                         check_tag = value
-                    if not check_tag in v:
+                    if not check_tag in v and v in c.views:
                         del c.views[v]
         return None
 
