@@ -260,6 +260,7 @@ class PptxChain(object):
         self.verbose = verbose
         self.decimals = decimals
         self.chain = chain
+        self.name = chain.name
         self.index_map = self._index_map()
         self.is_mask_item = chain._is_mask_item
         self.x_key_name = chain._x_keys[0]
@@ -267,15 +268,8 @@ class PptxChain(object):
         self._var_name_in_qtext = is_varname_in_qtext
         self.array_style = chain.array_style
         self.is_grid_summary = True if chain.array_style in [0,1] else False
-        if crossbreak:
-            if not isinstance(crossbreak, list):
-                crossbreak = [crossbreak]
-            crossbreak = self._check_crossbreaks(crossbreak)
-        else:
-            crossbreak = [BASE_COL]
-        self.name = chain.name
+        self.crossbreak = self._check_crossbreaks(crossbreak) if crossbreak else [BASE_COL]
         self.x_key_short_name = self._get_short_question_name()
-        self.crossbreak = crossbreak
         self.chain_df = self._select_crossbreak()
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes == False else [x[0] for x in self.xbase_indexes]
@@ -612,6 +606,9 @@ class PptxChain(object):
         :param crossbreaks:
         :return:
         """
+        if not isinstance(crossbreaks, list):
+            crossbreaks = [crossbreaks]
+
         if not self.is_grid_summary:
             for cb in crossbreaks[:]:
                 if cb not in self.chain.axes[1]:
@@ -638,7 +635,7 @@ class PptxChain(object):
                 pattern = '(?<=\[\{).*(?=\}\])'
                 result_list = re.findall(pattern, self.x_key_name)
                 if result_list:
-                    return result_list[0] # TODO Hmm what if more than one level grid
+                    return result_list[0] # TODO Hmm what if grid has more than one level
                 else:
                     return self.x_key_name
 
