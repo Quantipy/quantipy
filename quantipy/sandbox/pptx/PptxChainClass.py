@@ -272,7 +272,7 @@ class PptxChain(object):
         self.x_key_short_name = self._get_short_question_name()
         self.chain_df = self._select_crossbreak()
         self.xbase_indexes = self._base_indexes()
-        self.xbase_labels = ["Base"] if self.xbase_indexes == False else [x[0] for x in self.xbase_indexes]
+        self.xbase_labels = ["Base"] if self.xbase_indexes is None else [x[0] for x in self.xbase_indexes]
         self.xbase_count = ""
         self.xbase_label = ""
         self.xbase_index = 0
@@ -344,8 +344,8 @@ class PptxChain(object):
 
     def _base_indexes(self):
         """
-        Returns label and index of bases found in x keys as list
-        :return: list - self.xbase_indexes
+        Returns a list of label, index, cell_content and value of bases found in x keys.
+        :return: list
         """
 
         cell_contents = self.chain.describe()
@@ -357,7 +357,6 @@ class PptxChain(object):
         if not base_indexes:
             #msg = "No 'Base' element found, base size will be set to None"
             #warnings.warn(msg)
-            self.xbase_indexes = False
             return None
 
         cell_contents = [cell_contents[x] for x in base_indexes]
