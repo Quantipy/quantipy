@@ -261,6 +261,8 @@ class PptxChain(object):
         self.decimals = decimals
         self.chain = chain
         self.name = chain.name
+        self.xkey_levels = chain.dataframe.index.nlevels
+        self.ykey_levels = chain.dataframe.columns.nlevels
         self.index_map = self._index_map()
         self.is_mask_item = chain._is_mask_item
         self.x_key_name = chain._x_keys[0]
@@ -282,8 +284,6 @@ class PptxChain(object):
         self.question_text = self.get_question_text(include_varname=False)
         self.crossbreaks_qtext = []
         self.ybases = self._get_bases()
-        self.xkey_levels = chain.dataframe.index.nlevels
-        self.ykey_levels = chain.dataframe.columns.nlevels
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
