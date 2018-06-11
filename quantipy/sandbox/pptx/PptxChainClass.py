@@ -270,7 +270,7 @@ class PptxChain(object):
         if crossbreak:
             if not isinstance(crossbreak, list):
                 crossbreak = [crossbreak]
-            crossbreak = self._check_crossbreaks(chain, crossbreak)
+            crossbreak = self._check_crossbreaks(crossbreak)
         else:
             crossbreak = [BASE_COL]
         self.name = chain.name
@@ -606,16 +606,15 @@ class PptxChain(object):
         #print (base_text)
         return base_text
 
-    def _check_crossbreaks(self, chain, crossbreaks):
+    def _check_crossbreaks(self, crossbreaks):
         """
-        Checks the existence of the requested crossbreaks
-        :param chain:
+        Checks for existence of the requested crossbreaks
         :param crossbreaks:
         :return:
         """
         if not self.is_grid_summary:
             for cb in crossbreaks[:]:
-                if cb not in chain.axes[1]:
+                if cb not in self.chain.axes[1]:
                     crossbreaks.remove(cb)
                     if self.verbose:
                         msg = 'Requested crossbreak: \'{}\' is not found for chain \'{}\' and will be ignored'.format(cb, chain.name)
