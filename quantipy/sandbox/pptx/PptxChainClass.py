@@ -106,42 +106,6 @@ def is_grid_slice(chain):
         return True
 
 
-def paint(chains, text_key, *args, **kwargs):
-    text_key = text_key['x'][0]
-    chains.paint_all(text_key=text_key, *args, **kwargs)
-
-    for chain in chains:
-        df = chain.dataframe
-        # question text as it is in the dataframe, but without question name
-        xkey = chain._x_keys[0]
-        question_text = chain.dataframe.index[0][0][len(xkey) + 2:]
-        # need the xkey question text from ['masks'] if grid slice
-        if is_grid_slice(chain):
-            # search for the text before and after [{}]. in chain.name
-            pattern = '.*(?=\[\{)|(?<=\}\])\..*'
-            found = re.findall(pattern, chain.name)
-            # Construct grid name from found
-            grid_name = found[0] + found[-1]
-            # Find the grid mask question text
-            grid_text = chain._meta['masks'][grid_name]['text'][text_key]
-            if grid_text in question_text: continue
-            # Construct the new grid slice question text that includes grid mask question text
-            question_text = '{}. {} - {}'.format(chain.name, grid_text, question_text)
-            # Replace xkey index label with the new question text
-            chain.dataframe.rename({df.index.values[0][0]: question_text}, inplace = True)
-
-        # For grids I dont want the question text included in element labels
-        if chain.array_style > -1:
-            for index, row in enumerate(chain.dataframe.index):
-                element_label = row[1]
-                if question_text in element_label:
-                    element_label = element_label.replace(question_text, "").strip()
-                    if element_label[0] == "-":
-                        element_label = element_label[1:].strip()
-
-                chain.dataframe.rename({df.index.values[index][1]: element_label}, inplace=True)
-
-
 def get_indexes_from_list(lst, find, exact=True):
     """
     Helper function that search for element in a list and
