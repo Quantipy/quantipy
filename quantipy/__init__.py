@@ -19,11 +19,15 @@ import quantipy.core.tools.view as v
 # from quantipy.sandbox import sandbox
 
 from quantipy.core.tools.dp.io import (
-    read_quantipy, write_quantipy,
+    read_quantipy,
+    write_quantipy,
     read_ascribe,
     read_decipher,
-    read_dimensions,write_dimensions,
-    read_spss, write_spss)
+    read_dimensions,
+    write_dimensions,
+    read_spss,
+    write_spss,
+    unicoder)
 
 from quantipy.core.quantify.engine import Quantity, Test
 

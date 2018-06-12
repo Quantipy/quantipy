@@ -635,8 +635,8 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
             text_key = meta['lib']['default text']
         else:
             text_key = show
-        if not isinstance(text_key, dict):
-            text_key = {'x': text_key, 'y': text_key}
+        # if not isinstance(text_key, dict):
+        #     text_key = {'x': text_key, 'y': text_key}
         df = paint_dataframe(meta, df, text_key)
 
     if xtotal:
