@@ -229,7 +229,7 @@ def paint_col_values_text(meta, col, values, text_key, axis, add_text_map={}):
                 v_text = unicoder(get_text(val['text'], text_key, axis), like_ascii=True)
             values_text.append(v_text)
 
-    values_text.extend(add_text_map.keys())
+    values_text.extend(add_text_map.values())
     if has_all: values_text = ['All'] + values_text
 
     return values_text
@@ -267,33 +267,24 @@ def paint_array_items_text(meta, mask, items, text_key, axis):
     return items_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_values_text(meta, mask, values, text_key, add_text_map={}):
+def paint_array_values_text(meta, mask, values, text_key, axis, add_text_map={}):
 
-    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key, axis)
 
     # Values text
     values_meta = emulate_meta(meta, meta['masks'][mask]['values'])
-    try:
-        has_all = 'All' in values
-        if has_all: values.remove('All')
+
+    has_all = 'All' in values
+    if has_all: values.remove('All')
+    values_text = []
+    for val in values_meta:
         try:
-            values_map = {
-                val['value']: get_text(val['text'], text_key)
-                for val in values_meta}
+            v_text = get_text(val['text'], text_key, axis)
         except UnicodeEncodeError:
-            values_map = {
-                val['value']: qp.core.tools.dp.io.unicoder(
-                    get_text(val['text'], text_key,
-                    like_ascii=True))
-                for val in values_meta}
-        values_map.update(add_text_map)
-        values_text = [values_map[v] for v in values]
-        if has_all:
-            values_text = ['All'] + values_text
-    except KeyError:
-        values_text = values
-    except ValueError:
-        values_text = values
+            v_text = unicoder(get_text(val['text'], text_key, axis), like_ascii=True)
+        values_text.append(v_text)
+    values_text.extend(add_text_map.values())
+    values_text = ['All'] + values_text
 
     return values_text
 
@@ -310,15 +301,15 @@ def build_multiindex_from_tuples(l0_text, l1_text, names, single_row):
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_items_index(meta, index, text_key, display_names):
+def paint_array_items_index(meta, index, text_key, axis, display_names):
 
     single_row = len(index.values)==1
     levels = get_index_levels(index)
     mask = levels[0]
     items = levels[1]
 
-    mask_text = paint_mask_text(meta, mask, text_key, display_names)
-    items_text = paint_array_items_text(meta, mask, items, text_key)
+    mask_text = paint_mask_text(meta, mask, text_key, axis, display_names)
+    items_text = paint_array_items_text(meta, mask, items, text_key, axis)
 
     new_index = build_multiindex_from_tuples(
         mask_text,
@@ -329,7 +320,7 @@ def paint_array_items_index(meta, index, text_key, display_names):
     return new_index
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_values_index(meta, index, text_key, display_names,
+def paint_array_values_index(meta, index, text_key, axis, display_names,
                              grp_text_map=None):
 
     single_row = len(index.values)==1
@@ -337,10 +328,10 @@ def paint_array_values_index(meta, index, text_key, display_names,
     mask = levels[0]
     values = levels[1]
 
-    mask_text = paint_mask_text(meta, mask, text_key, display_names)
+    mask_text = paint_mask_text(meta, mask, text_key, axis, display_names)
 
     values_text = paint_array_values_text(
-        meta, mask, values, text_key, grp_text_map)
+        meta, mask, values, text_key, axis, grp_text_map)
 
     new_index = build_multiindex_from_tuples(
         mask_text,
@@ -504,55 +495,63 @@ def rule_viable_axes(meta, vk, x, y):
     return viable_axes
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_text(text, text_key, axis=None):
-    """ Uses text_key on text if it is a dictionary, pulling out the targeted
-    text. Either way, the resulting text (given directly or pulled out a
-    dictionary) is type-checked to ensure <str> or <unicode>
+def get_text(text_obj, text_key, axis=None, force_axis=False):
+    """
+    Get text from a text object, specified by the text_key and axis.
 
     Parameters
     ----------
-    text : <dict>, <OrderedDict>, <str> or <unicode>
+    text_obj : <dict>, <OrderedDict>, <str> or <unicode>
+        The object which holds the text.
     text_key : <str>
+        The requested text_key.
+    axis : <str>, {'x', 'y'}
+        The requested axis edit.
+    force_axis : <bool>, default False
+        If True, the axis is prioritised before the language/ text_key
 
     Returns
     ----------
     <str>
     """
+    error = (
+        "The value set into a 'text' object must either be <str> or <unicode>,"
+        " or <dict> or <collections.OrderedDict> of <str> or <unicode>. Found: {}")
+    text = ''
 
-    if text is None:
-        text = ''
-
-    if isinstance(text, (str, unicode)):
-        return text
-
-    elif isinstance(text, (dict, OrderedDict)):
-
-        if axis is None:
-
-            if isinstance(text_key, (str, unicode)):
-                if text_key in text:
-                    return text[text_key]
-            else:
-                for key in text_key:
-                    if key in text:
-                        return text[key]
+    tk_prio = ['en-GB',
+               'da-DK', 'fi-FI', 'nb-NO', 'sv-SE',
+               'de-DE', 'fr-FR', 'es-ES', 'it-IT',
+               'ar-AR']
+    if text_key:
+        tk_prio = [text_key] + tk_prio
+    if not text_obj:
+        raise TypeError(error.format('None'))
+    elif isinstance(text_obj, basestring):
+        text = text_obj
+    elif isinstance(text_obj, dict):
+        if axis in text_obj and force_axis:
+            for tk in tk_prio:
+                if tk in text_obj[axis]:
+                    text = text_obj[axis][tk]
+                    break
+            if not text:
+                for tk in tk_prio:
+                    if tk in text_obj:
+                        text = text_obj[tk]
+                        break
         else:
-            if axis in text_key.keys():
-                for key in text_key[axis]:
-                    if key in text:
-                        return text[key]
-
-        raise KeyError(
-            "No matching text key from the list {} was not found in the"
-            " text object: {}".format(text_key, text)
-        )
-
+            for tk in tk_prio:
+                if axis in text_obj and tk in text_obj[axis]:
+                    text = text_obj[axis][tk]
+                    break
+                elif tk in text_obj:
+                    text = text_obj[tk]
+                    break
     else:
-        raise TypeError(
-            "The value set into a 'text' object must either be"
-            " <str> or <unicode>, or <dict> or <collections.OrderedDict>"
-            " of <str> or <unicode>. Found: {}".format(text)
-        )
+        raise TypeError(error.format(text_obj))
+
+    return text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def finish_text_key(meta, text_key):
