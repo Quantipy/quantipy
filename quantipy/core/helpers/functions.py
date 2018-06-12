@@ -14,10 +14,11 @@ from constants import MAPPED_PATTERN
 from itertools import product
 import quantipy as qp
 
+from quantipy.core.tools.dp.io import unicoder
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def load_json(path_json, hook=OrderedDict):
-    ''' Returns a python object from the json file located at path_json
-    '''
+    # Returns a python object from the json file located at path_json
 
     with open(path_json) as f:
         obj = json.load(f, object_pairs_hook=hook)
@@ -26,8 +27,7 @@ def load_json(path_json, hook=OrderedDict):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def loads_json(json_text, hook=OrderedDict):
-    ''' Returns a python object from the json string json_text
-    '''
+    # Returns a python object from the json string json_text
 
     obj = json.loads(json_text, object_pairs_hook=hook)
 
@@ -39,169 +39,15 @@ def save_json(obj, path_json):
     with open(path_json, 'w+') as f:
         json.dump(obj, f)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def df_to_browser(df, path_html='df.html', **kwargs):
+# ============================================================================
+# Paint
+# ============================================================================
 
-    import webbrowser
-
-    with open(path_html, 'w') as f:
-        f.write(df.to_html(**kwargs))
-
-    webbrowser.open(path_html, new=2)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_delimited_value_map(ds, ds_split=None, sep=';'):
-    ''' Returns a sorted list of unique values found in ds, being a series
-    storing delimited set data separated by sep
-
-    ds - (pandas.Series) a series storing delimited set data
-    ds_split - (pandas.DataFrame, optional) an Excel-style text-to-columns
-        version of ds
-    sep - (str, optional) the character/s to use to delimit ds
-    '''
-
-    if ds_split is None:
-        ds_split = ds.dropna().str.split(sep)
-
-    delimited = pd.DataFrame(ds_split.tolist())
-    value_map = pd.unique(delimited.values.ravel())
-    value_map = np.sort(value_map[value_map.nonzero()])
-
-    return value_map
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def verify_dtypes_vs_meta(data, meta):
-    ''' Returns a df showing the pandas dtype for each column in data compared
-    to the type indicated for that variable name in meta plus a 'verified'
-    column indicating if quantipy determines the comparison as viable.
-
-    data - (pandas.DataFrame)
-    meta - (dict) quantipy meta object
-    '''
-
-    dtypes = data.dtypes
-    dtypes.name = 'dtype'
-    var_types = pd.DataFrame({k: v['type'] for k, v in meta['columns'].iteritems()}, index=['meta']).T
-    df = pd.concat([var_types, dtypes.astype(str)], axis=1)
-
-    missing = df.loc[df['dtype'].isin([np.NaN])]['meta']
-    if missing.size>0:
-        print '\nSome meta not paired to data columns was found (these may be special data types):\n', missing, '\n'
-
-    df = df.dropna(how='any')
-    df['verified'] = df.apply(lambda x: x['dtype'] in DTYPE_MAP[x['meta']], axis=1)
-
-    return df
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def coerce_dtypes_from_meta(data, meta):
-
-    data = data.copy()
-    verified = verify_dtypes_vs_meta(data, meta)
-    for idx in verified[~verified['verified']].index:
-        meta = verified.loc[idx]['meta']
-        dtype = verified.loc[idx]['dtype']
-        if meta in ["int", "single"]:
-            if dtype in ["object"]:
-                data[idx] = data[idx].convert_objects(convert_numeric=True)
-            data[idx] = data[idx].replace(np.NaN, 0).astype(int)
-
-    return data
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def index_to_dict(index):
-
-    if isinstance(index, pd.MultiIndex):
-        levels = index.levels
-        names = index.names
-        index_dict = {names[i]: levels[i] for i in range(len(names))}
-    else:
-        index_dict = {None: index.tolist()}
-
-    return index_dict
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def has_collapsed_axis(df, axis=0):
-    # agg_func =  ('cBase', 'cMean', 'rBase', 'rMean', 'net', 'Promoters' , 'Net')
-    agg_func = ('cbase', 'rbase', 'effbase', 'mean', 'net', 'promoters')
-    if axis == 0:
-        if df.index.get_level_values(1)[0].startswith(agg_func):
-            return True
-    else:
-        if df.T.index.get_level_values(1)[0].startswith(agg_func):
-            return True
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def get_view_slicer(meta, col, values=None):
-
-    if values is None:
-        slicer = [
-            (col, val['value'])
-            for val in emulate_meta(meta, meta['columns'][col]['values'])]
-    else:
-        slicer = [
-            (col, val)
-            for val in values]
-
-    return slicer
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_index(meta,
-                index,
-                text_key,
-                display_names=False,
-                transform_names=None,
-                grp_text_map=None):
-
-    single_row = len(index.values)==1
-    levels = get_index_levels(index)
-    col = levels[0]
-    values = list(levels[1])
-    if not col in meta['columns']:
-        return index
-    else:
-        col_text = paint_col_text(
-            meta, col, text_key, display_names, transform_names)
-        values_text = paint_col_values_text(
-            meta, col, values, text_key, grp_text_map)
-
-        new_index = build_multiindex_from_tuples(
-            col_text,
-            values_text,
-            ['Question', 'Values'],
-            single_row)
-
-        return new_index
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_view(meta, view, text_key=None, display_names=None,
-               transform_names=False, axes=['x', 'y']):
-
-    if text_key is None: text_key = finish_text_key(meta, {})
-    if display_names is None: display_names = ['x', 'y']
-
-    is_array = any(view.meta()[axis]['is_array'] for axis in ['x', 'y'])
-
-    if is_array:
-        df = paint_array(
-            meta, view, text_key, display_names, transform_names, axes)
-    else:
-        df = view.dataframe.copy()
-        grp_text_map = view.meta()['agg']['grp_text_map']
-        df = paint_dataframe(
-            meta, df, text_key, display_names, transform_names, axes,
-            grp_text_map)
-
-    return df
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_dataframe(meta, df, text_key=None, display_names=None,
+def paint_dataframe(meta, df, text_key=None, display_names=['x', 'y'],
                     transform_names=False, axes=['x', 'y'],
                     grp_text_map=None):
 
-    if text_key is None: text_key = finish_text_key(meta, {})
-    if display_names is None: display_names = ['x', 'y']
+    if not text_key: meta['lib'].get('default text', 'None')
 
     if 'x' in axes:
         display_x_names = 'x' in display_names
@@ -221,7 +67,7 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
                 axis=0).index
         else:
             df.index = paint_index(
-                meta, df.index, text_key['x'],
+                meta, df.index, text_key, 'x',
                 display_x_names, transform_names, grp_text_map)
 
     if 'y' in axes:
@@ -236,8 +82,58 @@ def paint_dataframe(meta, df, text_key=None, display_names=None,
                 axis=1).columns
         else:
             df.columns = paint_index(
-                meta, df.columns, text_key['y'],
+                meta, df.columns, text_key, 'y',
                 display_y_names, transform_names)
+
+    return df
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def paint_index(meta,
+                index,
+                text_key,
+                axis,
+                display_names=False,
+                transform_names={},
+                grp_text_map=None):
+
+    single_row = len(index.values)==1
+    levels = get_index_levels(index)
+    col = levels[0]
+    values = list(levels[1])
+    if not col in meta['columns']:
+        return index
+    else:
+        col_text = paint_col_text(
+            meta, col, text_key, axis, display_names, transform_names)
+        values_text = paint_col_values_text(
+            meta, col, values, text_key, axis, grp_text_map)
+
+        new_index = build_multiindex_from_tuples(
+            col_text,
+            values_text,
+            ['Question', 'Values'],
+            single_row)
+
+        return new_index
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def paint_view(meta, view, text_key=None, display_names=['x', 'y'],
+               transform_names=False, axes=['x', 'y']):
+
+    if not text_key: meta['lib'].get('default text', 'None')
+
+    is_array = any(view.meta()[axis]['is_array'] for axis in ['x', 'y'])
+
+    if is_array:
+        df = paint_array(
+            meta, view, text_key, display_names, transform_names, axes)
+    else:
+        df = view.dataframe.copy()
+        grp_text_map = view.meta()['agg']['grp_text_map']
+        df = paint_dataframe(
+            meta, df, text_key, display_names, transform_names, axes,
+            grp_text_map)
 
     return df
 
@@ -255,14 +151,14 @@ def paint_array(meta, view, text_key, display_names, transform_names, axes):
         index = paint_array_items_index(
             meta,
             df.index if columns_on_x else df.columns,
-            text_key['x'],
+            text_key, 'x',
             display_x_names)
     if 'y' in axes:
         display_y_names = axes_x.get(not columns_on_x) in display_names
         columns = paint_array_values_index(
             meta,
             df.columns if columns_on_x else df.index,
-            text_key['y'],
+            text_key, 'y',
             display_y_names,
             grp_text_map)
 
@@ -289,142 +185,89 @@ def get_index_levels(index):
     return levels
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_col_text(meta, col, text_key, display_names, transform_names):
+def paint_col_text(meta, col, text_key, axis, display_names, transform_names):
 
     col_meta = emulate_meta(meta, meta['columns'][col])
     if display_names:
+        col_name = transform_names.get(col_name, col_name)
+        text = get_text(col_meta['text'], text_key, axis)
         try:
-            col_name = col
-            if transform_names: col_name = transform_names.get(col, col)
-            col_text = '{}. {}'.format(
-                col_name, get_text(col_meta['text'], text_key))
+            col_text = '{}. {}'.format(col_name, text)
         except UnicodeEncodeError:
-            col_text = '{}. {}'.format(
-                col_name, qp.core.tools.dp.io.unicoder(
-                    get_text(col_meta['text'], text_key),
-                    like_ascii=True))
+            col_text = '{}. {}'.format(col_name, unicoder(text, like_ascii=True))
     else:
-        col_text = get_text(col_meta['text'], text_key)
+        col_text = get_text(col_meta['text'], text_key, axis)
 
     return col_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_add_text_map(meta, add_text_map, text_key):
+def paint_add_text_map(meta, add_text_map, text_key, axis):
 
-    if add_text_map is None:
-        add_text_map = {}
-    else:
-        try:
-            add_text_map = {
-                key: get_text(text, text_key)
-                for key, text in add_text_map.iteritems()}
-        except UnicodeEncodeError:
-            add_text_map = {
-                key: qp.core.tools.dp.io.unicoder(
-                    get_text(text, text_key, like_ascii=True))
-                for key, text in add_text_map.iteritems()}
+    if add_text_map:
+        for key, text in add_text_map.iteritems():
+            try:
+                t = get_text(text, text_key, axis)
+            except UnicodeEncodeError:
+                t = unicoder(get_text(text, text_key, axis), like_ascii=True)
+            add_text_map[key] = t
 
     return add_text_map
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_col_values_text(meta, col, values, text_key, add_text_map=None):
-    add_text_map = paint_add_text_map(meta, add_text_map, text_key)
+def paint_col_values_text(meta, col, values, text_key, axis, add_text_map={}):
+    add_text_map = paint_add_text_map(meta, add_text_map, text_key, axis)
     num_col = meta['columns'][col]['type'] in ['int', 'float']
-    try:
-        has_all = 'All' in values
-        if has_all: values.remove('All')
-        if not num_col:
+
+    values_text = []
+    has_all = 'All' in values
+    if has_all: values.remove('All')
+    if not num_col:
+        for val in meta['columns'][col]['values']:
             try:
-                values_map = {
-                    val['value']: get_text(val['text'], text_key)
-                    for val in meta['columns'][col]['values']}
+                v_text = get_text(val['text'], text_key, axis)
             except UnicodeEncodeError:
-                values_map = {
-                    val['value']: qp.core.tools.dp.io.unicoder(
-                        get_text(val['text'], text_key, like_ascii=True))
-                    for val in meta['columns'][col]['values']}
-        else:
-            values_map = {}
-        values_map.update(add_text_map)
-        values_text = [values_map[v] for v in values]
-    except KeyError:
-        values_text = values
-    except ValueError:
-        values_text = values
-    if has_all:
-        values_text = ['All'] + values_text
+                v_text = unicoder(get_text(val['text'], text_key, axis), like_ascii=True)
+            values_text.append(v_text)
+
+    values_text.extend(add_text_map.keys())
+    if has_all: values_text = ['All'] + values_text
 
     return values_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_mask_text(meta, mask, text_key, display_names):
+def paint_mask_text(meta, mask, text_key, axis, display_names):
 
     mask_meta = meta['masks'][mask]
+    try:
+        mask_text = get_text(mask_meta['text'], text_key, axis)
+    except UnicodeEncodeError:
+        mask_text = unicoder(get_text(mask_meta['text'], text_key, axis), like_ascii=True)
     if display_names:
-        try:
-            mask_text = '{}. {}'.format(
-                mask, get_text(mask_meta['text'], text_key))
-        except UnicodeEncodeError:
-            mask_text = '{}. {}'.format(
-                mask, qp.core.tools.dp.io.unicoder(
-                    get_text(mask_meta['text'], text_key),
-                    like_ascii=True))
-    else:
-        mask_text = get_text(mask_meta['text'], text_key)
+        mask_text = '{}. {}'.format(mask, mask_text)
 
     return mask_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_items_text(meta, mask, items, text_key):
+def paint_array_items_text(meta, mask, items, text_key, axis):
 
-    try:
-        has_all = 'All' in items
-        items = [i for i in items if not i=='All']
-        items_map = {}
+    has_all = 'All' in items
+    if has_all: items.remove('All')
+    items_text = []
+    for item in meta['masks'][mask]['items']:
+        source = item['source'].split('@')[-1]
+        if not source in items: continue
         try:
-            for item in meta['masks'][mask]['items']:
-                if isinstance(item['text'], dict):
-                    text = get_text(item['text'], text_key)
-                else:
-                    source = item['source'].split('@')[-1]
-                    text = get_text(meta['columns'][source]['text'], text_key)
-                    text = text.replace(
-                        '{} - '.format(
-                            get_text(meta['masks'][mask]['text'],
-                            text_key)),
-                        '')
-                items_map.update({item['source'].split('@')[-1]: text})
+            i_text = get_text(item['text'], text_key, axis)
         except UnicodeEncodeError:
-            for item in meta['masks'][mask]['items']:
-                if isinstance(item['text'], dict):
-                    text = qp.core.tools.dp.io.unicoder(
-                        get_text(item['text'], text_key),
-                        like_ascii=True)
-                else:
-                    source = item['source'].split('@')[-1]
-                    text = qp.core.tools.dp.io.unicoder(
-                        get_text(meta['columns'][source]['text'], text_key),
-                        like_ascii=True)
-                    text = qp.core.tools.dp.io.unicoder(
-                        text.replace(
-                            '{} - '.format(
-                                get_text(meta['masks'][mask]['text'],
-                                text_key)),
-                            ''),
-                        like_ascii=True)
-                items_map.update({item['source'].split('@')[-1]: text})
-        items_text = [items_map[i] for i in items]
-        if has_all:
-            items_text = ['All'] + items_text
-    except KeyError:
-        items_text = items
-    except ValueError:
-        items_text = items
+            i_text = unicoder(get_text(item['text'], text_key, axis), like_ascii=True)
+        items_text.append(i_text)
+
+    if has_all: items_text = ['All'] + items_text
 
     return items_text
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def paint_array_values_text(meta, mask, values, text_key, add_text_map=None):
+def paint_array_values_text(meta, mask, values, text_key, add_text_map={}):
 
     add_text_map = paint_add_text_map(meta, add_text_map, text_key)
 
@@ -2569,3 +2412,137 @@ def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
 def cpickle_copy(obj):
     copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
     return copy
+
+
+
+
+# ============================================================================
+# DEPRECATION
+# ============================================================================
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# # duplicated: qp.core.tools.dp.io
+
+# def df_to_browser(df, path_html='df.html', **kwargs):
+
+#     import webbrowser
+
+#     with open(path_html, 'w') as f:
+#         f.write(df.to_html(**kwargs))
+
+#     webbrowser.open(path_html, new=2)
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# # duplicated: qp.core.tools.dp.prep
+
+# def get_delimited_value_map(ds, ds_split=None, sep=';'):
+#     ''' Returns a sorted list of unique values found in ds, being a series
+#     storing delimited set data separated by sep
+
+#     ds - (pandas.Series) a series storing delimited set data
+#     ds_split - (pandas.DataFrame, optional) an Excel-style text-to-columns
+#         version of ds
+#     sep - (str, optional) the character/s to use to delimit ds
+#     '''
+
+#     if ds_split is None:
+#         ds_split = ds.dropna().str.split(sep)
+
+#     delimited = pd.DataFrame(ds_split.tolist())
+#     value_map = pd.unique(delimited.values.ravel())
+#     value_map = np.sort(value_map[value_map.nonzero()])
+
+#     return value_map
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# # duplicated: qp.core.tools.dp.io
+
+# def verify_dtypes_vs_meta(data, meta):
+#     ''' Returns a df showing the pandas dtype for each column in data compared
+#     to the type indicated for that variable name in meta plus a 'verified'
+#     column indicating if quantipy determines the comparison as viable.
+
+#     data - (pandas.DataFrame)
+#     meta - (dict) quantipy meta object
+#     '''
+
+#     dtypes = data.dtypes
+#     dtypes.name = 'dtype'
+#     var_types = pd.DataFrame({k: v['type'] for k, v in meta['columns'].iteritems()}, index=['meta']).T
+#     df = pd.concat([var_types, dtypes.astype(str)], axis=1)
+
+#     missing = df.loc[df['dtype'].isin([np.NaN])]['meta']
+#     if missing.size>0:
+#         print '\nSome meta not paired to data columns was found (these may be special data types):\n', missing, '\n'
+
+#     df = df.dropna(how='any')
+#     df['verified'] = df.apply(lambda x: x['dtype'] in DTYPE_MAP[x['meta']], axis=1)
+
+#     return df
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# # duplicated: qp.core.tools.dp.io
+
+# def coerce_dtypes_from_meta(data, meta):
+
+#     data = data.copy()
+#     verified = verify_dtypes_vs_meta(data, meta)
+#     for idx in verified[~verified['verified']].index:
+#         meta = verified.loc[idx]['meta']
+#         dtype = verified.loc[idx]['dtype']
+#         if meta in ["int", "single"]:
+#             if dtype in ["object"]:
+#                 data[idx] = data[idx].convert_objects(convert_numeric=True)
+#             data[idx] = data[idx].replace(np.NaN, 0).astype(int)
+
+#     return data
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# #  not used
+
+# def index_to_dict(index):
+
+#     if isinstance(index, pd.MultiIndex):
+#         levels = index.levels
+#         names = index.names
+#         index_dict = {names[i]: levels[i] for i in range(len(names))}
+#     else:
+#         index_dict = {None: index.tolist()}
+
+#     return index_dict
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# #  not used
+
+# def has_collapsed_axis(df, axis=0):
+#     # agg_func =  ('cBase', 'cMean', 'rBase', 'rMean', 'net', 'Promoters' , 'Net')
+#     agg_func = ('cbase', 'rbase', 'effbase', 'mean', 'net', 'promoters')
+#     if axis == 0:
+#         if df.index.get_level_values(1)[0].startswith(agg_func):
+#             return True
+#     else:
+#         if df.T.index.get_level_values(1)[0].startswith(agg_func):
+#             return True
+
+# #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# #  not used
+
+# def get_view_slicer(meta, col, values=None):
+
+#     if values is None:
+#         slicer = [
+#             (col, val['value'])
+#             for val in emulate_meta(meta, meta['columns'][col]['values'])]
+#     else:
+#         slicer = [
+#             (col, val)
+#             for val in values]
+
+#     return slicer
