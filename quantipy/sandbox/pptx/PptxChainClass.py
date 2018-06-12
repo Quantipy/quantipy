@@ -430,15 +430,15 @@ class PptxChain(object):
 
     @property
     def ybase_values(self):
-        if not hasattr(self, "_base_values"):
-            self._base_values=[x[1] for x in self.ybases]
-        return self._base_values
+        if not hasattr(self, "_ybase_values"):
+            self._ybase_values=[x[1] for x in self.ybases]
+        return self._ybase_values
 
     @property
     def ybase_value_labels(self):
-        if not hasattr(self, "_base_value_labels"):
-            self._base_value_labels=[x[0] for x in self.ybases]
-        return self._base_value_labels
+        if not hasattr(self, "_ybase_value_labels"):
+            self._ybase_value_labels=[x[0] for x in self.ybases]
+        return self._ybase_value_labels
 
     def place_vals_in_labels(self, base_position=0, orientation='side', drop_base=False, values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
@@ -570,31 +570,6 @@ class PptxChain(object):
                     base_text = u"{} {}".format(base_label,base_description)
                 else:
                     base_text = ""
-
-
-#        # Final base text
-#        if not self.is_grid_summary:
-#            if len(self.ybases) == 1:
-#                if base_description:
-#                    base_text = "{} {} {}".format(base_label,base_description,ybase_values[0])
-#                else:
-#                    base_text = "{} {}".format(base_label, ybase_values[0])
-#            else:
-#                if base_description:
-#                    base_text = "{} {}{}".format(base_label,base_description,base_value_text)
-#                else:
-#                    base_text = "{} {}".format(base_label,base_value_text)
-#        else: # Grid Summary
-#            if len(uniquify(ybase_values))== 1:
-#                if base_description:
-#                    base_text = "{} {} {}".format(base_label, base_description, ybase_values[0])
-#                else:
-#                    base_text = "{} {}".format(base_label, ybase_values[0])
-#            else:
-#                if base_description:
-#                    base_text = "{} {}".format(base_label, base_description)
-#                else:
-#                    base_text = ""
 
         #print (base_text)
         return base_text
