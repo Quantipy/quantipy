@@ -283,7 +283,6 @@ class PptxChain(object):
         if self.base_description[0:6] == "Base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
         self.crossbreaks_qtext = []
-        self.ybases = self._get_bases()
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
@@ -341,6 +340,7 @@ class PptxChain(object):
         self.xbase_count = float2String(total_base)
         self.xbase_label = self.xbase_labels[index[0]]
         self.xbase_index = self.xbase_indexes[index[0]][1]
+        self.ybases = self._get_y_bases()
 
     def _base_indexes(self):
         """
@@ -722,7 +722,7 @@ class PptxChain(object):
                 return False
         return True
 
-    def _get_bases(self):
+    def _get_y_bases(self):
         """
         Retrieves the base label and base size from the dataframe
         :param chain: the chain instance
@@ -783,8 +783,6 @@ class PptxChain(object):
     def prepare_dataframe(self):
         """
         Prepares the dataframe for charting
-        :param
-            crossbreak
         :return: copy of chain.dataframe containing only rows and cols that are to be charted
         """
 
