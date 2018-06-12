@@ -95,7 +95,7 @@ def as_numeric(df):
 
 def is_grid_slice(chain):
     """
-    Returns True if chain is a grid slice
+    Returns True if _chain is a grid slice
     :param
         chain: the chain instance
     :return: True id grid slice
@@ -258,8 +258,8 @@ class PptxChain(object):
             crossbreak:
         """
         self.verbose = verbose
-        self.decimals = decimals
-        self.chain = chain
+        self._decimals = decimals
+        self._chain = chain
         self.name = chain.name
         self.xkey_levels = chain.dataframe.index.nlevels
         self.ykey_levels = chain.dataframe.columns.nlevels
@@ -337,7 +337,7 @@ class PptxChain(object):
 
         # print "self.xbase_indexes: ", self.xbase_indexes
         total_base = self.xbase_indexes[index[0]][3]
-        total_base = np.around(total_base, decimals=self.decimals)
+        total_base = np.around(total_base, decimals=self._decimals)
         self.xbase_count = float2String(total_base)
         self.xbase_label = self.xbase_labels[index[0]]
         self.xbase_index = self.xbase_indexes[index[0]][1]
@@ -348,7 +348,7 @@ class PptxChain(object):
         :return: list
         """
 
-        cell_contents = self.chain.describe()
+        cell_contents = self._chain.describe()
         if self.array_style == 0: cell_contents = cell_contents[0]
 
         # Find base rows
@@ -363,13 +363,13 @@ class PptxChain(object):
 
         if self.array_style == -1 or self.array_style == 1:
 
-            xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain.dataframe.iloc[base_indexes, 0]
+            xlabels = self._chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self._chain.dataframe.iloc[base_indexes, 0]
 
         else:
 
-            xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain.dataframe.iloc[0,base_indexes]
+            xlabels = self._chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self._chain.dataframe.iloc[0, base_indexes]
 
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
@@ -378,54 +378,54 @@ class PptxChain(object):
         Map not painted index with painted index into a list of tuples (notpainted, painted)
         :return:
         """
-        if self.chain.painted:  # UnPaint if painted
-            self.chain.toggle_labels()
-        if self.chain.array_style == -1:
-            unpainted_index = self.chain.dataframe.index.get_level_values(-1).tolist()
+        if self._chain.painted:  # UnPaint if painted
+            self._chain.toggle_labels()
+        if self._chain.array_style == -1:
+            unpainted_index = self._chain.dataframe.index.get_level_values(-1).tolist()
         else:
-            unpainted_index = self.chain.dataframe.columns.get_level_values(-1).tolist()
-        if not self.chain.painted:  # Paint if not painted
-            self.chain.toggle_labels()
-        if self.chain.array_style == -1:
-            painted_index = self.chain.dataframe.index.get_level_values(-1).tolist()
+            unpainted_index = self._chain.dataframe.columns.get_level_values(-1).tolist()
+        if not self._chain.painted:  # Paint if not painted
+            self._chain.toggle_labels()
+        if self._chain.array_style == -1:
+            painted_index = self._chain.dataframe.index.get_level_values(-1).tolist()
         else:
-            painted_index = self.chain.dataframe.columns.get_level_values(-1).tolist()
+            painted_index = self._chain.dataframe.columns.get_level_values(-1).tolist()
 
         return zip(unpainted_index, painted_index)
 
     def _select_crossbreak(self):
         """
-        Takes self.chain.dataframe and returns only the columns stated in self.crossbreak
+        Takes self._chain.dataframe and returns only the columns stated in self.crossbreak
         :return:
         """
 
         if not self.is_grid_summary:
             # Keep only requested columns
-            if self.chain.painted: # UnPaint if painted
-                self.chain.toggle_labels()
+            if self._chain.painted: # UnPaint if painted
+                self._chain.toggle_labels()
 
-            all_columns = self.chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of the not painted column values for outer level
-            if self.chain.axes[1].index(BASE_COL) == 0:
+            all_columns = self._chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of the not painted column values for outer level
+            if self._chain.axes[1].index(BASE_COL) == 0:
                 all_columns[0] = BASE_COL # Need '@' as the outer column label
 
             column_selection = []
             for cb in self.crossbreak:
                 column_selection = column_selection + (get_indexes_from_list(all_columns, cb))
 
-            if not self.chain.painted: # Paint if not painted
-                self.chain.toggle_labels()
+            if not self._chain.painted: # Paint if not painted
+                self._chain.toggle_labels()
 
-            all_columns = self.chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of painted column values for outer level
+            all_columns = self._chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of painted column values for outer level
 
             col_qtexts = [all_columns[x] for x in column_selection] # determine painted column values for requested crossbreak
             self.crossbreaks_qtext = uniquify(col_qtexts) # Save q text for crossbreak in class atribute
 
             # Slice the dataframes columns based on requested crossbreaks
-            df = self.chain.dataframe.iloc[:, column_selection]
+            df = self._chain.dataframe.iloc[:, column_selection]
         else:
-            df = self.chain.dataframe
+            df = self._chain.dataframe
 
-        df_rounded = np.around(df, decimals=self.decimals, out=None)
+        df_rounded = np.around(df, decimals=self._decimals, out=None)
         return df_rounded
 
     @property
@@ -610,7 +610,7 @@ class PptxChain(object):
 
         if not self.is_grid_summary:
             for cb in crossbreaks[:]:
-                if cb not in self.chain.axes[1]:
+                if cb not in self._chain.axes[1]:
                     crossbreaks.remove(cb)
                     if self.verbose:
                         msg = 'Requested crossbreak: \'{}\' is not found for chain \'{}\' and will be ignored'.format(cb, chain.name)
@@ -697,7 +697,7 @@ class PptxChain(object):
             question_text appended the array question text
         """
         if self.source == "native":
-            meta=self.chain._meta
+            meta=self._chain._meta
             cols = meta['columns']
             masks = meta['masks']
             if self.is_mask_item:
@@ -735,7 +735,7 @@ class PptxChain(object):
 
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.iloc[base_index, :].values.tolist()
-            base_values = np.around(base_values, decimals=self.decimals).tolist()
+            base_values = np.around(base_values, decimals=self._decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.columns.get_level_values('Values'))
             bases = zip(base_labels, base_values)
@@ -745,7 +745,7 @@ class PptxChain(object):
 
             # Construct a list of tuples with (base label, base size)
             base_values = self.chain_df.T.iloc[base_index,:].values.tolist()
-            base_values = np.around(base_values, decimals=self.decimals).tolist()
+            base_values = np.around(base_values, decimals=self._decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.index.get_level_values(-1))
             bases = zip(base_labels, base_values)
@@ -829,9 +829,9 @@ class PptxChain(object):
         # For rows that are type '%' divide by 100
         indexes = []
         if not self.is_grid_summary:
-            cell_contents = self.chain.describe()
+            cell_contents = self._chain.describe()
         else:
-            cell_contents = self.chain.describe()[0]
+            cell_contents = self._chain.describe()[0]
 
         for i, row in enumerate(cell_contents):
             for type in row:
@@ -846,10 +846,10 @@ class PptxChain(object):
         # Make a PptxDataFrame instance
         chart_df = PptxDataFrame(data=df.values, index=df.index, columns=df.columns)
         if not self.is_grid_summary:
-            chart_df.cell_contents = self.chain.describe() # TODO Is this okay? to initialize a class attribute outside of the class
+            chart_df.cell_contents = self._chain.describe() # TODO Is this okay? to initialize a class attribute outside of the class
         else:
-            chart_df.cell_contents = self.chain.describe()[0]
-        chart_df.array_style = self.chain.array_style
+            chart_df.cell_contents = self._chain.describe()[0]
+        chart_df.array_style = self._chain.array_style
 
         # Choose a basic Chart type that will fit dataframe
         chart_df.chart_type = auto_charttype(chart_df, chart_df.array_style)
