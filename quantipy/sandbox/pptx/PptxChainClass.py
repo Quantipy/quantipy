@@ -753,65 +753,12 @@ class PptxChain(object):
         #print ybases
         return bases
 
-    # def _get_rowbase_label(self):
-    #     """
-    #     Retrieves the base label from the dataframe
-    #     :param
-    #         chain: the chain instance
-    #
-    #     :return: base_label - Str
-    #     """
-    #
-    #     # Paint if not painted
-    #     if not self.chain.painted:
-    #         self.chain.toggle_labels()
-    #         self.chain_df = self.chain.dataframe
-    #
-    #     if self.xbase_indexes:
-    #         if not self.is_grid_summary:
-    #             cell_contents = self.chain.describe()
-    #             row = get_indexes_from_list(cell_contents, BASE_ROW, exact=False) #TODO Cater for more that one base row
-    #             base_label = self.chain_df.index.get_level_values(-1)[row[0]]
-    #         else:
-    #             cell_contents = self.chain.describe()[0]
-    #             row = get_indexes_from_list(cell_contents, BASE_ROW, exact=False) #TODO Cater for more that one base row
-    #             base_label = self.chain_df.T.index.get_level_values(-1)[row[0]]
-    #     else:
-    #         base_label = 'Base'
-    #     return base_label
-
     def prepare_dataframe(self):
         """
-        Prepares the dataframe for charting
+        Prepares the dataframe for charting, that is takes self.chain_df and
+        removes all outer levels and prepares the dataframe for PptxPainter.
         :return: copy of chain.dataframe containing only rows and cols that are to be charted
         """
-
-        #if not self.is_grid_summary:
-            # Keep only requested columns
-            #if self.chain.painted: # UnPaint if painted
-            #    self.chain.toggle_labels()
-            #    self.chain_df = self.chain.dataframe
-
-
-            # all_columns = self.chain_df.columns.get_level_values(0).tolist() # retrieve a list of the not painted column values for outer level
-            # if self.chain.axes[1].index(BASE_COL) == 0: # Need '@' instead of the outer row value
-            #     all_columns[0] = BASE_COL
-            #
-            # if crossbreak == None:
-            #     crossbreak = [BASE_COL]
-            #
-            # column_selection = []
-            # for cb in crossbreak:
-            #     column_selection = column_selection + (get_indexes_from_list(all_columns, cb))
-            #
-            # if not self.chain.painted: # Paint if not painted
-            #     self.chain.toggle_labels()
-            #     self.chain_df = self.chain.dataframe
-            #
-            # all_columns = self.chain_df.columns.get_level_values(0).tolist() # retrieve a list of painted column values for outer level
-            #
-            # col_qtexts = [all_columns[x] for x in column_selection] # determine painted column values for requested crossbreak
-            # self.crossbreaks_qtext = uniquify(col_qtexts) # Save q text for crossbreak in class atribute
 
         # Strip outer level
         df = strip_levels(self.chain_df, rows=0, columns=0)
