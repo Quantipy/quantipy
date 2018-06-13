@@ -2380,6 +2380,7 @@ class Stack(defaultdict):
                 prop['recoded_net'] = arr_items[0]
                 if 'properties' in ds._meta['masks'][arr_items[0]]:
                     for p, v in ds._meta['masks'][arr_items[0]]['properties'].items():
+                        if p == 'survey': continue
                         prop[p] = v
                 org_items = ds.sources(arr_items[0])
                 new_items = ds.sources(dims_name)
