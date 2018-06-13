@@ -129,6 +129,7 @@ def get_indexes_from_list(lst, find, exact=True):
 def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
     """
     Auto suggest chart type based on dataframe analysis
+    TODO Move this to Class PptxDataFrame()
     :param
         df: a Pandas Dataframe, not multiindex
         array_style: array_style as returned from Chain Class
@@ -157,7 +158,7 @@ class PptxDataFrame(pd.DataFrame):
         self.array_style = None
         self.cell_contents = None
         self.__frames = []
-        self.chart_type = None # TODO PptxDataFrame - How to do: if a user sets chart_type it is auto checked for correctnes
+        self.chart_type = None # TODO PptxDataFrame - Use Property descriptor to do get and set function
 
     def make_copy(self, data=None, index=None, columns=None):
 
@@ -243,6 +244,14 @@ class PptxDataFrame(pd.DataFrame):
         pptx_df.cell_contents = cell_contents
 
         return pptx_df
+
+    def read_pptx_setup(self, setup):
+        """
+
+        :param setup:
+        :return:
+        """
+
 
 
 class PptxChain(object):
@@ -771,7 +780,7 @@ class PptxChain(object):
             chart_df.cell_contents = self._chain.describe()[0]
         chart_df.array_style = self._chain.array_style
 
-        # Choose a basic Chart type that will fit dataframe
+        # Choose a basic Chart type that will fit dataframe TODO Move this to init of Class PptxDataFrame
         chart_df.chart_type = auto_charttype(chart_df, chart_df.array_style)
 
         return chart_df
