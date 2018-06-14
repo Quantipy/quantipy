@@ -673,7 +673,8 @@ class ChainManager(object):
         else:
             return cm
 
-    def cut(self, values, axis='x', painted=True):
+
+    def cut(self, values, axis='x'):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
 
@@ -684,30 +685,26 @@ class ChainManager(object):
             axis value, e.g. ``'mean'``, ``'net_1'``, etc.
         axis : {'x', 'y'}, default 'x'
             The axis to target.
-        painted : bool, default True
-            whether or not to (re)build a "painted" ``Chain.dataframe``.
 
         Returns
         -------
         None
         """
-        idx = pd.IndexSlice
         if not isinstance(values, list): values = [values]
+        if 'cbase' in values:
+            values[values.index('cbase')] = 'All'
         for c in self.chains:
-            if c.painted: c.toggle_labels()
+            idx, names = c._view_idxs(values, names=True)
             if axis == 'y':
-                c._frame = c._frame.sort_index(axis=1).loc[:, idx[:, values]]
+                c._frame = c._frame.iloc[:, idx]
             else:
-                c._frame = c._frame = c._frame.sort_index(axis=0).loc[idx[:, values], :]
-            if painted: c.paint()
+                c._frame = c._frame.iloc[idx, :]
+            new_views = OrderedDict()
             for v in c.views.copy():
-                for value in values:
-                    if value == 'All':
-                        check_tag = 'cbase'
-                    else:
-                        check_tag = value
-                    if not check_tag in v and v in c.views:
-                        del c.views[v]
+                if not v in names:
+                    del c._views[v]
+                else:
+                    c._views[v] = names.count(v)
         return None
 
     def concat(self, x_label='auto', y_label='auto', pos=None, drop=True):
@@ -1037,10 +1034,10 @@ class ChainManager(object):
             # new_chain._meta['var_meta'] = basic_chain_defintion[-1]
             # new_chain._extract_base_descriptions()
             new_chain._views = OrderedDict()
-            new_chain._views_per_rows
-            for vk in new_chain._views_per_rows:
+            new_chain._views_per_rows()
+            for vk in new_chain._views_per_rows():
                 if not vk in new_chain._views:
-                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+                    new_chain._views[vk] = new_chain._views_per_rows().count(vk)
             return new_chain
 
         def mine_mtd(tab_collection, paint, chain_coll, folder=None):
@@ -1215,9 +1212,9 @@ class ChainManager(object):
             new_chain._meta['var_meta'] = basic_chain_defintion[-1]
             new_chain._extract_base_descriptions()
             new_chain._views = OrderedDict()
-            for vk in new_chain._views_per_rows:
+            for vk in new_chain._views_per_rows():
                 if not vk in new_chain._views:
-                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+                    new_chain._views[vk] = new_chain._views_per_rows().count(vk)
             return new_chain
 
             # self.name = name              OK!
@@ -1911,7 +1908,7 @@ class Chain(object):
                         for row in range(0, dims[0])}
         else:
             contents = dict()
-        for row, idx in enumerate(self._views_per_rows):
+        for row, idx in enumerate(self._views_per_rows()):
             if nested:
                 for i, v in idx.items():
                     if v:
@@ -2001,7 +1998,7 @@ class Chain(object):
                 else:
                     return False
 
-    @lazy_property
+    # @lazy_property
     def _views_per_rows(self):
         """
         """
@@ -2121,7 +2118,10 @@ class Chain(object):
                     if not flat:
                         clean_view_list.append(new_v)
                     else:
-                        clean_view_list.extend(new_v)
+                        if isinstance(new_v, list):
+                            clean_view_list.extend(new_v)
+                        else:
+                            clean_view_list.append(new_v)
         return clean_view_list
 
 
@@ -2158,6 +2158,33 @@ class Chain(object):
                     is_stat=self._is_stat(parts),
                     stat=self._stat(parts),
                     siglevel=self._siglevel(parts))
+
+    def _view_idxs(self, view_tags, ignore_tests=True, names=False):
+        """
+        """
+        if not isinstance(view_tags, list): view_tags = [view_tags]
+        rows = self.named_rowmeta
+        cut_rows = []
+        invalids = []
+        if ignore_tests:
+            invalids.extend(['is_propstest', 'is_meanstest'])
+        idxs = []
+        names = []
+        for i, row in enumerate(rows):
+            if any([invalid in row[1] for invalid in invalids]): continue
+            if row[0] in view_tags:
+                idxs.append(i)
+                names.append(self._views_per_rows()[i])
+        return idxs if not names else idxs, names
+
+    @property
+    def named_rowmeta(self):
+        if self.painted:
+            self.toggle_labels()
+        d = self.describe()
+        n = self._frame.index.get_level_values(1).values.tolist()
+        if not self.painted: self.toggle_labels()
+        return zip(n, d)
 
     @lazy_property
     def _nested_y(self):
@@ -2319,7 +2346,7 @@ class Chain(object):
             self.toggle_labels()
         else:
             repaint = False
-        vpr = self._views_per_rows
+        vpr = self._views_per_rows()
         if row_id is not None:
             vpr = [v[1] for v in vpr[row_id].items()]
             idx = self.dataframe.columns.get_level_values(1).tolist()
@@ -3142,7 +3169,7 @@ class Chain(object):
                                     if int(value) == item['value']:
                                         text = self._get_text(item, text_keys[axis])
                                         level_1_text.append(text)
-                        except ValueError:
+                        except (ValueError, UnboundLocalError):
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
                                     if value in gtm.keys():
@@ -3245,19 +3272,17 @@ class Chain(object):
             values = self._meta['columns'][column].get('values', [])
         elif column in self._meta['masks']:
             values = self._meta['lib']['values'].get(column, [])
-
         if isinstance(values, (str, unicode)):
             keys = values.split('@')
             values = self._meta[keys.pop(0)]
             while keys:
                 values = values[keys.pop(0)]
-
         return values
 
     def _add_view_level(self, shorten=False):
         """ Insert a third Index level containing View keys into the DataFrame.
         """
-        vnames = self._views_per_rows
+        vnames = self._views_per_rows()
         if shorten:
             vnames = [v.split('|')[-1] for v in vnames]
         self._frame['View'] = pd.Series(vnames, index=self._frame.index)
