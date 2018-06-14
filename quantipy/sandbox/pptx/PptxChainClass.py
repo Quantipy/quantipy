@@ -173,6 +173,11 @@ class PptxDataFrame(pd.DataFrame):
         return df_copy
 
     def get_cpct(self):
+        """
+        Return a copy of the PptxDataFrame only containing column percentage categories
+
+        :rtype: PptxDataFrame
+        """
         row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
         dont_want = get_indexes_from_list(self.cell_contents, ['is_net','net','is_c_pct_sum'], exact=False)
         not_net = get_indexes_from_list(self.cell_contents, ['normal', 'expanded'], exact=False)
@@ -194,8 +199,38 @@ class PptxDataFrame(pd.DataFrame):
         return pptx_df_copy
 
     def get_nets(self):
+        """
+        Return a copy of the PptxDataFrame only containing net type categories
+
+        :rtype: PptxDataFrame
+        """
         row_list = get_indexes_from_list(self.cell_contents, ['is_net','net'], exact=False)
         dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest'], exact=False)
+
+        for x in dont_want:
+            if x in row_list:
+                row_list.remove(x)
+
+        if self.array_style == -1:
+            df_copy = self.iloc[row_list]
+        else:
+            df_copy = self.iloc[:, row_list]
+
+        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
+        cell_contents = pptx_df_copy.cell_contents
+        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
+
+        return pptx_df_copy
+
+    def get_means(self):
+        """
+        Return a copy of the PptxDataFrame only containing mean type categories
+
+        :rtype: PptxDataFrame
+        """
+        row_list = get_indexes_from_list(self.cell_contents, ['is_mean'], exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, ['is_meanstest'], exact=False)
 
         for x in dont_want:
             if x in row_list:
@@ -216,14 +251,15 @@ class PptxDataFrame(pd.DataFrame):
     def get(self, cell_types, sort=False):
         """
         Method to get specific elements from chains dataframe
-        :param
-            cel_types: A comma separated list of cell types to return. Available types are 'c_pct,net'
-            sort: Sort the elements ascending or decending. Str 'asc', 'dsc' or False
-        :return: df_copy, a Pandas dataframe. Element types will be returned in the order they are requested
+
+        :param str cel_types: A string of comma separated cell types to return. Available types are 'c_pct, net, mean'
+        :param boolean or str sort: TODO Sort the elements ascending or decending. Str 'asc', 'dsc' or False
+        :rtype: PptxDataFrame
         """
         method_map = {'c_pct': self.get_cpct,
-                      'net': self.get_nets}
-        # TODO Add methods for 'mean', 'stddev', 'min', 'max', 'median', 't_props', 't_means'
+                      'net': self.get_nets,
+                      'mean': self.get_means}
+        # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_props', 't_means'
         available_celltypes = set(method_map.keys())
         if isinstance(cell_types, basestring):
             cell_types = re.sub(' +', '', cell_types)
@@ -246,12 +282,16 @@ class PptxDataFrame(pd.DataFrame):
 
         return pptx_df
 
-    def read_pptx_setup(self, setup):
+    def read_slide_items(self, setup):
         """
 
-        :param setup:
-        :return:
+        :param str setup:
+        :rtype:
         """
+        if setup in ['basic+nets', 'basic+nets+means-line', 'basic+nets+means']:
+            pptx_df = self.get('basic+nets')
+
+
 
 
 
