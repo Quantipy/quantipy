@@ -2200,6 +2200,8 @@ class Chain(object):
         """
         if not isinstance(view_tags, list): view_tags = [view_tags]
         rows = self.named_rowmeta
+        print rows
+        raise
         cut_rows = []
         invalids = []
         if ignore_tests:
@@ -2218,9 +2220,14 @@ class Chain(object):
         if self.painted:
             self.toggle_labels()
         d = self.describe()
-        n = self._frame.index.get_level_values(1).values.tolist()
+        if self.array_style == 0:
+            n = self._frame.columns.get_level_values(1).values.tolist()
+            mapped = {rowid: zip(n, rowmeta) for rowid, rowmeta in d.items()}
+        else:
+            n = self._frame.index.get_level_values(1).values.tolist()
+            mapped = zip(n, d)
         if not self.painted: self.toggle_labels()
-        return zip(n, d)
+        return mapped
 
     @lazy_property
     def _nested_y(self):
