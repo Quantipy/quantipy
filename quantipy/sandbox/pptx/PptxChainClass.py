@@ -288,12 +288,19 @@ class PptxDataFrame(pd.DataFrame):
         :param str setup:
         :rtype:
         """
-        if setup in ['basic+nets', 'basic+nets+means-line', 'basic+nets+means']:
-            pptx_df = self.get('basic+nets')
+        if setup in ['basic']:
+            pptx_df = self.get('c_pct')
+        elif setup in ['basic+nets','basic+nets-table']:
+            pptx_df = self.get('c_pct,net')
+        elif setup in ['basic+means-line','basic+means-table']:
+            pptx_df = self.get('c_pct,mean')
+        elif setup in ['basic+nets+means-table','basic+nets+means-line','basic+nets-table+means-table',
+                       'basic+nets-table+means-line']:
+            pptx_df = self.get('c_pct,net,mean')
+        else:
+            pptx_df = self.get('c_pct')
 
-
-
-
+        return pptx_df
 
 class PptxChain(object):
     """
