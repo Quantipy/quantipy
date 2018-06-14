@@ -673,7 +673,6 @@ class ChainManager(object):
         else:
             return cm
 
-
     def cut(self, values, axis='x'):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
@@ -694,6 +693,7 @@ class ChainManager(object):
         if 'cbase' in values:
             values[values.index('cbase')] = 'All'
         for c in self.chains:
+            c._remove_letter_header()
             idx, names = c._view_idxs(values, names=True)
             if axis == 'y':
                 c._frame = c._frame.iloc[:, idx]
@@ -705,6 +705,7 @@ class ChainManager(object):
                     del c._views[v]
                 else:
                     c._views[v] = names.count(v)
+            c.edited = True
         return None
 
     def concat(self, x_label='auto', y_label='auto', pos=None, drop=True):
@@ -718,7 +719,37 @@ class ChainManager(object):
         -------
         None
         """
-        pass
+        custom_views = []
+        for fn in self.folder_names:
+            self.unfold(fn)
+        new_df = self.chains[0].dataframe
+
+        # rename total column for vertical index merge (columns)...
+        new_df.rename(columns={self.chains[0]._x_keys[0]: 'Total'}, inplace=True)
+
+        if x_label == 'auto':
+            pass
+        if y_label == 'auto':
+            pass
+
+        new_df.index.set_levels(levels=[x_label], level=0, inplace=True)
+        # new_df.columns.set_levels(levels=[y_label], level=0, inplace=True)
+        custom_views.extend(self.chains[0]._views_per_rows())
+        for c in self.chains[1:]:
+            custom_views.extend(c._views_per_rows())
+            c.dataframe.index.set_levels(levels=[x_label], level=0, inplace=True)
+            # c.dataframe.columns.set_levels(levels=[y_label], level=0, inplace=True)
+
+            # rename total column for vertical index merge (columns)...
+            c.dataframe.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
+
+            new_df = new_df.append(c.dataframe)
+
+        self.chains[0]._frame = new_df
+        self.reorder([0])
+        self.chains[0]._custom_views = custom_views
+        return None
+
 
     def reorder(self, order, folder=None, inplace=True):
         """
@@ -1671,6 +1702,8 @@ class Chain(object):
         self.name = name
         self.structure = structure
         self.source = 'native'
+        self.edited = False
+        self._custom_views = None
         self.double_base = False
         self.grouping = None
         self.sig_test_letters = None
@@ -2043,60 +2076,63 @@ class Chain(object):
         else:
             #  Native Chain views
             # ----------------------------------------------------------------
-            if self._array_style != 0:
-                metrics = []
-                if self.orientation == 'x':
-                    for view in self._valid_views():
-                        view = self._force_list(view)
-                        initial = view[0]
-                        size = self.views[initial]
-                        metrics.extend(view * size)
-                else:
-                    for view_part in self.views:
+            if self.edited and self._custom_views:
+                return self._custom_views
+            else:
+                if self._array_style != 0:
+                    metrics = []
+                    if self.orientation == 'x':
                         for view in self._valid_views():
                             view = self._force_list(view)
                             initial = view[0]
-                            size = view_part[initial]
+                            size = self.views[initial]
                             metrics.extend(view * size)
-            else:
-                counts = []
-                colpcts =  []
-                rowpcts = []
-                metrics = []
-                ci = self.cell_items
-                for v in self.views.keys():
-                    parts = v.split('|')
-                    is_completed = ']*:' in v
-                    if not self._is_c_pct(parts):
-                        counts.extend([v]*self.views[v])
-                    if self._is_r_pct(parts):
-                        rowpcts.extend([v]*self.views[v])
-                    if (self._is_c_pct(parts) or self._is_base(parts) or
-                        self._is_stat(parts)):
-                        colpcts.extend([v]*self.views[v])
-                    # else:
-                    #     if ci == 'counts_colpct' and self.grouping:
-                    #         if not self._is_counts(parts):
-                    #         # ...or self._is_c_base(parts):
-                    #             colpcts.append(None)
-                    #     else:
-                    #         colpcts.extend([v] * self.views[v])
-                dims = self._frame.shape
-                for row in range(0, dims[0]):
-                    if ci == 'counts_colpct' and self.grouping:
-                        if row % 2 == 0:
-                            if self._counts_first:
-                                vc = counts
-                            else:
-                                vc = colpcts
-                        else:
-                            if not self._counts_first:
-                                vc = counts
-                            else:
-                                vc = colpcts
                     else:
-                        vc = counts if ci == 'counts' else colpcts
-                    metrics.append({col: vc[col] for col in range(0, dims[1])})
+                        for view_part in self.views:
+                            for view in self._valid_views():
+                                view = self._force_list(view)
+                                initial = view[0]
+                                size = view_part[initial]
+                                metrics.extend(view * size)
+                else:
+                    counts = []
+                    colpcts =  []
+                    rowpcts = []
+                    metrics = []
+                    ci = self.cell_items
+                    for v in self.views.keys():
+                        parts = v.split('|')
+                        is_completed = ']*:' in v
+                        if not self._is_c_pct(parts):
+                            counts.extend([v]*self.views[v])
+                        if self._is_r_pct(parts):
+                            rowpcts.extend([v]*self.views[v])
+                        if (self._is_c_pct(parts) or self._is_base(parts) or
+                            self._is_stat(parts)):
+                            colpcts.extend([v]*self.views[v])
+                        # else:
+                        #     if ci == 'counts_colpct' and self.grouping:
+                        #         if not self._is_counts(parts):
+                        #         # ...or self._is_c_base(parts):
+                        #             colpcts.append(None)
+                        #     else:
+                        #         colpcts.extend([v] * self.views[v])
+                    dims = self._frame.shape
+                    for row in range(0, dims[0]):
+                        if ci == 'counts_colpct' and self.grouping:
+                            if row % 2 == 0:
+                                if self._counts_first:
+                                    vc = counts
+                                else:
+                                    vc = colpcts
+                            else:
+                                if not self._counts_first:
+                                    vc = counts
+                                else:
+                                    vc = colpcts
+                        else:
+                            vc = counts if ci == 'counts' else colpcts
+                        metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
     def _valid_views(self, flat=False):
