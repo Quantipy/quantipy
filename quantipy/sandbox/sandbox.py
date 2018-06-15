@@ -720,35 +720,44 @@ class ChainManager(object):
         None
         """
         custom_views = []
-        for fn in self.folder_names:
-            self.unfold(fn)
-        new_df = self.chains[0].dataframe
-        totalmul = len(new_df.columns.get_level_values(0).tolist())
-
-        # rename total column for vertical index merge (columns)...
-        new_df.rename(columns={self.chains[0]._x_keys[0]: 'Total'}, inplace=True)
-
         if x_label == 'auto':
             pass
         if y_label == 'auto':
             pass
-        new_df.index.set_levels(levels=[x_label], level=0, inplace=True)
-        if self.chains[0].array_style == 0:
-            new_df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
+        for fn in self.folder_names:
+            self.unfold(fn)
 
-        if not self.chains[0].array_style == 0:
-            custom_views.extend(self.chains[0]._views_per_rows())
-        for c in self.chains[1:]:
+        chains = self.chains
+        firstchain = chains[0]
+        totalmul = len(firstchain._frame.columns.get_level_values(0).tolist())
+        concat_dfs = []
+        for c in chains:
+            df = c.dataframe
+            df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
+            df.index.set_levels(levels=[x_label], level=0, inplace=True)
             if not c.array_style == 0:
                 custom_views.extend(c._views_per_rows())
+            else:
+                df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
+            concat_dfs.append(df)
+        new_df = pd.concat(concat_dfs, axis=0)
 
-            # rename total column for vertical index merge (columns)...
-            c.dataframe.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
-
-            c.dataframe.index.set_levels(levels=[x_label], level=0, inplace=True)
-            if c.array_style == 0:
-                c.dataframe.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
-            new_df = new_df.append(c.dataframe)
+        # new_df = self.chains[0].dataframe
+        # totalmul = len(new_df.columns.get_level_values(0).tolist())
+        # new_df.rename(columns={self.chains[0]._x_keys[0]: 'Total'}, inplace=True)
+        # new_df.index.set_levels(levels=[x_label], level=0, inplace=True)
+        # if self.chains[0].array_style == 0:
+        #     new_df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
+        # else:
+        #     custom_views.extend(self.chains[0]._views_per_rows())
+        # for c in self.chains[1:]:
+        #     c.dataframe.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
+        #     c.dataframe.index.set_levels(levels=[x_label], level=0, inplace=True)
+        #     if not c.array_style == 0:
+        #         custom_views.extend(c._views_per_rows())
+        #     else:
+        #         c.dataframe.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
+        #     new_df = new_df.append(c.dataframe)
 
         self.chains[0]._frame = new_df
         self.reorder([0])
