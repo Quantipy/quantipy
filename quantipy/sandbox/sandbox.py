@@ -736,7 +736,6 @@ class ChainManager(object):
             pass
         for fn in self.folder_names:
             self.unfold(fn)
-
         chains = self.chains
         firstchain = chains[0]
         totalmul = len(firstchain._frame.columns.get_level_values(0).tolist())
