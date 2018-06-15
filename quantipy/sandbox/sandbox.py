@@ -714,6 +714,16 @@ class ChainManager(object):
 
         Parameters
         ----------
+        x_label : {str, 'auto'}, default 'auto'
+            A new text label for the merged x-axis.
+        y_label : {str, 'auto'}, default 'auto'
+            A new text label for the merged y-axis if multiple array summaries
+            are the input.
+        pos : TODO
+            TODO
+        drop : bool, default False
+            By default, the original ``qp.Chain`` elements will get removed from
+            the resulting ``qp.ChainManager`` structure.
 
         Returns
         -------
