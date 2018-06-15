@@ -693,7 +693,7 @@ class ChainManager(object):
         if 'cbase' in values:
             values[values.index('cbase')] = 'All'
         for c in self.chains:
-            c._remove_letter_header()
+            if c.sig_test_letters: c._remove_letter_header()
             idx, names = c._view_idxs(values, names=True)
             if axis == 'y':
                 c._frame = c._frame.iloc[:, idx]
@@ -723,6 +723,7 @@ class ChainManager(object):
         for fn in self.folder_names:
             self.unfold(fn)
         new_df = self.chains[0].dataframe
+        totalmul = len(new_df.columns.get_level_values(0).tolist())
 
         # rename total column for vertical index merge (columns)...
         new_df.rename(columns={self.chains[0]._x_keys[0]: 'Total'}, inplace=True)
@@ -731,18 +732,22 @@ class ChainManager(object):
             pass
         if y_label == 'auto':
             pass
-
         new_df.index.set_levels(levels=[x_label], level=0, inplace=True)
-        # new_df.columns.set_levels(levels=[y_label], level=0, inplace=True)
-        custom_views.extend(self.chains[0]._views_per_rows())
+        if self.chains[0].array_style == 0:
+            new_df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
+
+        if not self.chains[0].array_style == 0:
+            custom_views.extend(self.chains[0]._views_per_rows())
         for c in self.chains[1:]:
-            custom_views.extend(c._views_per_rows())
-            c.dataframe.index.set_levels(levels=[x_label], level=0, inplace=True)
-            # c.dataframe.columns.set_levels(levels=[y_label], level=0, inplace=True)
+            if not c.array_style == 0:
+                custom_views.extend(c._views_per_rows())
 
             # rename total column for vertical index merge (columns)...
             c.dataframe.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
 
+            c.dataframe.index.set_levels(levels=[x_label], level=0, inplace=True)
+            if c.array_style == 0:
+                c.dataframe.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
             new_df = new_df.append(c.dataframe)
 
         self.chains[0]._frame = new_df
@@ -1933,7 +1938,6 @@ class Chain(object):
     def contents(self):
         if self.structure:
             return
-
         nested = self._array_style == 0
         if nested:
             dims = self._frame.shape
@@ -2076,7 +2080,7 @@ class Chain(object):
         else:
             #  Native Chain views
             # ----------------------------------------------------------------
-            if self.edited and self._custom_views:
+            if self.edited and (self._custom_views and not self.array_style == 0):
                 return self._custom_views
             else:
                 if self._array_style != 0:
@@ -2132,6 +2136,7 @@ class Chain(object):
                                     vc = colpcts
                         else:
                             vc = counts if ci == 'counts' else colpcts
+
                         metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
@@ -2200,9 +2205,9 @@ class Chain(object):
         """
         if not isinstance(view_tags, list): view_tags = [view_tags]
         rows = self.named_rowmeta
-        print rows
-        raise
-        cut_rows = []
+        nested = self.array_style == 0
+        if nested:
+            rows = rows[0]
         invalids = []
         if ignore_tests:
             invalids.extend(['is_propstest', 'is_meanstest'])
@@ -2212,7 +2217,10 @@ class Chain(object):
             if any([invalid in row[1] for invalid in invalids]): continue
             if row[0] in view_tags:
                 idxs.append(i)
-                names.append(self._views_per_rows()[i])
+                if nested:
+                    names.append(self._views_per_rows()[i][i])
+                else:
+                    names.append(self._views_per_rows()[i])
         return idxs if not names else idxs, names
 
     @property
