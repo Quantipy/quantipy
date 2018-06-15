@@ -153,13 +153,14 @@ class Rules(object):
 
                 f = self._get_frequency_via_stack(col_key, axis)
 
-            if axis == 0 and self.array_summary:
+            slice_array_items = False
+            if axis == 0 and (self.array_summary or self.transposed_summary):
                 slice_array_items = True
-            else:
-                slice_array_items = False
 
-            if self.transposed_summary or (not slice_array_items and self.array_summary):
+            if self.transposed_summary:
                 rules_slicer = self._get_rules_slicer(f.T, rule_axis)
+            elif slice_array_items:
+                rules_slicer = self._get_rules_slicer(f, rule_axis)
             else:
                 if not expanded_net or ('sortx' in rule_axis and on_mean):
                     rules_slicer = self._get_rules_slicer(f, rule_axis)
