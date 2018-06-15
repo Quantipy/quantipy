@@ -702,6 +702,9 @@ class Batch(qp.DataSet):
         if self.additional:
             err_msg = "Cannot add open end DataFrames to as_addition()-Batches!"
             raise NotImplementedError(err_msg)
+        dupes = [v for v in oe if v in break_by]
+        if dupes:
+            raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
             if self.filter != 'no_filter':
                 ds = qp.DataSet('open_end')
