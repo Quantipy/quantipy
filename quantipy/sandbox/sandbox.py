@@ -673,7 +673,12 @@ class ChainManager(object):
         else:
             return cm
 
-    def cut(self, values, axis='x'):
+    def rebase(self, base_vector, replace_base=True):
+        """
+        """
+        pass
+
+    def cut(self, values):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
 
@@ -682,8 +687,6 @@ class ChainManager(object):
         values : (list of) str
             The string must indicate the raw (i.e. the unpainted) second level
             axis value, e.g. ``'mean'``, ``'net_1'``, etc.
-        axis : {'x', 'y'}, default 'x'
-            The axis to target.
 
         Returns
         -------
@@ -694,11 +697,13 @@ class ChainManager(object):
             values[values.index('cbase')] = 'All'
         for c in self.chains:
             if c.sig_test_letters: c._remove_letter_header()
-            idx, names = c._view_idxs(values, names=True)
-            if axis == 'y':
-                c._frame = c._frame.iloc[:, idx]
+            idxs, names, order = c._view_idxs(values, names=True)
+            idxs = [i for _, i in sorted(zip(order, idxs))]
+            names = [n for _, n in sorted(zip(order, names))]
+            if c.array_style == 0:
+                c._frame = c._frame.iloc[:, idxs]
             else:
-                c._frame = c._frame.iloc[idx, :]
+                c._frame = c._frame.iloc[idxs, :]
             new_views = OrderedDict()
             for v in c.views.copy():
                 if not v in names:
@@ -710,7 +715,7 @@ class ChainManager(object):
 
     def concat(self, x_label='auto', y_label='auto', pos=None, drop=True):
         """
-        Concatenate **all** ``qp.Chain```elements, merging to a single x-axis.
+        Concatenate **all** ``qp.Chain```elements, merging into a single x-axis.
 
         Parameters
         ----------
@@ -2222,24 +2227,39 @@ class Chain(object):
         """
         """
         if not isinstance(view_tags, list): view_tags = [view_tags]
-        rows = self.named_rowmeta
+        rowmeta = self.named_rowmeta
         nested = self.array_style == 0
         if nested:
-            rows = rows[0]
+            rowmeta = rowmeta[0]
+        rows = []
+        for r in rowmeta:
+            if str(r[0]).isdigit() or r[0] == '':
+                if 'is_counts' in r[1]:
+                    rows.append(('counts', r[1]))
+                elif 'is_c_pct' in r[1]:
+                    rows.append(('c%', r[1]))
+                elif 'is_propstest' in r[1]:
+                    rows.append(('propstest', r[1]))
+                elif 'is_meanstest' in r[1]:
+                    rows.append(('meanstest', r[1]))
+            else:
+                rows.append(r)
         invalids = []
         if ignore_tests:
             invalids.extend(['is_propstest', 'is_meanstest'])
         idxs = []
         names = []
+        order = []
         for i, row in enumerate(rows):
             if any([invalid in row[1] for invalid in invalids]): continue
             if row[0] in view_tags:
+                order.append(view_tags.index(row[0]))
                 idxs.append(i)
                 if nested:
                     names.append(self._views_per_rows()[i][i])
                 else:
                     names.append(self._views_per_rows()[i])
-        return idxs if not names else idxs, names
+        return (idxs, order) if not names else (idxs, names, order)
 
     @property
     def named_rowmeta(self):
