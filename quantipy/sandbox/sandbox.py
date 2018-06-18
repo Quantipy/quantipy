@@ -678,7 +678,7 @@ class ChainManager(object):
         """
         pass
 
-    def cut(self, values):
+    def cut(self, values, ci=None):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
 
@@ -687,6 +687,9 @@ class ChainManager(object):
         values : (list of) str
             The string must indicate the raw (i.e. the unpainted) second level
             axis value, e.g. ``'mean'``, ``'net_1'``, etc.
+        ci : {'counts', 'c%', None}, default None
+            The cell item version to target if multiple frequency representations
+            are present.
 
         Returns
         -------
@@ -697,9 +700,10 @@ class ChainManager(object):
             values[values.index('cbase')] = 'All'
         for c in self.chains:
             if c.sig_test_letters: c._remove_letter_header()
-            idxs, names, order = c._view_idxs(values, names=True)
+            idxs, names, order = c._view_idxs(values, names=True, ci=ci)
             idxs = [i for _, i in sorted(zip(order, idxs))]
             names = [n for _, n in sorted(zip(order, names))]
+
             if c.array_style == 0:
                 c._frame = c._frame.iloc[:, idxs]
             else:
@@ -713,9 +717,9 @@ class ChainManager(object):
             c.edited = True
         return None
 
-    def concat(self, x_label='auto', y_label='auto', pos=None, drop=True):
+    def join(self, x_label='auto', y_label='auto', drop=True):
         """
-        Concatenate **all** ``qp.Chain```elements, merging into a single x-axis.
+        Join **all** ``qp.Chain```elements, concatenating along a merged x-axis.
 
         Parameters
         ----------
@@ -724,8 +728,6 @@ class ChainManager(object):
         y_label : {str, 'auto'}, default 'auto'
             A new text label for the merged y-axis if multiple array summaries
             are the input.
-        pos : TODO
-            TODO
         drop : bool, default False
             By default, the original ``qp.Chain`` elements will get removed from
             the resulting ``qp.ChainManager`` structure.
@@ -736,7 +738,7 @@ class ChainManager(object):
         """
         custom_views = []
         if x_label == 'auto':
-            pass
+            x_label = ', '.join(c._x_keys[0] for c in self.chains)
         if y_label == 'auto':
             pass
         for fn in self.folder_names:
@@ -2223,7 +2225,7 @@ class Chain(object):
                     stat=self._stat(parts),
                     siglevel=self._siglevel(parts))
 
-    def _view_idxs(self, view_tags, ignore_tests=True, names=False):
+    def _view_idxs(self, view_tags, ignore_tests=True, names=False, ci=None):
         """
         """
         if not isinstance(view_tags, list): view_tags = [view_tags]
@@ -2233,20 +2235,24 @@ class Chain(object):
             rowmeta = rowmeta[0]
         rows = []
         for r in rowmeta:
-            if str(r[0]).isdigit() or r[0] == '':
-                if 'is_counts' in r[1]:
-                    rows.append(('counts', r[1]))
-                elif 'is_c_pct' in r[1]:
-                    rows.append(('c%', r[1]))
-                elif 'is_propstest' in r[1]:
-                    rows.append(('propstest', r[1]))
-                elif 'is_meanstest' in r[1]:
-                    rows.append(('meanstest', r[1]))
+            is_code = str(r[0]).isdigit()
+            if 'is_counts' in r[1] and is_code:
+                rows.append(('counts', r[1]))
+            elif 'is_c_pct' in r[1] and is_code:
+                rows.append(('c%', r[1]))
+            elif 'is_propstest' in r[1]:
+                rows.append(('propstest', r[1]))
+            elif 'is_meanstest' in r[1]:
+                rows.append(('meanstest', r[1]))
             else:
                 rows.append(r)
         invalids = []
         if ignore_tests:
             invalids.extend(['is_propstest', 'is_meanstest'])
+        if ci == 'counts':
+            invalids.append('is_c_pct')
+        elif ci == 'c%':
+            invalids.append('is_counts')
         idxs = []
         names = []
         order = []
@@ -2261,6 +2267,19 @@ class Chain(object):
                     names.append(self._views_per_rows()[i])
         return (idxs, order) if not names else (idxs, names, order)
 
+    @staticmethod
+    def _remove_grouped_blanks(viewindex_labs):
+        """
+        """
+        full = []
+        for v in viewindex_labs:
+            if v == '':
+                full.append(last)
+            else:
+                last = v
+                full.append(last)
+        return full
+
     @property
     def named_rowmeta(self):
         if self.painted:
@@ -2268,9 +2287,11 @@ class Chain(object):
         d = self.describe()
         if self.array_style == 0:
             n = self._frame.columns.get_level_values(1).values.tolist()
+            n = self._remove_grouped_blanks(n)
             mapped = {rowid: zip(n, rowmeta) for rowid, rowmeta in d.items()}
         else:
             n = self._frame.index.get_level_values(1).values.tolist()
+            n = self._remove_grouped_blanks(n)
             mapped = zip(n, d)
         if not self.painted: self.toggle_labels()
         return mapped
