@@ -146,7 +146,10 @@ class PptxPainter(object):
         self.chart_column = default_chart_column.copy()
         self.chart_pie = default_chart_pie.copy()
 
-        self.slide_kwargs = default_slide_kwargs.copy()
+        self.slide_kwargs = {
+                    'textboxs': {},
+                    'charts': {},
+                    }
 
     # TODO Make a method that output all defaults
 

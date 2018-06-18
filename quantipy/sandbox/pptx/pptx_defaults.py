@@ -217,10 +217,3 @@ footer_shape['textframe_kwargs'] = default_textframe.copy()
 footer_shape['textframe_kwargs']['font_kwargs'] = default_font.copy()
 footer_shape['textframe_kwargs']['font_kwargs']['font_bold']=True
 
-#----------------------------------------------------------------------------------------------
-# Testing a version with dict in dicts 'txtboxes'/'chart' instead of list
-default_slide_kwargs = {
-    'textboxs': {},
-    'charts': {},
-}
-
