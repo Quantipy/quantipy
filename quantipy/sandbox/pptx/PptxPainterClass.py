@@ -150,6 +150,31 @@ class PptxPainter(object):
 
     # TODO Make a method that output all defaults
 
+    def queue_slide_items(self, chain, slide_items):
+        """
+        Helper function to queue a full slide.
+        Includes queueing of header with question text, chart and footer with base description
+
+        :param chain:
+        :param slide_items:
+        :return:
+        """
+        # Question text
+        draft = self.draft_textbox(pptx_defaults.header_shape, chain.question_text)
+        pptx.queue_textbox(settings=draft)
+
+        draft = pptx.draft_textbox(pptx_defaults.footer_shape, base_text)
+        pptx.queue_textbox(settings=draft)
+
+        # Chart
+        draft = pptx.draft_chart(chain.chart_df, chain.chart_type)
+        pptx.queue_chart(settings=draft)
+
+
+
+    def queue_chart_items(self, pptxdataframe, slide_items):
+        pass
+
     def clear_charts(self):
         """
         Initilalize the slide_kwargs "charts" dict
