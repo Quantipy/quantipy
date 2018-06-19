@@ -673,7 +673,7 @@ class ChainManager(object):
         else:
             return cm
 
-    def rebase(self, base_vector, replace_base=True):
+    def apply(self):
         """
         """
         pass
@@ -703,7 +703,6 @@ class ChainManager(object):
             idxs, names, order = c._view_idxs(values, names=True, ci=ci)
             idxs = [i for _, i in sorted(zip(order, idxs))]
             names = [n for _, n in sorted(zip(order, names))]
-
             if c.array_style == 0:
                 c._frame = c._frame.iloc[:, idxs]
             else:
@@ -757,24 +756,6 @@ class ChainManager(object):
                 df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
             concat_dfs.append(df)
         new_df = pd.concat(concat_dfs, axis=0)
-
-        # new_df = self.chains[0].dataframe
-        # totalmul = len(new_df.columns.get_level_values(0).tolist())
-        # new_df.rename(columns={self.chains[0]._x_keys[0]: 'Total'}, inplace=True)
-        # new_df.index.set_levels(levels=[x_label], level=0, inplace=True)
-        # if self.chains[0].array_style == 0:
-        #     new_df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
-        # else:
-        #     custom_views.extend(self.chains[0]._views_per_rows())
-        # for c in self.chains[1:]:
-        #     c.dataframe.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
-        #     c.dataframe.index.set_levels(levels=[x_label], level=0, inplace=True)
-        #     if not c.array_style == 0:
-        #         custom_views.extend(c._views_per_rows())
-        #     else:
-        #         c.dataframe.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
-        #     new_df = new_df.append(c.dataframe)
-
         self.chains[0]._frame = new_df
         self.reorder([0])
         self.chains[0]._custom_views = custom_views
