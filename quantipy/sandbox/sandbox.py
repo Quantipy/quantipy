@@ -703,7 +703,7 @@ class ChainManager(object):
             idxs, names, order = c._view_idxs(values, names=True, ci=ci)
             idxs = [i for _, i in sorted(zip(order, idxs))]
             names = [n for _, n in sorted(zip(order, names))]
-            c._non_grouped_axis()
+            if c.ci_count > 1: c._non_grouped_axis()
             if c.array_style == 0:
                 c._frame = c._frame.iloc[:, idxs]
             else:
