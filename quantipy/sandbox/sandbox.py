@@ -743,8 +743,7 @@ class ChainManager(object):
         for fn in self.folder_names:
             self.unfold(fn)
         chains = self.chains
-        firstchain = chains[0]
-        totalmul = len(firstchain._frame.columns.get_level_values(0).tolist())
+        totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
         concat_dfs = []
         for c in chains:
             df = c.dataframe
@@ -760,7 +759,6 @@ class ChainManager(object):
         self.reorder([0])
         self.chains[0]._custom_views = custom_views
         return None
-
 
     def reorder(self, order, folder=None, inplace=True):
         """
@@ -2248,6 +2246,7 @@ class Chain(object):
                     names.append(self._views_per_rows()[i])
         return (idxs, order) if not names else (idxs, names, order)
 
+
     @staticmethod
     def _remove_grouped_blanks(viewindex_labs):
         """
@@ -2260,6 +2259,11 @@ class Chain(object):
                 last = v
                 full.append(last)
         return full
+
+    def _non_grouped_axis(self, index):
+        """
+        """
+        pass
 
     @property
     def named_rowmeta(self):
