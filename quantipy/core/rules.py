@@ -155,9 +155,10 @@ class Rules(object):
 
                 f = self._get_frequency_via_stack(col_key, axis)
 
-            if expanded_net and not ('sortx' in rule_axis and on_mean):
-                rules_slicer = f.index.values.tolist()
-            elif self.array_summary and axis == 1:
+            # if expanded_net and not ('sortx' in rule_axis and on_mean)
+            #     rules_slicer = f.index.values.tolist()
+            # el
+            if self.array_summary and axis == 1:
                 rules_slicer = self._get_rules_slicer(f.T, rule_axis)
             else:
                 rules_slicer = self._get_rules_slicer(f, rule_axis)
