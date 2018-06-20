@@ -153,19 +153,14 @@ class Rules(object):
 
                 f = self._get_frequency_via_stack(col_key, axis)
 
-            slice_array_items = False
-            if axis == 0 and (self.array_summary or self.transposed_summary):
-                slice_array_items = True
-
-            if self.transposed_summary:
+            if expanded_net and not ('sortx' in rule_axis and on_mean):
+                rules_slicer = f.index.values.tolist()
+            elif self.transposed_summary:# and axis == 0:
                 rules_slicer = self._get_rules_slicer(f.T, rule_axis)
-            elif slice_array_items:
-                rules_slicer = self._get_rules_slicer(f, rule_axis)
+            elif self.array_summary and axis == 1:
+                rules_slicer = self._get_rules_slicer(f.T, rule_axis)
             else:
-                if not expanded_net or ('sortx' in rule_axis and on_mean):
-                    rules_slicer = self._get_rules_slicer(f, rule_axis)
-                else:
-                    rules_slicer = f.index.values.tolist()
+                rules_slicer = self._get_rules_slicer(f, rule_axis)
             try:
                 rules_slicer.remove((col_key, 'All'))
             except:
@@ -183,7 +178,6 @@ class Rules(object):
         elif rules_axis == 'y' and 'y' not in all_rules_axes:
             return None
         k, f, x, y = self.link.data_key, self.link.filter, self.link.x, self.link.y
-
         rules = None
         if rules_axis == 'x':
             if not self.array_summary and not self.transposed_summary:
@@ -233,7 +227,7 @@ class Rules(object):
                 xcol = '@'
                 ycol = y
                 try:
-                    rules = self.meta['masks'][y]['rules']['x']
+                    rules = self.meta['masks'][y]['rules']['y']
                     self._yrule_col = y
                 except:
                     pass
