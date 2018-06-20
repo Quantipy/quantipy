@@ -703,6 +703,7 @@ class ChainManager(object):
             idxs, names, order = c._view_idxs(values, names=True, ci=ci)
             idxs = [i for _, i in sorted(zip(order, idxs))]
             names = [n for _, n in sorted(zip(order, names))]
+            c._non_grouped_axis()
             if c.array_style == 0:
                 c._frame = c._frame.iloc[:, idxs]
             else:
@@ -2260,10 +2261,20 @@ class Chain(object):
                 full.append(last)
         return full
 
-    def _non_grouped_axis(self, index):
+    def _non_grouped_axis(self):
         """
         """
-        pass
+        axis = self._frame.index
+        l_zero = axis.get_level_values(0).values.tolist()[0]
+        l_one = axis.get_level_values(1).values.tolist()
+        l_one = self._remove_grouped_blanks(l_one)
+        axis_tuples = [(l_zero, lab) for lab in l_one]
+        if self.array_style == 0:
+            names = ['Array', 'Questions']
+        else:
+            names = ['Question', 'Values']
+        self._frame.index = pd.MultiIndex.from_tuples(axis_tuples, names=names)
+        return None
 
     @property
     def named_rowmeta(self):
