@@ -186,6 +186,9 @@ class DataSet(object):
     def created(self):
         return [v for v in self.variables() if self.get_property(v, 'created')]
 
+    def batches(self):
+        return self._meta['sets']['batches'].keys()
+
     def set_verbose_errmsg(self, verbose=True):
         """
         """
