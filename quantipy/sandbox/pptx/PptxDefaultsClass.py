@@ -31,7 +31,9 @@ class PptxDefaults(object):
 
     def __init__(self):
         self._shapes = pptx.shapes
+        self._chart = pptx.default_chart
         self._charts = pptx.shapes['charts']
+        self._textbox = pptx.default_textbox
         self._textboxes = pptx.shapes['textboxes']
         self._chart_bar = pptx.shapes['charts']['bar']
         self._chart_bar_stacked100 = pptx.shapes['charts']['bar_stacked100']
@@ -40,6 +42,39 @@ class PptxDefaults(object):
         self._chart_pie = pptx.shapes['charts']['pie']
         self._textbox_header = pptx.shapes['textboxes']['header']
         self._textbox_footer = pptx.shapes['textboxes']['footer']
+        self._text_frame = pptx.default_textframe
+
+    @property
+    def shapes(self):
+        return self._shapes
+
+    @property
+    def chart(self):
+        return self._chart
+
+    @property
+    def charts(self):
+        return self._charts
+
+    @property
+    def textbox(self):
+        return self._textbox
+
+    @property
+    def textboxes(self):
+        return self._textboxes
+
+    @property
+    def textbox_header(self):
+        return self._textbox_header
+
+    @property
+    def textbox_footer(self):
+        return self._textbox_footer
+
+    @property
+    def text_frame(self):
+        return self._text_frame
 
     def update_shape(self, shape, settings):
         """
