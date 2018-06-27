@@ -284,7 +284,7 @@ class PptxDataFrame(pd.DataFrame):
 
     def read_slide_items(self, setup):
         """
-
+        Method to translate the slide items request
         :param str setup:
         :rtype:
         """
@@ -304,7 +304,7 @@ class PptxDataFrame(pd.DataFrame):
 
 class PptxChain(object):
     """
-    This class is a wrapper around Chain() class to prepare for PPTX charting
+    This class is a wrapper around Chain class to prepare for PPTX charting
     """
 
     def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', decimals=2, verbose=True):
@@ -314,6 +314,7 @@ class PptxChain(object):
             is_varname_in_qtext: Is var name included in the painted chain dataframe? (False, True, 'full', 'ignore')
             crossbreak:
         """
+        self.crossbreaks_qtext = []
         self.verbose = verbose
         self._decimals = decimals
         self._chain = chain
@@ -336,10 +337,9 @@ class PptxChain(object):
         self.xbase_label = ""
         self.xbase_index = 0
         self.select_base(base_type=base_type)
-        self.base_description = "" if chain.base_descriptions == None else chain.base_descriptions
-        if self.base_description[0:6] == "Base: ": self.base_description = self.base_description[6:]
+        self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
+        if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
-        self.crossbreaks_qtext = []
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
