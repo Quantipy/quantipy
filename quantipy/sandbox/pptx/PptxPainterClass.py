@@ -27,7 +27,8 @@ from enumerations import (
     chart_type_dct
 )
 
-from pptx_defaults import *
+from PptxDefaultsClass import PptxDefaults
+import pandas as pd
 
 # chartdata_from_dataframe taken from topy.core.pandas_pptx.py
 def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
@@ -112,39 +113,46 @@ def return_slide_layout_by_name(pptx, slide_layout_name):
 
 class PptxPainter(object):
     """
-    A convenience YG-wrapper around the python-pptx library
+    A convenience wrapper around the python-pptx library
     """
 
-    def __init__(self, path_to_presentation, slide_layout=None):
+    def __init__(self, path_to_presentation, slide_layout=None, shape_properties=None):
         """
         Makes a Presentation instance and also defines a default slide layout if specified.
-        :param
-            path_to_presentation: Full path to PowerPoint book
-            slide_layout: Int
-                To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
 
+        Parameters
+        ----------
+        path_to_presentation: str
+            Full path to PowerPoint book
+        slide_layout: int
+            A PowerPoint slide layout.
+            To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
+        shape_properties: quantipy.sandbox.pptx.PptxDefaultsClass.PptxDefaults
+            An instance of PptxDefaults
         """
-        self.presentation  = Presentation(path_to_presentation) # TODO PptxPainter - Path checking
+
+        self.presentation  = Presentation(path_to_presentation) # TODO PptxPainter - Path checking # type: Presentation
         if slide_layout is None:
             self.default_slide_layout = None
         else:
             self.default_slide_layout = self.set_slide_layout(slide_layout)
 
-        # Add all the dafault dicts to the class - TODO Can this be done without importing the defaults module?
-        self.font = default_font.copy()
-        self.font_legend = default_font_legend.copy()
-        self.font_caxis = default_font_caxis.copy()
-        self.font_vaxis = default_font_vaxis.copy()
-        self.font_data_label = default_font_data_label.copy()
-        self.textframe = default_textframe.copy()
-        self.textbox = default_textbox.copy()
+        # Add all the dafault dicts to the class -
+        if shape_properties:
+            self._shape_properties = shape_properties
+        else:
+            self._defaults = PptxDefaults()
+            self._shape_properties = self._defaults.shapes
 
-        self.chart = default_chart.copy()
-        self.chart_bar = default_chart_bar.copy()
-        self.chart_bar_stacked100 = default_chart_bar_stacked100.copy()
-        self.chart_line = default_chart_line.copy()
-        self.chart_column = default_chart_column.copy()
-        self.chart_pie = default_chart_pie.copy()
+        self.textbox = None
+        self.chart = None
+
+        charts = self._shape_properties.charts
+        self.chart_bar = charts['bar']
+        self.chart_bar_stacked100 = charts['bar_stacked100']
+        self.chart_line = charts['line']
+        self.chart_column = charts['column']
+        self.chart_pie = charts['pie']
 
         self.slide_kwargs = {
                     'textboxs': {},
@@ -153,20 +161,27 @@ class PptxPainter(object):
 
     # TODO Make a method that output all defaults
 
-    def queue_slide_items(self, chain, slide_items):
+    def queue_slide_items(self, pptx_chain, items):
         """
         Helper function to queue a full slide.
         Includes queueing of header with question text, chart and footer with base description
 
-        :param chain:
-        :param slide_items:
-        :return:
-        """
-        # Question text
-        draft = self.draft_textbox(pptx_defaults.header_shape, chain.question_text)
-        pptx.queue_textbox(settings=draft)
+        Parameters
+        ----------
+        pptx_chain: PptxChain
+            An instance of an PptxChain
+        pptx_defaults: quantipy.sandbox.pptx.PptxDefaultsClass.PptxDefaults
 
-        draft = pptx.draft_textbox(pptx_defaults.footer_shape, base_text)
+        Returns
+        -------
+        dict
+        """
+
+        # Question text
+        draft = self.draft_textbox(self._defaults.textbox_header, pptx_chain.question_text)
+        self.queue_textbox(settings=draft)
+
+        draft = pptx.draft_textbox(self._defaults.textbox_footer, pptx_chain.)
         pptx.queue_textbox(settings=draft)
 
         # Chart
@@ -203,7 +218,7 @@ class PptxPainter(object):
                 self.slide_kwargs[item].clear()
         elif key=='charts':
             self.slide_kwargs['charts'].clear()
-        elif key=='textboxs':
+        elif key=='textboxes':
             self.slide_kwargs['textboxs'].clear()
 
     def set_slide_layout(self, slide_layout):
@@ -240,20 +255,106 @@ class PptxPainter(object):
 
         return self.presentation.slides.add_slide(slide_layout)
 
-    def add_slide_from_queue(self, slide_layout=None, **kwargs):
+    def draft_textbox(self, settings, text=''):
+        """
+        Sets attribute self.textbox
+
+        Parameters
+        ----------
+        settings: dict
+            A dict of textbox settings, see dict default_textbox in pptx_defaults.py
+        text: basestring
+            Text to show in textbox
+        Returns: self.textbox
+        -------
+        """
+        self.textbox = settings.copy()
+        self.textbox['text'] = text
+        return self.textbox
+
+    def draft_chart(self, settings, dataframe):
+        """
+        Sets attribute self.chart
+
+        Parameters
+        ----------
+        settings: dict
+            A dict of chart settings, see dict default_chart in pptx_defaults.py
+        dataframe: pandas.core.frame.DataFrame
+            the pandas.dataframe to chart
+        Returns: self.chart
+        -------
+        """
+
+        self.chart = settings.copy()
+        self.chart['dataframe'] = dataframe
+        return self.chart
+
+    def draft_autochart(self, dataframe, chart_type):
+        """
+        Sets self.chart['chart_type'] and self.chart['dataframe']
+
+        Parameters
+        ----------
+        dataframe: pandas.core.frame.DataFrame
+        chart_type: str
+            A string corresponding to the keys in Dict "chart_type_dct" from "enumerations.py"
+        Returns: self.chart
+        -------
+        """
+        # TODO Class PptxPainter - Method draft_chart: check for correct chart_type input
+        if chart_type == 'pie':
+            self.chart = self.chart_pie.copy()
+        elif chart_type == 'bar_clustered' or chart_type == 'bar':
+            self.chart = self.chart_bar.copy()
+            if len(dataframe.columns) > 1:
+                self.chart['has_legend'] = True
+        elif chart_type == 'bar_stacked_100':
+            self.chart = self.chart_bar_stacked100.copy()
+
+        self.chart['dataframe'] = dataframe
+
+        return self.chart
+
+    def queue_chart(self, settings=None, name=None):
+        """
+        Will add a chart to the Slide properties Dict
+        :param
+            settings: A dictionary of chart settings, default is self.chart
+            init: Boolean. If True self.slide_kwargs['charts'] will be cleared before adding chart
+            name: Optionally give the chart a name. If none the chart will be named 'chart[n]'
+        :return:
+            None, Adds a key to self.slide_kwargs['charts']
+        """
+        if settings is None:
+            settings = self.chart.copy()
+        self._add('chart', settings, name=name)
+
+    def queue_textbox(self, settings=None, name=None):
+        """
+        Will add a textbox to the Slide properties Dict
+        :param
+            settings:  A dictionary of textbox settings, deafult is self.textbox
+            init: Boolean. Should self.slide_kwargs['textboxes'] be initialized before adding chart
+            name: Optionally give the textbox a name. If none the textbox will be named 'textbox[n]'
+        :return:
+            None, adds a key to self.slide_kwargs['textboxes']
+        """
+        if settings is None:
+            settings = self.textbox.copy()
+
+        self._add('textbox', settings, name=name)
+
+    def add_slide_from_queue(self, slide_layout=None):
         """
         Method that creates a Slide instance and inserts
-        textboxes and charts as requested in **kwargs
+        textboxes and charts as queued in self.slide_kwargs
         :param
             slide_layout: Int
                 The Slide Layout to use.
                 To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
                 If no Slide layout is specified then self.default_slide_layout will be used
-            kwargs: Dict -> List -> Dict
-                A dict with keys that are shape types (supported types: 'txtboxes' and 'charts')
-                Each dict can have a list of 1 or more dicts with info needed to insert shape type.
-
-        :return: None - sets the self.slide property
+        :return:
         """
         slide= self.add_slide(slide_layout=slide_layout)
         kwargs = self.slide_kwargs
@@ -272,34 +373,12 @@ class PptxPainter(object):
 
         return slide
 
-    def draft_chart(self, dataframe, chart_type):
-        """
-        Sets self.chart['chart_type'] and self.chart['dataframe']
-        :param
-           dataframe: the pandas.dataframe to chart
-           chart_type: A string corresponding to the keys in Dict "chart_type_dct" from "enumerations.py"
-        :return:
-            None, sets self.chart
-        """
-        # TODO PptxPainter - draft_chart - check for correct chart_type input
-        if chart_type == 'pie':
-            self.chart = self.chart_pie.copy()
-        elif chart_type == 'bar_clustered' or chart_type == 'bar':
-            self.chart = self.chart_bar.copy()
-            if len(dataframe.columns) > 1:
-                self.chart['has_legend'] = True
-        elif chart_type == 'bar_stacked_100':
-            self.chart = self.chart_bar_stacked100.copy()
-
-        self.chart['dataframe'] = dataframe
-
-    def _add(self, shape, attrib, name=None):
+    def _add(self, shape, settings, name=None):
         """
         Internal for adding a new shape (textbox or chart) to self.slide_kwargs
         :param
             shape: String ('chart' or 'textbox')
-            attrib: A dictionary of settings
-            init: Boolean. If True the specified shape attrib in self.slide_kwargs will be cleared
+            settings: A dictionary of settings
             name:
         :return:
         """
@@ -309,21 +388,7 @@ class PptxPainter(object):
         if name is None:
             name='{}{}'.format(shape, len(self.slide_kwargs[shapes]) + 1)
 
-        self.slide_kwargs[shapes][name] = attrib.copy()
-
-    def queue_chart(self, settings=None, name=None):
-        """
-        Will add a chart to the Slide properties Dict
-        :param
-            settings: A dictionary of chart settings, default is self.chart
-            init: Boolean. If True self.slide_kwargs['charts'] will be cleared before adding chart
-            name: Optionally give the chart a name. If none the chart will be named 'chart[n]'
-        :return:
-            None, Adds a key to self.slide_kwargs['charts']
-        """
-        if settings is None:
-            settings = self.chart.copy()
-        self._add('chart', settings, name=name)
+        self.slide_kwargs[shapes][name] = settings.copy()
 
     def add_chart(self, slide,
                   dataframe=None,
@@ -334,14 +399,14 @@ class PptxPainter(object):
                   # Title
                   has_chart_title=False,
                   titletext=None,
-                  textframe_kwargs=default_textframe.copy(),
+                  textframe_kwargs=dict(),
 
                   # Legend properties
                   has_legend=True,
                   legend_position='right',
                   legend_in_layout=False,  # will we ever set this True?
                   legend_horz_offset=0.1583,
-                  legend_font_kwargs=default_font_legend.copy(),
+                  legend_font_kwargs=dict(),
 
                   # Category axis properties
                   caxis_visible=True,
@@ -351,7 +416,7 @@ class PptxPainter(object):
                   caxis_has_minor_gridlines=False,
                   caxis_major_tick_mark='outside',
                   caxis_minor_tick_mark='none',
-                  caxis_font_kwargs=default_font_caxis.copy(),
+                  caxis_font_kwargs=dict(),
 
                   # Value axis properties
                   vaxis_visible=True,
@@ -366,7 +431,7 @@ class PptxPainter(object):
                   vaxis_minor_unit=None,
                   vaxis_tick_labels_num_format='0%',
                   vaxis_tick_labels_num_format_is_linked=False,
-                  vaxis_font_kwargs=default_font_vaxis.copy(),
+                  vaxis_font_kwargs=dict(),
 
                   # Fix yaxis (False, 'center', ?). Currently only an option for bar chart
                   fix_yaxis = False,
@@ -376,7 +441,7 @@ class PptxPainter(object):
                   data_labels_position='center',
                   data_labels_num_format='0%',
                   data_labels_num_format_is_linked=False,
-                  data_labels_font_kwargs=default_font_data_label.copy(),
+                  data_labels_font_kwargs=dict(),
 
                   # Plot properties
                   plot_vary_by_cat=False,
@@ -561,18 +626,6 @@ class PptxPainter(object):
 
         return chart
 
-    def draft_textbox(self, attrib, text=''):
-        """
-        Sets attribute self.textbox
-        :param
-            attrib: A attrib of textbox settings
-            text: Text to show in textbox
-        :return: self.textbox
-        """
-        self.textbox = attrib.copy()
-        self.textbox['text'] = text
-        return self.textbox
-
     def add_text(self, text):
         """
         Adds text to self.textbox['text']
@@ -581,21 +634,6 @@ class PptxPainter(object):
         :return: None, sets self.textbox
         """
         self.textbox['text'] = text
-
-    def queue_textbox(self, settings=None, name=None):
-        """
-        Will add a textbox to the Slide properties Dict
-        :param
-            settings:  A dictionary of textbox settings, deafult is self.textbox
-            init: Boolean. Should self.slide_kwargs['textboxes'] be initialized before adding chart
-            name: Optionally give the textbox a name. If none the textbox will be named 'textbox[n]'
-        :return:
-            None, adds a key to self.slide_kwargs['textboxes']
-        """
-        if settings is None:
-            settings = self.textbox.copy()
-
-        self._add('textbox', settings, name=name)
 
     @staticmethod
     def add_textbox(slide,
@@ -606,7 +644,7 @@ class PptxPainter(object):
                     textbox_fill_solid=False,
                     textbox_color=(100, 0, 0),
                     textbox_color_brightness=0,
-                    textframe_kwargs=default_textframe.copy(),
+                    textframe_kwargs=dict(),
                     ):
         """
         Adds a text box to the given slide and sets all properties for the text box
@@ -653,7 +691,7 @@ class PptxPainter(object):
                       margin_bottom=Cm(0.13),
                       vertical_alignment='middle',
                       horizontal_alignment='left',
-                      font_kwargs=default_font.copy()
+                      font_kwargs=dict()
                       ):
         """
         Adds a textframe to the given textbox and sets all properties for the text frame
@@ -714,7 +752,7 @@ class PptxPainter(object):
     def set_font(font_obj,
                  textframe=None,
                  fit_text=False,
-                 font_name=default_font_name,
+                 font_name='Trebuchet MS',
                  font_size=12,
                  font_bold=False,
                  font_italic=False,
