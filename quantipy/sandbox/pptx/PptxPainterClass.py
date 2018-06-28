@@ -163,35 +163,54 @@ class PptxPainter(object):
 
     def queue_slide_items(self, pptx_chain, items):
         """
-        Helper function to queue a full slide.
+        Helper function to queue a full automated slide.
         Includes queueing of header with question text, chart and footer with base description
 
         Parameters
         ----------
-        pptx_chain: PptxChain
-            An instance of an PptxChain
-        pptx_defaults: quantipy.sandbox.pptx.PptxDefaultsClass.PptxDefaults
-
+        pptx_chain: quantipy.sandbox.pptx.PptxChainClass.PptxChain
+            An instance of a PptxChain
+        items: basestring
+            A string of slide items, separated with +, eg. 'basic+nets+means-table'
+            Supported items are 'basic', 'nets', 'means-table', 'means-line', 'nets-table',
         Returns
         -------
-        dict
+        None
         """
 
         # Question text
-        draft = self.draft_textbox(self._defaults.textbox_header, pptx_chain.question_text)
+        draft = self.draft_textbox(self._shape_properties.textbox_header, pptx_chain.question_text)
         self.queue_textbox(settings=draft)
 
-        draft = pptx.draft_textbox(self._defaults.textbox_footer, pptx_chain.)
-        pptx.queue_textbox(settings=draft)
+        draft = self.draft_textbox(self._shape_properties.textbox_footer, pptx_chain.base_text)
+        self.queue_textbox(settings=draft)
+
+        self.queue_chart_items(pptx_chain, items)
+
+        return None
+
+    def queue_chart_items(self, pptx_chain, items):
+        """
+        Helper function to queue chart items.
+
+        Parameters
+        ----------
+        pptx_chain: quantipy.sandbox.pptx.PptxChainClass.PptxChain
+            An instance of a PptxChain
+        items: basestring
+            A string of slide items, separated with +, eg. 'basic+nets+means-table'
+            Supported items are 'basic', 'nets', 'means-table', 'means-line', 'nets-table',
+            Item 'basic' will always be included.
+        Returns
+        -------
+        None
+        """
+
+        chart_items = items.split('+')
 
         # Chart
-        draft = pptx.draft_chart(chain.chart_df, chain.chart_type)
-        pptx.queue_chart(settings=draft)
-
-
-
-    def queue_chart_items(self, pptxdataframe, slide_items):
-        pass
+        draft = self.draft_autochart(pptx_chain.chart_df, pptx_chain.chart_type)
+        self.queue_chart(settings=draft)
 
     def clear_charts(self):
         """
