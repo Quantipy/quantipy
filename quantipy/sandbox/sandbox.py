@@ -708,6 +708,7 @@ class ChainManager(object):
                 c._frame = c._frame.iloc[:, idxs]
             else:
                 c._frame = c._frame.iloc[idxs, :]
+                c.index = c._slice_edited_index(c.index, idxs)
             new_views = OrderedDict()
             for v in c.views.copy():
                 if not v in names:
@@ -1766,6 +1767,11 @@ class Chain(object):
         """Returns the total number of cells in the Chain.dataframe"""
         return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
 
+    def clone(self):
+        """
+        """
+        return copy.deepcopy(self)
+
     @lazy_property
     def _default_text(self):
         return self._meta['lib']['default text']
@@ -2260,6 +2266,20 @@ class Chain(object):
                 last = v
                 full.append(last)
         return full
+
+    def _slice_edited_index(self, axis, positions):
+        """
+        """
+        l_zero = axis.get_level_values(0).values.tolist()[0]
+        l_one = axis.get_level_values(1).values.tolist()
+        l_one = [l_one[p] for p in positions]
+        axis_tuples = [(l_zero, lab) for lab in l_one]
+        if self.array_style == 0:
+            names = ['Array', 'Questions']
+        else:
+            names = ['Question', 'Values']
+        return pd.MultiIndex.from_tuples(axis_tuples, names=names)
+
 
     def _non_grouped_axis(self):
         """
