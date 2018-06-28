@@ -339,6 +339,7 @@ class PptxChain(object):
         self.select_base(base_type=base_type)
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
+        self._base_text = None
         self.question_text = self.get_question_text(include_varname=False)
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
@@ -550,7 +551,11 @@ class PptxChain(object):
             self.chain_df = self.chain_df.rename(columns=new_labels_list)
             self.vals_in_labels = True
 
-    def base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", "):
+    @property
+    def base_text(self):
+        return self._base_text
+
+    def set_base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", ", base_label=None):
         """
         Returns the full base text made up of base_label, base_description and ybases, with some delimiters
         :param
@@ -558,10 +563,12 @@ class PptxChain(object):
             base_label_suf: char to put after base_label
             base_description_suf: When more than one column, use this char after base_description
             base_value_label_sep: char to separate column label, if more than one
+            base_label: str adhoc to use for base label
         :return:
         """
         # Base_label
-        base_label = self.xbase_label
+        if base_label is None:
+            base_label = self.xbase_label
 
         if self.base_description:
             base_label = u"{}{}".format(base_label,base_label_suf)
@@ -628,8 +635,7 @@ class PptxChain(object):
                 else:
                     base_text = ""
 
-        #print (base_text)
-        return base_text
+        self._base_text = base_text
 
     def _check_crossbreaks(self, crossbreaks):
         """
