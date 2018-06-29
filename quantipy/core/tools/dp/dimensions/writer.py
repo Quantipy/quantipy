@@ -190,7 +190,10 @@ def get_categories_mrs(meta, vtype, vvalues, child, child_name, text_key):
     mval = 1 if vtype == 'single' else len(vvalues)
     var_code.append(MaxValue(0, child, mval))
     for value in vvalues:
-        name = '{}a{}'.format(child_name, value['value'])
+        if value['value'] < 0:
+            name = '{}aminus{}'.format(child_name, -1 * value['value'])
+        else:
+            name = '{}a{}'.format(child_name, value['value'])
         labels = DimLabels(name, text_key)
         labels.add_text(value['text'])
         var_code.extend([
@@ -411,11 +414,14 @@ def convert_categorical(categorical):
         resp_prefix = categorical.name + 'a'
     if not cat.dtype == 'object':
         cat = cat.apply(lambda x:
-                        '{}{}'.format(resp_prefix, int(x))
+                        '{}{}'.format(resp_prefix, 
+                                      int(x) if int(x) > -1 else
+                                      'minus{}'.format(-1 * int(x)))
                         if not np.isnan(x) else np.NaN)
     else:
         cat = cat.apply(lambda x: str(x).split(';')[:-1])
-        cat = cat.apply(lambda x: ['{}{}'.format(resp_prefix, code)
+        cat = cat.apply(lambda x: ['{}{}'.format(resp_prefix, 
+                                                 code.replace('-', 'minus'))
                                    for code in x])
         cat = cat.apply(lambda x: str(x).replace('[', '').replace(']', ''))
         cat = cat.apply(lambda x: x.replace("'", '').replace(', ', ';'))

@@ -2260,6 +2260,7 @@ class Stack(defaultdict):
                 dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
                 if 'properties' in dataset._meta['columns'][var]:
                     for pname, props in dataset._meta['columns'][var]['properties'].items():
+                        if pname == 'survey': continue
                         dataset._meta['columns'][name]['properties'][pname] = props
                 if _is_simple_net(net_map):
                     _add_simple_expr_property(dataset, name, net_map)
@@ -2379,6 +2380,7 @@ class Stack(defaultdict):
                 prop['recoded_net'] = arr_items[0]
                 if 'properties' in ds._meta['masks'][arr_items[0]]:
                     for p, v in ds._meta['masks'][arr_items[0]]['properties'].items():
+                        if p == 'survey': continue
                         prop[p] = v
                 org_items = ds.sources(arr_items[0])
                 new_items = ds.sources(dims_name)

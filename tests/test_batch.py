@@ -133,7 +133,8 @@ class TestBatch(unittest.TestCase):
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
 		verbatims = _get_meta(batch)['verbatims'][0]
 		self.assertEqual(len(verbatims['idx']), 118)
-		self.assertEqual(verbatims['columns'], ['RecordNo', 'q8a', 'q9a'])
+		self.assertEqual(verbatims['columns'], ['q8a', 'q9a'])
+		self.assertEqual(verbatims['break_by'], ['RecordNo'])
 		self.assertEqual(verbatims['title'], 'open ends')
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', split=True,
 							title=['open ends', 'open ends2'], overwrite=True)
