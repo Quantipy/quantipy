@@ -555,6 +555,10 @@ class PptxChain(object):
     def base_text(self):
         return self._base_text
 
+    @base_text.setter
+    def base_text(self, base_text):
+        self._base_text = base_text
+
     def set_base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", ", base_label=None):
         """
         Returns the full base text made up of base_label, base_description and ybases, with some delimiters
