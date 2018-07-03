@@ -3592,10 +3592,11 @@ class DataSet(object):
                     ind = df_items.index('masks@{}'.format(var))
                     n_items = df_items[:ind] + self._get_source_ref(var) + df_items[ind+1:]
                     meta['sets']['data file']['items'] = n_items
-                    values = meta['lib']['values'][var]
-                    for source in self.sources(var):
-                        meta['columns'][source]['values'] = values
-                        meta['columns'][source]['parent'] = {}
+                    if self._has_categorical_data(var):
+                        values = meta['lib']['values'][var]
+                        for source in self.sources(var):
+                            meta['columns'][source]['values'] = values
+                            meta['columns'][source]['parent'] = {}
 
         df_items = meta['sets']['data file']['items']
         n_items = [i for i in df_items if not i.split('@')[-1] in name]
