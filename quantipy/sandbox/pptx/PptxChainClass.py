@@ -228,8 +228,8 @@ class PptxDataFrame(pd.DataFrame):
         return pptx_df_copy
 
     def get_nets(self):
-        row_list = get_indexes_from_list(self.cell_contents, ['net'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest'], exact=False)
+        row_list = get_indexes_from_list(self.cell_contents, ['is_net', 'net'], exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest','calc','normal'], exact=False)
 
         for x in dont_want:
             if x in row_list:
@@ -336,7 +336,7 @@ class PptxChain(object):
                       '\nGrid summary: {}'
                       '\nQuestion text: {}'
                       '\nBase description: {}'
-                      '\nBase label: {}'  
+                      '\nBase label: {}'
                       '\nBase size: {}'
                       '\nRequested crossbreak: {}'
                       '\n')
