@@ -210,9 +210,10 @@ class PptxDataFrame(pd.DataFrame):
     def get_cpct(self):
         row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
         dont_want = get_indexes_from_list(self.cell_contents, ['is_net','net','is_c_pct_sum'], exact=False)
+        not_net = get_indexes_from_list(self.cell_contents, ['normal', 'expanded'], exact=False)
 
         for x in dont_want:
-            if x in row_list:
+            if x in row_list and x not in not_net:
                 row_list.remove(x)
 
         if self.array_style == -1:
@@ -228,8 +229,8 @@ class PptxDataFrame(pd.DataFrame):
         return pptx_df_copy
 
     def get_nets(self):
-        row_list = get_indexes_from_list(self.cell_contents, ['net'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest'], exact=False)
+        row_list = get_indexes_from_list(self.cell_contents, ['net', 'is_net'], exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest','calc','normal'], exact=False)
 
         for x in dont_want:
             if x in row_list:
