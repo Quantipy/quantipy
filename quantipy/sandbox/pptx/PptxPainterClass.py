@@ -144,8 +144,8 @@ class PptxPainter(object):
             self._defaults = PptxDefaults()
             self._shape_properties = self._defaults.shapes
 
-        self.textbox = None
-        self.chart = None
+        self.textbox = self._shape_properties.textbox
+        self.chart = self._shape_properties.chart
 
         charts = self._shape_properties.charts
         self.chart_bar = charts['bar']
@@ -208,11 +208,11 @@ class PptxPainter(object):
         for chart_item in chart_items:
             if chart_item == 'basic':
                 chart_df = pptx_chain.chart_df.get_cpct()
-                draft = self.draft_autochart(chart_df.df, pptx_chain.chart_type)
+                draft = self.draft_autochart(chart_df(), pptx_chain.chart_type)
                 self.queue_chart(settings=draft)
             if chart_item == 'basic_nets':
                 chart_df = pptx_chain.chart_df.get('c_pct,net')
-                draft = self.draft_autochart(chart_df.df, pptx_chain.chart_type)
+                draft = self.draft_autochart(chart_df(), pptx_chain.chart_type)
                 self.queue_chart(settings=draft)
 
     def clear_charts(self):
@@ -333,6 +333,8 @@ class PptxPainter(object):
                 self.chart['has_legend'] = True
         elif chart_type == 'bar_stacked_100':
             self.chart = self.chart_bar_stacked100.copy()
+        else:
+            self.chart = self.chart_bar.copy()
 
         self.chart['dataframe'] = dataframe
 

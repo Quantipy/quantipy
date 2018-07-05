@@ -158,11 +158,8 @@ class PptxDataFrame_v2(object):
         self.__frames = []
         self.chart_type = chart_type
 
-    def __str__(self):
+    def __call__(self):
         return self.df
-
-    def __repr__(self):
-        return self.__str__()
 
     def get_cpct(self):
         """
@@ -238,7 +235,7 @@ class PptxDataFrame_v2(object):
 
         return pptx_df_copy
 
-    def get(self, cell_types, sort=False):
+    def get(self, cell_items_request, sort=False):
         """
         Method to get specific elements from chains dataframe
 
@@ -250,25 +247,28 @@ class PptxDataFrame_v2(object):
                       'net': self.get_nets,
                       'mean': self.get_means}
         # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_props', 't_means'
-        available_celltypes = set(method_map.keys())
-        if isinstance(cell_types, basestring):
-            cell_types = re.sub(' +', '', cell_types)
-            cell_types = cell_types.split(',')
-        value_test = set(cell_types).difference(available_celltypes)
+        available_cell_items = set(method_map.keys())
+        if isinstance(cell_items_request, basestring):
+            cell_items_request = re.sub(' +', '', cell_items_request)
+            cell_items_request = cell_items_request.split(',')
+        value_test = set(cell_items_request).difference(available_cell_items)
         if value_test:
-            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_celltypes))
+            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_items_request, available_cell_items))
 
         dataframes = []
         cell_items = []
-        for cell_type in cell_types:
-            pptx_frame = method_map[cell_type]()
+
+        for cell_item in cell_items_request:
+            pptx_frame = method_map[cell_item]()
+            if pptx_frame.df.empty:
+                continue
             dataframes.append(pptx_frame.df)
             cell_items += pptx_frame.cell_items
         new_df=pd.concat(dataframes, axis=0 if self.array_style==-1 else 1)
 
-        new_pptx_df = PptxDataFrame_v2(new_df, self.cell_items, self.array_style, self.chart_type)
+        new_pptx_df = PptxDataFrame_v2(new_df, cell_items, self.array_style, self.chart_type)
         new_pptx_df.chart_type = auto_charttype(new_df, self.array_style)
-        new_pptx_df.cell_items = cell_items
+
         return new_pptx_df
 
     def read_slide_items(self, setup):
