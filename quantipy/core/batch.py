@@ -240,7 +240,7 @@ class Batch(qp.DataSet):
         self = None
         return None
 
-    def rename(self, new_name, refs=True):
+    def rename(self, new_name):
         """
         Rename instance, updating ``DataSet`` references to the definiton, too.
         """
@@ -248,10 +248,6 @@ class Batch(qp.DataSet):
             raise KeyError("'%s' is already included!" % new_name)
         batches = self._meta['sets']['batches']
         p_spec = self._meta['info'].get('project_spec', {})
-        if refs:
-            org_name = self.name
-            if org_name in p_spec:
-                p_spec[new_name] = p_spec.pop(org_name)
         batches[new_name] = batches.pop(self.name)
         self.name = new_name
         self._update()
