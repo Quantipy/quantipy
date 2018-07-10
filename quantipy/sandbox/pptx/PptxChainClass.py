@@ -146,7 +146,7 @@ def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
 
     return chart_type
 
-class PptxDataFrame_v2(object):
+class PptxDataFrame(object):
     """
     Class for handling the dataframe to be charted
     """
@@ -180,7 +180,7 @@ class PptxDataFrame_v2(object):
         else:
             df_copy = self.df.iloc[:,row_list]
 
-        pptx_df_copy = PptxDataFrame_v2(df_copy,self.cell_items,self.array_style,self.chart_type)
+        pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style,self.chart_type)
         pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in row_list]
 
@@ -205,7 +205,7 @@ class PptxDataFrame_v2(object):
         else:
             df_copy = self.df.iloc[:, row_list]
 
-        pptx_df_copy = PptxDataFrame_v2(df_copy, self.cell_items, self.array_style, self.chart_type)
+        pptx_df_copy = PptxDataFrame(df_copy, self.cell_items, self.array_style, self.chart_type)
         pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in row_list]
 
@@ -229,7 +229,7 @@ class PptxDataFrame_v2(object):
         else:
             df_copy = self.df.iloc[:, row_list]
 
-        pptx_df_copy = PptxDataFrame_v2(df_copy, self.cell_items, self.array_style, self.chart_type)
+        pptx_df_copy = PptxDataFrame(df_copy, self.cell_items, self.array_style, self.chart_type)
         pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in row_list]
 
@@ -266,7 +266,7 @@ class PptxDataFrame_v2(object):
             cell_items += pptx_frame.cell_items
         new_df=pd.concat(dataframes, axis=0 if self.array_style==-1 else 1)
 
-        new_pptx_df = PptxDataFrame_v2(new_df, cell_items, self.array_style, self.chart_type)
+        new_pptx_df = PptxDataFrame(new_df, cell_items, self.array_style, self.chart_type)
         new_pptx_df.chart_type = auto_charttype(new_df, self.array_style)
 
         return new_pptx_df
@@ -277,7 +277,7 @@ class PptxDataFrame_v2(object):
         :param str setup:
         :rtype:
         """
-        if setup in ['basic']:
+        if setup in ['basic', 'table']:
             return self.get('c_pct')
         elif setup in ['basic_nets','basic+nets-table']:
             return self.get('c_pct,net')
@@ -288,163 +288,6 @@ class PptxDataFrame_v2(object):
             return self.get('c_pct,net,mean')
         else:
             return self.get('c_pct')
-
-
-class PptxDataFrame(pd.DataFrame):
-    """
-    Adds some PPTX friendly methods to the standard pd.DataFrame class
-    """
-
-    # TODO class PptxDataFrame - Add more methods
-
-    def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
-        super(PptxDataFrame, self).__init__(data, index, columns, dtype, copy)
-        self.array_style = None
-        self.cell_contents = None
-        #self.__frames = []
-        self.chart_type = None # TODO PptxDataFrame - Use Property descriptor to do get and set function
-
-    def make_copy(self, data=None, index=None, columns=None):
-
-        val = data if isinstance(data, (np.ndarray)) else self.values
-        idx = index if isinstance(index, (pd.Index, pd.Int64Index, pd.MultiIndex)) else self.index
-        col = columns if isinstance(columns, (pd.Index, pd.Int64Index, pd.MultiIndex)) else self.columns
-        df_copy = PptxDataFrame(data=val, index=idx, columns=col)
-        df_copy.cell_contents = self.cell_contents
-        df_copy.array_style = self.array_style
-        df_copy.chart_type = self.chart_type
-
-        return df_copy
-
-    def get_cpct(self):
-        """
-        Return a copy of the PptxDataFrame only containing column percentage categories
-
-        :rtype: PptxDataFrame
-        """
-        row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_net','net','is_c_pct_sum'], exact=False)
-        not_net = get_indexes_from_list(self.cell_contents, ['normal', 'expanded'], exact=False)
-
-        for x in dont_want:
-            if x in row_list and x not in not_net:
-                row_list.remove(x)
-
-        if self.array_style == -1:
-            df_copy=self.iloc[row_list]
-        else:
-            df_copy = self.iloc[:,row_list]
-
-        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
-        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
-        cell_contents = pptx_df_copy.cell_contents
-        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
-
-        return pptx_df_copy
-
-    def get_nets(self):
-        """
-        Return a copy of the PptxDataFrame only containing net type categories
-
-        :rtype: PptxDataFrame
-        """
-
-        row_list = get_indexes_from_list(self.cell_contents, ['is_net', 'net'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest','calc','normal'], exact=False)
-
-        for x in dont_want:
-            if x in row_list:
-                row_list.remove(x)
-
-        if self.array_style == -1:
-            df_copy = self.iloc[row_list]
-        else:
-            df_copy = self.iloc[:, row_list]
-
-        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
-        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
-        cell_contents = pptx_df_copy.cell_contents
-        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
-
-        return pptx_df_copy
-
-    def get_means(self):
-        """
-        Return a copy of the PptxDataFrame only containing mean type categories
-
-        :rtype: PptxDataFrame
-        """
-        row_list = get_indexes_from_list(self.cell_contents, ['is_mean'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_meanstest'], exact=False)
-
-        for x in dont_want:
-            if x in row_list:
-                row_list.remove(x)
-
-        if self.array_style == -1:
-            df_copy = self.iloc[row_list]
-        else:
-            df_copy = self.iloc[:, row_list]
-
-        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
-        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
-        cell_contents = pptx_df_copy.cell_contents
-        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
-
-        return pptx_df_copy
-
-    def get(self, cell_types, sort=False):
-        """
-        Method to get specific elements from chains dataframe
-
-        :param str cel_types: A string of comma separated cell types to return. Available types are 'c_pct, net, mean'
-        :param boolean or str sort: TODO Sort the elements ascending or decending. Str 'asc', 'dsc' or False
-        :rtype: PptxDataFrame
-        """
-        method_map = {'c_pct': self.get_cpct,
-                      'net': self.get_nets,
-                      'mean': self.get_means}
-        # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_props', 't_means'
-        available_celltypes = set(method_map.keys())
-        if isinstance(cell_types, basestring):
-            cell_types = re.sub(' +', '', cell_types)
-            cell_types = cell_types.split(',')
-        value_test = set(cell_types).difference(available_celltypes)
-        if value_test:
-            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_celltypes))
-
-        frames = []
-        cell_contents = []
-        for cell_type in cell_types:
-            frame = method_map[cell_type]()
-            frames.append(frame)
-            cell_contents += frame.cell_contents
-        new_df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
-
-        pptx_df = self.make_copy(data=new_df.values, index=new_df.index, columns=new_df.columns)
-        pptx_df.chart_type = auto_charttype(pptx_df, pptx_df.array_style)
-        pptx_df.cell_contents = cell_contents
-
-        return pptx_df
-
-    def read_slide_items(self, setup):
-        """
-        Method to translate the slide items request
-        :param str setup:
-        :rtype:
-        """
-        if setup in ['basic']:
-            return self.get('c_pct')
-        elif setup in ['basic_nets','basic+nets-table']:
-            return self.get('c_pct,net')
-        elif setup in ['basic+means-line','basic+means-table']:
-            return self.get('c_pct,mean')
-        elif setup in ['basic_nets+means-table','basic_nets+means-line','basic+nets-table+means-table',
-                       'basic+nets-table+means-line']:
-            return self.get('c_pct,net,mean')
-        else:
-            return self.get('c_pct')
-
 
 class PptxChain(object):
     """
@@ -987,7 +830,7 @@ class PptxChain(object):
             df.iloc[:, indexes] /= 100
 
         # Make a PptxDataFrame instance
-        self.chart_df = PptxDataFrame_v2(df,cell_contents,self.array_style,None)
+        self.chart_df = PptxDataFrame(df,cell_contents,self.array_style,None)
         # Choose a basic Chart type that will fit dataframe TODO Move this to init of Class PptxDataFrame
         self.chart_df.chart_type = auto_charttype(df, self.array_style)
 
