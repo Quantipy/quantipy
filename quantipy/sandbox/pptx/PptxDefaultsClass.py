@@ -35,6 +35,8 @@ class PptxDefaults(object):
         self._charts = pptx.shapes['charts']
         self._textbox = pptx.default_textbox
         self._textboxes = pptx.shapes['textboxes']
+        self._table = pptx.default_table
+        self._tables = pptx.shapes['tables']
         self._chart_bar = pptx.shapes['charts']['bar']
         self._chart_bar_stacked100 = pptx.shapes['charts']['bar_stacked100']
         self._chart_line = pptx.shapes['charts']['line']
@@ -55,6 +57,14 @@ class PptxDefaults(object):
     @property
     def charts(self):
         return self._charts
+
+    @property
+    def table(self):
+        return self._table
+
+    @property
+    def tables(self):
+        return self._tables
 
     @property
     def textbox(self):

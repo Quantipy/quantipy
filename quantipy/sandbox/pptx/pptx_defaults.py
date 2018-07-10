@@ -71,6 +71,62 @@ default_textbox = OrderedDict([
     ('textframe_kwargs', default_textframe.copy())
 ])
 
+#-----------------------------------------------------------------------------
+# Table defaults
+default_table = OrderedDict([
+    ('dataframe', pd.DataFrame()),
+    ('left', 838800), ('top', 1476000), ('width', 10515600), ('height', 4140000),
+
+    ('margin_left', Cm(0.0)),
+    ('margin_right', Cm(0.0)),
+    ('margin_top', Cm(0.0)),
+    ('margin_bottom', Cm(0.0)),
+
+    ('show_side_member', True),
+    ('side_member_column_width', Cm(10)),
+    ('side_member_font_size', 10),
+    ('side_member_font_name', 'Verdana'),
+    ('side_member_font_bold', False),
+    ('side_member_font_italic', False),
+    ('side_member_font_color', (0,0,0)),
+    ('side_member_font_para_alignment', 'left'),
+    ('side_member_vert_alignment', 'top'),
+    ('side_member_shading', False),
+    ('side_member_shading_color', 'No fill'), #(0,0,128)
+
+    ('show_top_member', True),
+    ('top_member_row_height', Cm(1)),
+    ('top_member_font_size', 10),
+    ('top_member_font_name', 'Verdana'),
+    ('top_member_font_bold', False),
+    ('top_member_font_italic', False),
+    ('top_member_font_color', (0, 0, 0)),
+    ('top_member_font_para_alignment', 'center'),
+    ('top_member_vert_alignment', 'bottom'),
+    ('top_member_shading', False),
+    ('top_member_shading_color', 'No fill'), #(0,0,128)
+
+    ('values_font_size', 10),
+    ('values_font_name', 'Verdana'),
+    ('values_font_bold', False),
+    ('values_font_italic', False),
+    ('values_font_color', (0, 0, 0)),
+    ('values_font_para_alignment', 'right'),
+    ('values_vert_alignment', 'top'),
+    ('values_shading', False),
+    ('values_shading_shading_color', 'No fill'), #(0,0,128)
+
+    ('question_box_font_size', 10),
+    ('question_box_font_name', 'Verdana'),
+    ('question_box_font_bold', False),
+    ('question_box_font_italic', False),
+    ('question_box_font_color', (0, 0, 0)),
+    ('question_box_vert_alignment', 'bottom'),
+    ('question_box_para_alignment', 'left'),
+    ('question_box_shading', False),
+    ('question_box_shading_color', 'No fill'), #(0,0,128)
+])
+
 # -------------------------------------------------------------------------------------------
 # Chart defaults (Bar_clustered 1 series)
 
@@ -223,6 +279,7 @@ shapes = {'charts' : {'bar': default_chart_bar,
                       'column': default_chart_column,
                       'pie': default_chart_pie},
           'textboxes' : {'header': header_shape,
-                         'footer': footer_shape}
+                         'footer': footer_shape},
+          'tables' : {'table' : default_table},
           }
 
