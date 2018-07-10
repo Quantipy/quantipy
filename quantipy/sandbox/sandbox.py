@@ -604,7 +604,7 @@ class ChainManager(object):
                 self.__chains[self._singles_to_idx()[s.name]] = {s.name: [s]}
         return None
 
-    def unfold(self, folder):
+    def unfold(self, folder=None):
         """
         Remove folder but keep the collected items.
 
@@ -613,21 +613,28 @@ class ChainManager(object):
 
         Parameters
         ----------
-        folder : str
-            The name of the folder to drop and extract items from.
+        folder : (list of) str, default None
+            The name of the folder to drop and extract items from. If not
+            provided all folders will be unfolded.
 
         Returns
         -------
         None
         """
-        if not folder in self.folder_names:
-            err = "A folder named '{}' does not exist!".format(folder)
-            raise KeyError(err)
-        old_pos = self._idx_from_name(folder)
-        items = self[folder]
-        start = self.__chains[: old_pos]
-        end = self.__chains[old_pos + 1: ]
-        self.__chains = start + items + end
+        if not folder:
+            folder = self.folder_names
+        else:
+            if not isinstance(folder, list): folder = [folder]
+            invalid = [f for f in folder if f not in self.folder_names]
+            if invalid:
+                err = "Folder(s) named '{}' not found.".format(invalid)
+                raise KeyError(err)
+        for f in folder:
+            old_pos = self._idx_from_name(f)
+            items = self[f]
+            start = self.__chains[: old_pos]
+            end = self.__chains[old_pos + 1: ]
+            self.__chains = start + items + end
         return None
 
     def remove(self, chains, folder=None, inplace=True):
@@ -673,10 +680,17 @@ class ChainManager(object):
         else:
             return cm
 
-    def apply(self):
+
+    def export(self):
         """
         """
         pass
+
+    def assign(self):
+        """
+        """
+        pass
+
 
     def cut(self, values, ci=None):
         """
@@ -742,8 +756,7 @@ class ChainManager(object):
             x_label = ', '.join(c._x_keys[0] for c in self.chains)
         if y_label == 'auto':
             pass
-        for fn in self.folder_names:
-            self.unfold(fn)
+        self.unfold()
         chains = self.chains
         totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
         concat_dfs = []
