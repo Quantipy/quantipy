@@ -1020,6 +1020,7 @@ class DataSet(object):
                 variables += yks
         if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
+        variables = self.roll_up(variables)
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
