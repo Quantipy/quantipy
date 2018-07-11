@@ -4764,29 +4764,30 @@ class DataSet(object):
 
         if not names: names = self.variables()
         mapper = {}
-        for mask_name, mask in masks.iteritems():
-            if mask_name in names:
-                mask_name = fix(mask_name)
+        for org_mn, mask in masks.iteritems():
+            if org_mn in names:
+                mask_name = fix(org_mn)
                 new_mask_name = '{mn}.{mn}{s}'.format(mn=mask_name, s=suffix)
-                mapper[mask_name] = new_mask_name
+                mapper[org_mn] = new_mask_name
 
-                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                mask_mapper = 'masks@{mn}'.format(mn=org_mn)
                 new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
                 mapper[mask_mapper] = new_mask_mapper
 
-                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                values_mapper = 'lib@values@{mn}'.format(mn=org_mn)
                 new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
                 mapper[values_mapper] = new_values_mapper
 
-                items = masks[mask_name]['items']
+                items = masks[org_mn]['items']
                 for i, item in enumerate(items):
-                    col_name = item['source'].split('@')[-1]
+                    org_cn = item['source'].split('@')[-1]
+                    col_name = fix(org_cn)
                     new_col_name = '{mn}[{{{cn}}}].{mn}{s}'.format(
                         mn=mask_name, cn=col_name, s=suffix
                     )
-                    mapper[col_name] = new_col_name
+                    mapper[org_cn] = new_col_name
 
-                    col_mapper = 'columns@{cn}'.format(cn=col_name)
+                    col_mapper = 'columns@{cn}'.format(cn=org_cn)
                     new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
                     mapper[col_mapper] = new_col_mapper
 
