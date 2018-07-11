@@ -681,17 +681,6 @@ class ChainManager(object):
             return cm
 
 
-    def export(self):
-        """
-        """
-        pass
-
-    def assign(self):
-        """
-        """
-        pass
-
-
     def cut(self, values, ci=None):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
@@ -1752,6 +1741,75 @@ class Chain(object):
         self._flag_bases = None
         self._is_mask_item = False
         self._shapes = None
+
+    class _TransformedChainDF(object):
+        """
+        """
+        def __init__(self, chain):
+            c = chain.clone()
+            self.df = c._frame
+            self._org_idx = self.df.index
+            self._edit_idx = range(0, len(self._org_idx))
+            self._idx_valmap = {n: o for n, o in
+                                zip(self._edit_idx,
+                                    self._org_idx.get_level_values(1))}
+            self.df.index = self._edit_idx
+
+            self._org_col = self.df.columns
+            self._edit_col = range(0, len(self._org_col))
+            self._col_valmap = {n: o for n, o in
+                                zip(self._edit_col,
+                                    self._org_col.get_level_values(1))}
+            self.df.columns = self._edit_col
+            return None
+
+        def _updated_index_tuples(self, axis):
+            """
+            """
+            if axis == 1:
+                current = self.df.columns.values.tolist()
+                mapped = self._col_valmap
+                org_tuples = self._org_col.tolist()
+            else:
+                current = self.df.index.values.tolist()
+                mapped = self._idx_valmap
+                org_tuples = self._org_idx.tolist()
+            merged = [mapped[val] if val in mapped else val for val in current]
+            new_tuples = []
+            i = d = 0
+            for merged_val in merged:
+                idx = i-d if i-d != len(org_tuples) else i-d-1
+                if org_tuples[idx][1] == merged_val:
+                    new_tuples.append(org_tuples[idx])
+                else:
+                    new_tuples.append(('*', merged_val))
+                    d += 1
+                i += 1
+            return new_tuples
+
+        def _reindex(self):
+            """
+            """
+            names = ['Question', 'Values']
+            tuples = self._updated_index_tuples(axis=0)
+            self.df.index = pd.MultiIndex.from_tuples(tuples, names=names)
+            tuples = self._updated_index_tuples(axis=1)
+            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=names)
+            return None
+
+    def export(self):
+        """
+        """
+        return self._TransformedChainDF(self)
+
+    def assign(self, transformed_chain_df):
+        """
+        """
+        if not isinstance(transformed_chain_df, self._TransformedChainDF):
+            raise ValueError("Must pass an exported ``Chain`` instance!")
+        transformed_chain_df._reindex()
+        self._frame = transformed_chain_df.df
+        return None
 
     def __str__(self):
         if self.structure is not None:
