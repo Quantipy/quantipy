@@ -569,10 +569,10 @@ class DataSet(object):
         """
         ds_clone = self.clone()
         if not text_key: text_key = ds_clone.text_key
-        if not ds_clone._dimensions_comp:
-            msg = "Converting variable names into Dimensions equivalents..."
-            print msg
-            ds_clone.dimensionize()
+        if ds_clone._dimensions_comp:
+            ds_clone.undimensionize()
+        # naming rules for Dimensions are applied
+        ds_clone.dimensionize()
         meta, data = ds_clone._meta, ds_clone._data
         if path_ddf is None and path_mdd is None:
             path = ds_clone.path
@@ -4753,37 +4753,55 @@ class DataSet(object):
             maps non-Dimensions naming conventions to Dimensions naming
             conventions.
         """
+
+        def fix(string):
+            tags = ["'", '"', ' ', '&', '(', ')', '.', '/', '-']
+            for tag in tags:
+                string = string.replace(tag, '_')
+            return string
+
         masks = self._meta['masks']
         columns = self._meta['columns']
         suffix = self._dimensions_suffix
 
+        if not names: names = self.variables()
         mapper = {}
-        if not names:
-            names = masks.keys()
-        for mask_name, mask in masks.iteritems():
-            if mask_name in names:
+        for org_mn, mask in masks.iteritems():
+            if org_mn in names:
+                mask_name = fix(org_mn)
                 new_mask_name = '{mn}.{mn}{s}'.format(mn=mask_name, s=suffix)
-                mapper[mask_name] = new_mask_name
+                mapper[org_mn] = new_mask_name
 
-                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                mask_mapper = 'masks@{mn}'.format(mn=org_mn)
                 new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
                 mapper[mask_mapper] = new_mask_mapper
 
-                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                values_mapper = 'lib@values@{mn}'.format(mn=org_mn)
                 new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
                 mapper[values_mapper] = new_values_mapper
 
-                items = masks[mask_name]['items']
+                items = masks[org_mn]['items']
                 for i, item in enumerate(items):
-                    col_name = item['source'].split('@')[-1]
+                    org_cn = item['source'].split('@')[-1]
+                    col_name = fix(org_cn)
                     new_col_name = '{mn}[{{{cn}}}].{mn}{s}'.format(
                         mn=mask_name, cn=col_name, s=suffix
                     )
-                    mapper[col_name] = new_col_name
+                    mapper[org_cn] = new_col_name
 
-                    col_mapper = 'columns@{cn}'.format(cn=col_name)
+                    col_mapper = 'columns@{cn}'.format(cn=org_cn)
                     new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
                     mapper[col_mapper] = new_col_mapper
+
+        for col_name, col in columns.iteritems():
+            if col_name in names and not self._is_array_item(col_name):
+                new_col_name = fix(col_name)
+                if new_col_name == col_name: continue
+                mapper[col_name] = new_col_name
+
+                col_mapper = 'columns@{cn}'.format(cn=col_name)
+                new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
+                mapper[col_mapper] = new_col_mapper
 
         return mapper
 
@@ -4849,7 +4867,11 @@ class DataSet(object):
             raise ValueError('File is already dimensionized.')
         mapper = self.dimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
-        if not names: self.set_dim_comp(True)
+        if not names:
+            self.set_dim_comp(True)
+            if 'type' in self:
+                self.rename('type', '_type')
+        return None
 
     @modify(to_list='names')
     @verify(variables={'names': 'both'})
