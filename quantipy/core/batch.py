@@ -69,8 +69,8 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-    if dataset_func.func_name in ['hiding', 'slicing']:
-        self._update()
+        if dataset_func.func_name in ['hiding', 'slicing']:
+            self._update()
     return edit
 
 def not_implemented(dataset_func):

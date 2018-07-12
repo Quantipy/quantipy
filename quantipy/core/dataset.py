@@ -1026,6 +1026,7 @@ class DataSet(object):
                 variables += yks
         if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
+        variables = self.roll_up(variables)
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
@@ -3592,10 +3593,11 @@ class DataSet(object):
                     ind = df_items.index('masks@{}'.format(var))
                     n_items = df_items[:ind] + self._get_source_ref(var) + df_items[ind+1:]
                     meta['sets']['data file']['items'] = n_items
-                    values = meta['lib']['values'][var]
-                    for source in self.sources(var):
-                        meta['columns'][source]['values'] = values
-                        meta['columns'][source]['parent'] = {}
+                    if self._has_categorical_data(var):
+                        values = meta['lib']['values'][var]
+                        for source in self.sources(var):
+                            meta['columns'][source]['values'] = values
+                            meta['columns'][source]['parent'] = {}
 
         df_items = meta['sets']['data file']['items']
         n_items = [i for i in df_items if not i.split('@')[-1] in name]
