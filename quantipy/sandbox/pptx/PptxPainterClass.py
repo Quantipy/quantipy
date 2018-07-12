@@ -315,6 +315,14 @@ class PptxPainter(object):
         -------
         """
         valid_options = ['make_room_for_table']
+        # Validate the user-provided export options.
+        options = options or {}
+        if not isinstance(options, dict):
+            raise ValueError('The options argument must be a dictionary.')
+        for key in options.keys():
+            if key not in valid_options:
+                error_msg = 'Invalid option {}'
+                raise ValueError(error_msg.format(','.join(k)))
 
         self.chart = settings.copy()
         self.chart['dataframe'] = dataframe
@@ -337,9 +345,8 @@ class PptxPainter(object):
         if not isinstance(chart_type, basestring):
             raise ValueError('The chart_type argument must be a string')
         if chart_type not in valid_chart_types:
-                error_msg =
-                raise ValueError('Invalid chart_type {}. Valid chart types are {}'
-                                 .format(chart_type, valid_chart_types))
+                error_msg ='Invalid chart_type {}. Valid chart types are {}'
+                raise ValueError(error_msg.format(chart_type, valid_chart_types))
 
         if chart_type == 'pie':
             settings = self.chart_pie.copy()
@@ -353,8 +360,6 @@ class PptxPainter(object):
             settings = self.chart_bar.copy()
 
         self.draft_chart(settings, dataframe, options=options)
-
-
 
     def draft_table(self, settings, dataframe, text=None):
         """
