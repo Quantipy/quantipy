@@ -69,8 +69,8 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-    if dataset_func.func_name in ['hiding', 'slicing']:
-        self._update()
+        if dataset_func.func_name in ['hiding', 'slicing']:
+            self._update()
     return edit
 
 def not_implemented(dataset_func):
@@ -240,7 +240,7 @@ class Batch(qp.DataSet):
         self = None
         return None
 
-    def rename(self, new_name, refs=True):
+    def rename(self, new_name):
         """
         Rename instance, updating ``DataSet`` references to the definiton, too.
         """
@@ -248,10 +248,6 @@ class Batch(qp.DataSet):
             raise KeyError("'%s' is already included!" % new_name)
         batches = self._meta['sets']['batches']
         p_spec = self._meta['info'].get('project_spec', {})
-        if refs:
-            org_name = self.name
-            if org_name in p_spec:
-                p_spec[new_name] = p_spec.pop(org_name)
         batches[new_name] = batches.pop(self.name)
         self.name = new_name
         self._update()
@@ -707,10 +703,13 @@ class Batch(qp.DataSet):
         if self.additional:
             err_msg = "Cannot add open end DataFrames to as_addition()-Batches!"
             raise NotImplementedError(err_msg)
+        dupes = [v for v in oe if v in break_by]
+        if dupes:
+            raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
+            ds = qp.DataSet('open_end')
+            ds.from_components(self._data, self._meta, reset=False)
             if self.filter != 'no_filter':
-                ds = qp.DataSet('open_end')
-                ds.from_components(self._data, self._meta, reset=False)
                 f = self.filter.values()[0]
                 if filter_by: f = intersection([f, filter_by])
                 slicer = ds.take(f).tolist()
@@ -725,7 +724,8 @@ class Batch(qp.DataSet):
             oe = {
                 'title': title,
                 'idx': slicer,
-                'columns': break_by + oe,
+                'columns': oe,
+                'break_by': break_by,
                 'incl_nan': incl_nan,
                 'drop_empty': drop_empty,
                 'replace': replacements}

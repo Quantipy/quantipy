@@ -228,8 +228,8 @@ class PptxDataFrame(pd.DataFrame):
         return pptx_df_copy
 
     def get_nets(self):
-        row_list = get_indexes_from_list(self.cell_contents, ['is_net','net'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest'], exact=False)
+        row_list = get_indexes_from_list(self.cell_contents, ['is_net', 'net'], exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest','calc','normal'], exact=False)
 
         for x in dont_want:
             if x in row_list:
@@ -336,7 +336,7 @@ class PptxChain(object):
                       '\nGrid summary: {}'
                       '\nQuestion text: {}'
                       '\nBase description: {}'
-                      '\nBase label: {}'  
+                      '\nBase label: {}'
                       '\nBase size: {}'
                       '\nRequested crossbreak: {}'
                       '\n')
@@ -515,7 +515,7 @@ class PptxChain(object):
                 for x, y in zip(index_labels, values):
                     new_labels_list.update({x: x + sep + circumfix[0]+ prefix + str(y) + circumfix[1]})
 
-                self.chain_df.rename(index=new_labels_list, inplace=True)
+                self.chain_df = self.chain_df.rename(index=new_labels_list)
                 self.vals_in_labels = True
 
         else:
@@ -528,7 +528,7 @@ class PptxChain(object):
             for x, y in zip(index_labels, values):
                 new_labels_list.update({x: x + sep + circumfix[0] + prefix + str(y) + circumfix[1]})
 
-            self.chain_df.rename(columns=new_labels_list, inplace=True)
+            self.chain_df = self.chain_df.rename(columns=new_labels_list)
             self.vals_in_labels = True
 
     def base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", "):
