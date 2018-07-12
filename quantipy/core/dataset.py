@@ -6026,7 +6026,7 @@ class DataSet(object):
                     self._meta[collection][n]['rules'][ax].update(rule_update)
         return None
 
-    @modify(to_list='name')
+    @modify(to_list=['name', 'fix'])
     @verify(variables={'name': 'both'})
     def sorting(self, name, on='@', within=False, between=False, fix=None,
                 ascending=False, sort_by_weight=None):
@@ -6070,18 +6070,14 @@ class DataSet(object):
             else:
                 if 'rules' not in self._meta[collection][n]:
                     self._meta[collection][n]['rules'] = {'x': {}, 'y': {}}
-                if fix:
-                    if not isinstance(fix, list): fix = [fix]
-                else:
-                    fix = []
                 if not is_array:
-                    fix = self._clean_codes_against_meta(n, fix)
+                    n_fix = self._clean_codes_against_meta(n, fix)
                 else:
-                    fix = self._clean_items_against_meta(n, fix)
+                    n_fix = self._clean_items_against_meta(n, fix)
                 rule_update = {'sortx': {'ascending': ascending,
                                          'within': within,
                                          'between': between,
-                                         'fixed': fix,
+                                         'fixed': n_fix,
                                          'sort_on': on,
                                          'with_weight': sort_by_weight}}
                 self._meta[collection][n]['rules']['x'].update(rule_update)
