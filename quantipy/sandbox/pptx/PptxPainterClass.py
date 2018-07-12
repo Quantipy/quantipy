@@ -148,6 +148,8 @@ class PptxPainter(object):
             self._shape_properties = self._defaults.shapes
 
         self.textbox = self._shape_properties.textbox
+        self.textbox_header = self._shape_properties.textbox_header
+        self.textbox_footer = self._shape_properties.textbox_footer
         self.chart = self._shape_properties.chart
         self.table = self._shape_properties.table
         self.nets_table = self._shape_properties.nets_table
@@ -186,10 +188,10 @@ class PptxPainter(object):
         chart_items = ['chart', 'means-line']
 
         # Question text
-        draft = self.draft_textbox(self._shape_properties.textbox_header, pptx_chain.question_text)
+        draft = self.draft_textbox_header(pptx_chain.question_text)
         self.queue_textbox(settings=draft)
 
-        draft = self.draft_textbox(self._shape_properties.textbox_footer, pptx_chain.base_text)
+        draft = self.draft_textbox_footer(pptx_chain.base_text)
         self.queue_textbox(settings=draft)
 
         shape_items = items.split('+')
@@ -284,9 +286,9 @@ class PptxPainter(object):
 
         return self.presentation.slides.add_slide(slide_layout)
 
-    def draft_textbox(self, settings, text=''):
+    def draft_textbox(self, settings, text=None):
         """
-        Sets attribute self.textbox
+        Method for drafting a textboc
 
         Parameters
         ----------
@@ -300,6 +302,44 @@ class PptxPainter(object):
         self.textbox = settings.copy()
         self.textbox['text'] = text
         return self.textbox
+
+    def draft_textbox_header(self, text=None):
+        """
+        Simplified method for drafting a header textbox that wont require the settings dict,
+        but will instead pick the default textbox_header setting
+
+        Parameters
+        ----------
+        text: basestring
+            Text to show in textbox
+        Returns: dict
+            Returns settings for a textbox, which can be used for method queue_textbox
+        -------
+        """
+
+        settings = self.textbox_header.copy()
+        draft = self.draft_textbox(settings, text=text)
+
+        return draft
+
+    def draft_textbox_footer(self, text=None):
+        """
+        Simplified method for drafting a footer textbox that wont require the settings dict,
+        but will instead pick the default textbox_footer setting
+
+        Parameters
+        ----------
+        text: basestring
+            Text to show in textbox
+        Returns: dict
+            Returns settings for a textbox, which can be used for method queue_textbox
+        -------
+        """
+
+        settings = self.textbox_footer.copy()
+        draft = self.draft_textbox(settings, text=text)
+
+        return draft
 
     def draft_chart(self, settings, dataframe, options=None):
         """
@@ -330,7 +370,8 @@ class PptxPainter(object):
 
     def draft_autochart(self, dataframe, chart_type, options=None):
         """
-
+        Simplified caller for method draft_chart that wont require the settings dict,
+        but will instead pick the default chart setting for the chart type requested
 
         Parameters
         ----------
@@ -359,7 +400,8 @@ class PptxPainter(object):
         else:
             settings = self.chart_bar.copy()
 
-        self.draft_chart(settings, dataframe, options=options)
+        draft = self.draft_chart(settings, dataframe, options=options)
+        return draft
 
     def draft_table(self, settings, dataframe, text=None):
         """
