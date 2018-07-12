@@ -71,61 +71,49 @@ default_textbox = OrderedDict([
     ('textframe_kwargs', default_textframe.copy())
 ])
 
+# ---------------------------------------------------------------------------
+# Table cell defaults
+default_cell_kwargs = OrderedDict([
+    ('margin_left', Cm(0.1)),
+    ('margin_right', Cm(0.1)),
+    ('margin_top', Cm(0.1)),
+    ('margin_bottom', Cm(0.1)),
+    ('vertical_alignment', 'top'),
+    ('shading', False),
+    ('shading_color', (0,0,0)),
+])
+
 #-----------------------------------------------------------------------------
 # Table defaults
 default_table = OrderedDict([
     ('dataframe', pd.DataFrame()),
+    ('text', None),
     ('left', 838800), ('top', 1476000), ('width', 10515600), ('height', 4140000),
 
-    ('margin_left', Cm(0.0)),
-    ('margin_right', Cm(0.0)),
-    ('margin_top', Cm(0.0)),
-    ('margin_bottom', Cm(0.0)),
-
     ('show_side_member', True),
-    ('side_member_column_width', Cm(10)),
-    ('side_member_font_size', 10),
-    ('side_member_font_name', 'Verdana'),
-    ('side_member_font_bold', False),
-    ('side_member_font_italic', False),
-    ('side_member_font_color', (0,0,0)),
-    ('side_member_font_para_alignment', 'left'),
-    ('side_member_vert_alignment', 'top'),
-    ('side_member_shading', False),
-    ('side_member_shading_color', 'No fill'), #(0,0,128)
+    ('side_member_column_width', Cm(6)),
+    ('side_member_textframe_kwargs', default_textframe.copy()),
+    ('side_member_cell_kwargs', default_cell_kwargs.copy()),
 
     ('show_top_member', True),
     ('top_member_row_height', Cm(1)),
-    ('top_member_font_size', 10),
-    ('top_member_font_name', 'Verdana'),
-    ('top_member_font_bold', False),
-    ('top_member_font_italic', False),
-    ('top_member_font_color', (0, 0, 0)),
-    ('top_member_font_para_alignment', 'center'),
-    ('top_member_vert_alignment', 'bottom'),
-    ('top_member_shading', False),
-    ('top_member_shading_color', 'No fill'), #(0,0,128)
+    ('top_member_textframe_kwargs', default_textframe.copy()),
+    ('top_member_cell_kwargs', default_cell_kwargs.copy()),
 
-    ('values_font_size', 10),
-    ('values_font_name', 'Verdana'),
-    ('values_font_bold', False),
-    ('values_font_italic', False),
-    ('values_font_color', (0, 0, 0)),
-    ('values_font_para_alignment', 'right'),
-    ('values_vert_alignment', 'top'),
-    ('values_shading', False),
-    ('values_shading_shading_color', 'No fill'), #(0,0,128)
+    ('values_row_height', Cm(1)),
+    ('values_column_width', Cm(2)),
+    ('values_textframe_kwargs', default_textframe.copy()),
+    ('values_cell_kwargs', default_cell_kwargs.copy()),
 
-    ('question_box_font_size', 10),
-    ('question_box_font_name', 'Verdana'),
-    ('question_box_font_bold', False),
-    ('question_box_font_italic', False),
-    ('question_box_font_color', (0, 0, 0)),
-    ('question_box_vert_alignment', 'bottom'),
-    ('question_box_para_alignment', 'left'),
-    ('question_box_shading', False),
-    ('question_box_shading_color', 'No fill'), #(0,0,128)
+    ('top_left_corner_textframe_kwargs', default_textframe.copy()),
+    ('top_left_corner_cell_kwargs', default_cell_kwargs.copy()),
 ])
+
+default_nets_table = default_table.copy()
+default_nets_table['show_side_member']=False
+default_nets_table['values_column_width']=Cm(1.8)
+default_nets_table['top_member_row_height']=Cm(1.7)
+
 
 # -------------------------------------------------------------------------------------------
 # Chart defaults (Bar_clustered 1 series)
