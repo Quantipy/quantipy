@@ -184,20 +184,25 @@ class PptxPainter(object):
         None
         """
 
-        table_items = ['means-table','nets-table']
-        chart_items = ['chart', 'means-line']
+        valid_table_items = ['means-table','nets-table']
+        valid_chart_items = ['chart', 'means-line']
 
         # Question text
         draft = self.draft_textbox_header(pptx_chain.question_text)
         self.queue_textbox(settings=draft)
 
+        # Base description
         draft = self.draft_textbox_footer(pptx_chain.base_text)
         self.queue_textbox(settings=draft)
 
+
         shape_items = items.split('+')
-        options={}
-        if [a for a in table_items if a in shape_items]:
+        options={'make_room_for_table': False}
+        table_items = [a for a in valid_table_items if a in shape_items]
+        if table_items:
+            for table_item in table_items:
             options['make_room_for_table'] = True
+
 
         for shape_item in shape_items:
             if shape_item == 'basic':
@@ -355,16 +360,19 @@ class PptxPainter(object):
         -------
         """
         valid_options = ['make_room_for_table']
+
         # Validate the user-provided export options.
         options = options or {}
         if not isinstance(options, dict):
             raise ValueError('The options argument must be a dictionary.')
         for key in options.keys():
             if key not in valid_options:
-                error_msg = 'Invalid option {}'
-                raise ValueError(error_msg.format(','.join(k)))
+                error_msg = 'Invalid option {}. Valid options are {}'
+                raise ValueError(error_msg.format(key, valid_options))
+
 
         self.chart = settings.copy()
+
         self.chart['dataframe'] = dataframe
         return self.chart
 
