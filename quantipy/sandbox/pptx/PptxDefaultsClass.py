@@ -36,7 +36,7 @@ class PptxDefaults(object):
         self._textbox = pptx.default_textbox
         self._textboxes = pptx.shapes['textboxes']
         self._table = pptx.default_table
-        self._nets_table = pptx.default_nets_table
+        self._side_table = pptx.default_side_table
         self._tables = pptx.shapes['tables']
         self._chart_bar = pptx.shapes['charts']['bar']
         self._chart_bar_stacked100 = pptx.shapes['charts']['bar_stacked100']
@@ -64,8 +64,8 @@ class PptxDefaults(object):
         return self._table
 
     @property
-    def nets_table(self):
-        return self._nets_table
+    def side_table(self):
+        return self._side_table
 
     @property
     def tables(self):
@@ -118,6 +118,7 @@ class PptxDefaults(object):
                       'chart_pie': self._chart_pie,
                       'textbox_header': self._textbox_header,
                       'textbox_footer': self._textbox_footer,
+                      'side_table': self._side_table,
                       }
 
         available_shapes = parameter_map.keys()

@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import re
 from lxml import etree
 
 # Imports from Python-PPTX
@@ -152,7 +153,7 @@ class PptxPainter(object):
         self.textbox_footer = self._shape_properties.textbox_footer
         self.chart = self._shape_properties.chart
         self.table = self._shape_properties.table
-        self.nets_table = self._shape_properties.nets_table
+        self.side_table = self._shape_properties.side_table
 
         charts = self._shape_properties.charts
         self.chart_bar = charts['bar']
@@ -167,7 +168,7 @@ class PptxPainter(object):
                     'tables': {},
                     }
 
-    def queue_slide_items(self, pptx_chain, items):
+    def queue_slide_items(self, pptx_chain, slide_items):
         """
         Helper function to queue a full automated slide.
         Includes queueing of header with question text, chart and footer with base description
@@ -176,16 +177,18 @@ class PptxPainter(object):
         ----------
         pptx_chain: quantipy.sandbox.pptx.PptxChainClass.PptxChain
             An instance of a PptxChain
-        items: basestring
-            A string of slide items, separated with +, eg. 'basic+nets+means-table'
-            Supported items are 'chart', 'nets', 'means-table', 'means-line', 'nets-table',
+        slide_items: basestring
+            A string of slide items, separated with +, eg. 'chart+table'
+            Supported items are 'chart' and 'table'
+            An item cannot appear more than once
         Returns
         -------
         None
         """
 
-        valid_table_items = ['means-table','nets-table']
-        valid_chart_items = ['chart', 'means-line']
+        valid_slide_items = ['chart','table']
+        slide_items = re.sub(' +', '', slide_items)
+        # TODO check for valid slide_items input
 
         # Question text
         draft = self.draft_textbox_header(pptx_chain.question_text)
@@ -195,29 +198,58 @@ class PptxPainter(object):
         draft = self.draft_textbox_footer(pptx_chain.base_text)
         self.queue_textbox(settings=draft)
 
+        slide_items = slide_items.split('+')
 
-        shape_items = items.split('+')
-        options={'make_room_for_table': False}
-        table_items = [a for a in valid_table_items if a in shape_items]
-        if table_items:
-            for table_item in table_items:
-            options['make_room_for_table'] = True
+        table_draft = {}
+        chart_draft = {}
+        for slide_item in slide_items:
+            if slide_item.startswith('table'):
+                cell_items = slide_item.split(':')[1]
+                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(decimals=0)
+                if not pptx_frame().empty:
+                    table_draft = self.draft_side_table(pptx_frame())
+            if slide_item.startswith('chart'):
+                cell_items = slide_item.split(':')[1]
+                pptx_frame = pptx_chain.chart_df.get(cell_items)
+                if not pptx_frame().empty:
+                    chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
 
+        if table_draft:
+            # set table width based on number of columns in dataframe
+            cols = len(table_draft['dataframe'].columns)
+            col_width = table_draft['values_column_width']
+            table_width = cols * col_width
+            table_draft['width'] = table_width
 
-        for shape_item in shape_items:
-            if shape_item == 'basic':
-                chart_df = pptx_chain.chart_df.get_cpct()
-                draft = self.draft_autochart(chart_df(), pptx_chain.chart_type, options=options)
-                self.queue_chart(settings=draft)
-            if shape_item == 'basic_nets':
-                chart_df = pptx_chain.chart_df.get('c_pct,net')
-                draft = self.draft_autochart(chart_df(), pptx_chain.chart_type)
-                self.queue_chart(settings=draft)
-            if shape_item == 'nets-table':
-                chart_df = pptx_chain.chart_df.get_nets()
-                if not chart_df().empty:
-                    draft = self.draft_nets_table(self.nets_table, chart_df())
-                    self.queue_table(settings=draft)
+            # adjust chart width to fit a table to the right
+            chart_draft['width'] -= table_width
+
+            # position table
+            rows = len(table_draft['dataframe'].index)
+            table_draft['left'] = chart_draft['left'] + chart_draft['width']
+            height = chart_draft['height']
+            top = chart_draft['top']
+            top_member_row_height = table_draft['top_member_row_height']
+
+            if rows == 1:
+                top = top + int(round(height * (0.3 / rows)) - top_member_row_height)
+            else:
+                top = top + int(round(height * (0.45 / rows)) - top_member_row_height)
+
+            table_draft['top'] = top
+
+            plot_area = int(round(height * 0.9)) - Cm(0.4)
+            value_row_height = int(round(plot_area / rows))
+            height = top_member_row_height + rows * value_row_height
+
+            table_draft['height'] = height
+            table_draft['values_row_height'] = value_row_height
+
+            self.queue_table(settings=table_draft)
+
+        if chart_draft:
+            self.queue_chart(settings=chart_draft)
+
         return None
 
     def clear_tables(self):
@@ -346,7 +378,7 @@ class PptxPainter(object):
 
         return draft
 
-    def draft_chart(self, settings, dataframe, options=None):
+    def draft_chart(self, settings, dataframe):
         """
         Sets attribute self.chart
 
@@ -359,24 +391,13 @@ class PptxPainter(object):
         Returns: self.chart
         -------
         """
-        valid_options = ['make_room_for_table']
-
-        # Validate the user-provided export options.
-        options = options or {}
-        if not isinstance(options, dict):
-            raise ValueError('The options argument must be a dictionary.')
-        for key in options.keys():
-            if key not in valid_options:
-                error_msg = 'Invalid option {}. Valid options are {}'
-                raise ValueError(error_msg.format(key, valid_options))
-
 
         self.chart = settings.copy()
 
         self.chart['dataframe'] = dataframe
         return self.chart
 
-    def draft_autochart(self, dataframe, chart_type, options=None):
+    def draft_autochart(self, dataframe, chart_type):
         """
         Simplified caller for method draft_chart that wont require the settings dict,
         but will instead pick the default chart setting for the chart type requested
@@ -408,7 +429,7 @@ class PptxPainter(object):
         else:
             settings = self.chart_bar.copy()
 
-        draft = self.draft_chart(settings, dataframe, options=options)
+        draft = self.draft_chart(settings, dataframe)
         return draft
 
     def draft_table(self, settings, dataframe, text=None):
@@ -430,54 +451,20 @@ class PptxPainter(object):
         self.table['text'] = text
         return self.table
 
-    def draft_nets_table(self, settings, dataframe, text=None):
+    def draft_side_table(self, dataframe):
         """
-        Sets attribute self.tables
+        Draft a table
 
         Parameters
         ----------
-        settings: dict
-            A dict of chart settings, see dict default_chart in pptx_defaults.py
         dataframe: pandas.core.frame.DataFrame
             the pandas.dataframe to make a table of
         Returns: self.tables
         -------
         """
 
-        self.table = settings.copy()
+        self.table = self.side_table.copy()
         self.table['dataframe'] = dataframe
-        self.table['text'] = text
-
-        # set table width based on number of columns in dataframe
-        cols = len(dataframe.columns)
-        col_width = self.table['values_column_width']
-        table_width = cols * col_width
-        self.table['width'] = table_width
-
-        # If no charts drafted then just return draft as is
-        charts = self.slide_kwargs['charts']
-        if not charts:
-            return self.table
-
-        # If charts drafted then adjust chart to make room for net-table
-        for chart_name in charts.keys():
-            charts[chart_name]['width'] -= table_width
-
-        # position table
-        rows = len(dataframe.index)
-        chart = charts[charts.keys()[0]]
-        self.table['left'] = chart['left'] + chart['width']
-        self.table['height'] = chart['height']
-        height = self.table['height']
-        top = chart['top']
-        top_member_row_height = self.table['top_member_row_height']
-        if rows == 1:
-            top = top + int(round(height * (0.3 / rows)) - top_member_row_height)
-        else:
-            top = top + int(round(height* (0.45/rows)) - top_member_row_height)
-
-        self.table['top'] = top
-
 
         return self.table
 
@@ -609,6 +596,8 @@ class PptxPainter(object):
                   values_column_width=Cm(2),
                   values_textframe_kwargs=None, # type: dict
                   values_cell_kwargs=None,  # type: dict
+                  values_prefix=None,
+                  values_suffix=None,
 
                   top_left_corner_textframe_kwargs=None, # type: dict
                   top_left_corner_cell_kwargs=None,  # type: dict
@@ -653,7 +642,8 @@ class PptxPainter(object):
                 table.columns[col_idx].width = values_column_width
                 cell = table.cell(row_idx, col_idx)
                 PptxPainter.set_cell_properties(cell, **values_cell_kwargs)
-                PptxPainter.add_textframe(cell, str(subval), **values_textframe_kwargs)
+                subval = (values_prefix or '') + str(subval) + (values_suffix or '')
+                PptxPainter.add_textframe(cell, subval, **values_textframe_kwargs)
 
         # add question label
         if show_side_member and show_top_member:

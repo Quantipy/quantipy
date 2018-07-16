@@ -161,6 +161,24 @@ class PptxDataFrame(object):
     def __call__(self):
         return self.df
 
+    def to_table(self, decimals=2):
+        indexes = []
+        for i, row in enumerate(self.cell_items):
+            for type in row:
+                for pct_type in PCT_TYPES:
+                    if type == pct_type:
+                        indexes.append(i)
+        if self.array_style == -1:
+            self.df.iloc[indexes] *= 100
+        else:
+            self.df.iloc[:, indexes] *= 100
+
+        self.df = np.around(self.df, decimals=decimals, out=None)
+        if decimals == 0:
+            self.df = self.df.applymap(lambda x: int(x))
+
+        return self
+
     def get_cpct(self):
         """
         Return a copy of the PptxDataFrame only containing column percentage categories
@@ -244,8 +262,11 @@ class PptxDataFrame(object):
         :rtype: PptxDataFrame
         """
         method_map = {'c_pct': self.get_cpct,
+                      'pct': self.get_cpct,
                       'net': self.get_nets,
-                      'mean': self.get_means}
+                      'nets': self.get_nets,
+                      'mean': self.get_means,
+                      'means': self.get_means}
         # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_props', 't_means'
         available_cell_items = set(method_map.keys())
         if isinstance(cell_items_request, basestring):
@@ -255,16 +276,17 @@ class PptxDataFrame(object):
         if value_test:
             raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_items_request, available_cell_items))
 
-        dataframes = []
+        list_of_dataframes = []
         cell_items = []
 
         for cell_item in cell_items_request:
             pptx_frame = method_map[cell_item]()
-            if pptx_frame.df.empty:
-                continue
-            dataframes.append(pptx_frame.df)
+            #if pptx_frame.df.empty:
+            #    continue
+            list_of_dataframes.append(pptx_frame.df)
             cell_items += pptx_frame.cell_items
-        new_df=pd.concat(dataframes, axis=0 if self.array_style==-1 else 1)
+
+        new_df=pd.concat(list_of_dataframes, axis=0 if self.array_style==-1 else 1)
 
         new_pptx_df = PptxDataFrame(new_df, cell_items, self.array_style, self.chart_type)
         new_pptx_df.chart_type = auto_charttype(new_df, self.array_style)
@@ -277,7 +299,7 @@ class PptxDataFrame(object):
         :param str setup:
         :rtype:
         """
-        if setup in ['basic', 'table']:
+        if setup in ['chart', 'table']:
             return self.get('c_pct')
         elif setup in ['basic_nets','basic+nets-table']:
             return self.get('c_pct,net')

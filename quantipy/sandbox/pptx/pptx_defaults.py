@@ -79,8 +79,8 @@ default_cell_kwargs = OrderedDict([
     ('margin_top', Cm(0.1)),
     ('margin_bottom', Cm(0.1)),
     ('vertical_alignment', 'top'),
-    ('shading', False),
-    ('shading_color', (0,0,0)),
+    ('shading', True),
+    ('shading_color', (255,255,255)),
 ])
 
 #-----------------------------------------------------------------------------
@@ -104,16 +104,21 @@ default_table = OrderedDict([
     ('values_column_width', Cm(2)),
     ('values_textframe_kwargs', default_textframe.copy()),
     ('values_cell_kwargs', default_cell_kwargs.copy()),
+    ('values_prefix', None),
+    ('values_suffix', None),
 
     ('top_left_corner_textframe_kwargs', default_textframe.copy()),
     ('top_left_corner_cell_kwargs', default_cell_kwargs.copy()),
 ])
 
-default_nets_table = default_table.copy()
-default_nets_table['show_side_member']=False
-default_nets_table['values_column_width']=Cm(1.8)
-default_nets_table['top_member_row_height']=Cm(1.7)
-
+default_side_table = default_table.copy()
+default_side_table['show_side_member']=False
+default_side_table['values_column_width']=Cm(1.8)
+default_side_table['top_member_row_height']=Cm(1.7)
+default_side_table['values_textframe_kwargs']['horizontal_alignment'] = 'center'
+default_side_table['top_member_textframe_kwargs']['horizontal_alignment'] = 'center'
+default_side_table['top_member_cell_kwargs']['vertical_alignment'] = 'middle'
+default_side_table['values_suffix'] = '%'
 
 # -------------------------------------------------------------------------------------------
 # Chart defaults (Bar_clustered 1 series)
