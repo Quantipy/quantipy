@@ -2078,7 +2078,6 @@ class Stack(defaultdict):
             self.aggregate(['counts_cumsum', 'c%_cumsum'], False, [], _batches, on_vars, verbose=verbose)
         return None
 
-    @staticmethod
     def _add_checking_chain(self, dk, cluster, name, x, y, views):
         key, view, c_view = views
         if isinstance(cluster, ChainManager):
