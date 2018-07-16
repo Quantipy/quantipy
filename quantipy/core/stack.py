@@ -2176,7 +2176,8 @@ class Stack(defaultdict):
                 arr_name = dataset._dims_free_arr_name(parent) + suf
                 if arr_name in dataset:
                     msg = "Cannot create array {}. Variable already exists!"
-                    raise ValueError(msg.format(arr_name))
+                    if not dataset.get_property(arr_name, 'recoded_net'):
+                        raise ValueError(msg.format(arr_name))
                 no = dataset.item_no(var)
                 if not arr_name in to_array_set:
                     to_array_set[arr_name] = [parent, [name], [no]]
