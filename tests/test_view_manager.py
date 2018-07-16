@@ -39,8 +39,8 @@ class TestViewManager(unittest.TestCase):
         basic_views = ['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum']
         stack.aggregate(views=basic_views, verbose=False)
         if nets:
-            stack.add_nets(['q5', 'q9'], [{'Top3': [1, 2, 3]}], verbose=False)
-            stack.add_nets(['q8'], [{'Top2': [1, 2]}], expand='after', verbose=False)
+            stack.add_nets(['q5', 'q9'], [{'Top3': [1, 2, 3]}], verbose=False, recode=False)
+            stack.add_nets(['q8'], [{'Top2': [1, 2]}], expand='after', verbose=False, recode=False)
         if stats:
             stack.add_stats(x, ['mean'], rescale={1:100, 2:50, 3:0}, verbose=False)
             stack.add_stats('q5', ['mean', 'stddev'], custom_text='stat2', verbose=False)
