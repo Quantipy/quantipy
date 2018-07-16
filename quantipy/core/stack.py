@@ -9,6 +9,7 @@ import quantipy as qp
 import copy
 import time
 import sys
+import warnings
 
 from link import Link
 from chain import Chain
@@ -2105,7 +2106,8 @@ class Stack(defaultdict):
         return cluster
 
     @staticmethod
-    def recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose=True):
+    def recode_from_net_def(dataset, on_vars, net_map, expand, recode= 'auto',
+                            verbose=True):
         """
         Create variables from net definitions.
         """
@@ -2145,6 +2147,14 @@ class Stack(defaultdict):
             mapper += appends
             q_type = 'delimited set' if ds._is_delimited_set_mapper(mapper) else 'single'
             return mapper, q_type, labels, simple_nets
+
+        forced_recode = False
+        valid = ['extend_codes', 'drop_codes', 'collect_codes']
+        if recode == 'auto':
+            recode = 'collect_codes'
+            forced_recode = True
+        if not any(rec in recode for rec in valid):
+            raise ValueError("'recode' must be one of {}".format(valid))
 
         dataset._meta['sets']['to_array'] = {}
         for var in on_vars[:]:
@@ -2198,6 +2208,8 @@ class Stack(defaultdict):
 
             if verbose:
                 print 'Created: {}'. format(name)
+            if forced_recode:
+                warnings.warn("'{}' was a forced recode.".format(name))
 
             # order, remove codes
             if 'collect_codes' in recode:
@@ -2260,7 +2272,7 @@ class Stack(defaultdict):
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 checking_cluster=None, _batches='all', recode=None, verbose=True):
+                 checking_cluster=None, _batches='all', recode='auto', verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -2302,7 +2314,7 @@ class Stack(defaultdict):
             Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
         recode: {'extend_codes', 'drop_codes', 'collect_codes', 'collect_codes@cat_name'},
-                 default None
+                 default 'auto'
             Adds variable with nets as codes to DataSet/Stack. If 'extend_codes',
             codes are extended with nets. If 'drop_codes', new variable only
             contains nets as codes. If 'collect_codes' or 'collect_codes@cat_name'
@@ -2393,8 +2405,7 @@ class Stack(defaultdict):
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
-            if recode and any(rec in recode
-                              for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
+            if recode:
                 ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
