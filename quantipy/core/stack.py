@@ -2215,7 +2215,7 @@ class Stack(defaultdict):
             if 'collect_codes' in recode:
                 other_logic = intersection(
                     [{var: not_count(0)}, {name: has_count(0)}])
-                if dataset.take(other_logic).tolist():
+                if dataset._is_array_item(var) or dataset.take(other_logic).tolist():
                     cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
                     code = len(mapper)+1
                     dataset.extend_values(name, [(code, str(code))])
