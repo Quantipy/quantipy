@@ -2772,6 +2772,8 @@ class DataSet(object):
                         rolled_up.append(item_map[v])
                 else:
                     rolled_up.append(v)
+            else:
+                rolled_up.append(v)
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
