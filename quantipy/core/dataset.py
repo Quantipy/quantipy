@@ -6531,9 +6531,11 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name.decode('utf8')):
+        try:
+            batches.get(name.decode('utf8'), name)
+        except KeyError:
             raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, name.decode('utf8'))
+        return qp.Batch(self, name)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):
