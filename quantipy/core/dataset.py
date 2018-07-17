@@ -1395,9 +1395,9 @@ class DataSet(object):
         def _text_from_textobj(textobj, text_key, axis_edit):
             if axis_edit:
                 a_edit = '{} edits'.format(axis_edit)
-                return textobj.get(a_edit, {}).get(text_key, None)
+                return textobj.get(a_edit, {}).get(text_key, '')
             else:
-                return textobj.get(text_key, None)
+                return textobj.get(text_key, '')
 
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
