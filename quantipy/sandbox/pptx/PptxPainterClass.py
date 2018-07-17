@@ -166,6 +166,7 @@ class PptxPainter(object):
                     'textboxs': {},
                     'charts': {},
                     'tables': {},
+                    'side_tables': {},
                     }
 
     def queue_slide_items(self, pptx_chain, slide_items):
@@ -186,7 +187,7 @@ class PptxPainter(object):
         None
         """
 
-        valid_slide_items = ['chart','table']
+        valid_slide_items = ['chart','table','side_table']
         slide_items = re.sub(' +', '', slide_items)
         # TODO check for valid slide_items input
 
@@ -201,56 +202,48 @@ class PptxPainter(object):
         slide_items = slide_items.split('+')
 
         table_draft = {}
+        side_table_draft = {}
         chart_draft = {}
         for slide_item in slide_items:
             if slide_item.startswith('table'):
                 cell_items = slide_item.split(':')[1]
                 pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(decimals=0)
                 if not pptx_frame().empty:
-                    table_draft = self.draft_side_table(pptx_frame())
+                    table_draft = self.draft_table(pptx_frame())
+                    self.queue_table(settings=table_draft)
+            if slide_item.startswith('side_table'):
+                cell_items = slide_item.split(':')[1]
+                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(decimals=0)
+                if not pptx_frame().empty:
+                    side_table_draft = self.draft_side_table(pptx_frame())
+                    pct_index = [index for index, value in enumerate(pptx_frame.cell_items) if 'is_c_pct' in value]
+                    side_table_draft['values_suffix_columns'] = pct_index
+                    self.queue_side_table(settings=side_table_draft)
             if slide_item.startswith('chart'):
                 cell_items = slide_item.split(':')[1]
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
+                    if side_table_draft:
+                        chart_draft['width'] -= side_table_draft['width']
+                    self.queue_chart(settings=chart_draft)
 
-        if table_draft:
-            # set table width based on number of columns in dataframe
-            cols = len(table_draft['dataframe'].columns)
-            col_width = table_draft['values_column_width']
-            table_width = cols * col_width
-            table_draft['width'] = table_width
-
-            # adjust chart width to fit a table to the right
-            chart_draft['width'] -= table_width
-
-            # position table
-            rows = len(table_draft['dataframe'].index)
-            table_draft['left'] = chart_draft['left'] + chart_draft['width']
-            height = chart_draft['height']
-            top = chart_draft['top']
-            top_member_row_height = table_draft['top_member_row_height']
-
-            if rows == 1:
-                top = top + int(round(height * (0.3 / rows)) - top_member_row_height)
-            else:
-                top = top + int(round(height * (0.45 / rows)) - top_member_row_height)
-
-            table_draft['top'] = top
-
-            plot_area = int(round(height * 0.9)) - Cm(0.4)
-            value_row_height = int(round(plot_area / rows))
-            height = top_member_row_height + rows * value_row_height
-
-            table_draft['height'] = height
-            table_draft['values_row_height'] = value_row_height
-
-            self.queue_table(settings=table_draft)
-
-        if chart_draft:
-            self.queue_chart(settings=chart_draft)
+        self._check_shapes()
 
         return None
+
+    def _check_shapes(self,adjust='chart'):
+
+        table_left=12240000
+        table_width=0
+        for table, table_settings in self.slide_kwargs['side_tables'].iteritems():
+            if table_settings['left'] < table_left:
+                table_left = table_settings['left']
+                table_width = table_settings['width']
+
+        for chart, chart_settings in self.slide_kwargs['charts'].iteritems():
+            if chart_settings['left'] + chart_settings['width'] > table_left:
+                chart_settings['width'] -= table_width
 
     def clear_tables(self):
         """
@@ -258,6 +251,13 @@ class PptxPainter(object):
         :return: None, removes all keys from self.slide_kwargs['tables']
         """
         self.clear_queue('tables')
+
+    def clear_side_tables(self):
+        """
+        Initilalize the slide_kwargs "tables" dict
+        :return: None, removes all keys from self.slide_kwargs['tables']
+        """
+        self.clear_queue('side_tables')
 
     def clear_charts(self):
         """
@@ -288,6 +288,8 @@ class PptxPainter(object):
             self.slide_kwargs['textboxs'].clear()
         elif key=='tables':
             self.slide_kwargs['tables'].clear()
+        elif key=='side_tables':
+            self.slide_kwargs['side_tables'].clear()
 
     def set_slide_layout(self, slide_layout):
         """
@@ -432,7 +434,7 @@ class PptxPainter(object):
         draft = self.draft_chart(settings, dataframe)
         return draft
 
-    def draft_table(self, settings, dataframe, text=None):
+    def draft_table(self, dataframe, text=None):
         """
         Sets attribute self.tables
 
@@ -446,7 +448,6 @@ class PptxPainter(object):
         -------
         """
 
-        self.table = settings.copy()
         self.table['dataframe'] = dataframe
         self.table['text'] = text
         return self.table
@@ -463,10 +464,39 @@ class PptxPainter(object):
         -------
         """
 
-        self.table = self.side_table.copy()
-        self.table['dataframe'] = dataframe
+        draft = self.side_table.copy()
+        draft['dataframe'] = dataframe
 
-        return self.table
+        # set table width based on number of columns in dataframe
+        cols = len(draft['dataframe'].columns)
+        col_width = draft['values_column_width']
+        table_width = cols * col_width
+
+        # position table
+        rows = len(draft['dataframe'].index)
+        draft['left'] = draft['left'] + draft['width'] - table_width
+        draft['width'] = table_width
+        height = draft['height']
+        top = draft['top']
+        top_member_row_height = draft['top_member_row_height']
+
+        if rows == 1:
+            top = top + int(round(height * (0.3 / rows)) - top_member_row_height)
+            draft['values_cell_kwargs']['margin_top'] = Cm(1.6)
+        else:
+            top = top + int(round(height * (0.45 / rows)) - top_member_row_height)
+            draft['values_cell_kwargs']['margin_top'] = Cm(0.1)
+
+        draft['top'] = top
+
+        plot_area = int(round(height * 0.86))
+        value_row_height = int(round(plot_area / rows))
+        height = top_member_row_height + rows * value_row_height
+
+        draft['height'] = height
+        draft['values_row_height'] = value_row_height
+
+        return draft
 
     def queue_chart(self, settings=None, name=None):
         """
@@ -508,6 +538,19 @@ class PptxPainter(object):
             settings = self.table.copy()
         self._add('table', settings, name=name)
 
+    def queue_side_table(self, settings=None, name=None):
+        """
+        Will add a table to the Slide properties Dict
+        :param
+            settings: A dictionary of table settings, default is self.table
+            name: Optionally give the table a name. If none the table will be named 'table[n]'
+        :return:
+            None, Adds a key to self.slide_kwargs['tables']
+        """
+        if settings is None:
+            settings = self.side_table.copy()
+        self._add('side_table', settings, name=name)
+
     def add_slide_from_queue(self, slide_layout=None):
         """
         Method that creates a Slide instance and inserts
@@ -533,8 +576,11 @@ class PptxPainter(object):
             # Add tables
             if _type == 'tables':
                 for name, settings in draft.iteritems():
-                    chart=self.add_table(slide, **settings)
-
+                    table=self.add_table(slide, **settings)
+            # Add side tables
+            if _type == 'side_tables':
+                for name, settings in draft.iteritems():
+                    side_table=self.add_table(slide, **settings)
         return slide
 
     def _add(self, shape, settings, name=None):
@@ -597,7 +643,9 @@ class PptxPainter(object):
                   values_textframe_kwargs=None, # type: dict
                   values_cell_kwargs=None,  # type: dict
                   values_prefix=None,
+                  values_prefix_columns='all', # or a list of column indexes
                   values_suffix=None,
+                  values_suffix_columns = 'all',  # or a list of column indexes
 
                   top_left_corner_textframe_kwargs=None, # type: dict
                   top_left_corner_cell_kwargs=None,  # type: dict
@@ -633,6 +681,9 @@ class PptxPainter(object):
                 PptxPainter.add_textframe(cell, col_label, **top_member_textframe_kwargs)
 
         # add values
+        df_cols_range = range(len(dataframe.columns))
+        if values_prefix_columns =='all': values_prefix_columns = df_cols_range
+        if values_suffix_columns == 'all': values_suffix_columns = df_cols_range
         table_values = dataframe.values
         for i, val in enumerate(table_values):
             row_idx = i +1 if show_top_member else i
@@ -642,7 +693,11 @@ class PptxPainter(object):
                 table.columns[col_idx].width = values_column_width
                 cell = table.cell(row_idx, col_idx)
                 PptxPainter.set_cell_properties(cell, **values_cell_kwargs)
-                subval = (values_prefix or '') + str(subval) + (values_suffix or '')
+                prefix = None
+                if x in values_prefix_columns: prefix = values_prefix
+                suffix = None
+                if x in values_suffix_columns: suffix = values_suffix
+                subval = (prefix or '') + str(subval) + (suffix or '')
                 PptxPainter.add_textframe(cell, subval, **values_textframe_kwargs)
 
         # add question label

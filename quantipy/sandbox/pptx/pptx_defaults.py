@@ -105,7 +105,10 @@ default_table = OrderedDict([
     ('values_textframe_kwargs', default_textframe.copy()),
     ('values_cell_kwargs', default_cell_kwargs.copy()),
     ('values_prefix', None),
+    ('values_prefix_columns', 'all'),
+
     ('values_suffix', None),
+    ('values_suffix_columns', 'all'),
 
     ('top_left_corner_textframe_kwargs', default_textframe.copy()),
     ('top_left_corner_cell_kwargs', default_cell_kwargs.copy()),
@@ -273,6 +276,7 @@ shapes = {'charts' : {'bar': default_chart_bar,
                       'pie': default_chart_pie},
           'textboxes' : {'header': header_shape,
                          'footer': footer_shape},
-          'tables' : {'table' : default_table},
+          'tables' : {'table' : default_table,
+                      'side_table': default_side_table},
           }
 
