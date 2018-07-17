@@ -121,6 +121,7 @@ class Batch(qp.DataSet):
             self.extended_filters_per_x = {}
             self.filter = 'no_filter'
             self.filter_names = ['no_filter']
+            self._filter_slice = None
             self.x_y_map = None
             self.x_filter_map = None
             self.y_on_y = []
@@ -171,7 +172,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info']:
+                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info',
+                     '_filter_slice']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -1055,7 +1057,9 @@ class Batch(qp.DataSet):
         """
         f = self.filter
         if f == 'no_filter':
-            self.sample_size = len(self._data.index)
+            idx = self._data.index
         else:
-            self.sample_size = len(self._dsfilter(self, 'sample', f.values()[0])._data.index)
+            idx = self._dsfilter(self, 'sample', f.values()[0])._data.index
+        self.sample_size = len(idx)
+        self._filter_slice = idx.values.tolist()
         return None
