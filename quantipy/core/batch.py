@@ -188,7 +188,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map', 'build_info']:
+                     'y_on_y_filter', 'y_filter_map', 'build_info',
+                     '_filter_slice']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
