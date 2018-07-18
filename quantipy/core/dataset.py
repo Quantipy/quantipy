@@ -4328,6 +4328,7 @@ class DataSet(object):
         if self.var_exists(newname):
             if safe:
                 raise ValueError('{} does already exist.'.format(name))
+            self.drop(newname, ignore_items=True)
         var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
         if not all(self.var_exists(v) for v in var_list):
