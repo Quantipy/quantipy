@@ -973,7 +973,11 @@ class DataSet(object):
             filters = []
             for add_batch in add_batches:
                 if all_batches[add_batch]['filter'] != 'no_filter':
-                    filters.append((add_batch, all_batches[add_batch]['filter']))
+                    filters.append(
+                        (add_batch,
+                         all_batches[add_batch]['language'],
+                         all_batches[add_batch]['filter'])
+                        )
             if not filters: return None
             cats = [(1, 'active')]
             fnames = []
@@ -981,9 +985,10 @@ class DataSet(object):
                 fname = 'filter_{}'.format(no)
                 fnames.append(fname)
                 source = f[0]
-                flogic = f[1].values()[0]
-                flabel = f[1].keys()[0]
-                ds.add_meta(fname, 'single', flabel, cats)
+                ftextkey = f[1]
+                flogic = f[2].values()[0]
+                flabel = f[2].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats, text_key=ftextkey)
                 ds._meta['columns'][fname]['properties']['recoded_filter'] = source
                 ds[ds.take(flogic), fname] = 1
             return fnames
@@ -1026,7 +1031,7 @@ class DataSet(object):
                 variables += yks
         if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
-        variables = self.roll_up(variables)
+        variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
@@ -1395,9 +1400,9 @@ class DataSet(object):
         def _text_from_textobj(textobj, text_key, axis_edit):
             if axis_edit:
                 a_edit = '{} edits'.format(axis_edit)
-                return textobj.get(a_edit, {}).get(text_key, None)
+                return textobj.get(a_edit, {}).get(text_key, '')
             else:
-                return textobj.get(text_key, None)
+                return textobj.get(text_key, '')
 
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
@@ -6532,9 +6537,12 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name.decode('utf8')):
+        check = batches.get(name.decode('utf8'))
+        if not check:
+            check = batches.get(name)
+        if not check:
             raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, name.decode('utf8'))
+        return qp.Batch(self, name)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):
