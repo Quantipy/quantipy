@@ -145,8 +145,7 @@ class PptxPainter(object):
         if shape_properties:
             self._shape_properties = shape_properties
         else:
-            self._defaults = PptxDefaults()
-            self._shape_properties = self._defaults.shapes
+            self._shape_properties = PptxDefaults()
 
         self.textbox = self._shape_properties.textbox
         self.textbox_header = self._shape_properties.textbox_header
@@ -224,8 +223,6 @@ class PptxPainter(object):
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
-                    if side_table_draft:
-                        chart_draft['width'] -= side_table_draft['width']
                     self.queue_chart(settings=chart_draft)
 
         self._check_shapes()
@@ -234,15 +231,17 @@ class PptxPainter(object):
 
     def _check_shapes(self,adjust='chart'):
 
-        table_left=12240000
+        # Find the side_table with the lowest 'left' number
+        table_max_left=12240000
         table_width=0
         for table, table_settings in self.slide_kwargs['side_tables'].iteritems():
-            if table_settings['left'] < table_left:
-                table_left = table_settings['left']
+            if table_settings['left'] < table_max_left:
+                table_max_left = table_settings['left']
                 table_width = table_settings['width']
 
+        # If any charts overlay a side_table then adjust width of chart
         for chart, chart_settings in self.slide_kwargs['charts'].iteritems():
-            if chart_settings['left'] + chart_settings['width'] > table_left:
+            if chart_settings['left'] + chart_settings['width'] > table_max_left:
                 chart_settings['width'] -= table_width
 
     def clear_tables(self):
@@ -325,7 +324,7 @@ class PptxPainter(object):
 
         return self.presentation.slides.add_slide(slide_layout)
 
-    def draft_textbox(self, settings, text=None):
+    def draft_textbox(self, text=None):
         """
         Method for drafting a textboc
 
@@ -338,9 +337,9 @@ class PptxPainter(object):
         Returns: self.textbox
         -------
         """
-        self.textbox = settings.copy()
-        self.textbox['text'] = text
-        return self.textbox
+        draft = self.textbox.copy()
+        draft['text'] = text
+        return draft
 
     def draft_textbox_header(self, text=None):
         """
@@ -356,8 +355,8 @@ class PptxPainter(object):
         -------
         """
 
-        settings = self.textbox_header.copy()
-        draft = self.draft_textbox(settings, text=text)
+        draft = self.textbox_header.copy()
+        draft['text'] = text
 
         return draft
 
@@ -375,12 +374,12 @@ class PptxPainter(object):
         -------
         """
 
-        settings = self.textbox_footer.copy()
-        draft = self.draft_textbox(settings, text=text)
+        draft = self.textbox_footer.copy()
+        draft['text'] = text
 
         return draft
 
-    def draft_chart(self, settings, dataframe):
+    def draft_chart(self, dataframe):
         """
         Sets attribute self.chart
 
@@ -394,10 +393,9 @@ class PptxPainter(object):
         -------
         """
 
-        self.chart = settings.copy()
-
-        self.chart['dataframe'] = dataframe
-        return self.chart
+        draft = self.chart.copy()
+        draft['dataframe'] = dataframe
+        return draft
 
     def draft_autochart(self, dataframe, chart_type):
         """
@@ -420,18 +418,19 @@ class PptxPainter(object):
                 error_msg ='Invalid chart_type {}. Valid chart types are {}'
                 raise ValueError(error_msg.format(chart_type, valid_chart_types))
 
+        # Make draft
         if chart_type == 'pie':
-            settings = self.chart_pie.copy()
+            draft = self.chart_pie.copy()
         elif chart_type == 'bar_clustered' or chart_type == 'bar':
-            settings = self.chart_bar.copy()
+            draft = self.chart_bar.copy()
             if len(dataframe.columns) > 1:
-                settings['has_legend'] = True
+                draft['has_legend'] = True
         elif chart_type == 'bar_stacked_100':
-            settings = self.chart_bar_stacked100.copy()
+            draft = self.chart_bar_stacked100.copy()
         else:
-            settings = self.chart_bar.copy()
+            draft = self.chart_bar.copy()
 
-        draft = self.draft_chart(settings, dataframe)
+        draft['dataframe'] = dataframe
         return draft
 
     def draft_table(self, dataframe, text=None):
@@ -448,9 +447,10 @@ class PptxPainter(object):
         -------
         """
 
-        self.table['dataframe'] = dataframe
-        self.table['text'] = text
-        return self.table
+        draft = self.table.copy()
+        draft['dataframe'] = dataframe
+        draft['text'] = text
+        return draft
 
     def draft_side_table(self, dataframe):
         """
@@ -498,7 +498,7 @@ class PptxPainter(object):
 
         return draft
 
-    def queue_chart(self, settings=None, name=None):
+    def queue_chart(self, settings, name=None):
         """
         Will add a chart to the Slide properties Dict
         :param
@@ -507,11 +507,10 @@ class PptxPainter(object):
         :return:
             None, Adds a key to self.slide_kwargs['charts']
         """
-        if settings is None:
-            settings = self.chart.copy()
+
         self._add('chart', settings, name=name)
 
-    def queue_textbox(self, settings=None, name=None):
+    def queue_textbox(self, settings, name=None):
         """
         Will add a textbox to the Slide properties Dict
         :param
@@ -520,12 +519,10 @@ class PptxPainter(object):
         :return:
             None, adds a key to self.slide_kwargs['textboxes']
         """
-        if settings is None:
-            settings = self.textbox.copy()
 
         self._add('textbox', settings, name=name)
 
-    def queue_table(self, settings=None, name=None):
+    def queue_table(self, settings, name=None):
         """
         Will add a table to the Slide properties Dict
         :param
@@ -534,11 +531,10 @@ class PptxPainter(object):
         :return:
             None, Adds a key to self.slide_kwargs['tables']
         """
-        if settings is None:
-            settings = self.table.copy()
+
         self._add('table', settings, name=name)
 
-    def queue_side_table(self, settings=None, name=None):
+    def queue_side_table(self, settings, name=None):
         """
         Will add a table to the Slide properties Dict
         :param
@@ -547,8 +543,7 @@ class PptxPainter(object):
         :return:
             None, Adds a key to self.slide_kwargs['tables']
         """
-        if settings is None:
-            settings = self.side_table.copy()
+
         self._add('side_table', settings, name=name)
 
     def add_slide_from_queue(self, slide_layout=None):
