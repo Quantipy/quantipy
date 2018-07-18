@@ -189,18 +189,69 @@ class PptxDataFrame(object):
 
         self.df = df
 
-        #self.df = np.around(self.df, decimals=decimals, out=None)
-        #if decimals == 0:
-        #    self.df = self.df.applymap(lambda x: int(x))
-
         return self
+
+    def select_categories(self,categories):
+
+        if self.array_style == -1:
+            df_copy=self.df.iloc[categories]
+        else:
+            df_copy = self.df.iloc[:,categories]
+
+        pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style,self.chart_type)
+        pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
+        pptx_df_copy.cell_items = [self.cell_items[i] for i in categories]
+
+        return pptx_df_copy
+
+    def get_test(self):
+        """
+        Return a copy of the PptxDataFrame only containing sig testing type categories
+
+        Returns
+        -------
+        A PptxDataFrame instance
+
+        """
+        row_list = get_indexes_from_list(self.cell_items, 'is_propstest', exact=False)
+        #dont_want = get_indexes_from_list(self.cell_items, ['is_net', 'net', 'is_c_pct_sum'], exact=False)
+        #not_net = get_indexes_from_list(self.cell_items, ['normal', 'expanded'], exact=False)
+
+        #for x in dont_want:
+        #    if x in row_list and x not in not_net:
+        #        row_list.remove(x)
+
+        return self.select_categories(row_list)
+
+    def get_stats(self):
+        """
+        Return a copy of the PptxDataFrame only containing stat type categories
+
+        Returns
+        -------
+        A PptxDataFrame instance
+
+        """
+        row_list = get_indexes_from_list(self.cell_items, 'is_stat', exact=False)
+        #dont_want = get_indexes_from_list(self.cell_items, ['is_net', 'net', 'is_c_pct_sum'], exact=False)
+        #not_net = get_indexes_from_list(self.cell_items, ['normal', 'expanded'], exact=False)
+
+        #for x in dont_want:
+        #    if x in row_list and x not in not_net:
+        #        row_list.remove(x)
+
+        return self.select_categories(row_list)
 
     def get_cpct(self):
         """
         Return a copy of the PptxDataFrame only containing column percentage categories
 
-        :rtype: PptxDataFrame
+        Returns
+        -------
+        A PptxDataFrame instance
+
         """
+
         row_list = get_indexes_from_list(self.cell_items, 'is_c_pct', exact=False)
         dont_want = get_indexes_from_list(self.cell_items, ['is_net', 'net', 'is_c_pct_sum'], exact=False)
         not_net = get_indexes_from_list(self.cell_items, ['normal', 'expanded'], exact=False)
@@ -209,22 +260,16 @@ class PptxDataFrame(object):
             if x in row_list and x not in not_net:
                 row_list.remove(x)
 
-        if self.array_style == -1:
-            df_copy=self.df.iloc[row_list]
-        else:
-            df_copy = self.df.iloc[:,row_list]
-
-        pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style,self.chart_type)
-        pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
-        pptx_df_copy.cell_items = [self.cell_items[i] for i in row_list]
-
-        return pptx_df_copy
+        return self.select_categories(row_list)
 
     def get_nets(self):
         """
         Return a copy of the PptxDataFrame only containing net type categories
 
-        :rtype: PptxDataFrame
+        Returns
+        -------
+        A PptxDataFrame instance
+
         """
 
         row_list = get_indexes_from_list(self.cell_items, ['is_net', 'net'], exact=False)
@@ -234,23 +279,18 @@ class PptxDataFrame(object):
             if x in row_list:
                 row_list.remove(x)
 
-        if self.array_style == -1:
-            df_copy = self.df.iloc[row_list]
-        else:
-            df_copy = self.df.iloc[:, row_list]
-
-        pptx_df_copy = PptxDataFrame(df_copy, self.cell_items, self.array_style, self.chart_type)
-        pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
-        pptx_df_copy.cell_items = [self.cell_items[i] for i in row_list]
-
-        return pptx_df_copy
+        return self.select_categories(row_list)
 
     def get_means(self):
         """
         Return a copy of the PptxDataFrame only containing mean type categories
 
-        :rtype: PptxDataFrame
+        Returns
+        -------
+        A PptxDataFrame instance
+
         """
+
         row_list = get_indexes_from_list(self.cell_items, ['is_mean'], exact=False)
         dont_want = get_indexes_from_list(self.cell_items, ['is_meanstest'], exact=False)
 
@@ -258,24 +298,21 @@ class PptxDataFrame(object):
             if x in row_list:
                 row_list.remove(x)
 
-        if self.array_style == -1:
-            df_copy = self.df.iloc[row_list]
-        else:
-            df_copy = self.df.iloc[:, row_list]
+        return self.select_categories(row_list)
 
-        pptx_df_copy = PptxDataFrame(df_copy, self.cell_items, self.array_style, self.chart_type)
-        pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
-        pptx_df_copy.cell_items = [self.cell_items[i] for i in row_list]
-
-        return pptx_df_copy
-
-    def get(self, cell_items_request, sort=False):
+    def get(self, cell_items_request):
         """
         Method to get specific elements from chains dataframe
 
-        :param str cel_types: A string of comma separated cell types to return. Available types are 'c_pct, net, mean'
-        :param boolean or str sort: TODO Sort the elements ascending or decending. Str 'asc', 'dsc' or False
-        :rtype: PptxDataFrame
+        Parameters
+        ----------
+        cell_items_request : str
+            A string of comma separated cell types to return. Available types are 'c_pct, net, mean'
+
+        Returns
+        -------
+        A PptxDataFrame instance
+
         """
         method_map = {'c_pct': self.get_cpct,
                       'pct': self.get_cpct,
@@ -309,23 +346,6 @@ class PptxDataFrame(object):
 
         return new_pptx_df
 
-    def read_slide_items(self, setup):
-        """
-        Method to translate the slide items request
-        :param str setup:
-        :rtype:
-        """
-        if setup in ['chart', 'table']:
-            return self.get('c_pct')
-        elif setup in ['basic_nets','basic+nets-table']:
-            return self.get('c_pct,net')
-        elif setup in ['basic+means-line','basic+means-table']:
-            return self.get('c_pct,mean')
-        elif setup in ['basic_nets+means-table','basic_nets+means-line','basic+nets-table+means-table',
-                       'basic+nets-table+means-line']:
-            return self.get('c_pct,net,mean')
-        else:
-            return self.get('c_pct')
 
 class PptxChain(object):
     """
