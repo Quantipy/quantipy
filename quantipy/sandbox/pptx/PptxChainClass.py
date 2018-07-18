@@ -10,6 +10,7 @@ t.use_encoding('utf-8')
 BASE_COL = '@'
 BASE_ROW = ['is_counts', 'is_c_base']
 PCT_TYPES = ['is_c_pct', 'is_r_pct']
+NOT_PCT_TYPES = ['is_stat']
 CONTINUATION_STR = "(continued {})"
 MAX_PIE_ELMS = 4
 
@@ -161,21 +162,36 @@ class PptxDataFrame(object):
     def __call__(self):
         return self.df
 
-    def to_table(self, decimals=2):
-        indexes = []
-        for i, row in enumerate(self.cell_items):
-            for type in row:
-                for pct_type in PCT_TYPES:
-                    if type == pct_type:
-                        indexes.append(i)
-        if self.array_style == -1:
-            self.df.iloc[indexes] *= 100
-        else:
-            self.df.iloc[:, indexes] *= 100
+    def to_table(self, decimals=2, pct_decimals=2):
 
-        self.df = np.around(self.df, decimals=decimals, out=None)
+        df = self.df
+        if self.array_style == -1:
+            df = df.T
+
+        indexes = get_indexes_from_list(self.cell_items, PCT_TYPES, exact=False)
+
+        df.iloc[:, indexes] *= 100
+        df.iloc[:, indexes] = df.iloc[:, indexes].round(decimals=pct_decimals)
+        if pct_decimals == 0:
+            columns = df.columns[indexes].tolist()
+            indexes_to_int=dict(zip(columns, ['int'] * len(columns)))
+            df = df.astype(indexes_to_int)
+
+        indexes = get_indexes_from_list(self.cell_items, NOT_PCT_TYPES, exact=False)
+        df.iloc[:, indexes] = df.iloc[:, indexes].round(decimals=decimals)
         if decimals == 0:
-            self.df = self.df.applymap(lambda x: int(x))
+            columns = df.columns[indexes].tolist()
+            indexes_to_int=dict(zip(columns, ['int'] * len(columns)))
+            df = df.astype(indexes_to_int)
+
+        if self.array_style == -1:
+            df = df.T
+
+        self.df = df
+
+        #self.df = np.around(self.df, decimals=decimals, out=None)
+        #if decimals == 0:
+        #    self.df = self.df.applymap(lambda x: int(x))
 
         return self
 
