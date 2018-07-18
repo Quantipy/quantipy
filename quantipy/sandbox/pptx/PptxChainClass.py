@@ -204,7 +204,7 @@ class PptxDataFrame(object):
 
         return pptx_df_copy
 
-    def get_test(self):
+    def get_propstest(self):
         """
         Return a copy of the PptxDataFrame only containing sig testing type categories
 
@@ -319,8 +319,12 @@ class PptxDataFrame(object):
                       'net': self.get_nets,
                       'nets': self.get_nets,
                       'mean': self.get_means,
-                      'means': self.get_means}
-        # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_props', 't_means'
+                      'means': self.get_means,
+                      'test': self.get_propstest,
+                      'tests': self.get_propstest,
+                      'stats': self.get_stats,
+                      'stat': self.get_stats}
+        # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_means'
         available_cell_items = set(method_map.keys())
         if isinstance(cell_items_request, basestring):
             cell_items_request = re.sub(' +', '', cell_items_request)
@@ -382,6 +386,7 @@ class PptxChain(object):
         self.xbase_count = ""
         self.xbase_label = ""
         self.xbase_index = 0
+        self.ybases = None
         self.select_base(base_type=base_type)
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
@@ -390,7 +395,6 @@ class PptxChain(object):
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
-
 
     def __str__(self):
         str_format = ('Table name: {}'
@@ -554,6 +558,40 @@ class PptxChain(object):
         if not hasattr(self, "_ybase_value_labels"):
             self._ybase_value_labels=[x[0] for x in self.ybases]
         return self._ybase_value_labels
+
+    @property
+    def ybase_test_labels(self):
+        if not hasattr(self, "_ybase_test_labels"):
+            if self.is_grid_summary:
+                self._ybase_test_labels = None
+                return None
+            self._ybase_test_labels=[x[2] for x in self.ybases]
+        return self._ybase_test_labels
+
+    def add_test_letter_to_column_labels(self, sep=" ", prefix=None, circumfix='()'):
+        if circumfix is None:
+            circumfix1 = ''
+            circumfix2 = ''
+        else:
+            if len(circumfix) <> 2:
+                raise ValueError("Parameter circumfix needs a string with length 2")
+
+            circumfix1 = circumfix[0]
+            circumfix2 = circumfix[1]
+
+        if self.is_grid_summary:
+            pass
+
+        else:
+
+            column_labels = self.chain_df.columns.get_level_values('Values')
+
+            # Edit labels
+            new_labels_list = {}
+            for x, y in zip(column_labels, self.ybase_test_labels):
+                new_labels_list.update({x: x + sep + circumfix1 + (prefix or '') + y + circumfix2})
+
+            self.chain_df = self.chain_df.rename(columns=new_labels_list)
 
     def place_vals_in_labels(self, base_position=0, orientation='side', drop_base=False, values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
@@ -832,12 +870,13 @@ class PptxChain(object):
 
         if not self.is_grid_summary:
 
-            # Construct a list of tuples with (base label, base size)
+            # Construct a list of tuples with (base label, base size, test letter)
             base_values = self.chain_df.iloc[base_index, :].values.tolist()
             base_values = np.around(base_values, decimals=self._decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.columns.get_level_values('Values'))
-            bases = zip(base_labels, base_values)
+            base_test   = list(self.chain_df.columns.get_level_values('Test-IDs'))
+            bases = zip(base_labels, base_values, base_test)
 
         else: # Array summary
             # Find base columns
