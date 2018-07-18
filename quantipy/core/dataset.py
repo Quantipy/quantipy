@@ -973,7 +973,11 @@ class DataSet(object):
             filters = []
             for add_batch in add_batches:
                 if all_batches[add_batch]['filter'] != 'no_filter':
-                    filters.append((add_batch, all_batches[add_batch]['filter']))
+                    filters.append(
+                        (add_batch,
+                         all_batches[add_batch]['language'],
+                         all_batches[add_batch]['filter'])
+                        )
             if not filters: return None
             cats = [(1, 'active')]
             fnames = []
@@ -981,9 +985,10 @@ class DataSet(object):
                 fname = 'filter_{}'.format(no)
                 fnames.append(fname)
                 source = f[0]
-                flogic = f[1].values()[0]
-                flabel = f[1].keys()[0]
-                ds.add_meta(fname, 'single', flabel, cats)
+                ftextkey = f[1]
+                flogic = f[2].values()[0]
+                flabel = f[2].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats, text_key=ftextkey)
                 ds._meta['columns'][fname]['properties']['recoded_filter'] = source
                 ds[ds.take(flogic), fname] = 1
             return fnames
