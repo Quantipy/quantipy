@@ -4762,7 +4762,10 @@ class DataSet(object):
         """
 
         def fix(string):
-            tags = ["'", '"', ' ', '&', '(', ')', '.', '/', '-']
+            tags = [
+                "'", '"', ' ', '&', '.', '/', '-',  
+                '(', ')', '[', ']', '{', '}'
+            ]
             for tag in tags:
                 string = string.replace(tag, '_')
             return string
