@@ -206,13 +206,13 @@ class PptxPainter(object):
         for slide_item in slide_items:
             if slide_item.startswith('table'):
                 cell_items = slide_item.split(':')[1]
-                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(decimals=0)
+                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(pct_decimals=0)
                 if not pptx_frame().empty:
                     table_draft = self.draft_table(pptx_frame())
                     self.queue_table(settings=table_draft)
             if slide_item.startswith('side_table'):
                 cell_items = slide_item.split(':')[1]
-                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(decimals=0)
+                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(pct_decimals=0)
                 if not pptx_frame().empty:
                     side_table_draft = self.draft_side_table(pptx_frame())
                     pct_index = [index for index, value in enumerate(pptx_frame.cell_items) if 'is_c_pct' in value]
@@ -680,6 +680,7 @@ class PptxPainter(object):
         if values_prefix_columns =='all': values_prefix_columns = df_cols_range
         if values_suffix_columns == 'all': values_suffix_columns = df_cols_range
         table_values = dataframe.values
+        datatypes = dataframe.dtypes.tolist()
         for i, val in enumerate(table_values):
             row_idx = i +1 if show_top_member else i
             table.rows[row_idx].height = values_row_height
@@ -692,8 +693,26 @@ class PptxPainter(object):
                 if x in values_prefix_columns: prefix = values_prefix
                 suffix = None
                 if x in values_suffix_columns: suffix = values_suffix
+                if datatypes[x].kind == 'i':
+                    subval = int(subval)
                 subval = (prefix or '') + str(subval) + (suffix or '')
                 PptxPainter.add_textframe(cell, subval, **values_textframe_kwargs)
+
+        # for i in range(len(dataframe.columns)):
+        #     col_idx = i + 1 if show_side_member else i
+        #     table.columns[col_idx].width = values_column_width
+        #     for x in range(len(dataframe.index)):
+        #         row_idx = x + 1 if show_top_member else x
+        #         table.rows[row_idx].height = values_row_height
+        #         cell = table.cell(row_idx, col_idx)
+        #         PptxPainter.set_cell_properties(cell, **values_cell_kwargs)
+        #         prefix = None
+        #         if i in values_prefix_columns: prefix = values_prefix
+        #         suffix = None
+        #         if i in values_suffix_columns: suffix = values_suffix
+        #         value = dataframe.iloc[x,i]
+        #         subval = (prefix or '') + str(value) + (suffix or '')
+        #         PptxPainter.add_textframe(cell, subval, **values_textframe_kwargs)
 
         # add question label
         if show_side_member and show_top_member:
