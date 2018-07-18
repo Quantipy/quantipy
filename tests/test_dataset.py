@@ -741,7 +741,7 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(text, dataset.text('q6_1', False, 'en-GB'))
         text = 'Exercise alone'
         self.assertEqual(text, dataset.text('q6_1', True, 'en-GB'))
-        text = None
+        text = ''
         self.assertEqual(text, dataset.text('q6_1', True, 'en-GB', 'x'))
 
     def test_set_value_texts(self):

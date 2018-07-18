@@ -1026,7 +1026,7 @@ class DataSet(object):
                 variables += yks
         if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
-        variables = self.roll_up(variables)
+        variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
@@ -1395,9 +1395,9 @@ class DataSet(object):
         def _text_from_textobj(textobj, text_key, axis_edit):
             if axis_edit:
                 a_edit = '{} edits'.format(axis_edit)
-                return textobj.get(a_edit, {}).get(text_key, None)
+                return textobj.get(a_edit, {}).get(text_key, '')
             else:
-                return textobj.get(text_key, None)
+                return textobj.get(text_key, '')
 
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
@@ -6531,9 +6531,12 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name.decode('utf8')):
+        check = batches.get(name.decode('utf8'))
+        if not check:
+            check = batches.get(name)
+        if not check:
             raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, name.decode('utf8'))
+        return qp.Batch(self, name)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):
