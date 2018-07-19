@@ -575,13 +575,13 @@ class PptxChain(object):
             circumfix = list(('',) * 2)
         else:
             if not isinstance(circumfix, str) or len(circumfix) <> 2:
-                raise ValueError("Parameter circumfix needs a string with length 2")
+                raise TypeError("Parameter circumfix needs a string with length 2")
             circumfix = list(circumfix)
 
         str_parameters = ['sep', 'prefix']
         for i in str_parameters:
             if not isinstance(eval(i), (str, type(None))):
-                raise ValueError("Parameter {} must be a string".format(i))
+                raise TypeError("Parameter {} must be a string".format(i))
 
         if self.is_grid_summary:
             pass
@@ -624,13 +624,13 @@ class PptxChain(object):
             circumfix = list(('',) * 2)
         else:
             if not isinstance(circumfix, str) or len(circumfix) <> 2:
-                raise ValueError("Parameter circumfix needs a string with length 2")
+                raise TypeError("Parameter circumfix needs a string with length 2")
             circumfix = list(circumfix)
 
         str_parameters = ['sep', 'prefix', 'orientation', 'setup']
         for i in str_parameters:
             if not isinstance(eval(i), (str, type(None))):
-                raise ValueError("Parameter {} must be a string".format(i))
+                raise TypeError("Parameter {} must be a string".format(i))
 
         valid_orientation = ['side', 'column']
         if orientation not in valid_orientation:
@@ -691,13 +691,13 @@ class PptxChain(object):
             base_value_circumfix = list(('',) * 2)
         else:
             if not isinstance(base_value_circumfix, str) or len(base_value_circumfix) <> 2:
-                raise ValueError("Parameter base_value_circumfix needs a string with length 2")
+                raise TypeError("Parameter base_value_circumfix needs a string with length 2")
             base_value_circumfix = list(base_value_circumfix)
 
         str_parameters = ['base_label_suf', 'base_description_suf', 'base_value_label_sep', 'base_label']
         for i in str_parameters:
             if not isinstance(eval(i), (str, type(None))):
-                raise ValueError("Parameter {} must be a string".format(i))
+                raise TypeError("Parameter {} must be a string".format(i))
 
         # Base_label
         if base_label is None:
