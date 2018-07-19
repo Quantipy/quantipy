@@ -569,15 +569,19 @@ class PptxChain(object):
         return self._ybase_test_labels
 
     def add_test_letter_to_column_labels(self, sep=" ", prefix=None, circumfix='()'):
-        if circumfix is None:
-            circumfix1 = ''
-            circumfix2 = ''
-        else:
-            if len(circumfix) <> 2:
-                raise ValueError("Parameter circumfix needs a string with length 2")
 
-            circumfix1 = circumfix[0]
-            circumfix2 = circumfix[1]
+        # Checking input
+        if circumfix is None:
+            circumfix = list(('',) * 2)
+        else:
+            if not isinstance(circumfix, str) or len(circumfix) <> 2:
+                raise ValueError("Parameter circumfix needs a string with length 2")
+            circumfix = list(circumfix)
+
+        str_parameters = ['sep', 'prefix']
+        for i in str_parameters:
+            if not isinstance(eval(i), (str, type(None))):
+                raise ValueError("Parameter {} must be a string".format(i))
 
         if self.is_grid_summary:
             pass
@@ -589,11 +593,11 @@ class PptxChain(object):
             # Edit labels
             new_labels_list = {}
             for x, y in zip(column_labels, self.ybase_test_labels):
-                new_labels_list.update({x: x + sep + circumfix1 + (prefix or '') + y + circumfix2})
+                new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + y + circumfix[1]})
 
             self.chain_df = self.chain_df.rename(columns=new_labels_list)
 
-    def place_vals_in_labels(self, base_position=0, orientation='side', drop_base=False, values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
+    def place_vals_in_labels(self, base_position=0, orientation='side', values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
         Takes values from a given column or row and inserts it to the df's row or column labels.
         Can be used to insert base values in side labels for a grid summary
@@ -602,8 +606,6 @@ class PptxChain(object):
             Which row/column to pick the base element from
         orientation: Str: 'side' or 'column', Default 'side'
             Add base to row or column labels.
-        drop_base: Bool, Default True
-            Removes the base column/row just added to labels
         values: list
             the list of values to insert
         sep: str
@@ -617,7 +619,26 @@ class PptxChain(object):
         """
         if setup=='never': return
 
-        circumfix = list(circumfix)
+        # Checking input
+        if circumfix is None:
+            circumfix = list(('',) * 2)
+        else:
+            if not isinstance(circumfix, str) or len(circumfix) <> 2:
+                raise ValueError("Parameter circumfix needs a string with length 2")
+            circumfix = list(circumfix)
+
+        str_parameters = ['sep', 'prefix', 'orientation', 'setup']
+        for i in str_parameters:
+            if not isinstance(eval(i), (str, type(None))):
+                raise ValueError("Parameter {} must be a string".format(i))
+
+        valid_orientation = ['side', 'column']
+        if orientation not in valid_orientation:
+            raise ValueError("Parameter orientation must be either of {}".format(valid_orientation))
+
+        valid_setup  = ['always', 'if_differs', 'never']
+        if setup not in valid_setup:
+            raise ValueError("Parameter setup must be either of {}".format(valid_setup))
 
         if self.is_grid_summary:
             if (len(uniquify(self.ybase_values))>1 and setup=='if_differs') or setup=='always':
@@ -628,7 +649,7 @@ class PptxChain(object):
                 # Edit labels
                 new_labels_list = {}
                 for x, y in zip(index_labels, values):
-                    new_labels_list.update({x: x + sep + circumfix[0]+ prefix + str(y) + circumfix[1]})
+                    new_labels_list.update({x: x + (sep or '') + circumfix[0]+ (prefix or '') + str(y) + circumfix[1]})
 
                 self.chain_df = self.chain_df.rename(index=new_labels_list)
                 self.vals_in_labels = True
@@ -641,7 +662,7 @@ class PptxChain(object):
             # Edit labels
             new_labels_list = {}
             for x, y in zip(index_labels, values):
-                new_labels_list.update({x: x + sep + circumfix[0] + prefix + str(y) + circumfix[1]})
+                new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + str(y) + circumfix[1]})
 
             self.chain_df = self.chain_df.rename(columns=new_labels_list)
             self.vals_in_labels = True
@@ -665,18 +686,30 @@ class PptxChain(object):
             base_label: str adhoc to use for base label
         :return:
         """
+        # Checking input
+        if base_value_circumfix is None:
+            base_value_circumfix = list(('',) * 2)
+        else:
+            if not isinstance(base_value_circumfix, str) or len(base_value_circumfix) <> 2:
+                raise ValueError("Parameter base_value_circumfix needs a string with length 2")
+            base_value_circumfix = list(base_value_circumfix)
+
+        str_parameters = ['base_label_suf', 'base_description_suf', 'base_value_label_sep', 'base_label']
+        for i in str_parameters:
+            if not isinstance(eval(i), (str, type(None))):
+                raise ValueError("Parameter {} must be a string".format(i))
+
         # Base_label
         if base_label is None:
             base_label = self.xbase_label
 
         if self.base_description:
-            base_label = u"{}{}".format(base_label,base_label_suf)
+            base_label = u"{}{}".format(base_label,base_label_suf or '')
         else:
             base_label = u"{}".format(base_label)
 
         # Base_values
         if self.xbase_indexes:
-            base_value_circumfix = list(base_value_circumfix)
             base_values = self.ybase_values[:]
             for index, base in enumerate(base_values):
                 base_values[index] = u"{}{}{}".format(base_value_circumfix[0], base, base_value_circumfix[1])
@@ -687,7 +720,7 @@ class PptxChain(object):
         base_description = ""
         if self.base_description:
             if len(self.ybases) > 1 and not self.vals_in_labels and self.array_style==-1:
-                base_description = u"{}{}".format(self.base_description, base_description_suf)
+                base_description = u"{}{}".format(self.base_description, base_description_suf or '')
             else:
                 base_description = u"{} ".format(self.base_description)
 
@@ -696,6 +729,7 @@ class PptxChain(object):
 
         # Include ybase_value_labels in base values if more than one base value
         base_value_text = ""
+        if base_value_label_sep is None: base_value_label_sep = ''
         if len(base_values) > 1:
             if not self.vals_in_labels:
                 if self.xbase_indexes:
