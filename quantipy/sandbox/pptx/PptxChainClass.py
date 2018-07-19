@@ -364,7 +364,8 @@ class PptxChain(object):
             crossbreak:
         """
         self._chart_type = None
-        self.crossbreaks_qtext = []
+        self._sig_test = None # type: list # is updated by ._select_crossbreak()
+        self.crossbreak_qtext = None # type: str # is updated by ._select_crossbreak()
         self.verbose = verbose
         self._decimals = decimals
         self._chain = chain
@@ -419,6 +420,15 @@ class PptxChain(object):
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def sig_test(self):
+
+        # Get the sig testing
+        sig_df = self.prepare_dataframe()
+        sig_df = sig_df.get_propstest()
+        self._sig_test = sig_df.df.values.tolist()
+        return self._sig_test
 
     @property
     def chart_type(self):
@@ -537,10 +547,11 @@ class PptxChain(object):
             all_columns = self._chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of painted column values for outer level
 
             col_qtexts = [all_columns[x] for x in column_selection] # determine painted column values for requested crossbreak
-            self.crossbreaks_qtext = uniquify(col_qtexts) # Save q text for crossbreak in class atribute
+            self.crossbreak_qtext = uniquify(col_qtexts) # Save q text for crossbreak in class atribute
 
             # Slice the dataframes columns based on requested crossbreaks
             df = self._chain.dataframe.iloc[:, column_selection]
+
         else:
             df = self._chain.dataframe
 
@@ -961,9 +972,9 @@ class PptxChain(object):
             df.iloc[:, indexes] /= 100
 
         # Make a PptxDataFrame instance
-        self.chart_df = PptxDataFrame(df,cell_contents,self.array_style,None)
+        chart_df = PptxDataFrame(df,cell_contents,self.array_style,None)
         # Choose a basic Chart type that will fit dataframe TODO Move this to init of Class PptxDataFrame
-        self.chart_df.chart_type = auto_charttype(df, self.array_style)
+        chart_df.chart_type = auto_charttype(df, self.array_style)
 
-        return self.chart_df
+        return chart_df
 
