@@ -188,7 +188,7 @@ class DataSet(object):
 
     def batches(self):
         if 'batches' in self._meta['sets']:
-            return self._meta['batches'].keys()
+            return self._meta['sets']['batches'].keys()
         else:
             return []
 
@@ -971,6 +971,7 @@ class DataSet(object):
             add_batches = ds._meta['sets']['batches'][batch_name]['additions']
             if not adds: return None
             filters = []
+            mtextkey = ds._meta['sets']['batches'][batch_name]['language']
             for add_batch in add_batches:
                 if all_batches[add_batch]['filter'] != 'no_filter':
                     filters.append(
@@ -989,6 +990,9 @@ class DataSet(object):
                 flogic = f[2].values()[0]
                 flabel = f[2].keys()[0]
                 ds.add_meta(fname, 'single', flabel, cats, text_key=ftextkey)
+                if not mtextkey == ftextkey:
+                    ds.set_variable_text(fname, flabel, text_key=mtextkey)
+                    ds.set_value_texts(fname, {1: 'active'}, text_key=mtextkey)
                 ds._meta['columns'][fname]['properties']['recoded_filter'] = source
                 ds[ds.take(flogic), fname] = 1
             return fnames
@@ -3867,7 +3871,6 @@ class DataSet(object):
         # Create the new meta data entry for the transposed array structure
         if not new_name:
             new_name = '{}_trans'.format(self._dims_free_arr_name(name))
-            dims_compat_name = self._dims_compat_arr_name(new_name)
         qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
@@ -3887,7 +3890,7 @@ class DataSet(object):
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
         if self._verbose_infos:
-            print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
+            print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     @verify(variables={'target': 'columns'})
     def recode(self, target, mapper, default=None, append=False,
