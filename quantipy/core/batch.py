@@ -237,10 +237,28 @@ class Batch(qp.DataSet):
         Remove instance from meta object.
         """
         name = self.name
+        adds = self._meta['sets']['batches'][name]['additions']
+        if adds:
+            for bname, bdef in self._meta['sets']['batches'].items():
+                if bname == name: continue
+                for add in adds[:]:
+                    if add in bdef['additions']:
+                        adds.remove(add)
+        for add in adds:
+            self._meta['sets']['batches'][add]['additional'] = False
+
         del(self._meta['sets']['batches'][name])
         if self._verbose_infos:
             print "Batch '%s' is removed from meta-object." % name
         self = None
+        return None
+
+    def _rename_in_additions(self, find_bname, new_name):
+        for bname, bdef in self._meta['sets']['batches'].items():
+            if find_bname in bdef['additions']:
+                adds = bdef['additions']
+                adds[adds.index(find_bname)] = new_name
+                bdef['additions'] = adds
         return None
 
     def rename(self, new_name):
@@ -251,7 +269,9 @@ class Batch(qp.DataSet):
             raise KeyError("'%s' is already included!" % new_name)
         batches = self._meta['sets']['batches']
         p_spec = self._meta['info'].get('project_spec', {})
-        batches[new_name] = batches.pop(self.name)
+        org_name = self.name
+        batches[new_name] = batches.pop(org_name)
+        self._rename_in_additions(org_name, new_name)
         self.name = new_name
         self._update()
         return None
