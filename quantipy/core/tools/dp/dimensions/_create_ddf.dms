@@ -114,9 +114,9 @@ Event(OnNextCase)
 				If data[i] = "" Then
 					oA = Null
 				Else
-                    Dim parts
-                    parts = data[i].Split(".")
-					oA = cDate(parts[i])
+                                       Dim parts
+                                       parts = data[i].Split(".")
+                                       oA = cDate(parts[i])
 				End If
 		End Select
 		i = i + 1

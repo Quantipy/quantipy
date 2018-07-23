@@ -309,7 +309,7 @@ def create_ddf(master_input, path_dms, CRLF):
     # NOTE:
     #-------------------------------------------------------------------------
     # dropping the second "line" which is an invisible line-break char
-    del full_dms[3]
+    del full_dms[2]
     with open(path_dms, 'w') as f:
         f.write('\n'.join(full_dms))
 
