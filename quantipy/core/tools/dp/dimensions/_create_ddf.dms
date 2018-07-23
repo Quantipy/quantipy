@@ -64,52 +64,6 @@ End Event
 
 Event(OnNextCase)
 
-	Function DateString(string)
-
-		Dim splitter
-		Dim datetime, sdate, stime
-		Dim date_parts, syear, smonth, sday
-
-		If Find(string, "T") > -1 Then
-			splitter = "T"
-		Else
-			splitter = " "
-		End If
-
-		string = Left(string, 19)
-		datetime = Split(string, splitter)
-		sdate = datetime[0]
-
-		if Len(datetime) = 1 Then
-			stime = "00:00:01"
-		Else
-			stime = datetime[1]
-		End If
-
-		date_parts = Split(sdate, "-")
-		If len(date_parts) <> 3 Then
-			DateString = Null
-		Else
-			syear = date_parts[0]
-			smonth = date_parts[1]
-			sday = date_parts[2]
-
-			If Not cLong(syear) > 1900 Then
-				DateString = Null
-			Else
-				Select Case DATE_FORMAT
-					Case "DM", "DDMM", "DMY", "DDMMYY", "DDMMYYYY"
-						DateString = sday +" "+ smonth +" "+ syear +" "+ stime
-					Case "MD", "MMDD", "MDY", "MMDDYY", "MMDDYYYY"
-						DateString = smonth +" "+ sday +" "+ syear +" "+ stime
-					Case Else
-						Debug.Log("Unknown DATE_FORMAT.")
-				End Select
-			End If
-		End If
-
-	End Function
-
 	Dim i, oA, oA_value
 	Dim columns, col, data
 	Dim gSplit, gName, gElement, gField
@@ -160,7 +114,9 @@ Event(OnNextCase)
 				If data[i] = "" Then
 					oA = Null
 				Else
-					oA = DateString(data[i])
+                                       Dim parts
+                                       parts = data[i].Split(".")
+                                       oA = cDate(parts[i])
 				End If
 		End Select
 		i = i + 1
