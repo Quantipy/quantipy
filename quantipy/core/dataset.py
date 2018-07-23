@@ -4646,6 +4646,13 @@ class DataSet(object):
             DataSet is modified inplace.
         """
 
+        def rename_properties(self, mapper):
+            """
+            Rename variable properties that reference other variables, i.e.
+            'recoded_net', 'recoded_stat' meta objects.
+            """
+            pass
+
         def rename_meta(meta, mapper):
             """
             Rename lib@values, masks, set items and columns using mapper.
@@ -4766,7 +4773,7 @@ class DataSet(object):
 
         def fix(string):
             tags = [
-                "'", '"', ' ', '&', '.', '/', '-',  
+                "'", '"', ' ', '&', '.', '/', '-',
                 '(', ')', '[', ']', '{', '}'
             ]
             for tag in tags:

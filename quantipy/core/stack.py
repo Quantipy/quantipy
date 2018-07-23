@@ -2210,7 +2210,7 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
-        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose):
+        def _recode_from_net_def(dataset, on_vars, net_map, prefix, expand, recode, verbose):
             for var in on_vars:
                 if dataset.is_array(var): continue
                 suffix = '_rc'
@@ -2238,14 +2238,17 @@ class Stack(defaultdict):
 
                 mapper = []
                 if recode == 'extend_codes':
-                    mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
+                    mapper += [(x, '{} {}'.format(y, prefix).strip(), {var: x})
+                               for (x, y) in dataset.values(var)]
                     max_code = max(dataset.codes(var))
                 elif recode == 'drop_codes':
                     max_code = 0
                 elif 'collect_codes' in recode:
                     max_code = 0
-                appends = [(max_code + x, net.keys()[0], {var: net.values()[0]})
-                            for x, net in enumerate(net_map, 1)]
+                appends = [(max_code + x,
+                            '{} {}'.format(prefix, net.keys()[0]).strip(),
+                            {var: net.values()[0]}
+                           ) for x, net in enumerate(net_map, 1)]
                 mapper += appends
 
                 if dataset._is_delimited_set_mapper(mapper):
@@ -2351,7 +2354,7 @@ class Stack(defaultdict):
                 ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
-                _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
+                _recode_from_net_def(ds, on_vars, net_map, text_prefix, expand, recode, verbose)
 
             if checking_cluster in [None, False] or only_recode: continue
             if isinstance(checking_cluster, ChainManager):
