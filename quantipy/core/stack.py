@@ -9,6 +9,7 @@ import quantipy as qp
 import copy
 import time
 import sys
+import warnings
 
 from link import Link
 from chain import Chain
@@ -2103,10 +2104,175 @@ class Stack(defaultdict):
                 cluster.add_chain(chain)
         return cluster
 
+    @staticmethod
+    def recode_from_net_def(dataset, on_vars, net_map, expand, recode= 'auto',
+                            verbose=True):
+        """
+        Create variables from net definitions.
+        """
+        def _is_simple_net(net_map):
+            return all(isinstance(net.values()[0], list) for net in net_map)
+
+        def _dissect_defs(ds, var, net_map, recode):
+            mapper = []
+            if recode == 'extend_codes':
+                mapper += [(x, y, {var: x}) for (x,y) in ds.values(var)]
+                max_code = max(ds.codes(var))
+            elif recode == 'drop_codes':
+                max_code = 0
+            elif 'collect_codes' in recode:
+                max_code = 0
+
+            appends = []
+            labels = {}
+            s_net = True
+            simple_nets = []
+            for x, net in enumerate(net_map, 1):
+                n = copy.deepcopy(net)
+                if net.get('text'):
+                    labs = n.pop('text')
+                else:
+                    labs = {ds.text_key: n.keys()[0]}
+                code = max_code + x
+                for tk, lab in labs.items():
+                    if not tk in labels: labels[tk] = {}
+                    labels[tk].update({code: lab})
+                appends.append((code, str(code), {var: n.values()[0]}))
+                if not isinstance(n.values()[0], list):
+                    s_net = False
+                    simple_nets = []
+                if s_net:
+                    simple_nets.append((labs[ds.text_key], n.values()[0]))
+            mapper += appends
+            q_type = 'delimited set' if ds._is_delimited_set_mapper(mapper) else 'single'
+            return mapper, q_type, labels, simple_nets
+
+        forced_recode = False
+        valid = ['extend_codes', 'drop_codes', 'collect_codes']
+        if recode == 'auto':
+            recode = 'collect_codes'
+            forced_recode = True
+        if not any(rec in recode for rec in valid):
+            raise ValueError("'recode' must be one of {}".format(valid))
+
+        dataset._meta['sets']['to_array'] = {}
+        for var in on_vars[:]:
+            if dataset.is_array(var): continue
+            # get name for new variable
+            suffix = '_rc'
+            for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
+                suf = suffix + s
+                name = '{}{}'.format(dataset._dims_free_arr_item_name(var), suf)
+                if dataset.var_exists(name):
+                    if dataset._meta['columns'][name]['properties'].get('recoded_net'):
+                        break
+                else:
+                    break
+
+            # collect array items
+            if dataset._is_array_item(var):
+                to_array_set = dataset._meta['sets']['to_array']
+                parent = dataset._maskname_from_item(var)
+                arr_name = dataset._dims_free_arr_name(parent) + suf
+                if arr_name in dataset:
+                    msg = "Cannot create array {}. Variable already exists!"
+                    if not dataset.get_property(arr_name, 'recoded_net'):
+                        raise ValueError(msg.format(arr_name))
+                no = dataset.item_no(var)
+                if not arr_name in to_array_set:
+                    to_array_set[arr_name] = [parent, [name], [no]]
+                else:
+                    to_array_set[arr_name][1].append(name)
+                    to_array_set[arr_name][2].append(no)
+
+            # create mapper to derive new variable
+            mapper, q_type, labels, simple_nets = _dissect_defs(dataset, var,
+                                                                net_map, recode)
+            dataset.derive(name, q_type, dataset.text(var), mapper)
+
+            # meta edits for new variable
+            for tk, labs in labels.items():
+                dataset.set_value_texts(name, labs, tk)
+                text = dataset.text(var, tk) or dataset.text(var, None)
+                dataset.set_variable_text(name, text, tk)
+
+            # properties
+            props = dataset._meta['columns'][name]['properties']
+            props.update({'recoded_net': var})
+            if 'properties' in dataset._meta['columns'][var]:
+                for pname, prop in dataset._meta['columns'][var]['properties'].items():
+                    if pname == 'survey': continue
+                    props[pname] = prop
+            if simple_nets:
+                props['simple_org_expr'] = simple_nets
+
+            if verbose:
+                print 'Created: {}'. format(name)
+            if forced_recode:
+                warnings.warn("'{}' was a forced recode.".format(name))
+
+            # order, remove codes
+            if 'collect_codes' in recode:
+                other_logic = intersection(
+                    [{var: not_count(0)}, {name: has_count(0)}])
+                if dataset._is_array_item(var) or dataset.take(other_logic).tolist():
+                    cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
+                    code = len(mapper)+1
+                    dataset.extend_values(name, [(code, str(code))])
+                    for tk in labels.keys():
+                        dataset.set_value_texts(name, {code: cat_name}, tk)
+                    dataset.recode(name, {code: other_logic})
+            if recode == 'extend_codes' and expand:
+                codes = dataset.codes(var)
+                new = [c for c in dataset.codes(name) if not c in codes]
+                order = []
+                remove = []
+                for x, y, z in mapper[:]:
+                    if not x in new:
+                        order.append(x)
+                    else:
+                        vals = z.values()[0]
+                        if not isinstance(vals, list):
+                            remove.append(vals)
+                            vals = [vals]
+                        if expand == 'after':
+                            idx = order.index(codes[min([codes.index(v) for v in vals])])
+                        elif expand == 'before':
+                            idx = order.index(codes[max([codes.index(v) for v in vals])]) + 1
+                        order.insert(idx, x)
+
+                dataset.reorder_values(name, order)
+                dataset.remove_values(name, remove)
+
+        for arr_name, arr_items in dataset._meta['sets']['to_array'].items():
+            org_mask = arr_items[0]
+            m_items = arr_items[1]
+            m_order = arr_items[2]
+            m_items = [item[1] for item in sorted(zip(m_order, m_items))]
+            dataset.to_array(arr_name, m_items, '', False)
+            dims_name = dataset._dims_compat_arr_name(arr_name)
+            prop = dataset._meta['masks'][dims_name]['properties']
+            prop['recoded_net'] = org_mask
+            if 'properties' in dataset._meta['masks'][org_mask]:
+                for p, v in dataset._meta['masks'][org_mask]['properties'].items():
+                    if p == 'survey': continue
+                    prop[p] = v
+            n_i0 = dataset.sources(dims_name)[0]
+            simple_net = dataset._meta['columns'][n_i0]['properties'].get('simple_org_expr')
+            if simple_net:
+                dataset._meta['masks'][dims_name]['properties'].update(
+                    {'simple_org_expr': simple_net})
+            if verbose:
+                msg = "Array {} built from recoded view variables!"
+                print msg.format(dims_name)
+        del dataset._meta['sets']['to_array']
+
+        return None
+
 
     @modify(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
-                 checking_cluster=None, _batches='all', recode=None, verbose=True):
+                 checking_cluster=None, _batches='all', recode='auto', verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -2148,7 +2314,7 @@ class Stack(defaultdict):
             Only for ``qp.Links`` that are defined in this ``qp.Batch``
             instances views are added.
         recode: {'extend_codes', 'drop_codes', 'collect_codes', 'collect_codes@cat_name'},
-                 default None
+                 default 'auto'
             Adds variable with nets as codes to DataSet/Stack. If 'extend_codes',
             codes are extended with nets. If 'drop_codes', new variable only
             contains nets as codes. If 'collect_codes' or 'collect_codes@cat_name'
@@ -2160,21 +2326,6 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-        def _is_simple_net(net_map):
-            return all(isinstance(net.values()[0], list) for net in net_map)
-
-        def _strip_simple_net(net_map):
-            simplified = []
-            for net in net_map:
-                simplified.append((net.keys()[0], net.values()[0]))
-            return simplified
-
-        def _add_simple_expr_property(dataset, var, net_map):
-            simplified = _strip_simple_net(net_map)
-            props = dataset._meta['columns'][var]['properties']
-            props.update({'simple_org_expr': simplified})
-            return None
-
         def _netdef_from_map(net_map, expand, prefix, text_key):
             netdef = []
             for no, net in enumerate(net_map, start=1):
@@ -2209,100 +2360,6 @@ class Stack(defaultdict):
                            "{}\nMust be provided as (net # 1, operator, net # 2)")
                 raise TypeError(err_msg.format(exp))
             return calc_expression
-
-        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose):
-            for var in on_vars:
-                if dataset.is_array(var): continue
-                suffix = '_rc'
-                for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
-                    suf = suffix + s
-                    name = '{}{}'.format(dataset._dims_free_arr_item_name(var), suf)
-                    if dataset.var_exists(name):
-                        if dataset._meta['columns'][name]['properties'].get('recoded_net'):
-                            break
-                    else:
-                        break
-
-                if dataset._is_array_item(var):
-                    if not 'to_array' in dataset._meta['sets']:
-                        dataset._meta['sets']['to_array'] = {}
-                    to_array_set = dataset._meta['sets']['to_array']
-                    parent = dataset.parents(var)[0].split('@')[-1]
-                    arr_name = dataset._dims_free_arr_name(parent) + suf
-                    no = dataset.item_no(var)
-                    if not arr_name in to_array_set:
-                        to_array_set[arr_name] = [parent, [name], [no]]
-                    else:
-                        to_array_set[arr_name][1].append(name)
-                        to_array_set[arr_name][2].append(no)
-
-                mapper = []
-                if recode == 'extend_codes':
-                    mapper += [(x, y, {var: x}) for (x, y) in dataset.values(var)]
-                    max_code = max(dataset.codes(var))
-                elif recode == 'drop_codes':
-                    max_code = 0
-                elif 'collect_codes' in recode:
-                    max_code = 0
-                appends = [(max_code + x,
-                            net.keys()[0],
-                            {var: net.values()[0]}
-                           ) for x, net in enumerate(net_map, 1)]
-                mapper += appends
-
-                if dataset._is_delimited_set_mapper(mapper):
-                    qtype = 'delimited set'
-                else:
-                    qtype = 'single'
-
-                dataset.derive(name, qtype, dataset.text(var), mapper)
-
-                if not dataset._meta['columns'][name].get('properties'):
-                    dataset._meta['columns'][name]['properties'] = {}
-                dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
-                if 'properties' in dataset._meta['columns'][var]:
-                    for pname, props in dataset._meta['columns'][var]['properties'].items():
-                        if pname == 'survey': continue
-                        dataset._meta['columns'][name]['properties'][pname] = props
-                if _is_simple_net(net_map):
-                    _add_simple_expr_property(dataset, name, net_map)
-
-                if verbose:
-                    print 'Created: {}'. format(name)
-                if 'collect_codes' in recode:
-                    cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
-                    code = len(net_map)+1
-                    dataset.extend_values(name, [(code, cat_name)])
-                    dataset.recode(name, {code: intersection([
-                                   {var: not_count(0)},
-                                   {name: has_count(0)}])})
-                if recode == 'extend_codes' and expand:
-                    codes = dataset.codes(var)
-                    insert = [{net[0]: net[-1].values()[0]}
-                              if isinstance(net[-1].values()[0], list)
-                              else {net[0]: [net[-1].values()[0]]}
-                              for net in appends]
-                    remove = []
-                    if expand == 'after':
-                        for net in insert:
-                            if len(net.values()[0]) == 1:
-                                codes[codes.index(net.values()[0][0])] = net.keys()[0]
-                                remove.append(net.values()[0][0])
-                            else:
-                                ind = codes.index(min(net.values()[0]))
-                                codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
-                    elif expand == 'before':
-                        for net in insert:
-                            if len(net.values()[0]) == 1:
-                                codes[codes.index(net.values()[0][0])] = net.keys()[0]
-                                remove.append(net.values()[0][0])
-                            else:
-                                ind = codes.index(max(net.values()[0])) + 1
-                                codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
-                    dataset.remove_values(name, remove)
-                    dataset.reorder_values(name, codes)
-
-            return None
 
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
@@ -2348,12 +2405,11 @@ class Stack(defaultdict):
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 
-            if recode and any(rec in recode
-                              for rec in ['extend_codes', 'drop_codes', 'collect_codes']):
+            if recode:
                 ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
-                _recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
+                self.recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
 
             if checking_cluster in [None, False] or only_recode: continue
             if isinstance(checking_cluster, ChainManager):
@@ -2368,33 +2424,6 @@ class Stack(defaultdict):
                 if not v_net in cc_keys:
                     checking_cluster = self._add_checking_chain(dk, checking_cluster,
                                             v_net, v, ['@', v], ('net', ['cbase'], view))
-
-        if recode and 'to_array' in ds._meta['sets']:
-            for arr_name, arr_items in ds._meta['sets']['to_array'].items():
-                dims_name = ds._dims_compat_arr_name(arr_name)
-                ds.to_array(arr_name, arr_items[1], ds.text(arr_items[0]), False)
-                sorter = list(enumerate(arr_items[2], start=1))
-                sorter.sort(key = lambda x: x[1])
-                sorter = [s[0] for s in sorter]
-                ds.reorder_items(dims_name, sorter)
-                msg = "Array {} built from recoded view variables!"
-                prop = ds._meta['masks'][dims_name]['properties']
-                prop['recoded_net'] = arr_items[0]
-                if 'properties' in ds._meta['masks'][arr_items[0]]:
-                    for p, v in ds._meta['masks'][arr_items[0]]['properties'].items():
-                        if p == 'survey': continue
-                        prop[p] = v
-                org_items = ds.sources(arr_items[0])
-                new_items = ds.sources(dims_name)
-                for org, new in zip(org_items, new_items):
-                    for p, v in ds._meta['columns'][org]['properties'].items():
-                        ds._meta['columns'][new]['properties'][p] = v
-                if _is_simple_net(net_map):
-                    arr_p = ds._meta['masks'][dims_name]['properties']
-                    ai_p = ds._meta['columns'][new_items[0]]['properties']
-                    arr_p.update({'simple_org_expr': ai_p['simple_org_expr']})
-                if verbose: print msg.format(dims_name)
-            del ds._meta['sets']['to_array']
 
         return None
 
