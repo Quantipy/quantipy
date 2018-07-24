@@ -2145,6 +2145,7 @@ class Stack(defaultdict):
                     simple_nets.append((labs[ds.text_key], n.values()[0]))
             mapper += appends
             q_type = 'delimited set' if ds._is_delimited_set_mapper(mapper) else 'single'
+            print
             return mapper, q_type, labels, simple_nets
 
         forced_recode = False
