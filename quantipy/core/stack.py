@@ -2105,15 +2105,15 @@ class Stack(defaultdict):
         return cluster
 
     @staticmethod
-    def recode_from_net_def(dataset, on_vars, net_map, expand, recode= 'auto',
-                            verbose=True):
+    def recode_from_net_def(dataset, on_vars, net_map, expand, recode='auto',
+                            text_prefix='Net:', verbose=True):
         """
         Create variables from net definitions.
         """
         def _is_simple_net(net_map):
             return all(isinstance(net.values()[0], list) for net in net_map)
 
-        def _dissect_defs(ds, var, net_map, recode):
+        def _dissect_defs(ds, var, net_map, recode, text_prefix):
             mapper = []
             if recode == 'extend_codes':
                 mapper += [(x, y, {var: x}) for (x,y) in ds.values(var)]
@@ -2136,13 +2136,14 @@ class Stack(defaultdict):
                 code = max_code + x
                 for tk, lab in labs.items():
                     if not tk in labels: labels[tk] = {}
-                    labels[tk].update({code: lab})
+                    labels[tk].update({code: '{} {}'.format(text_prefix, lab)})
                 appends.append((code, str(code), {var: n.values()[0]}))
                 if not isinstance(n.values()[0], list):
                     s_net = False
                     simple_nets = []
                 if s_net:
-                    simple_nets.append((labs[ds.text_key], n.values()[0]))
+                    simple_nets.append(
+                        ('{} {}'.format(text_prefix, labs[ds.text_key]), n.values()[0]))
             mapper += appends
             q_type = 'delimited set' if ds._is_delimited_set_mapper(mapper) else 'single'
             return mapper, q_type, labels, simple_nets
@@ -2186,8 +2187,8 @@ class Stack(defaultdict):
                     to_array_set[arr_name][2].append(no)
 
             # create mapper to derive new variable
-            mapper, q_type, labels, simple_nets = _dissect_defs(dataset, var,
-                                                                net_map, recode)
+            mapper, q_type, labels, simple_nets = _dissect_defs(
+                dataset, var, net_map, recode, text_prefix)
             dataset.derive(name, q_type, dataset.text(var), mapper)
 
             # meta edits for new variable
@@ -2409,7 +2410,8 @@ class Stack(defaultdict):
                 ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
-                self.recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
+                self.recode_from_net_def(ds, on_vars, net_map, expand, recode,
+                                         text_prefix, verbose)
 
             if checking_cluster in [None, False] or only_recode: continue
             if isinstance(checking_cluster, ChainManager):
