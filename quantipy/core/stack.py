@@ -2163,14 +2163,17 @@ class Stack(defaultdict):
         def _is_simple_net(net_map):
             return all(isinstance(net.values()[0], list) for net in net_map)
 
-        def _strip_simple_net(net_map):
+        def _strip_simple_net(prefix, net_map):
             simplified = []
             for net in net_map:
-                simplified.append((net.keys()[0], net.values()[0]))
+                simplified.append(
+                    ('{} {}'.format(prefix, net.keys()[0]).strip(),
+                     net.values()[0])
+                    )
             return simplified
 
-        def _add_simple_expr_property(dataset, var, net_map):
-            simplified = _strip_simple_net(net_map)
+        def _add_simple_expr_property(dataset, var, prefix, net_map):
+            simplified = _strip_simple_net(prefix, net_map)
             props = dataset._meta['columns'][var]['properties']
             props.update({'simple_org_expr': simplified})
             return None
@@ -2266,7 +2269,7 @@ class Stack(defaultdict):
                         if pname == 'survey': continue
                         dataset._meta['columns'][name]['properties'][pname] = props
                 if _is_simple_net(net_map):
-                    _add_simple_expr_property(dataset, name, net_map)
+                    _add_simple_expr_property(dataset, name, text_prefix, net_map)
 
                 if verbose:
                     print 'Created: {}'. format(name)
