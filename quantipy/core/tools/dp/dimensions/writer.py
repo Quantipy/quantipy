@@ -298,19 +298,18 @@ def mask_to_mrs(meta, name, text_key):
 
     return mask_code, lang, ltype
 
-def create_ddf(master_input, path_dms, CRLF, date_format):
+def create_ddf(master_input, path_dms, CRLF):
     dms_dummy_path = os.path.dirname(__file__)
     dms = open(os.path.join(dms_dummy_path, '_create_ddf.dms'), 'r')
     header = [
         u'#define MASTER_INPUT "{}"'.format(master_input).encode('utf-8'),
-        '#define DATE_FORMAT "{}"'.format(date_format),
         '#define CRLF "{}"'.format(CRLF),
     ]
     full_dms = header + [line.replace('\n', '') for line in dms]
     # NOTE:
     #-------------------------------------------------------------------------
     # dropping the second "line" which is an invisible line-break char
-    del full_dms[3]
+    del full_dms[2]
     with open(path_dms, 'w') as f:
         f.write('\n'.join(full_dms))
 
@@ -422,7 +421,7 @@ def convert_categorical(categorical):
     return cat
 
 def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
-                             CRLF="CR", date_format='DMY', run=True, clean_up=True):
+                             CRLF="CR", run=True, clean_up=True):
     """
     DESCP
 
@@ -444,7 +443,7 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
 
     if not text_key: text_key = meta['lib']['default text']
     create_mdd(meta, data, path_mrs, path_mdd, text_key, run)
-    create_ddf(name, path_dms, CRLF, date_format)
+    create_ddf(name, path_dms, CRLF)
     get_case_data_inputs(meta, data, path_paired_csv, path_datastore)
     print 'Case and meta data validated and transformed.'
     if run:
