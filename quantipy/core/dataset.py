@@ -186,6 +186,15 @@ class DataSet(object):
     def created(self):
         return [v for v in self.variables() if self.get_property(v, 'created')]
 
+    def _stat_view_recodes(self):
+        return [v for v in self.variables() if
+                self.get_property(v, 'recoded_stat')]
+
+    def _net_view_recodes(self):
+        return [v for v in self.variables() if
+                self.get_property(v, 'recoded_net')]
+
+
     def batches(self):
         if 'batches' in self._meta['sets']:
             return self._meta['sets']['batches'].keys()
@@ -4647,10 +4656,35 @@ class DataSet(object):
             DataSet is modified inplace.
         """
 
+        def rename_properties(mapper):
+            """
+            Rename variable properties that reference other variables, i.e.
+            'recoded_net', 'recoded_stat' meta objects.
+            """
+            net_recs = self._net_view_recodes()
+            stat_recs = self._stat_view_recodes()
+            all_recs = set([r for r in net_recs + stat_recs if r in mapper])
+            for rec in all_recs:
+                is_array = rec in self.masks()
+                if is_array:
+                    props = self._meta['masks'][rec]['properties']
+                else:
+                    props = self._meta['columns'][rec]['properties']
+                rn = props.get('recoded_net', None)
+                if rn:
+                    org_ref = props['recoded_net']
+                    props['recoded_net'] = mapper[org_ref]
+                rs = props.get('recoded_stat', None)
+                if rs:
+                    org_ref = props['recoded_stat']
+                    props['recoded_stat'] = mapper[org_ref]
+            return None
+
         def rename_meta(meta, mapper):
             """
             Rename lib@values, masks, set items and columns using mapper.
             """
+            rename_properties(mapper)
             rename_lib_values(meta['lib']['values'], mapper)
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
@@ -4767,7 +4801,7 @@ class DataSet(object):
 
         def fix(string):
             tags = [
-                "'", '"', ' ', '&', '.', '/', '-',  
+                "'", '"', ' ', '&', '.', '/', '-',
                 '(', ')', '[', ']', '{', '}'
             ]
             for tag in tags:
