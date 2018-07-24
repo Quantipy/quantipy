@@ -186,9 +186,18 @@ class DataSet(object):
     def created(self):
         return [v for v in self.variables() if self.get_property(v, 'created')]
 
+    def _stat_view_recodes(self):
+        return [v for v in self.variables() if
+                self.get_property(v, 'recoded_stat')]
+
+    def _net_view_recodes(self):
+        return [v for v in self.variables() if
+                self.get_property(v, 'recoded_net')]
+
+
     def batches(self):
         if 'batches' in self._meta['sets']:
-            return self._meta['batches'].keys()
+            return self._meta['sets']['batches'].keys()
         else:
             return []
 
@@ -971,9 +980,14 @@ class DataSet(object):
             add_batches = ds._meta['sets']['batches'][batch_name]['additions']
             if not adds: return None
             filters = []
+            mtextkey = ds._meta['sets']['batches'][batch_name]['language']
             for add_batch in add_batches:
                 if all_batches[add_batch]['filter'] != 'no_filter':
-                    filters.append((add_batch, all_batches[add_batch]['filter']))
+                    filters.append(
+                        (add_batch,
+                         all_batches[add_batch]['language'],
+                         all_batches[add_batch]['filter'])
+                        )
             if not filters: return None
             cats = [(1, 'active')]
             fnames = []
@@ -981,9 +995,13 @@ class DataSet(object):
                 fname = 'filter_{}'.format(no)
                 fnames.append(fname)
                 source = f[0]
-                flogic = f[1].values()[0]
-                flabel = f[1].keys()[0]
-                ds.add_meta(fname, 'single', flabel, cats)
+                ftextkey = f[1]
+                flogic = f[2].values()[0]
+                flabel = f[2].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats, text_key=ftextkey)
+                if not mtextkey == ftextkey:
+                    ds.set_variable_text(fname, flabel, text_key=mtextkey)
+                    ds.set_value_texts(fname, {1: 'active'}, text_key=mtextkey)
                 ds._meta['columns'][fname]['properties']['recoded_filter'] = source
                 ds[ds.take(flogic), fname] = 1
             return fnames
@@ -1026,7 +1044,7 @@ class DataSet(object):
                 variables += yks
         if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
-        variables = self.roll_up(variables)
+        variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
@@ -1395,9 +1413,9 @@ class DataSet(object):
         def _text_from_textobj(textobj, text_key, axis_edit):
             if axis_edit:
                 a_edit = '{} edits'.format(axis_edit)
-                return textobj.get(a_edit, {}).get(text_key, None)
+                return textobj.get(a_edit, {}).get(text_key, '')
             else:
-                return textobj.get(text_key, None)
+                return textobj.get(text_key, '')
 
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
@@ -2772,6 +2790,8 @@ class DataSet(object):
                         rolled_up.append(item_map[v])
                 else:
                     rolled_up.append(v)
+            else:
+                rolled_up.append(v)
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
@@ -3860,7 +3880,6 @@ class DataSet(object):
         # Create the new meta data entry for the transposed array structure
         if not new_name:
             new_name = '{}_trans'.format(self._dims_free_arr_name(name))
-            dims_compat_name = self._dims_compat_arr_name(new_name)
         qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
@@ -3880,7 +3899,7 @@ class DataSet(object):
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
         if self._verbose_infos:
-            print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
+            print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     @verify(variables={'target': 'columns'})
     def recode(self, target, mapper, default=None, append=False,
@@ -4637,10 +4656,35 @@ class DataSet(object):
             DataSet is modified inplace.
         """
 
+        def rename_properties(mapper):
+            """
+            Rename variable properties that reference other variables, i.e.
+            'recoded_net', 'recoded_stat' meta objects.
+            """
+            net_recs = self._net_view_recodes()
+            stat_recs = self._stat_view_recodes()
+            all_recs = set([r for r in net_recs + stat_recs if r in mapper])
+            for rec in all_recs:
+                is_array = rec in self.masks()
+                if is_array:
+                    props = self._meta['masks'][rec]['properties']
+                else:
+                    props = self._meta['columns'][rec]['properties']
+                rn = props.get('recoded_net', None)
+                if rn:
+                    org_ref = props['recoded_net']
+                    props['recoded_net'] = mapper[org_ref]
+                rs = props.get('recoded_stat', None)
+                if rs:
+                    org_ref = props['recoded_stat']
+                    props['recoded_stat'] = mapper[org_ref]
+            return None
+
         def rename_meta(meta, mapper):
             """
             Rename lib@values, masks, set items and columns using mapper.
             """
+            rename_properties(mapper)
             rename_lib_values(meta['lib']['values'], mapper)
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
@@ -4756,7 +4800,10 @@ class DataSet(object):
         """
 
         def fix(string):
-            tags = ["'", '"', ' ', '&', '(', ')', '.', '/', '-']
+            tags = [
+                "'", '"', ' ', '&', '.', '/', '-',
+                '(', ')', '[', ']', '{', '}'
+            ]
             for tag in tags:
                 string = string.replace(tag, '_')
             return string
@@ -6530,9 +6577,12 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name.decode('utf8')):
+        check = batches.get(name.decode('utf8'))
+        if not check:
+            check = batches.get(name)
+        if not check:
             raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, name.decode('utf8'))
+        return qp.Batch(self, name)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):

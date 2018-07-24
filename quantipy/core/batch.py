@@ -121,6 +121,7 @@ class Batch(qp.DataSet):
             self.extended_filters_per_x = {}
             self.filter = 'no_filter'
             self.filter_names = ['no_filter']
+            self._filter_slice = None
             self.x_y_map = None
             self.x_filter_map = None
             self.y_on_y = []
@@ -171,7 +172,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info']:
+                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info',
+                     '_filter_slice']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -186,7 +188,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map', 'build_info']:
+                     'y_on_y_filter', 'y_filter_map', 'build_info',
+                     '_filter_slice']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -234,10 +237,28 @@ class Batch(qp.DataSet):
         Remove instance from meta object.
         """
         name = self.name
+        adds = self._meta['sets']['batches'][name]['additions']
+        if adds:
+            for bname, bdef in self._meta['sets']['batches'].items():
+                if bname == name: continue
+                for add in adds[:]:
+                    if add in bdef['additions']:
+                        adds.remove(add)
+        for add in adds:
+            self._meta['sets']['batches'][add]['additional'] = False
+
         del(self._meta['sets']['batches'][name])
         if self._verbose_infos:
             print "Batch '%s' is removed from meta-object." % name
         self = None
+        return None
+
+    def _rename_in_additions(self, find_bname, new_name):
+        for bname, bdef in self._meta['sets']['batches'].items():
+            if find_bname in bdef['additions']:
+                adds = bdef['additions']
+                adds[adds.index(find_bname)] = new_name
+                bdef['additions'] = adds
         return None
 
     def rename(self, new_name):
@@ -248,7 +269,9 @@ class Batch(qp.DataSet):
             raise KeyError("'%s' is already included!" % new_name)
         batches = self._meta['sets']['batches']
         p_spec = self._meta['info'].get('project_spec', {})
-        batches[new_name] = batches.pop(self.name)
+        org_name = self.name
+        batches[new_name] = batches.pop(org_name)
+        self._rename_in_additions(org_name, new_name)
         self.name = new_name
         self._update()
         return None
@@ -1055,7 +1078,9 @@ class Batch(qp.DataSet):
         """
         f = self.filter
         if f == 'no_filter':
-            self.sample_size = len(self._data.index)
+            idx = self._data.index
         else:
-            self.sample_size = len(self._dsfilter(self, 'sample', f.values()[0])._data.index)
+            idx = self._dsfilter(self, 'sample', f.values()[0])._data.index
+        self.sample_size = len(idx)
+        self._filter_slice = idx.values.tolist()
         return None
