@@ -2238,14 +2238,16 @@ class Stack(defaultdict):
 
                 mapper = []
                 if recode == 'extend_codes':
-                    mapper += [(x, y, {var: x}) for (x,y) in dataset.values(var)]
+                    mapper += [(x, y, {var: x}) for (x, y) in dataset.values(var)]
                     max_code = max(dataset.codes(var))
                 elif recode == 'drop_codes':
                     max_code = 0
                 elif 'collect_codes' in recode:
                     max_code = 0
-                appends = [(max_code + x, net.keys()[0], {var: net.values()[0]})
-                            for x, net in enumerate(net_map, 1)]
+                appends = [(max_code + x,
+                            net.keys()[0],
+                            {var: net.values()[0]}
+                           ) for x, net in enumerate(net_map, 1)]
                 mapper += appends
 
                 if dataset._is_delimited_set_mapper(mapper):
