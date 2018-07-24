@@ -2329,17 +2329,14 @@ class Stack(defaultdict):
         def _is_simple_net(net_map):
             return all(isinstance(net.values()[0], list) for net in net_map)
 
-        def _strip_simple_net(prefix, net_map):
+        def _strip_simple_net(net_map):
             simplified = []
             for net in net_map:
-                simplified.append(
-                    ('{} {}'.format(prefix, net.keys()[0]).strip(),
-                     net.values()[0])
-                    )
+                simplified.append((net.keys()[0], net.values()[0]))
             return simplified
 
-        def _add_simple_expr_property(dataset, var, prefix, net_map):
-            simplified = _strip_simple_net(prefix, net_map)
+        def _add_simple_expr_property(dataset, var, net_map):
+            simplified = _strip_simple_net(net_map)
             props = dataset._meta['columns'][var]['properties']
             props.update({'simple_org_expr': simplified})
             return None
@@ -2379,7 +2376,7 @@ class Stack(defaultdict):
                 raise TypeError(err_msg.format(exp))
             return calc_expression
 
-        def _recode_from_net_def(dataset, on_vars, net_map, prefix, expand, recode, verbose):
+        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose):
             for var in on_vars:
                 if dataset.is_array(var): continue
                 suffix = '_rc'
@@ -2407,15 +2404,14 @@ class Stack(defaultdict):
 
                 mapper = []
                 if recode == 'extend_codes':
-                    mapper += [(x, '{} {}'.format(y, prefix).strip(), {var: x})
-                               for (x, y) in dataset.values(var)]
+                    mapper += [(x, y, {var: x}) for (x, y) in dataset.values(var)]
                     max_code = max(dataset.codes(var))
                 elif recode == 'drop_codes':
                     max_code = 0
                 elif 'collect_codes' in recode:
                     max_code = 0
                 appends = [(max_code + x,
-                            '{} {}'.format(prefix, net.keys()[0]).strip(),
+                            net.keys()[0],
                             {var: net.values()[0]}
                            ) for x, net in enumerate(net_map, 1)]
                 mapper += appends
@@ -2435,7 +2431,7 @@ class Stack(defaultdict):
                         if pname == 'survey': continue
                         dataset._meta['columns'][name]['properties'][pname] = props
                 if _is_simple_net(net_map):
-                    _add_simple_expr_property(dataset, name, text_prefix, net_map)
+                    _add_simple_expr_property(dataset, name, net_map)
 
                 if verbose:
                     print 'Created: {}'. format(name)
@@ -2522,11 +2518,7 @@ class Stack(defaultdict):
                 ds = ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
-<<<<<<< HEAD
                 self.recode_from_net_def(ds, on_vars, net_map, expand, recode, verbose)
-=======
-                _recode_from_net_def(ds, on_vars, net_map, text_prefix, expand, recode, verbose)
->>>>>>> i1073-dims_comp_and_properties_meta
 
             if checking_cluster in [None, False] or only_recode: continue
             if isinstance(checking_cluster, ChainManager):
