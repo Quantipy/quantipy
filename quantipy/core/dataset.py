@@ -540,7 +540,7 @@ class DataSet(object):
 
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
-                         date_format="DMY", run=True, clean_up=True):
+                         run=True, clean_up=True):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -599,7 +599,7 @@ class DataSet(object):
         path_mdd = path_mdd.replace('//', '/')
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
-                     date_format=date_format, run=run, clean_up=clean_up)
+                     run=run, clean_up=clean_up)
         file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
         return None
