@@ -2326,20 +2326,6 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
-        def _is_simple_net(net_map):
-            return all(isinstance(net.values()[0], list) for net in net_map)
-
-        def _strip_simple_net(net_map):
-            simplified = []
-            for net in net_map:
-                simplified.append((net.keys()[0], net.values()[0]))
-            return simplified
-
-        def _add_simple_expr_property(dataset, var, net_map):
-            simplified = _strip_simple_net(net_map)
-            props = dataset._meta['columns'][var]['properties']
-            props.update({'simple_org_expr': simplified})
-            return None
 
         def _netdef_from_map(net_map, expand, prefix, text_key):
             netdef = []
@@ -2375,100 +2361,6 @@ class Stack(defaultdict):
                            "{}\nMust be provided as (net # 1, operator, net # 2)")
                 raise TypeError(err_msg.format(exp))
             return calc_expression
-
-        def _recode_from_net_def(dataset, on_vars, net_map, expand, recode, verbose):
-            for var in on_vars:
-                if dataset.is_array(var): continue
-                suffix = '_rc'
-                for s in [str(x) if not x == 1 else '' for x in frange('1-5')]:
-                    suf = suffix + s
-                    name = '{}{}'.format(dataset._dims_free_arr_item_name(var), suf)
-                    if dataset.var_exists(name):
-                        if dataset._meta['columns'][name]['properties'].get('recoded_net'):
-                            break
-                    else:
-                        break
-
-                if dataset._is_array_item(var):
-                    if not 'to_array' in dataset._meta['sets']:
-                        dataset._meta['sets']['to_array'] = {}
-                    to_array_set = dataset._meta['sets']['to_array']
-                    parent = dataset.parents(var)[0].split('@')[-1]
-                    arr_name = dataset._dims_free_arr_name(parent) + suf
-                    no = dataset.item_no(var)
-                    if not arr_name in to_array_set:
-                        to_array_set[arr_name] = [parent, [name], [no]]
-                    else:
-                        to_array_set[arr_name][1].append(name)
-                        to_array_set[arr_name][2].append(no)
-
-                mapper = []
-                if recode == 'extend_codes':
-                    mapper += [(x, y, {var: x}) for (x, y) in dataset.values(var)]
-                    max_code = max(dataset.codes(var))
-                elif recode == 'drop_codes':
-                    max_code = 0
-                elif 'collect_codes' in recode:
-                    max_code = 0
-                appends = [(max_code + x,
-                            net.keys()[0],
-                            {var: net.values()[0]}
-                           ) for x, net in enumerate(net_map, 1)]
-                mapper += appends
-
-                if dataset._is_delimited_set_mapper(mapper):
-                    qtype = 'delimited set'
-                else:
-                    qtype = 'single'
-
-                dataset.derive(name, qtype, dataset.text(var), mapper)
-
-                if not dataset._meta['columns'][name].get('properties'):
-                    dataset._meta['columns'][name]['properties'] = {}
-                dataset._meta['columns'][name]['properties'].update({'recoded_net': var})
-                if 'properties' in dataset._meta['columns'][var]:
-                    for pname, props in dataset._meta['columns'][var]['properties'].items():
-                        if pname == 'survey': continue
-                        dataset._meta['columns'][name]['properties'][pname] = props
-                if _is_simple_net(net_map):
-                    _add_simple_expr_property(dataset, name, net_map)
-
-                if verbose:
-                    print 'Created: {}'. format(name)
-                if 'collect_codes' in recode:
-                    cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
-                    code = len(net_map)+1
-                    dataset.extend_values(name, [(code, cat_name)])
-                    dataset.recode(name, {code: intersection([
-                                   {var: not_count(0)},
-                                   {name: has_count(0)}])})
-                if recode == 'extend_codes' and expand:
-                    codes = dataset.codes(var)
-                    insert = [{net[0]: net[-1].values()[0]}
-                              if isinstance(net[-1].values()[0], list)
-                              else {net[0]: [net[-1].values()[0]]}
-                              for net in appends]
-                    remove = []
-                    if expand == 'after':
-                        for net in insert:
-                            if len(net.values()[0]) == 1:
-                                codes[codes.index(net.values()[0][0])] = net.keys()[0]
-                                remove.append(net.values()[0][0])
-                            else:
-                                ind = codes.index(min(net.values()[0]))
-                                codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
-                    elif expand == 'before':
-                        for net in insert:
-                            if len(net.values()[0]) == 1:
-                                codes[codes.index(net.values()[0][0])] = net.keys()[0]
-                                remove.append(net.values()[0][0])
-                            else:
-                                ind = codes.index(max(net.values()[0])) + 1
-                                codes = codes[:ind] + [net.keys()[0]] + codes[ind:]
-                    dataset.remove_values(name, remove)
-                    dataset.reorder_values(name, codes)
-
-            return None
 
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
