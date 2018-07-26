@@ -2618,10 +2618,10 @@ class Stack(defaultdict):
                        for b in _batches):
                     on_vars += [('@', v)]
 
-            ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
-            ds.from_stack(self, dk)
+                ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
+                ds.from_stack(self, dk)
 
-            self._add_factor_meta(ds, v, (rescale, drop, exclude))
+                self._add_factor_meta(ds, v, (rescale, drop, exclude))
 
 
             view = qp.ViewMapper()
