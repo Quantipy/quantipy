@@ -2365,6 +2365,31 @@ class Chain(object):
 
         return self
 
+
+    def _toggle_bases(self, keep_weighted=True):
+        df = self._frame
+        is_array = self._array_style == 0
+        # this needs to be adjusted if keep_weighted = False, we then need to
+        # search for v['is_weighted'] (instead of *not* v['is_weighted'])
+        if not is_array:
+            drop_rows = [k for k, v in self.contents.items()
+                         if v['is_c_base'] and not v['is_weighted']]
+        else:
+            drop_rows = [k for k, v in self.contents[0].items()
+                         if v['is_c_base'] and not v['is_weighted']]
+
+        drop_labs = [df.index[r] if not is_array else df.columns[r]
+                     for r in drop_rows]
+
+        names = ['x|f|x:|||cbase'] # plug in weight name for keep_weighted = False
+        for v in self.views.copy():
+            if not v in names:
+                del self._views[v]
+            else:
+                self._views[v] = names.count(v)
+        self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
+        return None
+
     def _drop_substituted_views(self, link):
         if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
             chain_views = list(chain.from_iterable(self._given_views))
