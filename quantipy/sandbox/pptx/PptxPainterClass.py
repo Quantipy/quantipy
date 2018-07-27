@@ -200,9 +200,6 @@ class PptxPainter(object):
 
         slide_items = slide_items.split('+')
 
-        table_draft = {}
-        side_table_draft = {}
-        chart_draft = {}
         for slide_item in slide_items:
             if slide_item.startswith('table'):
                 cell_items = slide_item.split(':')[1]
@@ -1142,7 +1139,8 @@ class PptxPainter(object):
 
         return font
 
-    def fix_yaxis(self, chart, fix_point, legend=None):
+    @staticmethod
+    def fix_yaxis(chart, fix_point, legend=None):
         """
         Method to fix the vertical axis in a charts plotArea
         :param
@@ -1179,8 +1177,8 @@ class PptxPainter(object):
         xml_insert = etree.fromstring(xml_string)
         chart._element.plotArea.append(xml_insert)
 
-    def add_net(self,
-                slide,
+    @staticmethod
+    def add_net(slide,
                 df,
                 left=Cm(27.55), top=Cm(3.69), width=Cm(1.8), # width for 1 column
                 height=Cm(10.68),
@@ -1318,3 +1316,86 @@ class PptxPainter(object):
                 paragraph.alignment = values_font_para_alignment
                 #paragraph.line_spacing = Pt(6)
                 cell.text = str(subval)
+
+    @staticmethod
+    def edit_datalabel(chart, series, point, text, prepend=False, append=False,
+                       position=None, rgb=None):
+        """
+        Add/append data label text.
+        """
+        data_label = chart.series[series].points[point].data_label
+        frame = data_label.text_frame
+        if prepend:
+            original_text = frame.text
+            frame.text = text
+            pgraph = frame.add_paragraph()
+            pgraph.text = original_text
+            run = frame.paragraphs[0].runs[0]
+        elif append:
+            pgraph = frame.add_paragraph()
+            pgraph.text = text
+            run = frame.paragraphs[-1].runs[0]
+        else:
+            frame.text = text
+            run = frame.paragraphs[0].runs[0]
+        if rgb is not None:
+            run.font.color.rgb = RGBColor(*rgb)
+        if position is not None:
+            data_label.position = data_label_pos_dct(position)
+
+    def show_data_labels(self, chart, position=None):
+        """
+        Explicitly sets datalabels to allow for datalabel editing.
+
+        Parameters
+        ----------
+        chart : pptx.chart.chart.Chart
+            The chart object for which datalabels need should be shown.
+        position : str, default=None
+            The position, relative to the data point, that the datalabel
+            should be appear in. Must be one of the following, or None:
+                'above', 'below', 'best', 'center', 'inside_base',
+                'inside_end', 'left', 'mixed', 'outside_end', 'right'
+            If None then the position already set for the chart will
+            be used.
+
+        Returns
+        -------
+        None
+        """
+
+        chart_values = self.get_chart_values(chart)
+        for s, series in enumerate(chart_values):
+            values = [
+                value
+                for value in series.values()[0]
+                if self.convertable(value, float)
+            ]
+            for v, value in enumerate(values):
+                point = chart.series[s].points[v]
+                frame = point.data_label.text_frame
+                frame.text = "" if value is None else str(value)
+                if position is not None:
+                    point.data_label.position = data_label_pos_dct(position)
+
+    @staticmethod
+    def get_chart_values(chart):
+
+        series = [
+            {series.name: [str(s) for s in series.values]}
+            for series in chart.series
+        ]
+
+        return series
+
+    @staticmethod
+    def convertable(obj, func):
+        """
+        Returns True if obj can be convertedby func without an error.
+        """
+
+        try:
+            func(obj)
+            return True
+        except ValueError:
+            return False
