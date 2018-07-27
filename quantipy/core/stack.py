@@ -2001,11 +2001,8 @@ class Stack(defaultdict):
                             ba_w = [b_w for b_w in w if not b_w is None]
                             if weights.get('wgt') and ba_w:
                                 self.add_link(dk, f, x=x, y=y, views=[ba], weights=ba_w)
-                            elif weights.get('wgt') and not ba_w:
+                            if (weights.get('wgt') and not ba_w) or weights.get('unwgt'):
                                 self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
-                            if weights.get('unwgt'):
-                                if not (x in v_typ['array'] or any(yks in v_typ['array'] for yks in y)):
-                                    self.add_link(dk, f, x=x, y=y, views=[ba], weights=None)
                         # remove existing nets for link if new view is a net
                         if isinstance(v, ViewMapper) and v.get('net') and not y_trans:
                             for ys in y:
