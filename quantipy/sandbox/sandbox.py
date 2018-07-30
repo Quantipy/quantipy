@@ -1925,7 +1925,8 @@ class Chain(object):
                 else:
                     return False
 
-    @lazy_property
+    # @lazy_property
+    @property
     def _views_per_rows(self):
         """
         """
@@ -2369,24 +2370,27 @@ class Chain(object):
     def _toggle_bases(self, keep_weighted=True):
         df = self._frame
         is_array = self._array_style == 0
-        # this needs to be adjusted if keep_weighted = False, we then need to
-        # search for v['is_weighted'] (instead of *not* v['is_weighted'])
-        if not is_array:
-            drop_rows = [k for k, v in self.contents.items()
-                         if v['is_c_base'] and not v['is_weighted']]
+        contents = self.contents[0] if is_array else self.contents
+        has_wgt_b = [k for k, v in contents.items()
+                     if v['is_c_base'] and v['is_weighted']]
+        has_unwgt_b = [k for k, v in contents.items()
+                       if v['is_c_base'] and not v['is_weighted']]
+        if not (has_wgt_b and has_unwgt_b):
+            return None
+
+        if keep_weighted:
+            drop_rows = has_unwgt_b
+            names = ['x|f|x:|||cbase']
         else:
-            drop_rows = [k for k, v in self.contents[0].items()
-                         if v['is_c_base'] and not v['is_weighted']]
+            drop_rows = has_wgt_b
+            names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
 
         drop_labs = [df.index[r] if not is_array else df.columns[r]
                      for r in drop_rows]
 
-        names = ['x|f|x:|||cbase'] # plug in weight name for keep_weighted = False
         for v in self.views.copy():
-            if not v in names:
+            if v in names:
                 del self._views[v]
-            else:
-                self._views[v] = names.count(v)
         self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
         return None
 
