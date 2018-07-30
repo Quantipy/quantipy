@@ -2392,20 +2392,6 @@ class Chain(object):
                 del self._views[v]
             else:
                 self._views[v] = names.count(v)
-        # if not is_array:
-        #     for x, con in self.contents.items():
-        #         if x in drop_rows:
-        #             self.contents.pop(x)
-        #         elif not x-1 in self.contents:
-        #             self.contents[x-1] = self.contents.pop(x)
-        # else:
-        #     for x, con in self.contents.items():
-        #         for k, v in con.items():
-        #             if k in drop_rows:
-        #                 self.contents[x].pop(k)
-        #             elif not k-1 in self.contents:
-        #                 self.contents[x][k-1] = self.contents.pop(k)
-        #     print self.contents
         self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
         return None
 
