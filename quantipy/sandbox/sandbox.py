@@ -2385,14 +2385,39 @@ class Chain(object):
             drop_rows = has_wgt_b
             names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
 
-        drop_labs = [df.index[r] if not is_array else df.columns[r]
-                     for r in drop_rows]
+        if is_array:
+            drop_labs = [df.columns[r] for r in drop_rows]
+            keep_rows = [x for x, y in enumerate(self._frame.columns.get_level_values(1).tolist())
+                         if not x in drop_rows]
+        else:
+            drop_labs = [df.index[r] for r in drop_rows]
+            keep_rows = [x for x, y in enumerate(self._frame.index.get_level_values(1).tolist())
+                         if not x in drop_rows]
 
         for v in self.views.copy():
             if v in names:
                 del self._views[v]
         self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
+
+        if is_array:
+            self.columns = self._slice_edited_index(self.columns, keep_rows)
+        else:
+            self.index = self._slice_edited_index(self.index, keep_rows)
         return None
+
+    def _slice_edited_index(self, axis, positions):
+        """
+        """
+        l_zero = axis.get_level_values(0).values.tolist()[0]
+        l_one = axis.get_level_values(1).values.tolist()
+        l_one = [l_one[p] for p in positions]
+        axis_tuples = [(l_zero, lab) for lab in l_one]
+        if self.array_style == 0:
+            names = ['Array', 'Questions']
+        else:
+            names = ['Question', 'Values']
+        return pd.MultiIndex.from_tuples(axis_tuples, names=names)
+
 
     def _drop_substituted_views(self, link):
         if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
