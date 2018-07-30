@@ -1925,7 +1925,8 @@ class Chain(object):
                 else:
                     return False
 
-    @lazy_property
+    # @lazy_property
+    @property
     def _views_per_rows(self):
         """
         """
@@ -2364,6 +2365,34 @@ class Chain(object):
         del self.stack
 
         return self
+
+
+    def _toggle_bases(self, keep_weighted=True):
+        df = self._frame
+        is_array = self._array_style == 0
+        contents = self.contents[0] if is_array else self.contents
+        has_wgt_b = [k for k, v in contents.items()
+                     if v['is_c_base'] and v['is_weighted']]
+        has_unwgt_b = [k for k, v in contents.items()
+                       if v['is_c_base'] and not v['is_weighted']]
+        if not (has_wgt_b and has_unwgt_b):
+            return None
+
+        if keep_weighted:
+            drop_rows = has_unwgt_b
+            names = ['x|f|x:|||cbase']
+        else:
+            drop_rows = has_wgt_b
+            names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
+
+        drop_labs = [df.index[r] if not is_array else df.columns[r]
+                     for r in drop_rows]
+
+        for v in self.views.copy():
+            if v in names:
+                del self._views[v]
+        self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
+        return None
 
     def _drop_substituted_views(self, link):
         if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
