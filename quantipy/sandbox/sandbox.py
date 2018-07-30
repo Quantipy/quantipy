@@ -1925,7 +1925,8 @@ class Chain(object):
                 else:
                     return False
 
-    @lazy_property
+    # @lazy_property
+    @property
     def _views_per_rows(self):
         """
         """
@@ -2390,8 +2391,6 @@ class Chain(object):
         for v in self.views.copy():
             if v in names:
                 del self._views[v]
-            else:
-                self._views[v] = names.count(v)
         self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
         return None
 
