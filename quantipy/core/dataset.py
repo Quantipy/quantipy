@@ -3631,6 +3631,21 @@ class DataSet(object):
         data.drop(data_drop, 1, inplace=True)
         return None
 
+    @modify(to_list=['name'])
+    @verify(variables={'name': 'both'})
+    def unbind(self, name):
+        """
+        Remove mask-structure for arrays
+        """
+        remove = []
+        for n in name:
+            if not self.is_array(n): continue
+            self.drop(n, ignore_items=True)
+            remove.append(n)
+        if remove and self._verbose_infos:
+            print "Remove mask structure for: '{}'".format("', '".join(remove))
+        return None
+
     @modify(to_list=['copy_only', 'copy_not'])
     def copy(self, name, suffix='rec', copy_data=True, slicer=None, copy_only=None,
              copy_not=None):
