@@ -1170,7 +1170,8 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                     s, n = item['source'].split('@')
                     if s == 'columns':
                         cols.append(n)
-                        mask_items[n] = 'lib@values@{}'.format(name)
+                        if meta_right['masks'][name].get('values'):
+                            mask_items[n] = 'lib@values@{}'.format(name)
         cols = uniquify_list(cols)
 
         if masks:
