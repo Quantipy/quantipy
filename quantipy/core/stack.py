@@ -2324,6 +2324,7 @@ class Stack(defaultdict):
         None
             The stack instance is modified inplace.
         """
+
         def _netdef_from_map(net_map, expand, prefix, text_key):
             netdef = []
             for no, net in enumerate(net_map, start=1):

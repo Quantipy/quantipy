@@ -33,7 +33,7 @@ Event(OnJobStart)
 
     'Line separator const.
     Const adCR = 13, adCRLF = -1, adLF = 10
-    	
+
 	Set dmgrGlobal.CaseData = CreateObject("ADODB.Stream")
 
 	dmgrGlobal.CaseData.CharSet = "utf-8"
@@ -49,15 +49,15 @@ Event(OnJobStart)
 	End Select
 	dmgrGlobal.CaseData.Open()
 	dmgrGlobal.CaseData.LoadFromFile(MASTER_INPUT+"_datastore.csv")
-	
+
 	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadText(-2)
-    
+
 	'Set decimal separator
 	Dim oExcel
 	dmgrJob.GlobalVariables.Add("DecimalSeparator")
-	dmgrJob.GlobalVariables.DecimalSeparator = "."  
+	dmgrJob.GlobalVariables.DecimalSeparator = "."
 	Set oExcel = createobject("Excel.Application")
-	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","    
+	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","
 
 End Event
 
@@ -91,9 +91,9 @@ Event(OnNextCase)
 					oA = NULL
 				Else
 					oA_value=data[i]
-					if dmgrJob.GlobalVariables.DecimalSeparator = "," Then 
+					if dmgrJob.GlobalVariables.DecimalSeparator = "," Then
 						oA_value = Replace(CText(oA_value),".",",")
-					End If	
+					End If
 					oA = oA_value
 				End If
 			Case 2
@@ -114,9 +114,9 @@ Event(OnNextCase)
 				If data[i] = "" Then
 					oA = Null
 				Else
-                              Dim parts
-                              parts = data[i].Split(".")
-                              oA = cDate(parts[0])
+                   Dim parts
+                   parts = data[i].Split(".")
+                   oA = cDate(parts[0])
 				End If
 		End Select
 		i = i + 1
