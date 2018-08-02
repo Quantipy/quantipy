@@ -1288,7 +1288,7 @@ class DataSet(object):
                     if str_tag in v: found.append(v)
         return found
 
-    def names(self):
+    def names(self, ignore_items=True):
         """
         Find all semi-duplicate variable names that are different only by case.
 
@@ -1301,15 +1301,17 @@ class DataSet(object):
             equal variable names.
         """
         all_names = self.variables()
+        if not ignore_items:
+            all_names = self.unroll(all_names, both='all')
         lower_names = [n.lower() for n in all_names]
         multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
-        if not multiple_names: return all_names
+        if not multiple_names: return self.variables()
         semi_dupes = OrderedDict()
         for name in all_names:
             if name.lower() in multiple_names:
                 if not name.lower() in semi_dupes:
                     semi_dupes[name.lower()] = [name]
-                else:
+                elif not name in semi_dupes[name.lower()]:
                     semi_dupes[name.lower()].append(name)
         return pd.DataFrame(semi_dupes)
 
