@@ -181,6 +181,42 @@ def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
 
     return chart_type
 
+
+def fill_gaps(l):
+    """
+    Return l replacing empty strings with the value from the previous position.
+    """
+    lnew = []
+    for i in l:
+        if i == '':
+            lnew.append(lnew[-1])
+        else:
+            lnew.append(i)
+    return lnew
+
+
+def fill_index_labels(df):
+    """
+    Fills in blank labels in the second level of df's multi-level index.
+    """
+    _0, _1 = zip(*df.index.values.tolist())
+    _1new = fill_gaps(_1)
+    dfnew = df.copy()
+    dfnew.index = pd.MultiIndex.from_tuples(zip(_0, _1new), names=df.index.names)
+    return dfnew
+
+
+def fill_column_values(df, icol=0):
+    """
+    Fills empty values in the targeted column with the value above it.
+    """
+    v = df.iloc[:,icol].fillna('').values.tolist()
+    vnew = fill_gaps(v)
+    dfnew = df.copy()
+    dfnew.iloc[:,icol] = vnew
+    return dfnew
+
+
 class PptxDataFrame(pd.DataFrame):
     """
     Adds some PPTX friendly methods to the standard pd.DataFrame class
@@ -392,7 +428,9 @@ class PptxChain(object):
         """
 
         cell_contents = self.chain.describe()
-        if self.array_style == 0: cell_contents = cell_contents[0]
+        if self.array_style == 0:
+            colpct_row = self.chain.cell_items.split('_').index('colpct')
+            cell_contents = cell_contents[colpct_row]
 
         # Find base rows
         base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
@@ -407,13 +445,13 @@ class PptxChain(object):
 
         if self.array_style == -1 or self.array_style == 1:
 
-            xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain.dataframe.iloc[base_indexes, 0]
+            xlabels = self.chain_df.index.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain_df.iloc[base_indexes, 0]
 
         else:
 
-            xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain.dataframe.iloc[0,base_indexes]
+            xlabels = self.chain_df.columns.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain_df.iloc[0,base_indexes]
 
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
@@ -443,6 +481,8 @@ class PptxChain(object):
         :return:
         """
 
+        cell_items = self.chain.cell_items.split('_')
+
         if not self.is_grid_summary:
             # Keep only requested columns
             if self.chain.painted: # UnPaint if painted
@@ -466,8 +506,28 @@ class PptxChain(object):
 
             # Slice the dataframes columns based on requested crossbreaks
             df = self.chain.dataframe.iloc[:, column_selection]
+
+            if len(cell_items) > 1:
+                df = fill_index_labels(df)
+
         else:
-            df = self.chain.dataframe
+
+            if len(cell_items) > 1:
+                cell_contents = self.chain.describe()
+                base_indexes = get_indexes_from_list(cell_contents[0], BASE_ROW, exact=False)
+                df_rows = len(cell_contents)
+                row_range = range(df_rows)
+                rows_good = range(cell_items.index('colpct'),df_rows+1,len(cell_items))
+                rows_bad = list(set(row_range) - set(rows_good))
+                df_filled = fill_index_labels(fill_column_values(self.chain.dataframe))
+                df = df_filled.iloc[rows_good, :]
+                #for index in base_indexes:
+                #    base_values = self.chain.dataframe.iloc[rows_bad, index].values
+                #    base_column = self.chain.dataframe.columns[index]
+                #    df.loc[:,[base_column]] = base_values
+
+            else:
+                df = self.chain.dataframe
 
         df_rounded = np.around(df, decimals=self.decimals, out=None)
         return df_rounded
@@ -873,7 +933,8 @@ class PptxChain(object):
         if not self.is_grid_summary:
             cell_contents = self.chain.describe()
         else:
-            cell_contents = self.chain.describe()[0]
+            colpct_row = self.chain.cell_items.split('_').index('colpct')
+            cell_contents = self.chain.describe()[colpct_row]
 
         for i, row in enumerate(cell_contents):
             for type in row:
@@ -890,7 +951,8 @@ class PptxChain(object):
         if not self.is_grid_summary:
             chart_df.cell_contents = self.chain.describe() # TODO Is this okay? to initialize a class attribute outside of the class
         else:
-            chart_df.cell_contents = self.chain.describe()[0]
+            colpct_row = self.chain.cell_items.split('_').index('colpct')
+            chart_df.cell_contents = self.chain.describe()[colpct_row]
         chart_df.array_style = self.chain.array_style
 
         # Choose a basic Chart type that will fit dataframe
