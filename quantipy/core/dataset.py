@@ -52,6 +52,10 @@ VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR',
              'ar-AR', 'es-ES', 'it-IT']
 VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
 
+BLACKLIST_VARIABLES = ['batches', 'columns', 'info', 'items', 'lib', 'masks',
+                       'name', 'parent', 'properties', 'text', 'type', 'sets',
+                       'subtype', 'values']
+
 class DataSet(object):
     """
     A set of casedata (required) and meta data (optional).
@@ -455,6 +459,7 @@ class DataSet(object):
             self.set_dim_suffix()
             self.undimensionize()
         if d_comp is True: self.dimensionize()
+        self._rename_blacklist_vars()
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -487,6 +492,7 @@ class DataSet(object):
             self.set_dim_suffix()
             self.undimensionize()
         if d_comp is True: self.dimensionize()
+        self._rename_blacklist_vars()
         return None
 
     @verify(text_keys='text_key')
@@ -514,6 +520,7 @@ class DataSet(object):
         if path_data.endswith('.txt'): path_data = path_data.replace('.txt', '')
         self._meta, self._data = r_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
         self._set_file_info(path_data, path_meta)
+        self._rename_blacklist_vars()
         return None
 
     def read_spss(self, path_sav, **kwargs):
@@ -536,6 +543,7 @@ class DataSet(object):
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
+        self._rename_blacklist_vars()
         return None
 
     @verify(text_keys='text_key')
@@ -796,6 +804,7 @@ class DataSet(object):
         self.set_verbose_infomsg(False)
         self._set_file_info('', reset=reset)
         self.set_dim_suffix()
+        self._rename_blacklist_vars()
         return None
 
     def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
@@ -904,6 +913,7 @@ class DataSet(object):
         # subset the dataset variables...
         b_ds.subset(main_variables, inplace=True)
         b_ds.order(main_variables)
+        self._rename_blacklist_vars()
         return b_ds
 
 
@@ -1062,6 +1072,7 @@ class DataSet(object):
         # select text_keys
         if text_key:
             b_ds.select_text_keys(text_key)
+        self._rename_blacklist_vars()
         return b_ds
 
     @verify(variables={'unique_key': 'columns'})
@@ -1106,7 +1117,7 @@ class DataSet(object):
 
         if merge:
             self.hmerge(new_ds, on=unique_key, verbose=False)
-
+        self._rename_blacklist_vars()
         return new_ds
 
     def _set_file_info(self, path_data, path_meta=None, reset=True):
@@ -1142,6 +1153,22 @@ class DataSet(object):
             len(self._data.columns)-1,
             self._dimensions_comp
         ).encode('utf-8')
+        return None
+
+    def _rename_blacklist_vars(self):
+        blacklist_txt = (u'Variables identified as part of a blacklist: {}. \n'
+                         u'They have been renamed by adding "_" as prefix')
+        blacklist_var = []
+        for var in BLACKLIST_VARIABLES:
+            n_var = '_%s' % var
+            if var in self and not n_var in self:
+                self.rename(var, u'_{}'.format(var))
+                blacklist_var.append(var)
+            elif var in self:
+                w = "{} cannot be renamed because {} is already used".format(var, n_var)
+                warnings.warn(w)
+        if blacklist_var:
+            print blacklist_txt.format(blacklist_var).encode('utf-8')
         return None
 
     # ------------------------------------------------------------------------
