@@ -6697,9 +6697,17 @@ class DataSet(object):
             for idx, xy in enumerate(xys, start=1):
                 x, y = xy
                 if x == '@':
-                    stack.add_link(dk, fs[y[0]], x='@', y=y)
+                    if fs[y[0]] is None:
+                        fi = 'no_filter'
+                    else:
+                        fi = {fs[y[0]]: {fs[y[0]]: 1}}
+                    stack.add_link(dk, fi, x='@', y=y)
                 else:
-                    stack.add_link(dk, fs[x], x=x, y=y)
+                    if fs[x] is None:
+                        fi = 'no_filter'
+                    else:
+                        fi = {fs[x]: {fs[x]: 1}}
+                    stack.add_link(dk, fi, x=x, y=y)
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',
@@ -6707,7 +6715,11 @@ class DataSet(object):
                     print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
             for idx, y_on_y in enumerate(batch['y_on_y'], len(xys)+1):
-                stack.add_link(dk, fy[y_on_y], x=my[1:], y=my)
+                if fy[y_on_y] is None:
+                    fi = 'no_filter'
+                else:
+                    fi = {fy[y_on_y]: {fy[y_on_y]: 1}}
+                stack.add_link(dk, fi, x=my[1:], y=my)
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',

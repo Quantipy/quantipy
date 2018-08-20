@@ -1854,7 +1854,9 @@ class Stack(defaultdict):
     def _x_y_f_w_map(self, dk, batches='all'):
         """
         """
-        def _append_loop(mapping, x, fn, f, w, ys):
+        def _append_loop(mapping, x, fi, w, ys):
+            fn = 'no_filter' if fi is None else fi
+            f = 'no_filter' if fi is None else {fi: {fi: 1}}
             if not x in mapping:
                 mapping[x] = {fn: {'f': f, tuple(w): ys}}
             elif not fn in mapping[x]:
@@ -1879,16 +1881,13 @@ class Stack(defaultdict):
             for x, y in xy:
                 if x == '@':
                     y = y[0]
-                    fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
-                    _append_loop(mapping, x, fn, f[y], w, [y])
+                    _append_loop(mapping, x, f[y], w, [y])
                 else:
-                    fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
-                    _append_loop(mapping, x, fn, f[x], w, y)
+                    _append_loop(mapping, x, f[x], w, y)
             for yy in b['y_on_y']:
-                fn = fy[yy] if fy[yy] == 'no_filter' else fy[yy].keys()[0]
                 for x in b['yks'][1:]:
-                    _append_loop(mapping, x, fn, fy[yy], w, b['yks'])
-                    _append_loop(y_on_y, x, fn, fy[yy], w, b['yks'])
+                    _append_loop(mapping, x, fy[yy], w, b['yks'])
+                    _append_loop(y_on_y, x, fy[yy], w, b['yks'])
         return mapping, y_on_y
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
@@ -2730,7 +2729,7 @@ class Stack(defaultdict):
                             time.sleep(0.01)
                             print  'Batch [{}]: {} %'.format(batch_name, round(done, 1)),
                             sys.stdout.flush()
-                if verbose: print '\n'
+                if verbose and levels: print '\n'
         if verbose: print 'Sig-Tests:', time.time()-start
         return None
 
