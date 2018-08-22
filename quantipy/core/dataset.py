@@ -1903,6 +1903,15 @@ class DataSet(object):
         else:
             return None
 
+    @staticmethod
+    def _verify_variable_meta_against_blacklist(name):
+        """
+        """
+        if name in BLACKLIST_VARIABLES:
+            msg = "Invalid variable name. '{}' is in the blacklist. "
+            msg += "Please consider another variable name"
+            raise ValueError(msg.format(name))
+
     def _clean_codes_against_meta(self, name, codes):
         valid = [c for c in codes if c in self._get_valuemap(name, 'codes')]
         deduped_valid = []
@@ -3412,9 +3421,11 @@ class DataSet(object):
             ``DataSet`` is modified inplace, meta data and ``_data`` columns
             will be added
         """
+        self._verify_variable_meta_against_blacklist(name)
         make_array_mask = True if items else False
         test_name = name
         self._verify_variable_meta_not_exist(test_name, make_array_mask)
+
         if not text_key: text_key = self.text_key
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key)
@@ -4662,6 +4673,8 @@ class DataSet(object):
         if new_name in self._data.columns:
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
+
+        self._verify_variable_meta_against_blacklist(new_name)
 
         if not self._dimensions_comp == 'ignore':
             self.undimensionize([name] + self.sources(name))
