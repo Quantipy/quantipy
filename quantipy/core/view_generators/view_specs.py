@@ -839,7 +839,8 @@ class ViewManager(object):
                     vk
                     for vk in item
                     if vk.split('|')[1] not in ['d.median', 'd.stddev',
-                                                'd.sem', 'd.max', 'd.min', 'd.mean'] or
+                                                'd.sem', 'd.max', 'd.min', 'd.mean',
+                                                'd.upper_q', 'd.lower_q'] or
                     vk.split('|')[1] == 'd.mean' and coltests
                 ]
 

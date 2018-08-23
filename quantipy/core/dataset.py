@@ -5303,7 +5303,7 @@ class DataSet(object):
                     new_text_key = new_tk
         if not new_text_key:
             raise ValueError('{} is no existing text_key'.format(copy_from))
-        if not copy_to in text_dict.keys() or update_existing:
+        if not text_dict.get(copy_to) or update_existing:
             if new_text_key in ['x edits', 'y edits']:
                 text = text_dict[new_text_key][copy_to]
             else:
