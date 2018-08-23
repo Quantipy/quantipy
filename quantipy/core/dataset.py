@@ -1904,7 +1904,7 @@ class DataSet(object):
             return None
 
     @staticmethod
-    def _verify_variable_meta_against_blacklist(name):
+    def _in_blacklist(name):
         """
         """
         if name in BLACKLIST_VARIABLES:
@@ -3421,7 +3421,7 @@ class DataSet(object):
             ``DataSet`` is modified inplace, meta data and ``_data`` columns
             will be added
         """
-        self._verify_variable_meta_against_blacklist(name)
+        self._in_blacklist(name)
         make_array_mask = True if items else False
         test_name = name
         self._verify_variable_meta_not_exist(test_name, make_array_mask)
@@ -4674,7 +4674,7 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
 
-        self._verify_variable_meta_against_blacklist(new_name)
+        self._in_blacklist(new_name)
 
         if not self._dimensions_comp == 'ignore':
             self.undimensionize([name] + self.sources(name))
