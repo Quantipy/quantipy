@@ -284,26 +284,6 @@ class PptxDataFrame(pd.DataFrame):
 
     #     return pptx_df_copy
 
-    def _get_row_list(self, cell_types):
-        if 'c_pct' in cell_types and 'net' in cell_types:
-            requested = ['is_c_pct', 'is_net', 'net']
-            exclude = ['normal', 'calc', 'is_propstest']
-        elif 'c_pct' in cell_types:
-            requested = ['is_c_pct']
-            exclude = ['normal', 'calc', 'is_propstest', 'is_net', 'net', 'expanded']
-        elif 'net' in cell_types:
-            requested = ['is_c_pct', 'is_net', 'net']
-            exclude = ['normal', 'calc', 'is_propstest']
-        else:
-            requested = []
-            exclude = []
-        row_list = get_indexes_from_list(self.cell_contents, requested, exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, exclude, exact=False)
-
-        row_list = [x for x in row_list if not x in dont_want]
-        return row_list
-
-
     def get(self, cell_types, sort=False):
         """
         Method to get specific elements from chains dataframe
@@ -321,9 +301,23 @@ class PptxDataFrame(pd.DataFrame):
             cell_types = cell_types.split(',')
         value_test = set(cell_types).difference(available_celltypes)
         if value_test:
-            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_celltypes))
+            msg = "Cell type: {} is not an available cell type.\n"
+            msg += "Available cell types are {}"
+            raise ValueError(msg.format(cell_types, available_celltypes))
 
-        row_list = self._get_row_list(cell_types)
+        req_ct = []
+        exclude = ['normal', 'calc', 'is_propstest', 'is_c_pct_sum']
+        if 'c_pct' in cell_types:
+            req_ct.append('is_c_pct')
+        if 'net' in cell_types:
+            req_ct.extend(['is_net', 'net'])
+        else:
+            exclude.extend(['is_net', 'net'])
+
+        row_list = get_indexes_from_list(self.cell_contents, req_ct, exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, exclude, exact=False)
+        row_list = [x for x in row_list if not x in dont_want]
+
         if self.array_style == -1:
             df_copy = self.iloc[row_list]
         else:
