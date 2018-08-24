@@ -306,7 +306,7 @@ class PptxDataFrame(pd.DataFrame):
             raise ValueError(msg.format(cell_types, available_celltypes))
 
         req_ct = []
-        exclude = ['normal', 'calc', 'is_propstest', 'is_c_pct_sum']
+        exclude = ['normal', 'calc', 'is_propstest', 'is_c_pct_sum', 'is_counts']
         if 'c_pct' in cell_types:
             req_ct.append('is_c_pct')
         if 'net' in cell_types:
