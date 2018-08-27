@@ -1740,10 +1740,13 @@ class DataSet(object):
             return [parent for parent in self._meta['columns'][name]['parent']]
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
-                 rules=False, xtotal=False):
+                 rules=False, xtotal=False, f=None):
         """
         """
         meta, data = self.split()
+        if f:
+            slicer = self.take(f)
+            data = data.copy().iloc[slicer]
         y = '@' if not y else y
         get = 'count' if not pct else 'normalize'
         show = 'values' if not text else 'text'
