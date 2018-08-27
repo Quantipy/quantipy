@@ -469,13 +469,14 @@ class PptxChain(object):
         if self.array_style == -1 or self.array_style == 1:
 
             xlabels = self.chain_df.index.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain_df.iloc[base_indexes, 0]
+            base_counts = self.chain_df.iloc[base_indexes, :].values.tolist()
 
         else:
 
             xlabels = self.chain_df.columns.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain_df.iloc[0,base_indexes]
+            base_counts = self.chain_df.iloc[:, base_indexes].values.tolist()
 
+        base_counts = [sum(b_c) for b_c in base_counts]
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
     def _index_map(self):
