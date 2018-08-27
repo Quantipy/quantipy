@@ -537,18 +537,10 @@ class PptxChain(object):
 
             if len(cell_items) > 1:
                 cell_contents = self.chain.describe()
-                base_indexes = get_indexes_from_list(cell_contents[0], BASE_ROW, exact=False)
-                df_rows = len(cell_contents)
-                row_range = range(df_rows)
-                rows_good = range(cell_items.index('colpct'),df_rows+1,len(cell_items))
-                rows_bad = list(set(row_range) - set(rows_good))
+                rows = [k for k, va in cell_contents.items()
+                        if any(pct in v for v in va for pct in PCT_TYPES)]
                 df_filled = fill_index_labels(fill_column_values(self.chain.dataframe))
-                df = df_filled.iloc[rows_good, :]
-                #for index in base_indexes:
-                #    base_values = self.chain.dataframe.iloc[rows_bad, index].values
-                #    base_column = self.chain.dataframe.columns[index]
-                #    df.loc[:,[base_column]] = base_values
-
+                df = df_filled.iloc[rows, :]
             else:
                 df = self.chain.dataframe
 
@@ -953,17 +945,18 @@ class PptxChain(object):
 
         # For rows that are type '%' divide by 100
         indexes = []
-        if not self.is_grid_summary:
-            cell_contents = self.chain.describe()
-        else:
-            colpct_row = self.chain.cell_items.split('_').index('colpct')
-            cell_contents = self.chain.describe()[colpct_row]
+        cell_contents = self.chain.describe()
+        if self.is_grid_summary:
+            colpct_row = min([k for k, va in cell_contents.items()
+                              if any(pct in v for v in va for pct in PCT_TYPES)])
+            cell_contents = cell_contents[colpct_row]
 
         for i, row in enumerate(cell_contents):
             for type in row:
                 for pct_type in PCT_TYPES:
                     if type == pct_type:
                         indexes.append(i)
+
         if not self.is_grid_summary:
             df.iloc[indexes] /= 100
         else:
@@ -971,11 +964,7 @@ class PptxChain(object):
 
         # Make a PptxDataFrame instance
         chart_df = PptxDataFrame(data=df.values, index=df.index, columns=df.columns)
-        if not self.is_grid_summary:
-            chart_df.cell_contents = self.chain.describe() # TODO Is this okay? to initialize a class attribute outside of the class
-        else:
-            colpct_row = self.chain.cell_items.split('_').index('colpct')
-            chart_df.cell_contents = self.chain.describe()[colpct_row]
+        chart_df.cell_contents = cell_contents
         chart_df.array_style = self.chain.array_style
 
         # Choose a basic Chart type that will fit dataframe
