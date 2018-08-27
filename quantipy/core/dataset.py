@@ -6103,6 +6103,47 @@ class DataSet(object):
         return hidden
 
     @modify(to_list='name')
+    @verify(variables={'name': 'columns'}, axis='axis')
+    def hide_low_counts(self, name, lower=50, weight=None, condition=None,
+                        axis='y', verbose=True):
+        """
+        Hide values if the amount of (weighted) counts is below the border.
+
+        Parameters
+        ----------
+        variables: str/ list of str
+            Name(s) of the variable(s) whose values are checked against the
+            defined border.
+        lower: int
+            If the amount of counts for a value is below this number, the
+            value is hidden.
+        weight: str, default None
+            Name of the weight, which is used to calculate the weigthed counts.
+        condition: complex logic
+            The data, which is used to calculate the counts, can be filtered
+            by the included condition.
+        axis: {'y', 'x', ['x', 'y']}, default None
+            The axis on which the values are hidden.
+        """
+        for v in name:
+            df = self.crosstab(v, w=weight, text=False, f=condition)[v]['@'][v]
+            hide = []
+            for i, c in zip(df.index, df.values):
+                if c < lower:
+                    hide.append(i)
+            if hide:
+                codes = self.codes(v)
+                if verbose:
+                    if 'All' in hide or all(c in hide for c in codes):
+                        msg = '{}: All values have less counts than {}.'
+                        print msg.format(v, lower)
+                    else:
+                        print '{}: Hide values {}'.format(v, hide)
+                hide = [h for h in hide if not h == 'All']
+                self.hiding(v, hide, axis)
+        return None
+
+    @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
     def hiding(self, name, hide, axis='y', hide_values=True):
         """

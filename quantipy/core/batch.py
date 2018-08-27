@@ -69,7 +69,7 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-        if dataset_func.func_name in ['hiding', 'slicing']:
+        if dataset_func.func_name in ['hiding', 'slicing', 'hide_low_counts']:
             self._update()
     return edit
 
@@ -146,6 +146,7 @@ class Batch(qp.DataSet):
         # DECORATED / OVERWRITTEN DataSet methods
         # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
+        self.hide_low_counts = meta_editor(self, qp.DataSet.hide_low_counts.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
