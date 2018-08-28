@@ -6104,17 +6104,17 @@ class DataSet(object):
 
     @modify(to_list='name')
     @verify(variables={'name': 'columns'}, axis='axis')
-    def hide_low_counts(self, name, lower=50, weight=None, condition=None,
+    def min_value_count(self, name, min=50, weight=None, condition=None,
                         axis='y', verbose=True):
         """
-        Hide values if the amount of (weighted) counts is below the border.
+        Wrapper for self.hiding(), which is hiding low value_counts.
 
         Parameters
         ----------
         variables: str/ list of str
             Name(s) of the variable(s) whose values are checked against the
             defined border.
-        lower: int
+        min: int
             If the amount of counts for a value is below this number, the
             value is hidden.
         weight: str, default None
@@ -6129,14 +6129,14 @@ class DataSet(object):
             df = self.crosstab(v, w=weight, text=False, f=condition)[v]['@'][v]
             hide = []
             for i, c in zip(df.index, df.values):
-                if c < lower:
+                if c < min:
                     hide.append(i)
             if hide:
                 codes = self.codes(v)
                 if verbose:
                     if 'All' in hide or all(c in hide for c in codes):
                         msg = '{}: All values have less counts than {}.'
-                        print msg.format(v, lower)
+                        print msg.format(v, min)
                     else:
                         print '{}: Hide values {}'.format(v, hide)
                 hide = [h for h in hide if not h == 'All']
