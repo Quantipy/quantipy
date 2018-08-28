@@ -2,9 +2,21 @@
 	:maxdepth: 5
 	:includehidden:
 
-===============
-Upcoming (July)
-===============
+====================
+Upcoming (September)
+====================
+
+**New**: ``DataSet.min_value_count()``
+
+A new wrapper for ``DataSet.hiding()`` is included. All values are hidden,
+that have less counts than the included number ``min``.
+The used data can be weighted or filtered using the parameters ``weight`` and
+``condition``.
+
+Usage as Batch method:
+``Batch.min_value_count()`` without the parameters ``weight`` and
+``condition`` automatically grabs ``Batch.weights[0]`` and ``Batch.filter``
+to calculate low value counts.
 
 
 ===================
