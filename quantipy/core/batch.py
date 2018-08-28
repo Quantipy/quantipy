@@ -32,6 +32,14 @@ def meta_editor(self, dataset_func):
             self.edits_ds = self.clone()
         ds_clone = self.edits_ds
         var_edits = []
+        # args/ kwargs for hide_low_counts
+        if dataset_func.func_name == 'hide_low_counts':
+            if len(args) < 3 and not 'weight' in kwargs:
+                kwargs['weight'] = self.weights[0]
+            if len(args) < 4 and not 'condition' in kwargs:
+                if not self.filter == 'no_filter':
+                    kwargs['condition'] = self.filter.values()[0]
+
         for n in name:
             is_array = self.is_array(n)
             is_array_item = self._is_array_item(n)
