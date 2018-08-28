@@ -32,6 +32,14 @@ def meta_editor(self, dataset_func):
             self.edits_ds = self.clone()
         ds_clone = self.edits_ds
         var_edits = []
+        # args/ kwargs for min_value_count
+        if dataset_func.func_name == 'min_value_count':
+            if len(args) < 3 and not 'weight' in kwargs:
+                kwargs['weight'] = self.weights[0]
+            if len(args) < 4 and not 'condition' in kwargs:
+                if not self.filter == 'no_filter':
+                    kwargs['condition'] = self.filter.values()[0]
+
         for n in name:
             is_array = self.is_array(n)
             is_array_item = self._is_array_item(n)
@@ -69,7 +77,7 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-        if dataset_func.func_name in ['hiding', 'slicing']:
+        if dataset_func.func_name in ['hiding', 'slicing', 'min_value_count']:
             self._update()
     return edit
 
@@ -146,6 +154,7 @@ class Batch(qp.DataSet):
         # DECORATED / OVERWRITTEN DataSet methods
         # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
+        self.min_value_count = meta_editor(self, qp.DataSet.min_value_count.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)

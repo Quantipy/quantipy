@@ -1740,10 +1740,13 @@ class DataSet(object):
             return [parent for parent in self._meta['columns'][name]['parent']]
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
-                 rules=False, xtotal=False):
+                 rules=False, xtotal=False, f=None):
         """
         """
         meta, data = self.split()
+        if f:
+            slicer = self.take(f)
+            data = data.copy().iloc[slicer]
         y = '@' if not y else y
         get = 'count' if not pct else 'normalize'
         show = 'values' if not text else 'text'
@@ -6098,6 +6101,47 @@ class DataSet(object):
             invalid = self.get_property(m, '_no_valid_items')
             if invalid: hidden.append(m)
         return hidden
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'columns'}, axis='axis')
+    def min_value_count(self, name, min=50, weight=None, condition=None,
+                        axis='y', verbose=True):
+        """
+        Wrapper for self.hiding(), which is hiding low value_counts.
+
+        Parameters
+        ----------
+        variables: str/ list of str
+            Name(s) of the variable(s) whose values are checked against the
+            defined border.
+        min: int
+            If the amount of counts for a value is below this number, the
+            value is hidden.
+        weight: str, default None
+            Name of the weight, which is used to calculate the weigthed counts.
+        condition: complex logic
+            The data, which is used to calculate the counts, can be filtered
+            by the included condition.
+        axis: {'y', 'x', ['x', 'y']}, default None
+            The axis on which the values are hidden.
+        """
+        for v in name:
+            df = self.crosstab(v, w=weight, text=False, f=condition)[v]['@'][v]
+            hide = []
+            for i, c in zip(df.index, df.values):
+                if c < min:
+                    hide.append(i)
+            if hide:
+                codes = self.codes(v)
+                if verbose:
+                    if 'All' in hide or all(c in hide for c in codes):
+                        msg = '{}: All values have less counts than {}.'
+                        print msg.format(v, min)
+                    else:
+                        print '{}: Hide values {}'.format(v, hide)
+                hide = [h for h in hide if not h == 'All']
+                self.hiding(v, hide, axis)
+        return None
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
