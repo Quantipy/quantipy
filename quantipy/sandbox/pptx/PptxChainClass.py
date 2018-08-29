@@ -452,11 +452,15 @@ class PptxChain(object):
 
         cell_contents = self.chain.describe()
         if self.array_style == 0:
-            colpct_row = self.chain.cell_items.split('_').index('colpct')
-            cell_contents = cell_contents[colpct_row]
+            row = min([k for k, va in cell_contents.items()
+                              if any(pct in v for v in va for pct in PCT_TYPES)])
+            cell_contents = cell_contents[row]
 
         # Find base rows
-        base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        bases = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        skip = get_indexes_from_list(cell_contents, ['is_c_base_gross'], exact=False)
+        base_indexes = [idx for idx in bases if not idx in skip] or bases
+
         # Show error if no base elements found
         if not base_indexes:
             #msg = "No 'Base' element found, base size will be set to None"
@@ -624,10 +628,11 @@ class PptxChain(object):
         :return:
         """
         # Base_label
+
         base_label = self.xbase_label
 
         if self.base_description:
-            base_label = u"{}{}".format(base_label,base_label_suf)
+            base_label = u"{}{}".format(base_label, base_label_suf)
         else:
             base_label = u"{}".format(base_label)
 
