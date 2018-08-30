@@ -3128,18 +3128,6 @@ class Chain(object):
                                         level_1_text.append(text)
         return map(unicode, level_1_text)
 
-    # @staticmethod
-    # def _is_multibase(views, basetype):
-    #     return len([v for v in views if v.split('|')[-1] == basetype]) > 1
-
-    # @staticmethod
-    # def _has_same_weight(views, base_vk):
-    #     valid_bases = ['cbase', 'cbase_gross', 'rbase', 'ebase']
-    #     weighted = base_vk.split('|')[-2]
-    #     diff = any(not view.split('|')[-2] == weighted for view in views
-    #                if not view in valid_bases)
-    #     return weighted, diff
-
     @staticmethod
     def _unwgt_label(views, base_vk):
         valid = ['cbase', 'cbase_gross', 'rbase', 'ebase']
