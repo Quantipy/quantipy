@@ -3129,8 +3129,20 @@ class Chain(object):
         return map(unicode, level_1_text)
 
     @staticmethod
-    def _is_multibase(views, basetype):
-        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
+    def _unwgt_label(views, base_vk):
+        valid = ['cbase', 'cbase_gross', 'rbase', 'ebase']
+        basetype = base_vk.split('|')[-1]
+        views_split = [v.split('|') for v in views]
+        multibase = len([v for v in views_split if v[-1] == basetype]) > 1
+        weighted = base_vk.split('|')[-2]
+        w_diff = len([v for v in views_split
+                      if not v[-1] in valid and not v[-2] == weighted]) > 0
+        if weighted:
+            return False
+        elif multibase or w_diff:
+            return True
+        else:
+            return False
 
     def _add_base_text(self, base_val, tk, bases):
         if self._array_style == 0 and bases != 'all':
@@ -3152,30 +3164,28 @@ class Chain(object):
         tk_transl = tk if tk in self._transl else self._default_text
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
-        weighted = base_vk.split('|')[-2]
-        is_multibase = self._is_multibase(self._views.keys(), basetype)
-        if basetype == 'cbase_gross':
-            if weighted or (not weighted and not is_multibase):
-                base_value = self._transl[tk_transl]['gross All']
-            else:
+        unwgt_label = self._unwgt_label(self._views.keys(), base_vk)
+
+        if unwgt_label:
+            if basetype == 'cbase_gross':
                 base_value = self._transl[tk_transl]['no_w_gross_All']
-        elif basetype == 'ebase':
-            if weighted or (not weighted and not is_multibase):
-                base_value = 'Effective base'
-            else:
+            elif basetype == 'ebase':
                 base_value = 'Unweighted effective base'
+            else:
+                base_value = self._transl[tk_transl]['no_w_All']
         else:
-            if weighted or (not weighted and not is_multibase):
-                if not bases or (bases == 'simple-no-items'
-                                 and self._is_mask_item):
-                    return self._transl[tk_transl]['All']
+            if basetype == 'cbase_gross':
+                base_value = self._transl[tk_transl]['gross All']
+            elif basetype == 'ebase':
+                base_value = 'Effective base'
+            elif not bases or (bases == 'simple-no-items' and self._is_mask_item):
+                base_value = self._transl[tk_transl]['All']
+            else:
                 key = tk
                 if isinstance(tk, tuple):
                     _, key = tk
                 base_value = self._add_base_text(self._transl[tk_transl]['All'],
                                                  key, bases)
-            else:
-                base_value = self._transl[tk_transl]['no_w_All']
         return base_value
 
     def _get_text(self, value, text_key, item_text=False):
