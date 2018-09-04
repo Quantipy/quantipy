@@ -104,74 +104,60 @@ class Rules(object):
                         and v.split('|')[-2] == w
                         and v.split('|')[1] == 'f' and
                         not v.split('|')[3] == 'x']
-        if expanded_net:
-            if len(expanded_net) > 1:
-                if len(expanded_net) == 2:
-                    if expanded_net[0].split('|')[2] == expanded_net[1].split('|')[2]:
-                        expanded_net = expanded_net[0]
-                else:
-                    msg = ("Multiple 'expand' using views found for '{}'. "
-                           "Unable to sort!")
-                    raise RuntimeError(msg.format(col_key))
-            else:
-                expanded_net = expanded_net[0]
 
-            cond_expand = expanded_net.split('|')[2]
-            cond_view = self.view_name.split('|')[2]
-            if not cond_expand == cond_view or rule_axis == self.y_rules:
-                expanded_net = []
-
-            return expanded_net
+        return expanded_net[0] if expanded_net else None
 
     def get_slicer(self):
         """
         """
         for axis, rule_axis in enumerate([self.x_rules, self.y_rules]):
             if not rule_axis: continue
-            if axis == 0:
-                col_key = self._xrule_col
-            elif axis == 1:
-                col_key = self._yrule_col
-            rules_slicer = None
+
+            # get all views of the link, depending on axis
+            col_key = self._xrule_col if axis == 0 else self._yrule_col
             views = self.link_base[col_key]['@'].keys()
-            w = self.link_weight
 
-            expanded_net = self._find_expanded_nets(views, rule_axis)
+            # get df (-slice) to apply rule on
             if 'sortx' in rule_axis:
-                on_mean = rule_axis['sortx'].get('sort_on', '@') == 'mean'
+                sort_on = rule_axis['sortx'].get('sort_on', '@')
+                expanded_net = self._find_expanded_nets(views, rule_axis)
+                # sort expanded nets, hiding + slicing is skipped
+                if expanded_net and not self.array_summary:
+                    if not sort_on == '@':
+                        msg = 'Cannot sort expanded nets on {}.'
+                        raise AttributeError(msg .format(sort_on))
+                    view = self.link_base[col_key]['@'][expanded_net]
+                    f = self.sort_expanded_nets(view, rule_axis['sortx'])
+                    if axis == 0:
+                        self.x_slicer = f.index.tolist()
+                    else:
+                        self.y_slicer = f.index.tolist()
+                    return None
+                # get df-desc-slice to sort on
+                elif sort_on in ['median', 'stddev', 'sem', 'max', 'min',
+                                 'mean', 'upper_q', 'lower_q']:
+                    f = self._get_descriptive_via_stack(col_key, sort_on)
+                # get df-net-slice to sort on
+                elif 'net' in sort_on:
+                    f = self._get_net_via_stack(col_key, sort_on)
+                # get df-freq-slice to sort on
+                else:
+                    f = self._get_frequency_via_stack(col_key, axis)
+            # get df for hiding + slicing
             else:
-                on_mean = False
-            if 'sortx' in rule_axis and on_mean:
-                f = self._get_descriptive_via_stack(col_key)
-            elif 'sortx' in rule_axis and expanded_net:
-                within = rule_axis['sortx'].get('within', False)
-                between = rule_axis['sortx'].get('between', False)
-                fix = rule_axis['sortx'].get('fixed', False)
-                ascending = rule_axis['sortx'].get('ascending', False)
-                view = self.link_base[col_key]['@'][expanded_net]
-                f = self.sort_expanded_nets(view, between=between, within=within,
-                                            ascending=ascending, fix=fix)
-            else:
-
                 f = self._get_frequency_via_stack(col_key, axis)
 
-            # if expanded_net and not ('sortx' in rule_axis and on_mean)
-            #     rules_slicer = f.index.values.tolist()
-            # el
-            if self.array_summary and axis == 1:
-                rules_slicer = self._get_rules_slicer(f.T, rule_axis)
-            else:
-                rules_slicer = self._get_rules_slicer(f, rule_axis)
-            try:
+            # get rules slicer
+            f = f.T if self.array_summary and axis == 1 else f
+            rules_slicer = self._get_rules_slicer(f, rule_axis)
+            if (col_key, 'All') in rules_slicer:
                 rules_slicer.remove((col_key, 'All'))
-            except:
-                pass
+
             if axis == 0:
                 self.x_slicer = rules_slicer
             else:
                 self.y_slicer = rules_slicer
         return None
-
 
     def _set_rules_params(self, all_rules_axes, rules_axis):
         if rules_axis == 'x' and 'x' not in all_rules_axes:
@@ -249,58 +235,59 @@ class Rules(object):
                          x=col, weight=agg_w)
         return f
 
-    def _get_descriptive_via_stack(self, col):
+    def _get_descriptive_via_stack(self, col, desc='mean'):
         l = self.link_base[col]['@']
         w = self.link_weight
-        mean_key = [k for k in l.keys() if 'd.mean' in k.split('|')[1] and
-                    k.split('|')[-2] == w]
-        if not mean_key:
-            msg = "No mean view to sort '{}' on found!"
-            raise RuntimeError(msg.format(col))
-        elif len(mean_key) > 1:
-            msg = "Multiple mean views found for '{}'. Unable to sort!"
+        desc_key = [k for k in l.keys() if 'd.{}'.format(desc) in k.split('|')[1]
+                    and k.split('|')[-2] == w]
+        if not desc_key:
+            msg = "No {} view to sort '{}' on found!"
+            raise RuntimeError(msg.format(desc, col))
+        elif len(desc_key) > 1:
+            msg = "Multiple {} views found for '{}'. Unable to sort!"
+            raise RuntimeError(msg.format(desc, col))
+        else:
+            desc_key = desc_key[0]
+        d = l[desc_key].dataframe
+        return d
+
+    def _get_net_via_stack(self, col, net='net_1'):
+        l = self.link_base[col]['@']
+        w = self.link_weight
+        net_no = int(net.split('_')[-1])
+        net_key = [k for k in l.keys() if k.split('|')[-1] == 'net'
+                    and len(k.split('|')[2].split(',x')) >= net_no
+                    and k.split('|')[-2] == w]
+        if not net_key:
+            msg = "No net view to sort '{}' on found!"
             raise RuntimeError(msg.format(col))
         else:
-            mean_key = mean_key[0]
-        vk = mean_key
-        d = l[mean_key].dataframe
+            net_key = net_key[0]
+        d = l[net_key].dataframe
         return d
 
     def _get_rules_slicer(self, f, rules, copy=True):
-
         if copy:
             f = f.copy()
 
-        if 'slicex' in rules:
-            kwargs = rules['slicex']
-            values = kwargs.get('values', None)
-    #         if not values is None:
-    #             kwargs['values'] = [val for val in values]
-            f = self.slicex(f, **kwargs)
+        rulesx = OrderedDict([
+            ('slicex', self.slicex),
+            ('sortx', self.sortx),
+            ('dropx', self.dropx)])
 
-        if 'sortx' in rules:
-            kwargs = rules['sortx']
-            fixed = kwargs.get('fixed', None)
-            sort_on = kwargs.get('sort_on', '@')
-    #         if not fixed is None:
-    #             kwargs['fixed'] = [fix for fix in fixed]
-            f = self.sortx(f, **kwargs)
-
-        if 'dropx' in rules:
-            kwargs = rules['dropx']
-            values = kwargs.get('values', None)
-    #         if not values is None:
-    #             kwargs['values'] = [v for v in values]
-            f = self.dropx(f, **kwargs)
+        for r, method in rulesx.items():
+            if r in rules:
+                f = method(f, **rules[r])
 
         return f.index.values.tolist()
 
-    def sort_expanded_nets(self, view, within=True, between=True, ascending=False,
-                           fix=None):
-        if not within and not between:
-            return view.dataframe
+    def sort_expanded_nets(self, view, sortx):
+        within = sortx.get('within', True)
+        between = sortx.get('between', True)
+        ascending = sortx.get('ascending', False)
+        fix = sortx.get('fix', None)
+        if not within and not between: return view.dataframe
         df = view.dataframe
-
         name = df.index.levels[0][0]
         sort_col = (df.columns.levels[0][0], '@')
         # get valid fixed codes
@@ -436,10 +423,11 @@ class Rules(object):
                 s_sort = [t for t in s_sort if not t in s_fixed]
 
             # Get sorted slicer
-            if (name_y, sort_on) in df.columns:
-                sort_col = (name_y, sort_on)
-            elif (name_y, str(sort_on)) in df.columns:
-                sort_col = (name_y, str(sort_on))
+            try:
+                sort_on = int(sort_on)
+            except:
+                sort_on = str(sort_on)
+            sort_col = (name_y, sort_on)
             if pd.__version__ == '0.19.2':
                 df_sorted = df.loc[s_sort].sort_values(sort_col, 0, ascending)
             else:
@@ -516,16 +504,6 @@ class Rules(object):
         slicer = [(name_x, value) for value in values
                   if (name_x, value) in df.index]
 
-        # if not all([s in df.index for s in slicer]):
-        #     raise KeyError (
-        #         "Some of of the values from the list %s cannot be dropped"
-        #         " from the dataframe because they were not found in %s."
-        #         " Be careful that you are not both slicing and/or sorting"
-        #         " any values that you are also trying to drop." % (
-        #             values,
-        #             df.index.tolist()
-        #         )
-        #     )
         if slicer:
             df = df.drop(slicer)
         return df
