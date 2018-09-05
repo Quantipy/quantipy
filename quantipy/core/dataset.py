@@ -4588,6 +4588,8 @@ class DataSet(object):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
+        ``delimited sets`` can be converted if only one category is defined.
+
         Parameters
         ----------
         name : str
@@ -4599,9 +4601,9 @@ class DataSet(object):
         """
         org_type = self._get_type(name)
         if org_type == 'single': return None
-        valid = ['int', 'date', 'string']
+        valid = ['int', 'date', 'string', 'delimited set']
+        msg = 'Cannot convert variable {} of type {} to single!'
         if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to single!'
             raise TypeError(msg.format(name, org_type))
         text_key = self.text_key
         if org_type == 'int':
@@ -4623,6 +4625,12 @@ class DataSet(object):
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
             if replace_map:
                 self._data[name].replace(replace_map, inplace=True)
+        elif org_type == 'delimited set':
+            if not len(self.codes(name)) == 1:
+                raise TypeError(msg.format(name, org_type))
+            self._data[name] = self._data[name].apply(lambda x:
+                int(x.replace(';', '')) if isinstance(x, basestring) else np.NaN)
+            values_obj = self._get_value_loc(name)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
