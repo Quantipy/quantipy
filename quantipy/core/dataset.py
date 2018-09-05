@@ -1317,13 +1317,13 @@ class DataSet(object):
 
     def names(self, ignore_items=True):
         """
-        Find all semi-duplicate variable names that are different only by case.
+        Find all weak-duplicate variable names that are different only by case.
 
-        .. note:: Will return self.variables() if no semi-duplicates are found.
+        .. note:: Will return self.variables() if no weak-duplicates are found.
 
         Returns
         -------
-        semi_dupes : pd.DataFrame
+        weak_dupes : pd.DataFrame
             An overview of case-sensitive spelling differences in otherwise
             equal variable names.
         """
@@ -1333,14 +1333,14 @@ class DataSet(object):
         lower_names = [n.lower() for n in all_names]
         multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
         if not multiple_names: return self.variables()
-        semi_dupes = OrderedDict()
+        weak_dupes = OrderedDict()
         for name in all_names:
             if name.lower() in multiple_names:
-                if not name.lower() in semi_dupes:
-                    semi_dupes[name.lower()] = [name]
-                elif not name in semi_dupes[name.lower()]:
-                    semi_dupes[name.lower()].append(name)
-        return pd.DataFrame(semi_dupes)
+                if not name.lower() in weak_dupes:
+                    weak_dupes[name.lower()] = [name]
+                elif not name in weak_dupes[name.lower()]:
+                    weak_dupes[name.lower()].append(name)
+        return pd.DataFrame(weak_dupes)
 
     def resolve_name(self, name):
         """
@@ -1891,6 +1891,12 @@ class DataSet(object):
         else:
             return arr_name
 
+    def _check_against_weak_dupes(self, name):
+        included = self.resolve_name(name)
+        if included and self._verbose_infos:
+            w = "weak duplicate is created, {} found in DataSet. Please rename."
+            warnings.warn(w.format(included))
+
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
         """
@@ -1904,6 +1910,7 @@ class DataSet(object):
         if msg and self._verbose_infos:
             print msg.format(name)
         else:
+            self._check_against_weak_dupes(name)
             return None
 
     @staticmethod
@@ -2896,7 +2903,7 @@ class DataSet(object):
                         if isinstance(origin_res, list):
                             if len(origin_res) > 1:
                                 msg = "Unable to regroup to {}, ".format(origin)
-                                msg += "found semi-duplicate derived names:\n"
+                                msg += "found weak duplicate derived names:\n"
                                 msg += "{}".format(origin_res)
                                 warnings.warn(msg)
                                 origin_res = origin
@@ -3746,8 +3753,8 @@ class DataSet(object):
             name = self._dims_free_arr_name(name)
 
         check_name = self._dims_compat_arr_name(copy_name)
-
         if self.var_exists(check_name): self.drop(check_name)
+        self._check_against_weak_dupes(check_name)
 
         if is_array:
             # copy meta and create rename mapper for array items
@@ -4678,6 +4685,7 @@ class DataSet(object):
             raise ValueError(msg.format(name, new_name))
 
         self._in_blacklist(new_name)
+        self._check_against_weak_dupes(new_name)
 
         if not self._dimensions_comp == 'ignore':
             self.undimensionize([name] + self.sources(name))
