@@ -6239,7 +6239,8 @@ class DataSet(object):
             if on == '@' and is_array:
                 for source in self.sources(n):
                     self.sorting(source, fix=fix, within=within,
-                                 between=between, ascending=ascending)
+                                 between=between, ascending=ascending,
+                                 sort_by_weight=sort_by_weight)
             else:
                 if 'rules' not in self._meta[collection][n]:
                     self._meta[collection][n]['rules'] = {'x': {}, 'y': {}}
@@ -6247,13 +6248,13 @@ class DataSet(object):
                     n_fix = self._clean_codes_against_meta(n, fix)
                 else:
                     n_fix = self._clean_items_against_meta(n, fix)
-                rule_update = {'sortx': {'ascending': ascending,
-                                         'within': within,
-                                         'between': between,
-                                         'fixed': n_fix,
-                                         'sort_on': on,
-                                         'with_weight': sort_by_weight}}
-                self._meta[collection][n]['rules']['x'].update(rule_update)
+                rule_update = {'ascending': ascending,
+                               'within': within,
+                               'between': between,
+                               'fixed': n_fix,
+                               'sort_on': on,
+                               'with_weight': sort_by_weight}
+                self._meta[collection][n]['rules']['x']['sortx'] = rule_update
         return None
 
     def _clean_missing_map(self, var, missing_map):
