@@ -588,6 +588,8 @@ class DataSet(object):
         if not text_key: text_key = ds_clone.text_key
         if ds_clone._dimensions_comp:
             ds_clone.undimensionize()
+        # check against weak dupes and rename automatically
+        ds_clone._rename_weak_dupes()
         # naming rules for Dimensions are applied
         ds_clone.dimensionize()
         meta, data = ds_clone._meta, ds_clone._data
@@ -1155,6 +1157,24 @@ class DataSet(object):
         ).encode('utf-8')
         return None
 
+    def _rename_weak_dupes(self):
+        dupes = self.names()
+        if isinstance(dupes, pd.DataFrame):
+            if len(dupes.index) > 2:
+                msg = 'More than two weak duplicates found for a variable. '
+                msg += 'Auto-rename not possible. Please rename manually!'
+                for col in dupes:
+                    print '{}: {}'.format(col, [c for c in dupes[col] if c])
+                raise ValueError(msg)
+            for col in dupes:
+                first_d = dupes[col].values.tolist()[0]
+                new_name = '_{}'.format(first_d)
+                if self.resolve_name(new_name):
+                    msg = 'Auto rename not possible: {} is already included!'
+                    raise KeyError(msg.format(new_name))
+                self.rename(first_d, new_name)
+        return None
+
     def _rename_blacklist_vars(self):
         blacklist_txt = (u'Variables identified as part of a blacklist: {}. \n'
                          u'They have been renamed by adding "_" as prefix')
@@ -1340,6 +1360,12 @@ class DataSet(object):
                     weak_dupes[name.lower()] = [name]
                 elif not name in weak_dupes[name.lower()]:
                     weak_dupes[name.lower()].append(name)
+        max_wd = max(len(v) for v in weak_dupes.values())
+        for k, v in weak_dupes.items():
+            while not len(v) == max_wd:
+                v.append(None)
+            weak_dupes[k] = v
+
         return pd.DataFrame(weak_dupes)
 
     def resolve_name(self, name):
