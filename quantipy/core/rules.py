@@ -263,11 +263,11 @@ class Rules(object):
             ('sortx', self.sortx),
             ('dropx', self.dropx)])
 
+        if not apply_rules: apply_rules = rulesx.keys()
         for r, method in rulesx.items():
             if apply_rules and r in apply_rules:
                 if r in rules:
                     f = method(f, **rules[r])
-
         rules_slicer = f.index.values.tolist()
         col_key = f.index.levels[0].tolist()[0]
         if (col_key, 'All') in rules_slicer:
