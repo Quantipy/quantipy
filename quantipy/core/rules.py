@@ -10,7 +10,6 @@ class Rules(object):
     # ------------------------------------------------------------------------
     # init
     # ------------------------------------------------------------------------
-
     def __init__(self, link, view_name, axes=['x', 'y']):
         self.link = link
         self.view_name = view_name
@@ -27,7 +26,7 @@ class Rules(object):
             self.view_df = link[view_name].dataframe
         self._xrule_col = None
         self._yrule_col = None
-        self._sort_weight = None
+        self._sort_weight = self._get_sort_weight()
         self.x_rules = self._set_rules_params(axes, 'x')
         self.y_rules = self._set_rules_params(axes, 'y')
         self.x_slicer = None
@@ -56,49 +55,51 @@ class Rules(object):
         elif rules_axis == 'y' and 'y' not in all_rules_axes:
             return None
         k, f, x, y = self.link.data_key, self.link.filter, self.link.x, self.link.y
-
         if self.transposed_summary:
             x, y = y, x
         rules = None
         if rules_axis == 'x':
             if not self.array_summary:
-                xcol = x
-                ycol = None
                 try:
                     rules = self.meta['columns'][x]['rules']['x']
                     self._xrule_col = x
                 except:
                     pass
             else:
-                xcol = x
-                ycol = '@'
                 try:
                     rules = self.meta['masks'][x]['rules']['x']
                     self._xrule_col = x
                 except:
                     pass
-            if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
-                self._sort_weight = rules['sortx']['with_weight']
         elif rules_axis == 'y':
             if not self.array_summary:
-                xcol = None
-                ycol = x
                 try:
                     rules = self.meta['columns'][y]['rules']['y']
                     self._yrule_col = y
                 except:
                     pass
             else:
-                xcol = x
-                ycol = '@'
                 try:
                     rules = self.meta['masks'][x]['rules']['y']
                     self._yrule_col = x
                 except:
                     pass
-            if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
-                self._sort_weight = rules['sortx']['with_weight']
         return rules
+
+    def _get_sort_weight(self):
+        var = self.link.y if self.link.x=='@' else self.link.x
+        try:
+            collection = self.meta['columns'][var]
+        except:
+            collection = self.meta['masks'][var]
+        rules = collection.get('rules', {}).get('x', {})
+        if 'sortx' in rules:
+            sort_on = rules['sortx'].get('sort_on', '@')
+            sort_weight = rules['sortx'].get('with_weight') or ''
+            if not sort_weight in self.link_weights:
+                if not(sort_on == '@' or isinstance(sort_on, int)):
+                    sort_weight = self.link_weights[0]
+            return sort_weight
 
     # ------------------------------------------------------------------------
     # display
@@ -173,9 +174,6 @@ class Rules(object):
             # get df (-slice) to apply rule on
             if 'sortx' in rule_axis:
                 sort_on = rule_axis['sortx'].get('sort_on', '@')
-                self._sort_weight = rule_axis['sortx'].get('with_weight') or ''
-                if not self._sort_weight in self.link_weights:
-                    self._sort_weight = self.link_weights[0]
                 expanded_net = self._find_expanded_nets(views, rule_axis)
                 # sort expanded nets
                 if expanded_net and not self.array_summary:
