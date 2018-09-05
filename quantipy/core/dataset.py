@@ -1894,17 +1894,17 @@ class DataSet(object):
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
         """
-        msg = ''
-        if not is_array:
-            if name in self._meta['columns']:
-                msg = "Overwriting meta for '{}', column already exists!"
-        else:
-            if name in self._meta['masks']:
-                msg = "Overwriting meta for '{}', mask already exists!"
-        if msg and self._verbose_infos:
-            print msg.format(name)
-        else:
-            return None
+        if not name in self: return None
+        if name in self.columns():
+            if not is_array and self._verbose_infos:
+                print "Overwriting meta for '{}', column already exists!".format(name)
+            elif is_array:
+                raise ValueError("{} already exists as column.".format(name))
+        elif name in self.masks():
+            if is_array and self._verbose_infos:
+                print "Overwriting meta for '{}', mask already exists!".format(name)
+            elif not is_array:
+                raise ValueError("{} already exists as mask.".format(name))
 
     @staticmethod
     def _in_blacklist(name):
@@ -3382,6 +3382,7 @@ class DataSet(object):
     # Recoding
     # ------------------------------------------------------------------------
 
+    @modify(to_list=['categories', 'items'])
     @verify(text_keys='text_key')
     def add_meta(self, name, qtype, label, categories=None, items=None,
         text_key=None, replace=True):
@@ -3424,31 +3425,32 @@ class DataSet(object):
             ``DataSet`` is modified inplace, meta data and ``_data`` columns
             will be added
         """
+        # verify name
         self._in_blacklist(name)
         make_array_mask = True if items else False
-        test_name = name
-        self._verify_variable_meta_not_exist(test_name, make_array_mask)
+        self._verify_variable_meta_not_exist(name, make_array_mask)
+
+        # verify qtype
+        valid = ['delimited set', 'single', 'float', 'int', 'date', 'string']
+        categorical = ['delimited set', 'single']
+        numerical = ['int', 'float']
+        if not qtype in valid:
+            raise NotImplementedError('Type {} data unsupported'.format(qtype))
+        elif qtype in categorical and not categories:
+            val_err = "Must provide 'categories' when requesting data of type {}."
+            raise ValueError(val_err.format(qtype))
+        elif qtype == 'delimited set' and len(categories) == 1:
+            qtype = 'single'
+            print 'Only one category is given, qtype is switched to single.'
+        elif qtype in numerical and categories:
+            val_err = "Must provide 'categories' when requesting data of type {}."
+            raise ValueError(val_err.format(qtype))
 
         if not text_key: text_key = self.text_key
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key)
             return None
-        categorical = ['delimited set', 'single']
-        numerical = ['int', 'float']
-        if not qtype in ['delimited set', 'single', 'float', 'int',
-                         'date', 'string']:
-            raise NotImplementedError('Type {} data unsupported'.format(qtype))
-        if qtype in categorical and not categories:
-            val_err = "Must provide 'categories' when requesting data of type {}."
-            raise ValueError(val_err.format(qtype))
-        elif qtype in numerical and categories:
-            val_err = "Numerical data of type {} does not accept 'categories'."
-            raise ValueError(val_err.format(qtype))
-        else:
-            if not isinstance(categories, list) and qtype in categorical:
-                raise TypeError("'Categories' must be a list of labels "
-                                "('str') or  a list of tuples of codes ('int') "
-                                "and lables ('str').")
+
         new_meta = {'text': {text_key: label},
                     'type': qtype,
                     'name': name,
