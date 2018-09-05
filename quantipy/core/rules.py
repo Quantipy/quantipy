@@ -7,12 +7,16 @@ import numpy as np
 
 class Rules(object):
 
+    # ------------------------------------------------------------------------
+    # init
+    # ------------------------------------------------------------------------
+
     def __init__(self, link, view_name, axes=['x', 'y']):
         self.link = link
         self.view_name = view_name
         self.stack_base = link.stack[link.data_key]
         self.link_base = self.stack_base[link.filter]
-        self.link_weight = view_name.split('|')[-2]
+        self.link_weights = self._get_link_weights()
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
@@ -22,142 +26,29 @@ class Rules(object):
         else:
             self.view_df = link[view_name].dataframe
         self._xrule_col = None
-        self._xrule_col = None
-        self._sort_x_w = None
-        self._sort_y_w = None
+        self._yrule_col = None
+        self._sort_weight = None
         self.x_rules = self._set_rules_params(axes, 'x')
         self.y_rules = self._set_rules_params(axes, 'y')
         self.x_slicer = None
         self.y_slicer = None
         self.rules_view_df = None
 
-    def rules_df(self):
-        if self.transposed_summary:
-            return self.rules_view_df.T
-        else:
-            return self.rules_view_df
+    def _get_link_weights(self):
+        # Get all weights of the included views. Ignore base-views.
+        weights = []
+        views = self.link.keys()
+        for v in views:
+            w = v.split('|')[-2]
+            if not w in weights and not 'base' in v.split('|')[-1]:
+                weights.append(w)
+        return weights
 
-    def show_rules(self, axis=None):
-        """
-        """
-        if not axis:
-            return {'x': self.x_rules}, {'y': self.y_rules}
-        elif axis == 'x':
-            return {'x': self.x_rules}
-        elif axis == 'y':
-            return {'y': self.y_rules}
-        else:
-            err = "If provided, 'axis' must be one of {'x', 'y'}"
-            raise valueError(err)
+    def _is_array_summary(self):
+        return self.link.x in self.meta['masks']
 
-    def show_slicers(self, axis=None):
-        if not axis:
-            return {'x': self.x_slicer}, {'y': self.y_slicer}
-        elif axis == 'x':
-            return {'x': self.x_slicer}
-        elif axis == 'y':
-            return {'y': self.y_slicer}
-        else:
-            err = "If provided, 'axis' must be one of {'x', 'y'}"
-            raise valueError(err)
-
-    def apply(self):
-        self.get_slicer()
-
-        viable_axes = self.rule_viable_axes()
-        if not viable_axes:
-            df = self.view_df
-        else:
-            df = self.view_df.copy()
-
-        if 'x' in viable_axes and not self.x_slicer is None:
-            rule_codes = set(self.x_slicer)
-            view_codes = set(df.index.tolist())
-            if not rule_codes - view_codes:
-                df = df.loc[self.x_slicer]
-
-        if 'y' in viable_axes and not self.y_slicer is None:
-            df = df[self.y_slicer]
-            if self.view_name.split('|')[1].startswith('t.'):
-                df = self.verify_test_results(df)
-        self.rules_view_df = df
-
-    def _find_expanded_net_groups(self, exp_net_view):
-        groups = OrderedDict()
-        view = exp_net_view
-        logic = view._kwargs.get('logic')
-        description = view.describe_block()
-        groups['codes'] = [c for c, d in description.items() if d == 'normal']
-        net_names = [v for v, d in description.items() if d == 'net']
-        for l in logic:
-            new_l = copy.deepcopy(l)
-            for k in l:
-                if k not in net_names:
-                    del new_l[k]
-            groups[new_l.keys()[0]] = new_l.values()[0]
-        groups['codes'] = [c for c, d in description.items() if d == 'normal']
-        return groups
-
-    def _find_expanded_nets(self, all_views, rule_axis):
-        w = self.link_weight
-        expanded_net = [v for v in all_views if '}+]' in v
-                        and v.split('|')[-2] == w
-                        and v.split('|')[1] == 'f' and
-                        not v.split('|')[3] == 'x']
-
-        return expanded_net[0] if expanded_net else None
-
-    def get_slicer(self):
-        """
-        """
-        for axis, rule_axis in enumerate([self.x_rules, self.y_rules]):
-            if not rule_axis: continue
-
-            # get all views of the link, depending on axis
-            col_key = self._xrule_col if axis == 0 else self._yrule_col
-            views = self.link_base[col_key]['@'].keys()
-
-            # get df (-slice) to apply rule on
-            if 'sortx' in rule_axis:
-                sort_on = rule_axis['sortx'].get('sort_on', '@')
-                expanded_net = self._find_expanded_nets(views, rule_axis)
-                # sort expanded nets, hiding + slicing is skipped
-                if expanded_net and not self.array_summary:
-                    if not sort_on == '@':
-                        msg = 'Cannot sort expanded nets on {}.'
-                        raise AttributeError(msg .format(sort_on))
-                    view = self.link_base[col_key]['@'][expanded_net]
-                    f = self.sort_expanded_nets(view, rule_axis['sortx'])
-                    if axis == 0:
-                        self.x_slicer = f.index.tolist()
-                    else:
-                        self.y_slicer = f.index.tolist()
-                    return None
-                # get df-desc-slice to sort on
-                elif sort_on in ['median', 'stddev', 'sem', 'max', 'min',
-                                 'mean', 'upper_q', 'lower_q']:
-                    f = self._get_descriptive_via_stack(col_key, sort_on)
-                # get df-net-slice to sort on
-                elif 'net' in sort_on:
-                    f = self._get_net_via_stack(col_key, sort_on)
-                # get df-freq-slice to sort on
-                else:
-                    f = self._get_frequency_via_stack(col_key, axis)
-            # get df for hiding + slicing
-            else:
-                f = self._get_frequency_via_stack(col_key, axis)
-
-            # get rules slicer
-            f = f.T if self.array_summary and axis == 1 else f
-            rules_slicer = self._get_rules_slicer(f, rule_axis)
-            if (col_key, 'All') in rules_slicer:
-                rules_slicer.remove((col_key, 'All'))
-
-            if axis == 0:
-                self.x_slicer = rules_slicer
-            else:
-                self.y_slicer = rules_slicer
-        return None
+    def _is_transposed_summary(self):
+        return self.link.x == '@' and self.link.y in self.meta['masks']
 
     def _set_rules_params(self, all_rules_axes, rules_axis):
         if rules_axis == 'x' and 'x' not in all_rules_axes:
@@ -187,7 +78,7 @@ class Rules(object):
                 except:
                     pass
             if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
-                self._sort_x_w = rules['sortx']['with_weight']
+                self._sort_weight = rules['sortx']['with_weight']
         elif rules_axis == 'y':
             if not self.array_summary:
                 xcol = None
@@ -206,38 +97,139 @@ class Rules(object):
                 except:
                     pass
             if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
-                self._sort_y_w = rules['sortx']['with_weight']
+                self._sort_weight = rules['sortx']['with_weight']
         return rules
 
-    def _is_array_summary(self):
-        return self.link.x in self.meta['masks']
+    # ------------------------------------------------------------------------
+    # display
+    # ------------------------------------------------------------------------
 
-    def _is_transposed_summary(self):
-        return self.link.x == '@' and self.link.y in self.meta['masks']
+    def rules_df(self):
+        if self.transposed_summary:
+            return self.rules_view_df.T
+        else:
+            return self.rules_view_df
 
-    def _get_frequency_via_stack(self, col, axis):
-        weight_notation = self.link_weight
-        vk = 'x|f|:||{}|counts'.format(weight_notation)
-        try:
-            f = self.link_base[col]['@'][vk].dataframe
-        except (KeyError, AttributeError) as e:
-            try:
-                f = self.link_base['@'][col][vk].dataframe.T
-            except (KeyError, AttributeError) as e:
-                freq = qp.core.tools.dp.prep.frequency
-                if axis == 0 and self._sort_x_w:
-                    agg_w = self._sort_x_w
-                elif axis == 1 and self._sort_y_w:
-                    agg_w = self._sort_y_w
+    def show_rules(self, axis=None):
+        """
+        """
+        if not axis:
+            return {'x': self.x_rules}, {'y': self.y_rules}
+        elif axis == 'x':
+            return {'x': self.x_rules}
+        elif axis == 'y':
+            return {'y': self.y_rules}
+        else:
+            err = "If provided, 'axis' must be one of {'x', 'y'}"
+            raise ValueError(err)
+
+    def show_slicers(self, axis=None):
+        if not axis:
+            return {'x': self.x_slicer}, {'y': self.y_slicer}
+        elif axis == 'x':
+            return {'x': self.x_slicer}
+        elif axis == 'y':
+            return {'y': self.y_slicer}
+        else:
+            err = "If provided, 'axis' must be one of {'x', 'y'}"
+            raise valueError(err)
+
+    # ------------------------------------------------------------------------
+    # apply rules
+    # ------------------------------------------------------------------------
+
+    def apply(self):
+        self.get_slicer()
+
+        viable_axes = self.rule_viable_axes()
+        if not viable_axes:
+            df = self.view_df
+        else:
+            df = self.view_df.copy()
+
+        if 'x' in viable_axes and not self.x_slicer is None:
+            rule_codes = set(self.x_slicer)
+            view_codes = set(df.index.tolist())
+            if not rule_codes - view_codes:
+                df = df.loc[self.x_slicer]
+
+        if 'y' in viable_axes and not self.y_slicer is None:
+            df = df[self.y_slicer]
+            if self.view_name.split('|')[1].startswith('t.'):
+                df = self.verify_test_results(df)
+        self.rules_view_df = df
+        return None
+
+    def get_slicer(self):
+        """
+        """
+        for axis, rule_axis in enumerate([self.x_rules, self.y_rules]):
+            if not rule_axis: continue
+
+            # get all views of the link, depending on axis
+            col_key = self._xrule_col if axis == 0 else self._yrule_col
+            views = self.link_base[col_key]['@'].keys()
+
+            # get df (-slice) to apply rule on
+            if 'sortx' in rule_axis:
+                sort_on = rule_axis['sortx'].get('sort_on', '@')
+                self._sort_weight = rule_axis['sortx'].get('with_weight') or ''
+                if not self._sort_weight in self.link_weights:
+                    self._sort_weight = self.link_weights[0]
+                expanded_net = self._find_expanded_nets(views, rule_axis)
+                # sort expanded nets
+                if expanded_net and not self.array_summary:
+                    if not sort_on == '@':
+                        msg = 'Cannot sort expanded nets on {}.'
+                        raise AttributeError(msg .format(sort_on))
+                    view = self.link_base[col_key]['@'][expanded_net]
+                    f = self.sort_expanded_nets(view, rule_axis['sortx'])
+                    r_slicer = self._get_rules_slicer(f, rule_axis,
+                                                      ['slicex', 'dropx'])
+                    if axis == 0:
+                        self.x_slicer = r_slicer
+                    else:
+                        self.y_slicer = r_slicer
+                    return None
+                # get df-desc-slice to sort on
+                elif sort_on in ['median', 'stddev', 'sem', 'max', 'min',
+                                 'mean', 'upper_q', 'lower_q']:
+                    f = self._get_descriptive_via_stack(col_key, sort_on)
+                # get df-net-slice to sort on
+                elif 'net' in sort_on:
+                    f = self._get_net_via_stack(col_key, sort_on)
+                # get df-freq-slice to sort on
                 else:
-                    agg_w = self.link_weight if not self.link_weight == '' else None
-                f = freq(self.stack_base.meta, self.stack_base.data,
-                         x=col, weight=agg_w)
+                    f = self._get_frequency_via_stack(col_key, axis, self._sort_weight)
+            # get df for hiding + slicing
+            else:
+                f = self._get_frequency_via_stack(col_key, axis, '')
+
+            # get rules slicer
+            f = f.T if self.array_summary and axis == 1 else f
+            r_slicer = self._get_rules_slicer(f, rule_axis)
+            if axis == 0:
+                self.x_slicer = r_slicer
+            else:
+                self.y_slicer = r_slicer
+        return None
+
+    def _get_frequency_via_stack(self, col, axis, weight):
+        vk = 'x|f|:||{}|counts'.format(weight)
+        try:
+            if self.transposed_summary:
+                f = self.link_base['@'][col][vk].dataframe.T
+            else:
+                f = self.link_base[col]['@'][vk].dataframe
+        except (KeyError, AttributeError) as e:
+            freq = qp.core.tools.dp.prep.frequency
+            f = freq(self.stack_base.meta, self.stack_base.data, x=col,
+                     weight=weight or None)
         return f
 
     def _get_descriptive_via_stack(self, col, desc='mean'):
         l = self.link_base[col]['@']
-        w = self.link_weight
+        w = self._sort_weight
         desc_key = [k for k in l.keys() if 'd.{}'.format(desc) in k.split('|')[1]
                     and k.split('|')[-2] == w]
         if not desc_key:
@@ -253,7 +245,7 @@ class Rules(object):
 
     def _get_net_via_stack(self, col, net='net_1'):
         l = self.link_base[col]['@']
-        w = self.link_weight
+        w = self._sort_weight
         net_no = int(net.split('_')[-1])
         net_key = [k for k in l.keys() if k.split('|')[-1] == 'net'
                     and len(k.split('|')[2].split(',x')) >= net_no
@@ -266,20 +258,48 @@ class Rules(object):
         d = l[net_key].dataframe
         return d
 
-    def _get_rules_slicer(self, f, rules, copy=True):
-        if copy:
-            f = f.copy()
-
+    def _get_rules_slicer(self, f, rules, apply_rules=None):
+        f = f.copy()
         rulesx = OrderedDict([
             ('slicex', self.slicex),
             ('sortx', self.sortx),
             ('dropx', self.dropx)])
 
         for r, method in rulesx.items():
-            if r in rules:
-                f = method(f, **rules[r])
+            if apply_rules and r in apply_rules:
+                if r in rules:
+                    f = method(f, **rules[r])
 
-        return f.index.values.tolist()
+        rules_slicer = f.index.values.tolist()
+        col_key = f.index.levels[0].tolist()[0]
+        if (col_key, 'All') in rules_slicer:
+            rules_slicer.remove((col_key, 'All'))
+
+        return rules_slicer
+
+    def _find_expanded_nets(self, all_views, rule_axis):
+        expanded_net = [v for v in all_views if '}+]' in v
+                        and v.split('|')[-2] == self._sort_weight
+                        and v.split('|')[1] == 'f' and
+                        not v.split('|')[3] == 'x']
+
+        return expanded_net[0] if expanded_net else None
+
+    def _find_expanded_net_groups(self, exp_net_view):
+        groups = OrderedDict()
+        view = exp_net_view
+        logic = view._kwargs.get('logic')
+        description = view.describe_block()
+        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+        net_names = [v for v, d in description.items() if d == 'net']
+        for l in logic:
+            new_l = copy.deepcopy(l)
+            for k in l:
+                if k not in net_names:
+                    del new_l[k]
+            groups[new_l.keys()[0]] = new_l.values()[0]
+        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+        return groups
 
     def sort_expanded_nets(self, view, sortx):
         within = sortx.get('within', True)
@@ -508,6 +528,7 @@ class Rules(object):
             df = df.drop(slicer)
         return df
 
+    # ------------------------------------------------------------------------
 
     def rule_viable_axes(self):
         viable_axes = ['x', 'y']
