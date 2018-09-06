@@ -1917,15 +1917,32 @@ class DataSet(object):
         else:
             return arr_name
 
+<<<<<<< HEAD
     def _check_against_weak_dupes(self, name):
         included = self.resolve_name(name)
         if included and self._verbose_infos:
             w = "weak duplicate is created, {} found in DataSet. Please rename."
             warnings.warn(w.format(included))
+=======
+    @modify(to_list='name')
+    @verify(variables={'name': 'both'})
+    def _prevent_one_cat_set(self, name=None):
+        if not name:
+            name = self.delimited_sets()
+        else:
+            name = [n for n in name if self.is_delimited_set(n)]
+        msg = "Prevent one-category delimited set: Convert '{}' to single."
+        for n in name:
+            if len(self.codes(n)) == 1:
+                self.convert(n, 'single')
+                print msg.format(n)
+        return None
+>>>>>>> i1112_prevent_single_cat_delimited_sets
 
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
         """
+<<<<<<< HEAD
         msg = ''
         if not is_array:
             if name in self._meta['columns']:
@@ -1938,6 +1955,19 @@ class DataSet(object):
         else:
             self._check_against_weak_dupes(name)
             return None
+=======
+        if not name in self: return None
+        if name in self.columns():
+            if not is_array and self._verbose_infos:
+                print "Overwriting meta for '{}', column already exists!".format(name)
+            elif is_array:
+                raise ValueError("{} already exists as column.".format(name))
+        elif name in self.masks():
+            if is_array and self._verbose_infos:
+                print "Overwriting meta for '{}', mask already exists!".format(name)
+            elif not is_array:
+                raise ValueError("{} already exists as mask.".format(name))
+>>>>>>> i1112_prevent_single_cat_delimited_sets
 
     @staticmethod
     def _in_blacklist(name):
@@ -2318,6 +2348,7 @@ class DataSet(object):
         self.repair_text_edits()
         self.restore_item_texts()
         self._clean_datafile_set()
+        self._prevent_one_cat_set()
         return None
 
     # ------------------------------------------------------------------------
@@ -3415,6 +3446,7 @@ class DataSet(object):
     # Recoding
     # ------------------------------------------------------------------------
 
+    @modify(to_list=['categories', 'items'])
     @verify(text_keys='text_key')
     def add_meta(self, name, qtype, label, categories=None, items=None,
         text_key=None, replace=True):
@@ -3457,31 +3489,32 @@ class DataSet(object):
             ``DataSet`` is modified inplace, meta data and ``_data`` columns
             will be added
         """
+        # verify name
         self._in_blacklist(name)
         make_array_mask = True if items else False
-        test_name = name
-        self._verify_variable_meta_not_exist(test_name, make_array_mask)
+        self._verify_variable_meta_not_exist(name, make_array_mask)
+
+        # verify qtype
+        valid = ['delimited set', 'single', 'float', 'int', 'date', 'string']
+        categorical = ['delimited set', 'single']
+        numerical = ['int', 'float']
+        if not qtype in valid:
+            raise NotImplementedError('Type {} data unsupported'.format(qtype))
+        elif qtype in categorical and not categories:
+            val_err = "Must provide 'categories' when requesting data of type {}."
+            raise ValueError(val_err.format(qtype))
+        elif qtype == 'delimited set' and len(categories) == 1:
+            qtype = 'single'
+            print 'Only one category is given, qtype is switched to single.'
+        elif qtype in numerical and categories:
+            val_err = "Numerical data of type {} does not accept 'categories'."
+            raise ValueError(val_err.format(qtype))
 
         if not text_key: text_key = self.text_key
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key)
             return None
-        categorical = ['delimited set', 'single']
-        numerical = ['int', 'float']
-        if not qtype in ['delimited set', 'single', 'float', 'int',
-                         'date', 'string']:
-            raise NotImplementedError('Type {} data unsupported'.format(qtype))
-        if qtype in categorical and not categories:
-            val_err = "Must provide 'categories' when requesting data of type {}."
-            raise ValueError(val_err.format(qtype))
-        elif qtype in numerical and categories:
-            val_err = "Numerical data of type {} does not accept 'categories'."
-            raise ValueError(val_err.format(qtype))
-        else:
-            if not isinstance(categories, list) and qtype in categorical:
-                raise TypeError("'Categories' must be a list of labels "
-                                "('str') or  a list of tuples of codes ('int') "
-                                "and lables ('str').")
+
         new_meta = {'text': {text_key: label},
                     'type': qtype,
                     'name': name,
@@ -4619,6 +4652,8 @@ class DataSet(object):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
+        ``delimited sets`` can be converted if only one category is defined.
+
         Parameters
         ----------
         name : str
@@ -4630,9 +4665,9 @@ class DataSet(object):
         """
         org_type = self._get_type(name)
         if org_type == 'single': return None
-        valid = ['int', 'date', 'string']
+        valid = ['int', 'date', 'string', 'delimited set']
+        msg = 'Cannot convert variable {} of type {} to single!'
         if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to single!'
             raise TypeError(msg.format(name, org_type))
         text_key = self.text_key
         if org_type == 'int':
@@ -4654,6 +4689,12 @@ class DataSet(object):
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
             if replace_map:
                 self._data[name].replace(replace_map, inplace=True)
+        elif org_type == 'delimited set':
+            if not len(self.codes(name)) == 1:
+                raise TypeError(msg.format(name, org_type))
+            self._data[name] = self._data[name].apply(lambda x:
+                int(x.replace(';', '')) if isinstance(x, basestring) else np.NaN)
+            values_obj = self._get_value_loc(name)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
@@ -5116,6 +5157,8 @@ class DataSet(object):
         else:
             self.uncode(name, {x: {name: x} for x in remove})
             self._verify_data_vs_meta_codes(name)
+        # convert delimited set to single if only one cat is left
+        self._prevent_one_cat_set(name)
         return None
 
     @modify(to_list='ext_values')
