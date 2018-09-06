@@ -472,15 +472,13 @@ class PptxChain(object):
 
         if self.array_style == -1 or self.array_style == 1:
 
-            xlabels = self.chain_df.index.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain_df.iloc[base_indexes, :].values.tolist()
-
+            xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain.dataframe.iloc[base_indexes, 0]
         else:
 
-            xlabels = self.chain_df.columns.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain_df.iloc[:, base_indexes].values.tolist()
+            xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain.dataframe.iloc[0, base_indexes]
 
-        base_counts = [sum(b_c) for b_c in base_counts]
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
     def _index_map(self):
@@ -614,7 +612,14 @@ class PptxChain(object):
             for x, y in zip(index_labels, values):
                 new_labels_list.update({x: x + sep + circumfix[0] + prefix + str(y) + circumfix[1]})
 
+            # Saving column index for level 'Question' in case it accidentially gets renamed
+            index_level_values = self.chain_df.columns.get_level_values('Question')
+
             self.chain_df = self.chain_df.rename(columns=new_labels_list)
+
+            # Returning column index for level 'Question' in case it got renamed
+            self.chain_df.columns.set_levels(index_level_values, level='Question', inplace=True)
+
             self.vals_in_labels = True
 
     def base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", "):
