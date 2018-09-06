@@ -473,15 +473,12 @@ class PptxChain(object):
         if self.array_style == -1 or self.array_style == 1:
 
             xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
-            #base_counts = self.chain.dataframe.iloc[base_indexes, :].values.tolist()
             base_counts = self.chain.dataframe.iloc[base_indexes, 0]
         else:
 
             xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
-            #base_counts = self.chain.dataframe.iloc[:, base_indexes].values.tolist()
             base_counts = self.chain.dataframe.iloc[0, base_indexes]
 
-        #base_counts = [sum(b_c) for b_c in base_counts]
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
     def _index_map(self):
