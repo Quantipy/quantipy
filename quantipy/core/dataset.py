@@ -1891,6 +1891,20 @@ class DataSet(object):
         else:
             return arr_name
 
+    @modify(to_list='name')
+    @verify(variables={'name': 'both'})
+    def _prevent_one_cat_set(self, name=None):
+        if not name:
+            name = self.delimited_sets()
+        else:
+            name = [n for n in name if self.is_delimited_set(n)]
+        msg = "Prevent one-category delimited set: Convert '{}' to single."
+        for n in name:
+            if len(self.codes(n)) == 1:
+                self.convert(n, 'single')
+                print msg.format(n)
+        return None
+
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
         """
@@ -2285,6 +2299,7 @@ class DataSet(object):
         self.repair_text_edits()
         self.restore_item_texts()
         self._clean_datafile_set()
+        self._prevent_one_cat_set()
         return None
 
     # ------------------------------------------------------------------------
@@ -3443,7 +3458,7 @@ class DataSet(object):
             qtype = 'single'
             print 'Only one category is given, qtype is switched to single.'
         elif qtype in numerical and categories:
-            val_err = "Must provide 'categories' when requesting data of type {}."
+            val_err = "Numerical data of type {} does not accept 'categories'."
             raise ValueError(val_err.format(qtype))
 
         if not text_key: text_key = self.text_key
@@ -5092,6 +5107,8 @@ class DataSet(object):
         else:
             self.uncode(name, {x: {name: x} for x in remove})
             self._verify_data_vs_meta_codes(name)
+        # convert delimited set to single if only one cat is left
+        self._prevent_one_cat_set(name)
         return None
 
     @modify(to_list='ext_values')
