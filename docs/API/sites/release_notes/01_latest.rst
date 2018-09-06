@@ -18,6 +18,26 @@ Usage as Batch method:
 ``condition`` automatically grabs ``Batch.weights[0]`` and ``Batch.filter``
 to calculate low value counts.
 
+""""
+
+**New**: Prevent weak duplicated in data
+
+As Python is case sensitive it is possible to have two or more variables with
+the same name, but in lower- and uppercases. Most other software do not support
+that, so a warning is shown if a weak dupe is created. Additionally
+``Dataset.write_dimensions()`` performs auto-renaming is weak dupes are detected.
+
+""""
+
+**New**: Prevent single-cat delimited sets
+
+``DataSet.add_meta(..., qtype='delimited set', categories=[...], ...)``
+automatically switches ``qtype`` to single if only one category is defined.
+``DataSet.convert(name, 'single')`` allows conversion from ``delimited set`` to
+``single`` if the variable has only one category.
+``DataSet.repair()`` and ``DataSt.remove_values()`` convert delimited sets
+automatically to singles if only one category is included.
+
 
 ===================
 Latest (04/06/2018)
