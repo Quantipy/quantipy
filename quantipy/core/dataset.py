@@ -1917,13 +1917,6 @@ class DataSet(object):
         else:
             return arr_name
 
-<<<<<<< HEAD
-    def _check_against_weak_dupes(self, name):
-        included = self.resolve_name(name)
-        if included and self._verbose_infos:
-            w = "weak duplicate is created, {} found in DataSet. Please rename."
-            warnings.warn(w.format(included))
-=======
     @modify(to_list='name')
     @verify(variables={'name': 'both'})
     def _prevent_one_cat_set(self, name=None):
@@ -1937,25 +1930,16 @@ class DataSet(object):
                 self.convert(n, 'single')
                 print msg.format(n)
         return None
->>>>>>> i1112_prevent_single_cat_delimited_sets
+
+    def _check_against_weak_dupes(self, name):
+        included = self.resolve_name(name)
+        if included and self._verbose_infos:
+            w = "weak duplicate is created, {} found in DataSet. Please rename."
+            warnings.warn(w.format(included))
 
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
         """
-<<<<<<< HEAD
-        msg = ''
-        if not is_array:
-            if name in self._meta['columns']:
-                msg = "Overwriting meta for '{}', column already exists!"
-        else:
-            if name in self._meta['masks']:
-                msg = "Overwriting meta for '{}', mask already exists!"
-        if msg and self._verbose_infos:
-            print msg.format(name)
-        else:
-            self._check_against_weak_dupes(name)
-            return None
-=======
         if not name in self: return None
         if name in self.columns():
             if not is_array and self._verbose_infos:
@@ -1967,7 +1951,6 @@ class DataSet(object):
                 print "Overwriting meta for '{}', mask already exists!".format(name)
             elif not is_array:
                 raise ValueError("{} already exists as mask.".format(name))
->>>>>>> i1112_prevent_single_cat_delimited_sets
 
     @staticmethod
     def _in_blacklist(name):
