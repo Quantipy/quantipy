@@ -94,6 +94,11 @@ class Rules(object):
                 net_weights = [k.split('|')[-2] for k in self.link.keys()
                                if k.split('|')[-1] == 'net']
                 if not sort_weight in net_weights: sort_weight = net_weights[0]
+            elif sort_on == '@':
+                expanded_nets_w = [k.split('|')[-2] for k in self.link.keys()
+                                   if '}+]' in k.split('|')[2]]
+                if expanded_nets_w and not sort_weight in expanded_nets_w:
+                    sort_weight = expanded_nets_w[0]
             return sort_weight
 
     # ------------------------------------------------------------------------
