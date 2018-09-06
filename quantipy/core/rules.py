@@ -15,7 +15,6 @@ class Rules(object):
         self.view_name = view_name
         self.stack_base = link.stack[link.data_key]
         self.link_base = self.stack_base[link.filter]
-        self.link_weights = self._get_link_weights()
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
@@ -32,16 +31,6 @@ class Rules(object):
         self.x_slicer = None
         self.y_slicer = None
         self.rules_view_df = None
-
-    def _get_link_weights(self):
-        # Get all weights of the included views. Ignore base-views.
-        weights = []
-        views = self.link.keys()
-        for v in views:
-            w = v.split('|')[-2]
-            if not w in weights and not 'base' in v.split('|')[-1]:
-                weights.append(w)
-        return weights
 
     def _is_array_summary(self):
         return self.link.x in self.meta['masks']
@@ -95,10 +84,16 @@ class Rules(object):
         rules = collection.get('rules', {}).get('x', {})
         if 'sortx' in rules:
             sort_on = rules['sortx'].get('sort_on', '@')
-            sort_weight = rules['sortx'].get('with_weight') or ''
-            if not sort_weight in self.link_weights:
-                if not(sort_on == '@' or isinstance(sort_on, int)):
-                    sort_weight = self.link_weights[0]
+            sort_weight = rules['sortx']['with_weight'] or ''
+            if sort_on in ['median', 'stddev', 'sem', 'max', 'min', 'mean',
+                           'upper_q', 'lower_q']:
+                desc_weights = [k.split('|')[-2] for k in self.link.keys()
+                                if 'd.{}'.format(sort_on) in k.split('|')[1]]
+                if not sort_weight in desc_weights: sort_weight = desc_weights[0]
+            elif 'net' in sort_on:
+                net_weights = [k.split('|')[-2] for k in self.link.keys()
+                               if k.split('|')[-1] == 'net']
+                if not sort_weight in net_weights: sort_weight = net_weights[0]
             return sort_weight
 
     # ------------------------------------------------------------------------
