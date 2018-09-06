@@ -706,8 +706,6 @@ class _Sheet(Worksheet):
             else:
                 fact = 1
 
-            print self.excel._formats.default_attributes['font_size'], font_size
-
             dimensions = self.truetype.getsize(label)
 
             if (dimensions[1] * units_to_pixels) - padding > height:
