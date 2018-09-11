@@ -1162,9 +1162,12 @@ class DataSet(object):
         if isinstance(dupes, pd.DataFrame):
             if len(dupes.index) > 2:
                 msg = 'More than two weak duplicates found for a variable. '
-                msg += 'Auto-rename not possible. Please rename manually!'
-                for col in dupes:
-                    print '{}: {}'.format(col, [c for c in dupes[col] if c])
+                msg += 'Auto-rename not possible. Please rename manually!\n'
+                dupes = '\n'.join([
+                    '{}: {}'.format(col, [c for c in dupes[col] if c])
+                    for col in dupes
+                ])
+                msg += dupes
                 raise ValueError(msg)
             for col in dupes:
                 first_d = dupes[col].values.tolist()[0]
@@ -1173,7 +1176,8 @@ class DataSet(object):
                     msg = 'Auto rename not possible: {} is already included!'
                     raise KeyError(msg.format(new_name))
                 self.rename(first_d, new_name)
-                print "Auto-rename: '{}' to '{}'".format(first_d, new_name)
+                print "A weak duplicate has been renamed: '{}' to '{}'".format(first_d, new_name)
+            print ''
         return None
 
     def _rename_blacklist_vars(self):
