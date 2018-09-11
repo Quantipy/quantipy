@@ -1173,6 +1173,7 @@ class DataSet(object):
                     msg = 'Auto rename not possible: {} is already included!'
                     raise KeyError(msg.format(new_name))
                 self.rename(first_d, new_name)
+                print "Auto-rename: '{}' to '{}'".format(first_d, new_name)
         return None
 
     def _rename_blacklist_vars(self):
