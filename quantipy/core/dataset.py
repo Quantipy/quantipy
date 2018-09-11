@@ -4807,6 +4807,8 @@ class DataSet(object):
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
             rename_sets(meta['sets'], mapper, keep_original)
+            if 'batches' in meta['sets']:
+                rename_batch_properties(meta['sets']['batches'], mapper)
             if not keep_original:
                 rename_set_items(meta['sets'], mapper)
 
@@ -4882,6 +4884,29 @@ class DataSet(object):
                         for i, item in enumerate(items):
                             if item in mapper:
                                 items[i] = mapper[item]
+
+        def rename_batch_properties(batches, mapper):
+
+            def _iterate_props(obj, mapper):
+                if isinstance(obj, bool):
+                    pass
+                elif isinstance(obj, basestring):
+                    return mapper.get(obj)
+                elif isinstance(obj, dict):
+                    for k, v in obj.items():
+                        if _iterate_props(k, mapper):
+                            obj[_iterate_props(k, mapper)] = _iterate_props(v, mapper) or v
+                            del obj[k]
+                        else:
+                            obj[k] = _iterate_props(v, mapper) or v
+                elif isinstance(obj, list):
+                    return [_iterate_props(a, mapper) or a for a in obj]
+                elif isinstance(obj, tuple):
+                    return tuple(_iterate_props(a, mapper) or a for a in obj)
+
+            for batch, defs in batches.items():
+                _iterate_props(defs, mapper)
+
 
         def rename_set_items(sets, mapper):
             """
