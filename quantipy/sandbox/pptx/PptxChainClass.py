@@ -96,7 +96,7 @@ def as_numeric(df):
 
 def is_grid_slice(chain):
     """
-    Returns True if _chain is a grid slice
+    Returns True if chain is a grid slice
     :param
         chain: the chain instance
     :return: True id grid slice
@@ -146,6 +146,42 @@ def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
         # TODO _auto_charttype - return 'bar_stacked' if rows not sum to 100
 
     return chart_type
+
+
+def fill_gaps(l):
+    """
+    Return l replacing empty strings with the value from the previous position.
+    """
+    lnew = []
+    for i in l:
+        if i == '':
+            lnew.append(lnew[-1])
+        else:
+            lnew.append(i)
+    return lnew
+
+
+def fill_index_labels(df):
+    """
+    Fills in blank labels in the second level of df's multi-level index.
+    """
+    _0, _1 = zip(*df.index.values.tolist())
+    _1new = fill_gaps(_1)
+    dfnew = df.copy()
+    dfnew.index = pd.MultiIndex.from_tuples(zip(_0, _1new), names=df.index.names)
+    return dfnew
+
+
+def fill_column_values(df, icol=0):
+    """
+    Fills empty values in the targeted column with the value above it.
+    """
+    v = df.iloc[:,icol].fillna('').values.tolist()
+    vnew = fill_gaps(v)
+    dfnew = df.copy()
+    dfnew.iloc[:,icol] = vnew
+    return dfnew
+
 
 class PptxDataFrame(object):
     """
@@ -273,7 +309,9 @@ class PptxDataFrame(object):
         """
 
         row_list = get_indexes_from_list(self.cell_items, ['is_net', 'net'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_items, ['is_propstest', 'calc', 'normal'], exact=False)
+        dont_want = get_indexes_from_list(self.cell_items,
+                                          ['is_propstest', 'calc', 'normal', 'is_c_pct_sum', 'is_counts'],
+                                          exact=False)
 
         for x in dont_want:
             if x in row_list:
@@ -350,6 +388,61 @@ class PptxDataFrame(object):
 
         return new_pptx_df
 
+    def get_kerstin(self, cell_types, sort=False):
+        """
+        Method to get specific elements from chains dataframe
+        :param
+            cel_types: A comma separated list of cell types to return. Available types are 'c_pct,net'
+            sort: Sort the elements ascending or decending. Str 'asc', 'dsc' or False
+        :return: df_copy, a Pandas dataframe. Element types will be returned in the order they are requested
+        """
+        # method_map = {'c_pct': self.get_cpct,
+        #               'net': self.get_nets}
+        # TODO Add methods for 'mean', 'stddev', 'min', 'max', 'median', 't_props', 't_means'
+        available_celltypes = ['c_pct', 'net'] # set(method_map.keys())
+        if isinstance(cell_types, basestring):
+            cell_types = re.sub(' +', '', cell_types)
+            cell_types = cell_types.split(',')
+        value_test = set(cell_types).difference(available_celltypes)
+        if value_test:
+            msg = "Cell type: {} is not an available cell type.\n"
+            msg += "Available cell types are {}"
+            raise ValueError(msg.format(cell_types, available_celltypes))
+
+        req_ct = []
+        exclude = ['normal', 'calc', 'is_propstest', 'is_c_pct_sum', 'is_counts']
+        if 'c_pct' in cell_types:
+            req_ct.append('is_c_pct')
+        if 'net' in cell_types:
+            req_ct.extend(['is_net', 'net'])
+        else:
+            exclude.extend(['is_net', 'net'])
+
+        row_list = get_indexes_from_list(self.cell_contents, req_ct, exact=False)
+        dont_want = get_indexes_from_list(self.cell_contents, exclude, exact=False)
+        row_list = [x for x in row_list if not x in dont_want]
+
+        if self.array_style == -1:
+            df_copy = self.iloc[row_list]
+        else:
+            df_copy = self.iloc[:, row_list]
+
+        new_df = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+        new_df.chart_type = auto_charttype(new_df, new_df.array_style)
+        cell_contents = new_df.cell_contents
+        new_df.cell_contents = [cell_contents[i] for i in row_list]
+
+        # for cell_type in cell_types:
+        #     frame = method_map[cell_type]()
+        #     frames.append(frame)
+        #     cell_contents += frame.cell_contents
+        # new_df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
+
+        pptx_df = self.make_copy(data=new_df.values, index=new_df.index, columns=new_df.columns)
+        pptx_df.chart_type = auto_charttype(pptx_df, pptx_df.array_style)
+        pptx_df.cell_contents = cell_contents
+
+        return pptx_df
 
 class PptxChain(object):
     """
@@ -478,10 +571,16 @@ class PptxChain(object):
         """
 
         cell_contents = self._chain.describe()
-        if self.array_style == 0: cell_contents = cell_contents[0]
+        if self.array_style == 0:
+            row = min([k for k, va in cell_contents.items()
+                              if any(pct in v for v in va for pct in PCT_TYPES)])
+            cell_contents = cell_contents[row]
 
         # Find base rows
-        base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        bases = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        skip = get_indexes_from_list(cell_contents, ['is_c_base_gross'], exact=False)
+        base_indexes = [idx for idx in bases if not idx in skip] or bases
+
         # Show error if no base elements found
         if not base_indexes:
             #msg = "No 'Base' element found, base size will be set to None"
@@ -528,6 +627,8 @@ class PptxChain(object):
         :return:
         """
 
+        cell_items = self._chain.cell_items.split('_')
+
         if not self.is_grid_summary:
             # Keep only requested columns
             if self._chain.painted: # UnPaint if painted
@@ -552,8 +653,22 @@ class PptxChain(object):
             # Slice the dataframes columns based on requested crossbreaks
             df = self._chain.dataframe.iloc[:, column_selection]
 
+            if len(cell_items) > 1:
+                df = fill_index_labels(df)
+
         else:
-            df = self._chain.dataframe
+            if len(cell_items) > 1:
+                cell_contents = self._chain.describe()
+                rows = [k for k, va in cell_contents.items()
+                        if any(pct in v for v in va for pct in PCT_TYPES)]
+                df_filled = fill_index_labels(fill_column_values(self._chain.dataframe))
+                df = df_filled.iloc[rows, :]
+                #for index in base_indexes:
+                #    base_values = self.chain.dataframe.iloc[rows_bad, index].values
+                #    base_column = self.chain.dataframe.columns[index]
+                #    df.loc[:,[base_column]] = base_values
+             else:
+                df = self._chain.dataframe
 
         df_rounded = np.around(df, decimals=self._decimals, out=None)
         return df_rounded
@@ -675,7 +790,14 @@ class PptxChain(object):
             for x, y in zip(index_labels, values):
                 new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + str(y) + circumfix[1]})
 
+            # Saving column index for level 'Question' in case it accidentially gets renamed
+            index_level_values = self.chain_df.columns.get_level_values('Question')
+
             self.chain_df = self.chain_df.rename(columns=new_labels_list)
+
+            # Returning column index for level 'Question' in case it got renamed
+            self.chain_df.columns.set_levels(index_level_values, level='Question', inplace=True)
+
             self.vals_in_labels = True
 
     @property
@@ -775,7 +897,7 @@ class PptxChain(object):
                     base_text = u"{} {}".format(base_label, base_values[0])
             else:
                 if base_description:
-                    base_text = u"{} {}".format(base_label,base_description)
+                    base_text = u"{} {}".format(base_label, base_description)
                 else:
                     base_text = ""
 
@@ -956,10 +1078,11 @@ class PptxChain(object):
 
         # For rows that are type '%' divide by 100
         indexes = []
-        if not self.is_grid_summary:
-            cell_contents = self._chain.describe()
-        else:
-            cell_contents = self._chain.describe()[0]
+        cell_contents = self._chain.describe()
+        if self.is_grid_summary:
+            colpct_row = min([k for k, va in cell_contents.items()
+                              if any(pct in v for v in va for pct in PCT_TYPES)])
+            cell_contents = cell_contents[colpct_row]
 
         for i, row in enumerate(cell_contents):
             for type in row:
