@@ -1909,7 +1909,7 @@ class DataSet(object):
         """
         """
         if not name in self: return None
-        if name in self.columns():
+        if name in self.columns() or self._is_array_item(name):
             if not is_array and self._verbose_infos:
                 print "Overwriting meta for '{}', column already exists!".format(name)
             elif is_array:
