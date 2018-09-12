@@ -701,11 +701,10 @@ class _Sheet(Worksheet):
 
         if isinstance(label, basestring):
 
-            if font_name is None:
-                font_name = self.excel._formats.default_attributes['font_name']
-
-            if font_size is None:
-                font_size = self.excel._formats.default_attributes['font_size']
+            if font_size is not None:
+                fact = float(font_size)/ float(self.excel._formats.default_attributes['font_size'])
+            else:
+                fact = 1
 
             dimensions = self.truetype.getsize(label)
 
@@ -713,7 +712,7 @@ class _Sheet(Worksheet):
                 # text too tall
                 return
 
-            if dimensions[0] >= int(self._size_col(self.start_column)/units_to_pixels):
+            if (dimensions[0] * fact) >= int(self._size_col(self.start_column)/units_to_pixels):
                 # text too long
                 return
 
