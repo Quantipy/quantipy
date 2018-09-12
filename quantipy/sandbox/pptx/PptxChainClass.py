@@ -315,7 +315,12 @@ class PptxDataFrame(pd.DataFrame):
             exclude.extend(['is_net', 'net'])
 
         row_list = get_indexes_from_list(self.cell_contents, req_ct, exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, exclude, exact=False)
+        expanded = {'is_c_pct', 'expanded'}
+        normal = {'is_c_pct', 'normal'}
+        dont_want = [index for index, value in enumerate(self.cell_contents)
+                     if set(exclude).intersection(set(value))
+                     and not expanded.issubset(set(value))
+                     and not normal.issubset(set(value))]
         row_list = [x for x in row_list if not x in dont_want]
 
         if self.array_style == -1:
