@@ -667,7 +667,7 @@ class PptxChain(object):
                 #    base_values = self.chain.dataframe.iloc[rows_bad, index].values
                 #    base_column = self.chain.dataframe.columns[index]
                 #    df.loc[:,[base_column]] = base_values
-             else:
+            else:
                 df = self._chain.dataframe
 
         df_rounded = np.around(df, decimals=self._decimals, out=None)
