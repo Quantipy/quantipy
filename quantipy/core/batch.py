@@ -768,6 +768,8 @@ class Batch(qp.DataSet):
             else:
                 self.verbatims.append(oe)
 
+        if len(oe) + len(break_by) = 0:
+            raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
             if not len(oe) == len(title):
                 msg = "Cannot derive verbatim DataFrame 'title' with more than 1 'oe'"
