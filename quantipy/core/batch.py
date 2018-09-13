@@ -471,6 +471,8 @@ class Batch(qp.DataSet):
                 raise KeyError('{} is not included.'.format(x))
             elif x not in self.xks:
                 self.xks.extend(self.unroll(x, both='all'))
+            if self.is_array(x) and not x in self.summaries:
+                self.summaries.append(x)
         self._update()
         return None
 
@@ -768,6 +770,8 @@ class Batch(qp.DataSet):
             else:
                 self.verbatims.append(oe)
 
+        if len(oe) + len(break_by) == 0:
+            raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
             if not len(oe) == len(title):
                 msg = "Cannot derive verbatim DataFrame 'title' with more than 1 'oe'"
