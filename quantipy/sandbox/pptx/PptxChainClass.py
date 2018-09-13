@@ -243,46 +243,46 @@ class PptxDataFrame(pd.DataFrame):
 
         return df_copy
 
-    def get_cpct(self):
-        row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_net','net','is_c_pct_sum'], exact=False)
-        not_net = get_indexes_from_list(self.cell_contents, ['normal', 'expanded'], exact=False)
+    # def get_cpct(self):
+    #     row_list = get_indexes_from_list(self.cell_contents, 'is_c_pct', exact=False)
+    #     dont_want = get_indexes_from_list(self.cell_contents, ['is_net','net','is_c_pct_sum'], exact=False)
+    #     not_net = get_indexes_from_list(self.cell_contents, ['normal', 'expanded'], exact=False)
 
-        for x in dont_want:
-            if x in row_list and x not in not_net:
-                row_list.remove(x)
+    #     for x in dont_want:
+    #         if x in row_list and x not in not_net:
+    #             row_list.remove(x)
 
-        if self.array_style == -1:
-            df_copy=self.iloc[row_list]
-        else:
-            df_copy = self.iloc[:,row_list]
+    #     if self.array_style == -1:
+    #         df_copy=self.iloc[row_list]
+    #     else:
+    #         df_copy = self.iloc[:,row_list]
 
-        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
-        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
-        cell_contents = pptx_df_copy.cell_contents
-        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
+    #     pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+    #     pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
+    #     cell_contents = pptx_df_copy.cell_contents
+    #     pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
 
-        return pptx_df_copy
+    #     return pptx_df_copy
 
-    def get_nets(self):
-        row_list = get_indexes_from_list(self.cell_contents, ['is_net', 'net'], exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest','calc','normal'], exact=False)
+    # def get_nets(self):
+    #     row_list = get_indexes_from_list(self.cell_contents, ['is_net', 'net'], exact=False)
+    #     dont_want = get_indexes_from_list(self.cell_contents, ['is_propstest','calc','normal'], exact=False)
 
-        for x in dont_want:
-            if x in row_list:
-                row_list.remove(x)
+    #     for x in dont_want:
+    #         if x in row_list:
+    #             row_list.remove(x)
 
-        if self.array_style == -1:
-            df_copy = self.iloc[row_list]
-        else:
-            df_copy = self.iloc[:, row_list]
+    #     if self.array_style == -1:
+    #         df_copy = self.iloc[row_list]
+    #     else:
+    #         df_copy = self.iloc[:, row_list]
 
-        pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
-        pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
-        cell_contents = pptx_df_copy.cell_contents
-        pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
+    #     pptx_df_copy = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+    #     pptx_df_copy.chart_type = auto_charttype(pptx_df_copy, pptx_df_copy.array_style)
+    #     cell_contents = pptx_df_copy.cell_contents
+    #     pptx_df_copy.cell_contents = [cell_contents[i] for i in row_list]
 
-        return pptx_df_copy
+    #     return pptx_df_copy
 
     def get(self, cell_types, sort=False):
         """
@@ -292,24 +292,52 @@ class PptxDataFrame(pd.DataFrame):
             sort: Sort the elements ascending or decending. Str 'asc', 'dsc' or False
         :return: df_copy, a Pandas dataframe. Element types will be returned in the order they are requested
         """
-        method_map = {'c_pct': self.get_cpct,
-                      'net': self.get_nets}
+        # method_map = {'c_pct': self.get_cpct,
+        #               'net': self.get_nets}
         # TODO Add methods for 'mean', 'stddev', 'min', 'max', 'median', 't_props', 't_means'
-        available_celltypes = set(method_map.keys())
+        available_celltypes = ['c_pct', 'net'] # set(method_map.keys())
         if isinstance(cell_types, basestring):
             cell_types = re.sub(' +', '', cell_types)
             cell_types = cell_types.split(',')
         value_test = set(cell_types).difference(available_celltypes)
         if value_test:
-            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_celltypes))
+            msg = "Cell type: {} is not an available cell type.\n"
+            msg += "Available cell types are {}"
+            raise ValueError(msg.format(cell_types, available_celltypes))
 
-        frames = []
-        cell_contents = []
-        for cell_type in cell_types:
-            frame = method_map[cell_type]()
-            frames.append(frame)
-            cell_contents += frame.cell_contents
-        new_df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
+        req_ct = []
+        exclude = ['normal', 'calc', 'is_propstest', 'is_c_pct_sum', 'is_counts']
+        if 'c_pct' in cell_types:
+            req_ct.append('is_c_pct')
+        if 'net' in cell_types:
+            req_ct.extend(['is_net', 'net'])
+        else:
+            exclude.extend(['is_net', 'net'])
+
+        row_list = get_indexes_from_list(self.cell_contents, req_ct, exact=False)
+        expanded = {'is_c_pct', 'expanded'}
+        normal = {'is_c_pct', 'normal'}
+        dont_want = [index for index, value in enumerate(self.cell_contents)
+                     if set(exclude).intersection(set(value))
+                     and not expanded.issubset(set(value))
+                     and not normal.issubset(set(value))]
+        row_list = [x for x in row_list if not x in dont_want]
+
+        if self.array_style == -1:
+            df_copy = self.iloc[row_list]
+        else:
+            df_copy = self.iloc[:, row_list]
+
+        new_df = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
+        new_df.chart_type = auto_charttype(new_df, new_df.array_style)
+        cell_contents = new_df.cell_contents
+        new_df.cell_contents = [cell_contents[i] for i in row_list]
+
+        # for cell_type in cell_types:
+        #     frame = method_map[cell_type]()
+        #     frames.append(frame)
+        #     cell_contents += frame.cell_contents
+        # new_df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
 
         pptx_df = self.make_copy(data=new_df.values, index=new_df.index, columns=new_df.columns)
         pptx_df.chart_type = auto_charttype(pptx_df, pptx_df.array_style)
@@ -429,11 +457,15 @@ class PptxChain(object):
 
         cell_contents = self.chain.describe()
         if self.array_style == 0:
-            colpct_row = self.chain.cell_items.split('_').index('colpct')
-            cell_contents = cell_contents[colpct_row]
+            row = min([k for k, va in cell_contents.items()
+                              if any(pct in v for v in va for pct in PCT_TYPES)])
+            cell_contents = cell_contents[row]
 
         # Find base rows
-        base_indexes = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        bases = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
+        skip = get_indexes_from_list(cell_contents, ['is_c_base_gross'], exact=False)
+        base_indexes = [idx for idx in bases if not idx in skip] or bases
+
         # Show error if no base elements found
         if not base_indexes:
             #msg = "No 'Base' element found, base size will be set to None"
@@ -445,13 +477,12 @@ class PptxChain(object):
 
         if self.array_style == -1 or self.array_style == 1:
 
-            xlabels = self.chain_df.index.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain_df.iloc[base_indexes, 0]
-
+            xlabels = self.chain.dataframe.index.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain.dataframe.iloc[base_indexes, 0]
         else:
 
-            xlabels = self.chain_df.columns.get_level_values(-1)[base_indexes].tolist()
-            base_counts = self.chain_df.iloc[0,base_indexes]
+            xlabels = self.chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
+            base_counts = self.chain.dataframe.iloc[0, base_indexes]
 
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
@@ -514,18 +545,10 @@ class PptxChain(object):
 
             if len(cell_items) > 1:
                 cell_contents = self.chain.describe()
-                base_indexes = get_indexes_from_list(cell_contents[0], BASE_ROW, exact=False)
-                df_rows = len(cell_contents)
-                row_range = range(df_rows)
-                rows_good = range(cell_items.index('colpct'),df_rows+1,len(cell_items))
-                rows_bad = list(set(row_range) - set(rows_good))
+                rows = [k for k, va in cell_contents.items()
+                        if any(pct in v for v in va for pct in PCT_TYPES)]
                 df_filled = fill_index_labels(fill_column_values(self.chain.dataframe))
-                df = df_filled.iloc[rows_good, :]
-                #for index in base_indexes:
-                #    base_values = self.chain.dataframe.iloc[rows_bad, index].values
-                #    base_column = self.chain.dataframe.columns[index]
-                #    df.loc[:,[base_column]] = base_values
-
+                df = df_filled.iloc[rows, :]
             else:
                 df = self.chain.dataframe
 
@@ -594,7 +617,14 @@ class PptxChain(object):
             for x, y in zip(index_labels, values):
                 new_labels_list.update({x: x + sep + circumfix[0] + prefix + str(y) + circumfix[1]})
 
+            # Saving column index for level 'Question' in case it accidentially gets renamed
+            index_level_values = self.chain_df.columns.get_level_values('Question')
+
             self.chain_df = self.chain_df.rename(columns=new_labels_list)
+
+            # Returning column index for level 'Question' in case it got renamed
+            self.chain_df.columns.set_levels(index_level_values, level='Question', inplace=True)
+
             self.vals_in_labels = True
 
     def base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", "):
@@ -608,10 +638,11 @@ class PptxChain(object):
         :return:
         """
         # Base_label
+
         base_label = self.xbase_label
 
         if self.base_description:
-            base_label = u"{}{}".format(base_label,base_label_suf)
+            base_label = u"{}{}".format(base_label, base_label_suf)
         else:
             base_label = u"{}".format(base_label)
 
@@ -930,17 +961,18 @@ class PptxChain(object):
 
         # For rows that are type '%' divide by 100
         indexes = []
-        if not self.is_grid_summary:
-            cell_contents = self.chain.describe()
-        else:
-            colpct_row = self.chain.cell_items.split('_').index('colpct')
-            cell_contents = self.chain.describe()[colpct_row]
+        cell_contents = self.chain.describe()
+        if self.is_grid_summary:
+            colpct_row = min([k for k, va in cell_contents.items()
+                              if any(pct in v for v in va for pct in PCT_TYPES)])
+            cell_contents = cell_contents[colpct_row]
 
         for i, row in enumerate(cell_contents):
             for type in row:
                 for pct_type in PCT_TYPES:
                     if type == pct_type:
                         indexes.append(i)
+
         if not self.is_grid_summary:
             df.iloc[indexes] /= 100
         else:
@@ -948,11 +980,7 @@ class PptxChain(object):
 
         # Make a PptxDataFrame instance
         chart_df = PptxDataFrame(data=df.values, index=df.index, columns=df.columns)
-        if not self.is_grid_summary:
-            chart_df.cell_contents = self.chain.describe() # TODO Is this okay? to initialize a class attribute outside of the class
-        else:
-            colpct_row = self.chain.cell_items.split('_').index('colpct')
-            chart_df.cell_contents = self.chain.describe()[colpct_row]
+        chart_df.cell_contents = cell_contents
         chart_df.array_style = self.chain.array_style
 
         # Choose a basic Chart type that will fit dataframe
