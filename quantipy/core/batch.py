@@ -277,7 +277,6 @@ class Batch(qp.DataSet):
         if new_name in self._meta['sets']['batches']:
             raise KeyError("'%s' is already included!" % new_name)
         batches = self._meta['sets']['batches']
-        p_spec = self._meta['info'].get('project_spec', {})
         org_name = self.name
         batches[new_name] = batches.pop(org_name)
         self._rename_in_additions(org_name, new_name)
