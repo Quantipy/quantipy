@@ -38,6 +38,43 @@ automatically switches ``qtype`` to single if only one category is defined.
 ``DataSet.repair()`` and ``DataSt.remove_values()`` convert delimited sets
 automatically to singles if only one category is included.
 
+""""
+
+**Update**: encoding in ``DataSet.get_batch(name)``
+
+The method is not that encoding sensitive anymore. It returns the depending
+``Batch``, no matter if ``'...'``, ``u'...'`` or ``'...'.decode('utf8')`` is
+included as name.
+
+""""
+
+**Update**: warning in weight engine
+
+Missing codes in the sample are only alerted, if the belonging target is not 0.
+
+""""
+
+**Update**: ``DataSet.to_array(..., variables, ...)``
+
+Duplicated vars in ``variables`` are not allowed anymore, these were causing
+problems in the ChainManager class.
+
+""""
+
+**Update**: ``Batch.add_open_ends()``
+
+Method raises an error if no vars are included in ``oe`` and ``break_by``. The
+empty dataframe was causing issues in the ChainManager class.
+
+""""
+
+**Update**: ``Batch.extend_x()``
+
+The method automatically checks if the included variables are arrays and adds
+them to ``Batch.summaries`` if they are included yet.
+
+""""
+
 
 ===================
 Latest (04/06/2018)
@@ -46,7 +83,7 @@ Latest (04/06/2018)
 **New**: Additional variable (names) "getter"-like and resolver methods
 
 * ``DataSet.created()``
-*  ``DataSet.find(str_tags=None, suffixed=False)``
+* ``DataSet.find(str_tags=None, suffixed=False)``
 * ``DataSet.names()``
 * ``DataSet.resolve_name()``
 
