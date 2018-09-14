@@ -4464,6 +4464,8 @@ class DataSet(object):
                      else v for v in variables]
         if not all(self.var_exists(v) for v in var_list):
             raise KeyError("'variables' must be included in DataSet.")
+        elif not len(set(var_list)) == len(var_list):
+            raise ValueError("'variables' contains duplicates!")
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
@@ -6768,12 +6770,13 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        check = batches.get(name.decode('utf8'))
-        if not check:
-            check = batches.get(name)
-        if not check:
+        if batches.get(name.decode('utf8')):
+            b = name.decode('utf8')
+        elif batches.get(name):
+            b = name
+        else:
             raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, name)
+        return qp.Batch(self, b)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):
