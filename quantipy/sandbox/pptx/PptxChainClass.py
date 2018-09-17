@@ -310,7 +310,7 @@ class PptxDataFrame(object):
 
         row_list = get_indexes_from_list(self.cell_items, ['is_net', 'net'], exact=False)
         dont_want = get_indexes_from_list(self.cell_items,
-                                          ['is_propstest', 'calc', 'normal', 'is_c_pct_sum', 'is_counts'],
+                                          ['is_propstest', 'calc', 'normal', 'is_c_pct_sum', 'is_counts', 'expanded'],
                                           exact=False)
 
         for x in dont_want:
