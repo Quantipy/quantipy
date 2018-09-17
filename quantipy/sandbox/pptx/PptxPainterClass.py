@@ -321,7 +321,7 @@ class PptxPainter(object):
 
         return self.presentation.slides.add_slide(slide_layout)
 
-    def draft_textbox(self, text=None):
+    def draft_textbox(self, settings=None, text=None):
         """
         Method for drafting a textboc
 
@@ -334,7 +334,10 @@ class PptxPainter(object):
         Returns: self.textbox
         -------
         """
-        draft = self.textbox.copy()
+        if settings:
+            draft = settings
+        else:
+            draft = self.textbox.copy()
         draft['text'] = text
         return draft
 
@@ -376,7 +379,7 @@ class PptxPainter(object):
 
         return draft
 
-    def draft_chart(self, dataframe):
+    def draft_chart(self, dataframe, settings=None):
         """
         Sets attribute self.chart
 
@@ -390,7 +393,10 @@ class PptxPainter(object):
         -------
         """
 
-        draft = self.chart.copy()
+        if settings:
+            draft = settings
+        else:
+            draft = self.chart.copy()
         draft['dataframe'] = dataframe
         return draft
 
@@ -430,7 +436,7 @@ class PptxPainter(object):
         draft['dataframe'] = dataframe
         return draft
 
-    def draft_table(self, dataframe, text=None):
+    def draft_table(self, dataframe, text=None, settings=None):
         """
         Sets attribute self.tables
 
@@ -444,7 +450,10 @@ class PptxPainter(object):
         -------
         """
 
-        draft = self.table.copy()
+        if settings:
+            draft = settings
+        else:
+            draft = self.table.copy()
         draft['dataframe'] = dataframe
         draft['text'] = text
         return draft
