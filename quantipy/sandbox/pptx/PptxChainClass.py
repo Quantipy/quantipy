@@ -1042,8 +1042,11 @@ class PptxChain(object):
             base_values = np.around(base_values, decimals=self._decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.columns.get_level_values('Values'))
-            base_test   = list(self.chain_df.columns.get_level_values('Test-IDs'))
-            bases = zip(base_labels, base_values, base_test)
+            if self._chain.sig_levels:
+                base_test   = list(self.chain_df.columns.get_level_values('Test-IDs'))
+                bases = zip(base_labels, base_values, base_test)
+            else:
+                bases = zip(base_labels, base_values)
 
         else: # Array summary
             # Find base columns
