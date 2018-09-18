@@ -1423,7 +1423,7 @@ def get_sets_from_set(meta, set_name):
     return sets
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None, verbose=True):
+           overwrite_text=False, from_set=None, merge_existing=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1453,6 +1453,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    merge_existing : str/ list of str, default None, {'all', [var_names]}
+        Specify if codes should be merged for delimited sets for defined
+        variables.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
 
@@ -1461,6 +1464,15 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta, data : dict, pandas.DataFrame
        Updated Quantipy dataset.
     """
+    def _merge_delimited_sets(x):
+        # codes = []
+        # for c in x:
+        #     if c == np.NaN
+        # ';'.join(sorted(list(set(x.split(';'))))) + ';'
+        #                 if len(set(x.split(';'))) > 0 else np.NaN
+        return None
+
+
     if all([kwarg is None for kwarg in [on, left_on, right_on]]):
         raise TypeError("You must provide a column name for either 'on' or "
                         "both 'left_on' AND 'right_on'")
@@ -1507,7 +1519,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
         if col_updates:
             updata_left = data_left.set_index([left_on])[col_updates].copy()
-
+            sets = [c for c in col_updates
+                    if meta_left['columns'][c]['type'] == 'delimited set']
+            non_sets = [c for c in col_updates if not c in sets]
             if update_right_on:
                 updata_right = data_right.set_index(right_on, drop=False)[col_updates].copy()
             else:
@@ -1515,8 +1529,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
             if verbose:
                 print '------ updating data for known columns'
-            updata_left.update(updata_right)
-            for update_col in col_updates:
+            updata_left.update(updata_right[non_sets])
+            for update_col in non_sets:
                 if verbose:
                     print "..{}".format(update_col)
                 try:
@@ -1525,6 +1539,16 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 except:
                     data_left[update_col] = updata_left[update_col].astype(
                         'object').values
+            if merge_existing:
+                for col in sets:
+                    if not (merge_existing == 'all' or col in merge_existing):
+                        continue
+                    if verbose:
+                        print "..{}".format(update_col)
+                    print data_left[col].head()
+                    data_left[col] = data_left[col] + data_right[col].astype(str)
+                    data_left[col] = data_left[col].astype(str).apply(
+                        lambda x: _merge_delimited_sets(x))
 
         if verbose:
             print '------ appending new columns'

@@ -3166,7 +3166,8 @@ class DataSet(object):
     @modify(to_list=['dataset'])
     @verify(variables={'on': 'columns', 'left_on': 'columns'})
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
-               overwrite_text=False, from_set=None, inplace=True, verbose=True):
+               overwrite_text=False, from_set=None, inplace=True,
+               merge_existing=None, verbose=True):
 
         """
         Merge Quantipy datasets together using an index-wise identifer.
@@ -3215,7 +3216,8 @@ class DataSet(object):
             id_backup = None
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
-            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
+            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose,
+            merge_existing=merge_existing)
         if id_backup is not None:
             merged_data[right_on] = id_backup
         if inplace:
