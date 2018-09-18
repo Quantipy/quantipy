@@ -228,7 +228,7 @@ default_chart_line['smooth_line'] = False
 #----------------------------
 # Column
 default_chart_column = default_chart.copy()
-default_chart_column['chart_type'] =  'column_clustered'
+default_chart_column['chart_type'] = 'column_clustered'
 # Legend properties
 default_chart_column['legend_position'] = 'bottom'
 default_chart_column['legend_horz_offset'] = 0
@@ -241,7 +241,7 @@ default_chart_column['plot_overlap'] = -10
 #---------------------------
 # Pie
 default_chart_pie = default_chart.copy()
-default_chart_pie['chart_type'] =  'pie'
+default_chart_pie['chart_type'] = 'pie'
 # Legend properties
 default_chart_pie['has_legend'] = True
 default_chart_pie['legend_position'] = 'bottom'
@@ -271,7 +271,7 @@ footer_shape['width'] = 10515600
 footer_shape['height'] = 396000
 footer_shape['textframe_kwargs'] = default_textframe.copy()
 footer_shape['textframe_kwargs']['font_kwargs'] = default_font.copy()
-footer_shape['textframe_kwargs']['font_kwargs']['font_bold']=True
+footer_shape['textframe_kwargs']['font_kwargs']['font_bold'] = True
 
 shapes = {'charts' : {'bar': default_chart_bar,
                       'bar_stacked100': default_chart_bar_stacked100,
