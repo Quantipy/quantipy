@@ -1077,7 +1077,7 @@ class PptxPainter(object):
         font = paragraph.font
 
         # If no text we will not be able to do fit_text
-        if text is None:
+        if text is None or text == '':
             fit_text = False
 
         PptxPainter.set_font(font,
