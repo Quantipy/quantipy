@@ -31,6 +31,7 @@ from enumerations import (
 
 from PptxDefaultsClass import PptxDefaults
 import pandas as pd
+import copy
 
 
 # chartdata_from_dataframe taken from topy.core.pandas_pptx.py
@@ -335,9 +336,9 @@ class PptxPainter(object):
         -------
         """
         if settings:
-            draft = settings
+            draft = copy.deepcopy(settings)
         else:
-            draft = self.textbox.copy()
+            draft = copy.deepcopy(self.textbox)
         draft['text'] = text
         return draft
 
@@ -355,7 +356,7 @@ class PptxPainter(object):
         -------
         """
 
-        draft = self.textbox_header.copy()
+        draft = copy.deepcopy(self.textbox_header)
         draft['text'] = text
 
         return draft
@@ -374,7 +375,7 @@ class PptxPainter(object):
         -------
         """
 
-        draft = self.textbox_footer.copy()
+        draft = copy.deepcopy(self.textbox_footer)
         draft['text'] = text
 
         return draft
@@ -394,9 +395,9 @@ class PptxPainter(object):
         """
 
         if settings:
-            draft = settings
+            draft = copy.deepcopy(settings)
         else:
-            draft = self.chart.copy()
+            draft = copy.deepcopy(self.chart)
         draft['dataframe'] = dataframe
         return draft
 
@@ -423,15 +424,15 @@ class PptxPainter(object):
 
         # Make draft
         if chart_type == 'pie':
-            draft = self.chart_pie.copy()
+            draft = copy.deepcopy(self.chart_pie)
         elif chart_type == 'bar_clustered' or chart_type == 'bar':
-            draft = self.chart_bar.copy()
+            draft = copy.deepcopy(self.chart_bar)
             if len(dataframe.columns) > 1:
                 draft['has_legend'] = True
         elif chart_type == 'bar_stacked_100':
-            draft = self.chart_bar_stacked100.copy()
+            draft = copy.deepcopy(self.chart_bar_stacked100)
         else:
-            draft = self.chart_bar.copy()
+            draft = copy.deepcopy(self.chart_bar)
 
         draft['dataframe'] = dataframe
         return draft
@@ -451,9 +452,9 @@ class PptxPainter(object):
         """
 
         if settings:
-            draft = settings
+            draft = copy.deepcopy(settings)
         else:
-            draft = self.table.copy()
+            draft = copy.deepcopy(self.table)
         draft['dataframe'] = dataframe
         draft['text'] = text
         return draft
@@ -470,7 +471,7 @@ class PptxPainter(object):
         -------
         """
 
-        draft = self.side_table.copy()
+        draft = copy.deepcopy(self.side_table)
         draft['dataframe'] = dataframe
 
         # set table width based on number of columns in dataframe
