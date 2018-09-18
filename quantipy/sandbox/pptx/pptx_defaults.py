@@ -9,12 +9,13 @@ from pptx.util import (
 from collections import OrderedDict
 
 import pandas as pd
+import copy
 
 # ----------------------------------------------------------------------------
 # Font defaults
 
 default_font_name='Trebuchet MS'
-#default_font_file='fonts\Raleway-Regular.ttf'
+# default_font_file='fonts\Raleway-Regular.ttf'
 
 default_font = OrderedDict([
     ('font_name', default_font_name),
@@ -34,11 +35,11 @@ default_font_legend = default_font.copy()
 default_font_caxis = default_font.copy()
 
 # Chart Value axis
-default_font_vaxis  = default_font.copy()
+default_font_vaxis = default_font.copy()
 default_font_vaxis['font_bold'] = True
 
 # Chart data labels
-default_font_data_label  = default_font.copy()
+default_font_data_label = default_font.copy()
 default_font_data_label['font_size'] = 8.5
 default_font_data_label['font_color'] = (0, 0, 0)
 
@@ -115,11 +116,14 @@ default_table = OrderedDict([
 ])
 
 default_side_table = default_table.copy()
-default_side_table['show_side_member']=False
-default_side_table['values_column_width']=Cm(1.8)
-default_side_table['top_member_row_height']=Cm(1.7)
+default_side_table['show_side_member'] = False
+default_side_table['values_column_width'] = Cm(1.8)
+default_side_table['top_member_row_height'] = Cm(1.7)
+default_side_table['values_textframe_kwargs'] = default_textframe.copy()
 default_side_table['values_textframe_kwargs']['horizontal_alignment'] = 'center'
+default_side_table['top_member_textframe_kwargs'] = default_textframe.copy()
 default_side_table['top_member_textframe_kwargs']['horizontal_alignment'] = 'center'
+default_side_table['top_member_cell_kwargs'] = default_textframe.copy()
 default_side_table['top_member_cell_kwargs']['vertical_alignment'] = 'middle'
 default_side_table['values_suffix'] = '%'
 
