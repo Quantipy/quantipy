@@ -1,15 +1,14 @@
 # encoding: utf-8
 
-from pptx.util import (
-    Emu,
-    Pt,
-    Cm,
-    Inches)
+# from pptx.util import (
+#    Emu,
+#    Pt,
+#    Cm,
+#    Inches)
 
 from collections import OrderedDict
 
 import pandas as pd
-import copy
 
 # ----------------------------------------------------------------------------
 # Font defaults
@@ -48,10 +47,10 @@ default_font_data_label['font_color'] = (0, 0, 0)
 
 default_textframe = OrderedDict([
     ('fit_text', True),
-    ('margin_left', Cm(0.25)),
-    ('margin_right', Cm(0.25)),
-    ('margin_top', Cm(0.13)),
-    ('margin_bottom', Cm(0.13)),
+    ('margin_left', 90000),  # Cm(0.25)
+    ('margin_right', 90000),  # Cm(0.25)
+    ('margin_top', 46800),  # Cm(0.13)
+    ('margin_bottom', 46800),  # Cm(0.13)
     ('vertical_alignment', 'top'),
     ('horizontal_alignment', 'left'),
     ('font_kwargs', default_font.copy())
@@ -61,10 +60,10 @@ default_textframe = OrderedDict([
 # Textbox defaults
 default_textbox = OrderedDict([
     ('text', ''),
-    ('left', Cm(2.31)),
-    ('top', Cm(3.25)),
-    ('width', Cm(29.23)),
-    ('height', Cm(1.75)),
+    ('left', 831600),  # Cm(2.31)
+    ('top', 1170000),  # Cm(3.25)
+    ('width', 10522800),  # Cm(29.23)
+    ('height', 630000),  # Cm(1.75)
     ('rotation', 0),
     ('textbox_fill_solid', False),
     ('textbox_color', (100, 0, 0)),
@@ -75,16 +74,16 @@ default_textbox = OrderedDict([
 # ---------------------------------------------------------------------------
 # Table cell defaults
 default_cell_kwargs = OrderedDict([
-    ('margin_left', Cm(0.1)),
-    ('margin_right', Cm(0.1)),
-    ('margin_top', Cm(0.1)),
-    ('margin_bottom', Cm(0.1)),
+    ('margin_left', 36000),  # Cm(0.1)
+    ('margin_right', 36000),  # Cm(0.1)
+    ('margin_top', 36000),  # Cm(0.1)
+    ('margin_bottom', 36000),  # Cm(0.1)
     ('vertical_alignment', 'top'),
     ('shading', True),
     ('shading_color', (255,255,255)),
 ])
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Table defaults
 default_table = OrderedDict([
     ('dataframe', pd.DataFrame()),
@@ -92,17 +91,17 @@ default_table = OrderedDict([
     ('left', 838800), ('top', 1476000), ('width', 10515600), ('height', 4140000),
 
     ('show_side_member', True),
-    ('side_member_column_width', Cm(6)),
+    ('side_member_column_width', 2160000),  # Cm(6)
     ('side_member_textframe_kwargs', default_textframe.copy()),
     ('side_member_cell_kwargs', default_cell_kwargs.copy()),
 
     ('show_top_member', True),
-    ('top_member_row_height', Cm(1)),
+    ('top_member_row_height', 360000),  # Cm(1)
     ('top_member_textframe_kwargs', default_textframe.copy()),
     ('top_member_cell_kwargs', default_cell_kwargs.copy()),
 
-    ('values_row_height', Cm(1)),
-    ('values_column_width', Cm(2)),
+    ('values_row_height', 360000),  # Cm(1)
+    ('values_column_width', 720000),  # Cm(2)
     ('values_textframe_kwargs', default_textframe.copy()),
     ('values_cell_kwargs', default_cell_kwargs.copy()),
     ('values_prefix', None),
@@ -117,8 +116,8 @@ default_table = OrderedDict([
 
 default_side_table = default_table.copy()
 default_side_table['show_side_member'] = False
-default_side_table['values_column_width'] = Cm(1.8)
-default_side_table['top_member_row_height'] = Cm(1.7)
+default_side_table['values_column_width'] = 648000  # Cm(1.8)
+default_side_table['top_member_row_height'] = 612000  # Cm(1.7)
 default_side_table['values_textframe_kwargs'] = default_textframe.copy()
 default_side_table['values_textframe_kwargs']['horizontal_alignment'] = 'center'
 default_side_table['top_member_textframe_kwargs'] = default_textframe.copy()
@@ -190,13 +189,13 @@ default_chart = OrderedDict([
     ('xl_number_format', '0.00%')
 ])
 
-#--------------------------
+# --------------------------
 # Bar_Clustered
 default_chart_bar = default_chart.copy()
 # fix y axis (False, 'center'), Currently only an option for bar chart, legend is not available if used.
 default_chart_bar['fix_yaxis'] = False
 
-#--------------------------
+# --------------------------
 # Bar_Stacked_100%
 default_chart_bar_stacked100 = default_chart.copy()
 default_chart_bar_stacked100['chart_type'] = 'bar_stacked_100'
@@ -209,7 +208,7 @@ default_chart_bar_stacked100['data_labels_position'] = 'center'
 # default_chart_bar_stacked100['plot_vary_by_cat'] = True
 default_chart_bar_stacked100['plot_overlap'] = 100
 
-#---------------------------
+# ---------------------------
 # Line
 default_chart_line = default_chart.copy()
 default_chart_line['chart_type'] = 'line'
@@ -225,7 +224,7 @@ default_chart_line['data_labels_position'] = 'above'
 default_chart_line['plot_overlap'] = 10
 default_chart_line['smooth_line'] = False
 
-#----------------------------
+# ----------------------------
 # Column
 default_chart_column = default_chart.copy()
 default_chart_column['chart_type'] = 'column_clustered'
@@ -238,7 +237,7 @@ default_chart_column['caxis_tick_labels_offset'] = 100
 # Plot properties
 default_chart_column['plot_overlap'] = -10
 
-#---------------------------
+# ---------------------------
 # Pie
 default_chart_pie = default_chart.copy()
 default_chart_pie['chart_type'] = 'pie'
@@ -249,7 +248,7 @@ default_chart_pie['legend_horz_offset'] = 0
 # Plot properties
 default_chart_pie['plot_vary_by_cat'] = True
 
-#----------------------------
+# ----------------------------
 # Question_text-dict for default_slide_kwargs
 header_shape = default_textbox.copy()
 header_shape['left'] = 838800
@@ -262,7 +261,7 @@ header_shape['textframe_kwargs']['font_kwargs']['font_size']=11
 header_shape['textframe_kwargs']['font_kwargs']['font_bold']=True
 header_shape['textframe_kwargs']['font_kwargs']['font_italic']=True
 
-#----------------------------
+# ----------------------------
 # Base_description-dict for default_slide_kwargs
 footer_shape = default_textbox.copy()
 footer_shape['left'] = 838800
