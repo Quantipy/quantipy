@@ -1768,8 +1768,6 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
 
     # convert right cols to delimited set if depending left col is delimited set
     for col in data_right.columns.tolist():
-        if col == 'Q8_1':
-
         if (meta_left['columns'].get(col, {}).get('type') == 'delimited set'
             and not meta_right['columns'][col]['type'] == 'delimited set'):
             data_right[col] = data_right[col].apply(
