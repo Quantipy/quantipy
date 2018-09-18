@@ -1093,20 +1093,61 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
     """
     Merge the metadata from the right column into the left column.
     """
+    _compatible_types(left_column, right_column)
     left_column['text'] = merge_text_meta(
             left_column['text'],
             right_column['text'],
             overwrite=overwrite)
-    try:
-        if 'values' in left_column:
-            left_column['values'] = merge_values_meta(
-                left_column['values'],
-                right_column['values'],
-                overwrite=overwrite)
-    except KeyError:
-        msg = "Found 'values' object in left {}, but not in right dataset!"
-        print msg.format(left_column['name'])
+    if 'values' in left_column and 'values' in right_column:
+        left_column['values'] = merge_values_meta(
+            left_column['values'],
+            right_column['values'],
+            overwrite=overwrite)
     return left_column
+
+def _compatible_types(left_column, right_column):
+    l_type = left_column['type']
+    r_type = right_column['type']
+    if l_type == r_type: return None
+    err = {
+        'array': [
+            'int', 'float', 'single', 'delimited set', 'string', 'date', 'time'],
+        'int': [
+            'float', 'delimited set', 'string', 'date', 'time', 'array'],
+        'float': [
+            'delimited set', 'string', 'date', 'time', 'array'],
+        'single': [
+            'delimited set', 'string', 'date', 'time', 'array'],
+        'delimited set': [
+            'string', 'date', 'time', 'array'],
+        'string': [
+            'int', 'float', 'single', 'delimited set', 'date', 'time', 'array'],
+        'date': [
+            'int', 'float', 'single', 'delimited set', 'string', 'time', 'array'],
+        'time': [
+            'int', 'float', 'single', 'delimited set', 'string', 'time', 'array'],
+        }
+    warn = {
+        'int': [
+            'single'],
+        'float': [
+            'int', 'single'],
+        'single': [
+            'int', 'float'],
+        'delimited set': [
+            'single', 'int', 'float'],
+    }
+    if r_type in err[l_type]:
+        msg = "\n'{}': Trying to merge incompatibe types: Found '{}' in left "
+        msg += "and '{}' in right dataset."
+        raise TypeError(msg.format(left_column['name'], l_type, r_type))
+    elif r_type in warn[l_type]:
+        msg = "\n'{}': Merge inconsistent types: Found '{}' in left "
+        msg += "and '{}' in right dataset."
+        warnings.warn(msg.format(left_column['name'], l_type, r_type))
+    else:
+        msg = "\n'{}': Unvalid type found in left dataset '{}'."
+        raise TypeError(msg.format(left_column['name'], l_type))
 
 def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
     """
@@ -1724,6 +1765,15 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
         data_right = data_right.loc[~vmerge_slicer]
+
+    # convert right cols to delimited set if depending left col is delimited set
+    for col in data_right.columns.tolist():
+        if col == 'Q8_1':
+
+        if (meta_left['columns'].get(col, {}).get('type') == 'delimited set'
+            and not meta_right['columns'][col]['type'] == 'delimited set'):
+            data_right[col] = data_right[col].apply(
+                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
 
     vdata = pd.concat([
         data_left,
