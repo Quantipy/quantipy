@@ -1093,20 +1093,61 @@ def merge_column_metadata(left_column, right_column, overwrite=False):
     """
     Merge the metadata from the right column into the left column.
     """
+    _compatible_types(left_column, right_column)
     left_column['text'] = merge_text_meta(
             left_column['text'],
             right_column['text'],
             overwrite=overwrite)
-    try:
-        if 'values' in left_column:
-            left_column['values'] = merge_values_meta(
-                left_column['values'],
-                right_column['values'],
-                overwrite=overwrite)
-    except KeyError:
-        msg = "Found 'values' object in left {}, but not in right dataset!"
-        print msg.format(left_column['name'])
+    if 'values' in left_column and 'values' in right_column:
+        left_column['values'] = merge_values_meta(
+            left_column['values'],
+            right_column['values'],
+            overwrite=overwrite)
     return left_column
+
+def _compatible_types(left_column, right_column):
+    l_type = left_column['type']
+    r_type = right_column['type']
+    if l_type == r_type: return None
+    err = {
+        'array': [
+            'int', 'float', 'single', 'delimited set', 'string', 'date', 'time'],
+        'int': [
+            'float', 'delimited set', 'string', 'date', 'time', 'array'],
+        'float': [
+            'delimited set', 'string', 'date', 'time', 'array'],
+        'single': [
+            'delimited set', 'string', 'date', 'time', 'array'],
+        'delimited set': [
+            'string', 'date', 'time', 'array'],
+        'string': [
+            'int', 'float', 'single', 'delimited set', 'date', 'time', 'array'],
+        'date': [
+            'int', 'float', 'single', 'delimited set', 'string', 'time', 'array'],
+        'time': [
+            'int', 'float', 'single', 'delimited set', 'string', 'time', 'array'],
+        }
+    warn = {
+        'int': [
+            'single'],
+        'float': [
+            'int', 'single'],
+        'single': [
+            'int', 'float'],
+        'delimited set': [
+            'single', 'int', 'float'],
+    }
+    if r_type in err[l_type]:
+        msg = "\n'{}': Trying to merge incompatibe types: Found '{}' in left "
+        msg += "and '{}' in right dataset."
+        raise TypeError(msg.format(left_column['name'], l_type, r_type))
+    elif r_type in warn[l_type]:
+        msg = "\n'{}': Merge inconsistent types: Found '{}' in left "
+        msg += "and '{}' in right dataset."
+        warnings.warn(msg.format(left_column['name'], l_type, r_type))
+    else:
+        msg = "\n'{}': Unvalid type found in left dataset '{}'."
+        raise TypeError(msg.format(left_column['name'], l_type))
 
 def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
     """
@@ -1382,7 +1423,7 @@ def get_sets_from_set(meta, set_name):
     return sets
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None, verbose=True):
+           overwrite_text=False, from_set=None, merge_existing=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1412,6 +1453,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    merge_existing : str/ list of str, default None, {'all', [var_names]}
+        Specify if codes should be merged for delimited sets for defined
+        variables.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
 
@@ -1420,6 +1464,19 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     meta, data : dict, pandas.DataFrame
        Updated Quantipy dataset.
     """
+    def _merge_delimited_sets(x):
+        codes = []
+        x = x.replace('nan', '')
+        for c in x.split(';'):
+            if not c:
+                continue
+            if not c in codes:
+                codes.append(c)
+        if not codes:
+            return np.NaN
+        else:
+            return ';'.join(sorted(codes)) + ';'
+
     if all([kwarg is None for kwarg in [on, left_on, right_on]]):
         raise TypeError("You must provide a column name for either 'on' or "
                         "both 'left_on' AND 'right_on'")
@@ -1466,7 +1523,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
         if col_updates:
             updata_left = data_left.set_index([left_on])[col_updates].copy()
-
+            sets = [c for c in col_updates
+                    if meta_left['columns'][c]['type'] == 'delimited set']
+            non_sets = [c for c in col_updates if not c in sets]
             if update_right_on:
                 updata_right = data_right.set_index(right_on, drop=False)[col_updates].copy()
             else:
@@ -1474,8 +1533,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
             if verbose:
                 print '------ updating data for known columns'
-            updata_left.update(updata_right)
-            for update_col in col_updates:
+            updata_left.update(updata_right[non_sets])
+            for update_col in non_sets:
                 if verbose:
                     print "..{}".format(update_col)
                 try:
@@ -1484,6 +1543,14 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                 except:
                     data_left[update_col] = updata_left[update_col].astype(
                         'object').values
+            if merge_existing:
+                for col in sets:
+                    if not (merge_existing == 'all' or col in merge_existing):
+                        continue
+                    if verbose:
+                        print "..{}".format(update_col)
+                    merge_set = data_left[col].astype(str) + data_right[col].astype(str)
+                    data_left[col] = merge_set.apply(lambda x: _merge_delimited_sets(x))
 
         if verbose:
             print '------ appending new columns'
@@ -1724,6 +1791,13 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     if not blind_append:
         vmerge_slicer = data_right[left_on].isin(data_left[right_on])
         data_right = data_right.loc[~vmerge_slicer]
+
+    # convert right cols to delimited set if depending left col is delimited set
+    for col in data_right.columns.tolist():
+        if (meta_left['columns'].get(col, {}).get('type') == 'delimited set'
+            and not meta_right['columns'][col]['type'] == 'delimited set'):
+            data_right[col] = data_right[col].apply(
+                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
 
     vdata = pd.concat([
         data_left,
