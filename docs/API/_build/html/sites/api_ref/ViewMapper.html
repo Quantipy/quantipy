@@ -91,9 +91,16 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (October)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-17-10-2017">Latest (17/10/2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (September)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-04-06-2018">Latest (04/06/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-13-11-2017">sd (13/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-17-10-2017">sd (17/10/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-15-09-2017">sd (15/09/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-31-08-2017">sd (31/08/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
@@ -196,7 +203,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -350,7 +357,7 @@
 <dl class="class">
 <dt id="quantipy.ViewMapper">
 <em class="property">class </em><code class="descclassname">quantipy.</code><code class="descname">ViewMapper</code><span class="sig-paren">(</span><em>views=None</em>, <em>template=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.ViewMapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies View computation results to Links based on the view method&#8217;s
+<dd><p>Applies View computation results to Links based on the view method’s
 kwargs, handling the coordination and structuring side of the aggregation
 process.</p>
 <dl class="method">
@@ -362,10 +369,10 @@ process.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> (<em>str</em>) &#8211; The short name of the View.</li>
-<li><strong>method</strong> (<em>view method</em>) &#8211; The view method that will be used to derivce the result</li>
-<li><strong>kwargs</strong> (<em>dict</em>) &#8211; The keyword arguments needed by the view method.</li>
-<li><strong>template</strong> (<em>dict</em>) &#8211; A ViewMapper template that contains information on view method and
+<li><strong>name</strong> (<em>str</em>) – The short name of the View.</li>
+<li><strong>method</strong> (<em>view method</em>) – The view method that will be used to derivce the result</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – The keyword arguments needed by the view method.</li>
+<li><strong>template</strong> (<em>dict</em>) – A ViewMapper template that contains information on view method and
 kwargs values to iterate over.</li>
 </ul>
 </td>
@@ -389,8 +396,8 @@ kwargs values to iterate over.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>method</strong> (<em>{'frequency'</em><em>, </em><em>'descriptives'</em><em>, </em><em>'coltests'}</em>) &#8211; The baseline view method to be used.</li>
-<li><strong>iterators</strong> (<em>dict</em>) &#8211; A dictionary mapping of view method kwargs to lists of values.</li>
+<li><strong>method</strong> (<em>{'frequency'</em><em>, </em><em>'descriptives'</em><em>, </em><em>'coltests'}</em>) – The baseline view method to be used.</li>
+<li><strong>iterators</strong> (<em>dict</em>) – A dictionary mapping of view method kwargs to lists of values.</li>
 </ul>
 </td>
 </tr>
@@ -413,8 +420,8 @@ kwargs values to iterate over.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>views</strong> (<em>list of str</em>) &#8211; The selection of View names to keep.</li>
-<li><strong>strict_selection</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; TODO</li>
+<li><strong>views</strong> (<em>list of str</em>) – The selection of View names to keep.</li>
+<li><strong>strict_selection</strong> (<em>bool</em><em>, </em><em>default True</em>) – TODO</li>
 </ul>
 </td>
 </tr>
@@ -481,7 +488,7 @@ kwargs values to iterate over.</li>
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

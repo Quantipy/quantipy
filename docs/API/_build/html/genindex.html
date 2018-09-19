@@ -90,9 +90,10 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="sites/release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sites/release_notes/01_latest.html">Upcoming (May)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sites/release_notes/01_latest.html#latest-04-04-2018">Latest (04/04/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sites/release_notes/01_latest.html">Upcoming (September)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sites/release_notes/01_latest.html#latest-04-06-2018">Latest (04/06/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sites/release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sites/release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sites/release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sites/release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
@@ -201,7 +202,7 @@
 <li class="toctree-l3"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -506,6 +507,8 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.drop">drop() (quantipy.DataSet method)</a>
 </li>
+      <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.drop_duplicates">drop_duplicates() (quantipy.DataSet method)</a>
+</li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.duplicates">duplicates() (quantipy.DataSet method)</a>
 </li>
   </ul></td>
@@ -542,6 +545,8 @@
         <li><a href="sites/api_ref/quantify_engine.html#quantipy.Quantity.filter">(quantipy.Quantity method)</a>
 </li>
       </ul></li>
+      <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.find">find() (quantipy.DataSet method)</a>
+</li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.find_duplicate_texts">find_duplicate_texts() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.flatten">flatten() (quantipy.DataSet method)</a>
@@ -680,15 +685,17 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.merge_texts">merge_texts() (quantipy.DataSet method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.meta">meta() (quantipy.DataSet method)</a>
 
       <ul>
         <li><a href="sites/api_ref/View.html#quantipy.View.meta">(quantipy.View method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.meta_to_json">meta_to_json() (quantipy.DataSet method)</a>
+</li>
+      <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.min_value_count">min_value_count() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/View.html#quantipy.View.missing">missing() (quantipy.View method)</a>
 </li>
@@ -698,6 +705,8 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.names">names() (quantipy.DataSet method)</a>
+</li>
       <li><a href="sites/api_ref/View.html#quantipy.View.nests">nests() (quantipy.View method)</a>
 </li>
   </ul></td>
@@ -756,6 +765,8 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.recode">recode() (quantipy.DataSet method)</a>
 </li>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.recode_from_net_def">recode_from_net_def() (quantipy.Stack static method)</a>
+</li>
       <li><a href="sites/api_ref/stack.html#quantipy.Stack.reduce">reduce() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/stack.html#quantipy.Stack.refresh">refresh() (quantipy.Stack method)</a>
@@ -789,6 +800,8 @@
       <li><a href="sites/api_ref/quantify_engine.html#quantipy.Quantity.rescale">rescale() (quantipy.Quantity method)</a>
 </li>
       <li><a href="sites/api_ref/View.html#quantipy.View.rescaling">rescaling() (quantipy.View method)</a>
+</li>
+      <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.resolve_name">resolve_name() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.restore_item_texts">restore_item_texts() (quantipy.DataSet method)</a>
 </li>
@@ -896,6 +909,8 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.unbind">unbind() (quantipy.DataSet method)</a>
+</li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.uncode">uncode() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.undimensionize">undimensionize() (quantipy.DataSet method)</a>
@@ -1008,7 +1023,7 @@
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
       <script type="text/javascript" src="_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
