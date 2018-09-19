@@ -40,6 +40,34 @@ automatically to singles if only one category is included.
 
 """"
 
+**Update**: merge warnings + merging delimites sets
+
+Warnings in ``hmerge()`` and ``vmerge()`` are updated. If a column exists in
+the left and the right dataset, the type is compared. Some type inconsistencies
+are allowed, but return a warning, while others end up in a raise.
+
+delimited sets in ``vmerge()``:
+
+If a column is a delimited set in the left dataset, but a single, int or float
+in the right dataset, the data of the right column is converted into a delimited
+set.
+
+delimited sets in ``hmerge(...merge_existing=None)``:
+
+For the hmerge a new parameter ``merge_existing`` is included, which can be
+``None``, a list of variable-names or ``'all'``.
+
+If delimited sets are included in left and right dataset:
+
+* ``merge_existing=None``: Only meta is adjusted. Data is untouched (left data
+is taken).
+* ``merge_existing='all'``: Meta and data are merged for all delimited sets,
+that are included in both datasets.
+* ``merge_existing=[variable-names]``: Meta and data are merged for all
+delimited sets, that are listed and included in both datasets.
+
+""""
+
 **Update**: encoding in ``DataSet.get_batch(name)``
 
 The method is not that encoding sensitive anymore. It returns the depending
