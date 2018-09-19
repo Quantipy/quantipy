@@ -1466,8 +1466,9 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     """
     def _merge_delimited_sets(x):
         codes = []
+        x = x.replace('nan', '')
         for c in x.split(';'):
-            if not c or c == 'nan':
+            if not c:
                 continue
             if not c in codes:
                 codes.append(c)
@@ -1548,9 +1549,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                         continue
                     if verbose:
                         print "..{}".format(update_col)
-                    merge_set = data_left[col] + data_right[col].astype(str)
-                    data_left[col] = merge_set.astype(str).apply(
-                        lambda x: _merge_delimited_sets(x))
+                    merge_set = data_left[col].astype(str) + data_right[col].astype(str)
+                    data_left[col] = merge_set.apply(lambda x: _merge_delimited_sets(x))
 
         if verbose:
             print '------ appending new columns'
