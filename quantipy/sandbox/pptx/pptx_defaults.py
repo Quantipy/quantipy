@@ -120,11 +120,20 @@ default_side_table['values_column_width'] = 648000  # Cm(1.8)
 default_side_table['top_member_row_height'] = 612000  # Cm(1.7)
 default_side_table['values_textframe_kwargs'] = default_textframe.copy()
 default_side_table['values_textframe_kwargs']['horizontal_alignment'] = 'center'
+default_side_table['values_textframe_kwargs']['font_kwargs'] = default_font.copy()
+default_side_table['values_textframe_kwargs']['font_kwargs']['font_size'] = 8
+
 default_side_table['top_member_textframe_kwargs'] = default_textframe.copy()
 default_side_table['top_member_textframe_kwargs']['horizontal_alignment'] = 'center'
+default_side_table['top_member_textframe_kwargs']['font_kwargs'] = default_font.copy()
+default_side_table['top_member_textframe_kwargs']['font_kwargs']['font_size'] = 8
+
 default_side_table['top_member_cell_kwargs'] = default_cell_kwargs.copy()
 default_side_table['top_member_cell_kwargs']['vertical_alignment'] = 'middle'
 default_side_table['values_suffix'] = '%'
+
+default_side_table['side_member_textframe_kwargs']['font_kwargs'] = default_font.copy()
+default_side_table['side_member_textframe_kwargs']['font_kwargs']['font_size'] = 8
 
 # -------------------------------------------------------------------------------------------
 # Chart defaults (Bar_clustered 1 series)
