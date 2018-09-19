@@ -201,6 +201,8 @@ class PptxDataFrame(object):
     def to_table(self, decimals=2, pct_decimals=2):
 
         df = self.df
+        if df.empty:
+            return self
         if self.array_style == -1:
             df = df.T
 
