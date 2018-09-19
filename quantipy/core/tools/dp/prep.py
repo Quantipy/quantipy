@@ -1465,13 +1465,16 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
        Updated Quantipy dataset.
     """
     def _merge_delimited_sets(x):
-        # codes = []
-        # for c in x:
-        #     if c == np.NaN
-        # ';'.join(sorted(list(set(x.split(';'))))) + ';'
-        #                 if len(set(x.split(';'))) > 0 else np.NaN
-        return None
-
+        codes = []
+        for c in x.split(';'):
+            if not c or c == 'nan':
+                continue
+            if not c in codes:
+                codes.append(c)
+        if not codes:
+            return np.NaN
+        else:
+            return ';'.join(sorted(codes)) + ';'
 
     if all([kwarg is None for kwarg in [on, left_on, right_on]]):
         raise TypeError("You must provide a column name for either 'on' or "
@@ -1545,9 +1548,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                         continue
                     if verbose:
                         print "..{}".format(update_col)
-                    print data_left[col].head()
-                    data_left[col] = data_left[col] + data_right[col].astype(str)
-                    data_left[col] = data_left[col].astype(str).apply(
+                    merge_set = data_left[col] + data_right[col].astype(str)
+                    data_left[col] = merge_set.astype(str).apply(
                         lambda x: _merge_delimited_sets(x))
 
         if verbose:
