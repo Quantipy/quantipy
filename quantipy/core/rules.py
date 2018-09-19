@@ -10,13 +10,17 @@ class Rules(object):
     def __init__(self, link, view_name, axes=['x', 'y']):
         self.link = link
         self.view_name = view_name
-        self.view_df = link[view_name].dataframe
         self.stack_base = link.stack[link.data_key]
         self.link_base = self.stack_base[link.filter]
         self.link_weight = view_name.split('|')[-2]
         self.meta = self.stack_base.meta
         self.array_summary = self._is_array_summary()
         self.transposed_summary = self._is_transposed_summary()
+        if self.transposed_summary:
+            self.view_df = link[view_name].dataframe.T
+            self.array_summary = True
+        else:
+            self.view_df = link[view_name].dataframe
         self._xrule_col = None
         self._xrule_col = None
         self._sort_x_w = None
@@ -27,16 +31,17 @@ class Rules(object):
         self.y_slicer = None
         self.rules_view_df = None
 
-
-
     def rules_df(self):
-        return self.rules_view_df
+        if self.transposed_summary:
+            return self.rules_view_df.T
+        else:
+            return self.rules_view_df
 
     def show_rules(self, axis=None):
         """
         """
         if not axis:
-            return {'X': self.x_rules}, {'y': self.y_rules}
+            return {'x': self.x_rules}, {'y': self.y_rules}
         elif axis == 'x':
             return {'x': self.x_rules}
         elif axis == 'y':
@@ -58,19 +63,18 @@ class Rules(object):
 
     def apply(self):
         self.get_slicer()
+
         viable_axes = self.rule_viable_axes()
         if not viable_axes:
             df = self.view_df
         else:
             df = self.view_df.copy()
+
         if 'x' in viable_axes and not self.x_slicer is None:
             rule_codes = set(self.x_slicer)
             view_codes = set(df.index.tolist())
             if not rule_codes - view_codes:
                 df = df.loc[self.x_slicer]
-
-        if 'x' in viable_axes and self.transposed_summary and self.y_slicer:
-            df = df.loc[self.y_slicer]
 
         if 'y' in viable_axes and not self.y_slicer is None:
             df = df[self.y_slicer]
@@ -132,8 +136,6 @@ class Rules(object):
             views = self.link_base[col_key]['@'].keys()
             w = self.link_weight
 
-            # weight = self.rules_weight
-
             expanded_net = self._find_expanded_nets(views, rule_axis)
             if 'sortx' in rule_axis:
                 on_mean = rule_axis['sortx'].get('sort_on', '@') == 'mean'
@@ -153,18 +155,13 @@ class Rules(object):
 
                 f = self._get_frequency_via_stack(col_key, axis)
 
-            if axis == 0 and self.array_summary:
-                slice_array_items = True
-            else:
-                slice_array_items = False
-
-            if self.transposed_summary or (not slice_array_items and self.array_summary):
+            # if expanded_net and not ('sortx' in rule_axis and on_mean)
+            #     rules_slicer = f.index.values.tolist()
+            # el
+            if self.array_summary and axis == 1:
                 rules_slicer = self._get_rules_slicer(f.T, rule_axis)
             else:
-                if not expanded_net or ('sortx' in rule_axis and on_mean):
-                    rules_slicer = self._get_rules_slicer(f, rule_axis)
-                else:
-                    rules_slicer = f.index.values.tolist()
+                rules_slicer = self._get_rules_slicer(f, rule_axis)
             try:
                 rules_slicer.remove((col_key, 'All'))
             except:
@@ -183,9 +180,11 @@ class Rules(object):
             return None
         k, f, x, y = self.link.data_key, self.link.filter, self.link.x, self.link.y
 
+        if self.transposed_summary:
+            x, y = y, x
         rules = None
         if rules_axis == 'x':
-            if not self.array_summary and not self.transposed_summary:
+            if not self.array_summary:
                 xcol = x
                 ycol = None
                 try:
@@ -193,7 +192,7 @@ class Rules(object):
                     self._xrule_col = x
                 except:
                     pass
-            elif self.array_summary:
+            else:
                 xcol = x
                 ycol = '@'
                 try:
@@ -201,18 +200,10 @@ class Rules(object):
                     self._xrule_col = x
                 except:
                     pass
-            elif self.transposed_summary:
-                xcol = '@'
-                ycol = y
-                try:
-                    rules = self.meta['masks'][y]['rules']['x']
-                    self._xrule_col = y
-                except:
-                    pass
             if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
                 self._sort_x_w = rules['sortx']['with_weight']
         elif rules_axis == 'y':
-            if not self.array_summary and not self.transposed_summary:
+            if not self.array_summary:
                 xcol = None
                 ycol = x
                 try:
@@ -220,20 +211,12 @@ class Rules(object):
                     self._yrule_col = y
                 except:
                     pass
-            elif self.array_summary:
+            else:
                 xcol = x
                 ycol = '@'
                 try:
                     rules = self.meta['masks'][x]['rules']['y']
                     self._yrule_col = x
-                except:
-                    pass
-            elif self.transposed_summary:
-                xcol = '@'
-                ycol = y
-                try:
-                    rules = self.meta['masks'][y]['rules']['x']
-                    self._yrule_col = y
                 except:
                     pass
             if rules and 'sortx' in rules and 'with_weight' in rules['sortx']:
@@ -554,20 +537,18 @@ class Rules(object):
         condensed_y = False
 
         meta = self.meta
-        x, y = self.link.x, self.link.y
+        if self.transposed_summary:
+            y, x = self.link.x, self.link.y
+        else:
+            x, y = self.link.x, self.link.y
         vk = self.view_name
         array_summary = (x in meta['masks'] and y == '@')
-        transposed_summary = (y in meta['masks'] and x == '@')
         v_method = vk.split('|')[1]
         relation = vk.split('|')[2]
         s_name = vk.split('|')[-1]
         descriptive = v_method.startswith('.d')
         exp_net = '}+]' in relation
         array_sum_freqs = array_summary and s_name in ['counts', 'c%', 'r%']
-
-
-        if transposed_summary:
-            x, y = y, x
 
         if (relation.split(":")[0].startswith('x') and not exp_net) or descriptive:
             if not array_summary:

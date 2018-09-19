@@ -410,7 +410,8 @@ class Rim:
                 sample_codes = check_df[target_col].value_counts(sort=False).index.tolist()
 
                 miss_in_sample = [code for code in target_codes
-                                   if code not in sample_codes]
+                                  if code not in sample_codes
+                                  and not target.values()[0][code] == 0.0]
 
                 miss_in_targets = [code for code in sample_codes
                                    if code not in target_codes]

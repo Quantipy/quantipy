@@ -1925,7 +1925,8 @@ class Chain(object):
                 else:
                     return False
 
-    @lazy_property
+    # @lazy_property
+    @property
     def _views_per_rows(self):
         """
         """
@@ -2364,6 +2365,59 @@ class Chain(object):
         del self.stack
 
         return self
+
+
+    def _toggle_bases(self, keep_weighted=True):
+        df = self._frame
+        is_array = self._array_style == 0
+        contents = self.contents[0] if is_array else self.contents
+        has_wgt_b = [k for k, v in contents.items()
+                     if v['is_c_base'] and v['is_weighted']]
+        has_unwgt_b = [k for k, v in contents.items()
+                       if v['is_c_base'] and not v['is_weighted']]
+        if not (has_wgt_b and has_unwgt_b):
+            return None
+
+        if keep_weighted:
+            drop_rows = has_unwgt_b
+            names = ['x|f|x:|||cbase']
+        else:
+            drop_rows = has_wgt_b
+            names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
+
+        if is_array:
+            drop_labs = [df.columns[r] for r in drop_rows]
+            keep_rows = [x for x, y in enumerate(self._frame.columns.get_level_values(1).tolist())
+                         if not x in drop_rows]
+        else:
+            drop_labs = [df.index[r] for r in drop_rows]
+            keep_rows = [x for x, y in enumerate(self._frame.index.get_level_values(1).tolist())
+                         if not x in drop_rows]
+
+        for v in self.views.copy():
+            if v in names:
+                del self._views[v]
+        self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
+
+        if is_array:
+            self.columns = self._slice_edited_index(self.columns, keep_rows)
+        else:
+            self.index = self._slice_edited_index(self.index, keep_rows)
+        return None
+
+    def _slice_edited_index(self, axis, positions):
+        """
+        """
+        l_zero = axis.get_level_values(0).values.tolist()[0]
+        l_one = axis.get_level_values(1).values.tolist()
+        l_one = [l_one[p] for p in positions]
+        axis_tuples = [(l_zero, lab) for lab in l_one]
+        if self.array_style == 0:
+            names = ['Array', 'Questions']
+        else:
+            names = ['Question', 'Values']
+        return pd.MultiIndex.from_tuples(axis_tuples, names=names)
+
 
     def _drop_substituted_views(self, link):
         if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
@@ -3075,8 +3129,20 @@ class Chain(object):
         return map(unicode, level_1_text)
 
     @staticmethod
-    def _is_multibase(views, basetype):
-        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
+    def _unwgt_label(views, base_vk):
+        valid = ['cbase', 'cbase_gross', 'rbase', 'ebase']
+        basetype = base_vk.split('|')[-1]
+        views_split = [v.split('|') for v in views]
+        multibase = len([v for v in views_split if v[-1] == basetype]) > 1
+        weighted = base_vk.split('|')[-2]
+        w_diff = len([v for v in views_split
+                      if not v[-1] in valid and not v[-2] == weighted]) > 0
+        if weighted:
+            return False
+        elif multibase or w_diff:
+            return True
+        else:
+            return False
 
     def _add_base_text(self, base_val, tk, bases):
         if self._array_style == 0 and bases != 'all':
@@ -3098,30 +3164,28 @@ class Chain(object):
         tk_transl = tk if tk in self._transl else self._default_text
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
-        weighted = base_vk.split('|')[-2]
-        is_multibase = self._is_multibase(self._views.keys(), basetype)
-        if basetype == 'cbase_gross':
-            if weighted or (not weighted and not is_multibase):
-                base_value = self._transl[tk_transl]['gross All']
-            else:
+        unwgt_label = self._unwgt_label(self._views.keys(), base_vk)
+
+        if unwgt_label:
+            if basetype == 'cbase_gross':
                 base_value = self._transl[tk_transl]['no_w_gross_All']
-        elif basetype == 'ebase':
-            if weighted or (not weighted and not is_multibase):
-                base_value = 'Effective base'
-            else:
+            elif basetype == 'ebase':
                 base_value = 'Unweighted effective base'
+            else:
+                base_value = self._transl[tk_transl]['no_w_All']
         else:
-            if weighted or (not weighted and not is_multibase):
-                if not bases or (bases == 'simple-no-items'
-                                 and self._is_mask_item):
-                    return self._transl[tk_transl]['All']
+            if basetype == 'cbase_gross':
+                base_value = self._transl[tk_transl]['gross All']
+            elif basetype == 'ebase':
+                base_value = 'Effective base'
+            elif not bases or (bases == 'simple-no-items' and self._is_mask_item):
+                base_value = self._transl[tk_transl]['All']
+            else:
                 key = tk
                 if isinstance(tk, tuple):
                     _, key = tk
                 base_value = self._add_base_text(self._transl[tk_transl]['All'],
                                                  key, bases)
-            else:
-                base_value = self._transl[tk_transl]['no_w_All']
         return base_value
 
     def _get_text(self, value, text_key, item_text=False):
