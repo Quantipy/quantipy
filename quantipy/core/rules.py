@@ -436,7 +436,8 @@ class Rules(object):
             if fixed is None:
                 s_fixed = []
             else:
-                s_fixed = [(name_x, value) for value in fixed]
+                s_fixed = [(name_x, value) for value in fixed
+                           if (name_x, value) in s_sort]
                 # Drop fixed tuples from the sort slicer
                 s_sort = [t for t in s_sort if not t in s_fixed]
 
