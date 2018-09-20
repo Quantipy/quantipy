@@ -206,21 +206,26 @@ class PptxDataFrame(object):
         if self.array_style == -1:
             df = df.T
 
-        indexes = get_indexes_from_list(self.cell_items, PCT_TYPES, exact=False)
+        rows_not_nan = pd.notnull(df).any(axis='columns')
 
+        df = df.fillna('')
+
+        # Percent type cells
+        indexes = get_indexes_from_list(self.cell_items, PCT_TYPES, exact=False)
         df.iloc[:, indexes] *= 100
         df.iloc[:, indexes] = df.iloc[:, indexes].round(decimals=pct_decimals)
         if pct_decimals == 0:
             columns = df.columns[indexes].tolist()
-            indexes_to_int=dict(zip(columns, ['int'] * len(columns)))
-            df = df.astype(indexes_to_int)
+            columns_to_int=dict(zip(columns, ['int'] * len(columns)))
+            df[rows_not_nan] = df[rows_not_nan].astype(columns_to_int)
 
+        # Not percent type cells
         indexes = get_indexes_from_list(self.cell_items, NOT_PCT_TYPES, exact=False)
         df.iloc[:, indexes] = df.iloc[:, indexes].round(decimals=decimals)
         if decimals == 0:
             columns = df.columns[indexes].tolist()
-            indexes_to_int=dict(zip(columns, ['int'] * len(columns)))
-            df = df.astype(indexes_to_int)
+            columns_to_int=dict(zip(columns, ['int'] * len(columns)))
+            df[rows_not_nan] = df[rows_not_nan].astype(columns_to_int)
 
         if self.array_style == -1:
             df = df.T
