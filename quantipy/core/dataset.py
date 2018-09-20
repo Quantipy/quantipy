@@ -6073,8 +6073,8 @@ class DataSet(object):
             if 'rules' not in self._meta['columns'][n]:
                 self._meta['columns'][n]['rules'] = {'x': {}, 'y': {}}
             if not isinstance(slicer, list): slicer = [slicer]
-            slicer = self._clean_codes_against_meta(n, slicer)
-            rule_update = {'slicex': {'values': slicer}}
+            sl = self._clean_codes_against_meta(n, slicer)
+            rule_update = {'slicex': {'values': sl}}
             for ax in axis:
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
@@ -6276,18 +6276,18 @@ class DataSet(object):
             for ax in axis:
                 if collection == 'masks' and ax == 'x' and not hide_values:
                     sources = self.sources(n)
-                    hide = [sources[idx-1]
+                    h = [sources[idx-1]
                             for idx, s in enumerate(sources, start=1) if idx in hide]
                 else:
-                    hide = self._clean_codes_against_meta(n, hide)
-                    if set(hide) == set(self._get_valuemap(n, 'codes')):
+                    h = self._clean_codes_against_meta(n, hide)
+                    if set(h) == set(self._get_valuemap(n, 'codes')):
                         msg = "Cannot hide all values of '{}'' on '{}'-axis"
                         raise ValueError(msg.format(n, ax))
                 if collection == 'masks' and ax == 'x' and hide_values:
                     for s in self.sources(n):
-                        self.hiding(s, hide, 'x')
+                        self.hiding(s, h, 'x')
                 else:
-                    rule_update = {'dropx': {'values': hide}}
+                    rule_update = {'dropx': {'values': h}}
                     self._meta[collection][n]['rules'][ax].update(rule_update)
         return None
 
@@ -6387,7 +6387,8 @@ class DataSet(object):
         return None
 
     @verify(variables={'var': 'both', 'ignore': 'both'})
-    def set_missings(self, var, missing_map='default', ignore=None):
+    def set_missings(self, var, missing_map='default', hide_on_y=True,
+                     ignore=None):
         """
         Flag category definitions for exclusion in aggregations.
 
@@ -6419,14 +6420,20 @@ class DataSet(object):
             self._set_default_missings(ignore)
         else:
             if isinstance(missing_map, list):
-                missing_map = {'exclude': missing_map}
+                m_map = {'exclude': missing_map}
+            else:
+                m_map = org_copy.deepcopy(missing_map)
             for v in var:
                 if v in ignore: continue
-                missing_map = self._clean_missing_map(v, missing_map)
+                v_m_map = self._clean_missing_map(v, m_map)
                 if self._has_missings(v):
-                    self._meta['columns'][v].update({'missings': missing_map})
+                    self._meta['columns'][v].update({'missings': v_m_map})
                 else:
-                    self._meta['columns'][v]['missings'] = missing_map
+                    self._meta['columns'][v]['missings'] = v_m_map
+            if hide_on_y:
+                print missing_map
+                self.hiding(var, missing_map, 'y', True)
+
         return None
 
     # ------------------------------------------------------------------------
