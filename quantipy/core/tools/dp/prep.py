@@ -1137,11 +1137,11 @@ def _compatible_types(left_column, right_column):
         'delimited set': [
             'single', 'int', 'float'],
     }
-    if r_type in err[l_type]:
+    if r_type in err.get(l_type, []):
         msg = "\n'{}': Trying to merge incompatibe types: Found '{}' in left "
         msg += "and '{}' in right dataset."
         raise TypeError(msg.format(left_column['name'], l_type, r_type))
-    elif r_type in warn[l_type]:
+    elif r_type in warn.get(l_type, []):
         msg = "\n'{}': Merge inconsistent types: Found '{}' in left "
         msg += "and '{}' in right dataset."
         warnings.warn(msg.format(left_column['name'], l_type, r_type))
