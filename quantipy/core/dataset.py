@@ -2296,8 +2296,8 @@ class DataSet(object):
                 if not parent in file_list:
                     idx = file_list.index(item)
                     file_list[idx] = parent
-            while item in file_list:
-                file_list.remove(item)
+                while item in file_list:
+                    file_list.remove(item)
         self._meta['sets']['data file']['items'] = file_list
         return None
 
