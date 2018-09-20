@@ -1109,9 +1109,10 @@ def _compatible_types(left_column, right_column):
     l_type = left_column['type']
     r_type = right_column['type']
     if l_type == r_type: return None
+    all_types = ['array', 'int', 'float', 'single', 'delimited set', 'string',
+                 'date', 'time', 'boolean']
     err = {
-        'array': [
-            'int', 'float', 'single', 'delimited set', 'string', 'date', 'time'],
+        'array': all_types,
         'int': [
             'float', 'delimited set', 'string', 'date', 'time', 'array'],
         'float': [
@@ -1136,18 +1137,20 @@ def _compatible_types(left_column, right_column):
             'int', 'float'],
         'delimited set': [
             'single', 'int', 'float'],
+        'string': [
+            'boolean']
     }
-    if r_type in err.get(l_type, []):
+    if r_type in err.get(l_type, all_types):
         msg = "\n'{}': Trying to merge incompatibe types: Found '{}' in left "
         msg += "and '{}' in right dataset."
         raise TypeError(msg.format(left_column['name'], l_type, r_type))
-    elif r_type in warn.get(l_type, []):
+    elif r_type in warn.get(l_type, all_types):
         msg = "\n'{}': Merge inconsistent types: Found '{}' in left "
         msg += "and '{}' in right dataset."
         warnings.warn(msg.format(left_column['name'], l_type, r_type))
     else:
-        msg = "\n'{}': Unvalid type found in left dataset '{}'."
-        raise TypeError(msg.format(left_column['name'], l_type))
+        msg = "\n'{}': Found '{}' in left and '{}' in right dataset."
+        raise TypeError(msg.format(left_column['name'], l_type, r_type))
 
 def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
     """
