@@ -696,13 +696,14 @@ class PptxPainter(object):
                 table.columns[col_idx].width = values_column_width
                 cell = table.cell(row_idx, col_idx)
                 PptxPainter.set_cell_properties(cell, **values_cell_kwargs)
-                prefix = None
-                if x in values_prefix_columns: prefix = values_prefix
-                suffix = None
-                if x in values_suffix_columns: suffix = values_suffix
-                if datatypes[x].kind == 'i':
-                    subval = int(subval)
-                subval = (prefix or '') + str(subval) + (suffix or '')
+                if subval <> '':
+                    prefix = None
+                    if x in values_prefix_columns: prefix = values_prefix
+                    suffix = None
+                    if x in values_suffix_columns: suffix = values_suffix
+                    if datatypes[x].kind == 'i':
+                        subval = int(subval)
+                    subval = (prefix or '') + str(subval) + (suffix or '')
                 PptxPainter.add_textframe(cell, subval, **values_textframe_kwargs)
 
         # for i in range(len(dataframe.columns)):
