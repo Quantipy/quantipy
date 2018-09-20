@@ -303,7 +303,7 @@ class Rules(object):
         within = sortx.get('within', True)
         between = sortx.get('between', True)
         ascending = sortx.get('ascending', False)
-        fix = sortx.get('fix', None)
+        fix = sortx.get('fixed', None)
         if not within and not between: return view.dataframe
         df = view.dataframe
         name = df.index.levels[0][0]
@@ -344,7 +344,8 @@ class Rules(object):
             is_code = len(g) == 1
             if not is_code:
                 fixed_net_name = g[0]
-                sort = [(name, v) for v in g[1:]]
+                fixed_in_g = [v for v in g[1:] if v in fix_codes]
+                sort = [(name, v) for v in g[1:] if not v in fixed_in_g]
                 if within:
                     if pd.__version__ == '0.19.2':
                         temp_df = df.loc[sort].sort_values(sort_col, 0, ascending=ascending)
@@ -352,8 +353,9 @@ class Rules(object):
                         temp_df = df.loc[sort].sort_index(0, sort_col, ascending=ascending)
                 else:
                     temp_df = df.loc[sort]
-                new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist()
+                new_idx = [fixed_net_name] + temp_df.index.get_level_values(1).tolist() + fixed_in_g
                 final_index.extend(new_idx)
+                fix_codes = [c for c in fix_codes if not c in fixed_in_g]
             else:
                 final_index.extend(g)
         # build final index including any fixed codes
