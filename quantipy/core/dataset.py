@@ -2288,11 +2288,11 @@ class DataSet(object):
             if not variable in self:
                 file_list.remove(item)
             elif collection == 'masks':
-                for s in dataset._get_source_ref(variable):
+                for s in self._get_source_ref(variable):
                     while s in file_list:
                         file_list.remove(s)
-            elif dataset._is_array_item(variable):
-                parent = dataset.parents(variable)[0]
+            elif self._is_array_item(variable):
+                parent = self.parents(variable)[0]
                 if not parent in file_list:
                     idx = file_list.index(item)
                     file_list[idx] = parent
