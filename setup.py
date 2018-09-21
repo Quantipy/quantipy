@@ -21,12 +21,12 @@ libs = ['numpy',
         'xmltodict',
         'lxml',
         'xlsxwriter',
-        'pillow',
+        # 'pillow',
         'prettytable',
         'decorator',
         'watchdog',
         'requests',
-        # 'pptx',
+        'pptx',
         'functools32']
 
 def version_libs(libs, precisions, versions):
