@@ -21,6 +21,7 @@ import os
 sys.path.insert(0, "C:\\Users\\alt\\AppData\\Local\\Continuum\\Anaconda\\Lib\\site-packages\\quantipy")
 sys.path.insert(0, "C:\\Users\\kmue\\Desktop\\quantipy")
 
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
