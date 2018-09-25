@@ -234,7 +234,20 @@ class PptxDataFrame(object):
 
         return self
 
-    def select_categories(self,categories):
+    def _select_categories(self,categories):
+        """
+        Returns a copy of self.df only including the categories requested
+
+        Parameters
+        ----------
+        categories : list
+            A list of ints specifying the categories from self.df to return
+
+        Returns
+        -------
+        pptx_df_copy : PptxDataFrame
+
+        """
 
         if self.array_style == -1:
             df_copy=self.df.iloc[categories]
@@ -247,43 +260,25 @@ class PptxDataFrame(object):
 
         return pptx_df_copy
 
-    def get_propstest(self):
+    def get_means(self):
         """
-        Return a copy of the PptxDataFrame only containing sig testing type categories
+        Return a copy of the PptxDataFrame only containing mean type categories
 
         Returns
         -------
         A PptxDataFrame instance
 
         """
-        row_list = get_indexes_from_list(self.cell_items, 'is_propstest', exact=False)
-        #dont_want = get_indexes_from_list(self.cell_items, ['is_net', 'net', 'is_c_pct_sum'], exact=False)
-        #not_net = get_indexes_from_list(self.cell_items, ['normal', 'expanded'], exact=False)
 
-        #for x in dont_want:
-        #    if x in row_list and x not in not_net:
-        #        row_list.remove(x)
-
-        return self.select_categories(row_list)
-
-    def get_stats(self):
+    def get_nets(self):
         """
-        Return a copy of the PptxDataFrame only containing stat type categories
+        Return a copy of the PptxDataFrame only containing net type categories
 
         Returns
         -------
         A PptxDataFrame instance
 
         """
-        row_list = get_indexes_from_list(self.cell_items, 'is_stat', exact=False)
-        #dont_want = get_indexes_from_list(self.cell_items, ['is_net', 'net', 'is_c_pct_sum'], exact=False)
-        #not_net = get_indexes_from_list(self.cell_items, ['normal', 'expanded'], exact=False)
-
-        #for x in dont_want:
-        #    if x in row_list and x not in not_net:
-        #        row_list.remove(x)
-
-        return self.select_categories(row_list)
 
     def get_cpct(self):
         """
@@ -295,6 +290,61 @@ class PptxDataFrame(object):
 
         """
 
+    def get_propstest(self):
+        """
+        Return a copy of the PptxDataFrame only containing sig testing type categories
+
+        Returns
+        -------
+        A PptxDataFrame instance
+
+        """
+
+    def get_stats(self):
+        """
+        Return a copy of the PptxDataFrame only containing stat type categories
+
+        Returns
+        -------
+        A PptxDataFrame instance
+
+        """
+
+    def _get_propstest_index(self):
+        """
+        Return a list of index numbers from self.cell_items of type 'is_propstest'
+
+        Returns
+        -------
+        row_list : list
+
+        """
+        row_list = get_indexes_from_list(self.cell_items, 'is_propstest', exact=False)
+        return row_list
+
+    def _get_stats_index(self):
+        """
+        Return a list of index numbers from self.cell_items of type 'is_stat'
+
+        Returns
+        -------
+        row_list : list
+
+        """
+        row_list = get_indexes_from_list(self.cell_items, 'is_stat', exact=False)
+        return row_list
+
+    def _get_cpct_index(self):
+        """
+        Return a list of index numbers from self.cell_items of type 'is_c_pct' and not types
+        'is_net', 'net', 'is_c_pct_sum'
+
+        Returns
+        -------
+        row_list : list
+
+        """
+
         row_list = get_indexes_from_list(self.cell_items, 'is_c_pct', exact=False)
         dont_want = get_indexes_from_list(self.cell_items, ['is_net', 'net', 'is_c_pct_sum'], exact=False)
         not_net = get_indexes_from_list(self.cell_items, ['normal', 'expanded'], exact=False)
@@ -303,15 +353,16 @@ class PptxDataFrame(object):
             if x in row_list and x not in not_net:
                 row_list.remove(x)
 
-        return self.select_categories(row_list)
+        return row_list
 
-    def get_nets(self):
+    def _get_nets_index(self):
         """
-        Return a copy of the PptxDataFrame only containing net type categories
+        Return a list of index numbers from self.cell_items of types 'is_net' or 'net' and not types
+        'is_propstest', 'calc', 'normal', 'is_c_pct_sum', 'is_counts', 'expanded'
 
         Returns
         -------
-        A PptxDataFrame instance
+        row_list : list
 
         """
 
@@ -324,15 +375,16 @@ class PptxDataFrame(object):
             if x in row_list:
                 row_list.remove(x)
 
-        return self.select_categories(row_list)
+        return row_list
 
-    def get_means(self):
+    def _get_means_index(self):
         """
-        Return a copy of the PptxDataFrame only containing mean type categories
+        Return a list of index numbers from self.cell_items of type 'is_mean' and not type
+        'is_meanstest'
 
         Returns
         -------
-        A PptxDataFrame instance
+        row_list : list
 
         """
 
@@ -343,15 +395,15 @@ class PptxDataFrame(object):
             if x in row_list:
                 row_list.remove(x)
 
-        return self.select_categories(row_list)
+        return row_list
 
-    def get(self, cell_items_request):
+    def get(self, cell_types, sort=False):
         """
         Method to get specific elements from chains dataframe
 
         Parameters
         ----------
-        cell_items_request : str
+        cell_types : str
             A string of comma separated cell types to return. Available types are 'c_pct, net, mean'
 
         Returns
@@ -359,97 +411,36 @@ class PptxDataFrame(object):
         A PptxDataFrame instance
 
         """
-        method_map = {'c_pct': self.get_cpct,
-                      'pct': self.get_cpct,
-                      'net': self.get_nets,
-                      'nets': self.get_nets,
-                      'mean': self.get_means,
-                      'means': self.get_means,
-                      'test': self.get_propstest,
-                      'tests': self.get_propstest,
-                      'stats': self.get_stats,
-                      'stat': self.get_stats}
+        method_map = {'c_pct': self._get_cpct_index,
+                      'pct': self._get_cpct_index,
+                      'net': self._get_nets_index,
+                      'nets': self._get_nets_index,
+                      'mean': self._get_means_index,
+                      'means': self._get_means_index,
+                      'test': self._get_propstest_index,
+                      'tests': self._get_propstest_index,
+                      'stats': self._get_stats_index,
+                      'stat': self._get_stats_index}
         # TODO Add methods for 'stddev', 'min', 'max', 'median', 't_means'
-        available_cell_items = set(method_map.keys())
-        if isinstance(cell_items_request, basestring):
-            cell_items_request = re.sub(' +', '', cell_items_request)
-            cell_items_request = cell_items_request.split(',')
-        value_test = set(cell_items_request).difference(available_cell_items)
-        if value_test:
-            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_items_request, available_cell_items))
-
-        list_of_dataframes = []
-        cell_items = []
-
-        for cell_item in cell_items_request:
-            pptx_frame = method_map[cell_item]()
-            #if pptx_frame.df.empty:
-            #    continue
-            list_of_dataframes.append(pptx_frame.df)
-            cell_items += pptx_frame.cell_items
-
-        new_df=pd.concat(list_of_dataframes, axis=0 if self.array_style==-1 else 1)
-
-        new_pptx_df = PptxDataFrame(new_df, cell_items, self.array_style, self.chart_type)
-        new_pptx_df.chart_type = auto_charttype(new_df, self.array_style)
-
-        return new_pptx_df
-
-    def get_kerstin(self, cell_types, sort=False):
-        """
-        Method to get specific elements from chains dataframe
-        :param
-            cel_types: A comma separated list of cell types to return. Available types are 'c_pct,net'
-            sort: Sort the elements ascending or decending. Str 'asc', 'dsc' or False
-        :return: df_copy, a Pandas dataframe. Element types will be returned in the order they are requested
-        """
-        # method_map = {'c_pct': self.get_cpct,
-        #               'net': self.get_nets}
-        # TODO Add methods for 'mean', 'stddev', 'min', 'max', 'median', 't_props', 't_means'
-        available_celltypes = ['c_pct', 'net'] # set(method_map.keys())
+        available_cell_types = set(method_map.keys())
         if isinstance(cell_types, basestring):
             cell_types = re.sub(' +', '', cell_types)
             cell_types = cell_types.split(',')
-        value_test = set(cell_types).difference(available_celltypes)
+        value_test = set(cell_types).difference(available_cell_types)
         if value_test:
-            msg = "Cell type: {} is not an available cell type.\n"
-            msg += "Available cell types are {}"
-            raise ValueError(msg.format(cell_types, available_celltypes))
+            raise ValueError("Cell type: {} is not an available cell type. \n Available cell types are {}".format(cell_types, available_cell_types))
 
-        req_ct = []
-        exclude = ['normal', 'calc', 'is_propstest', 'is_c_pct_sum', 'is_counts']
-        if 'c_pct' in cell_types:
-            req_ct.append('is_c_pct')
-        if 'net' in cell_types:
-            req_ct.extend(['is_net', 'net'])
-        else:
-            exclude.extend(['is_net', 'net'])
+        cell_types_list = []
 
-        row_list = get_indexes_from_list(self.cell_contents, req_ct, exact=False)
-        dont_want = get_indexes_from_list(self.cell_contents, exclude, exact=False)
-        row_list = [x for x in row_list if not x in dont_want]
+        for cell_type in cell_types:
+            cell_types_list.extend(method_map[cell_type]())
 
-        if self.array_style == -1:
-            df_copy = self.iloc[row_list]
-        else:
-            df_copy = self.iloc[:, row_list]
+        if sort:  cell_types_list.sort()
 
-        new_df = self.make_copy(data=df_copy.values, index=df_copy.index, columns=df_copy.columns)
-        new_df.chart_type = auto_charttype(new_df, new_df.array_style)
-        cell_contents = new_df.cell_contents
-        new_df.cell_contents = [cell_contents[i] for i in row_list]
+        new_pptx_df = self._select_categories(cell_types_list)
 
-        # for cell_type in cell_types:
-        #     frame = method_map[cell_type]()
-        #     frames.append(frame)
-        #     cell_contents += frame.cell_contents
-        # new_df=pd.concat(frames, axis=0 if self.array_style==-1 else 1)
+        return new_pptx_df
 
-        pptx_df = self.make_copy(data=new_df.values, index=new_df.index, columns=new_df.columns)
-        pptx_df.chart_type = auto_charttype(pptx_df, pptx_df.array_style)
-        pptx_df.cell_contents = cell_contents
-
-        return pptx_df
 
 class PptxChain(object):
     """
