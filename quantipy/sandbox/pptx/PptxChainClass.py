@@ -397,7 +397,7 @@ class PptxDataFrame(object):
 
         return row_list
 
-    def get(self, cell_types, sort=False):
+    def get(self, cell_types, sort=True):
         """
         Method to get specific elements from chains dataframe
 
