@@ -272,18 +272,14 @@ class PptxDataFrame(object):
             Array style as given by quantipy.chain.array_style
         cell_types: list
             The dataframes cell types as given by quantipy.chain.contents
-        chart_type: str
-            Holds the chart type. Can be set when class is instantiated.
-            If not set a chart type will be auto set when using a get method.
 
     """
 
-    def __init__(self, dataframe, cell_types, array_style, chart_type=None):
+    def __init__(self, dataframe, cell_types, array_style):
         self.array_style = array_style
         self.cell_items = cell_types
         self.df = dataframe # type: pd.DataFrame
         self.__frames = []
-        self.chart_type = chart_type
 
     def __call__(self):
         return self.df
@@ -355,9 +351,7 @@ class PptxDataFrame(object):
         else:
             df_copy = self.df.iloc[:,categories]
 
-        pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style,self.chart_type)
-        if self.chart_type is None:
-            pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
+        pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in categories]
 
         return pptx_df_copy
