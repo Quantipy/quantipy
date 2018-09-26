@@ -265,14 +265,22 @@ class PptxDataFrame(object):
     the chains dataframe, flattened and ready for charting.
     A series of get cell-types methods can be used to select specific cell-types.
 
-    Attributes
-    
+    Attributes:
+        df: pandas.DataFrame
+            The actual dataframe ready to use with PptxPainter
+        array_style: int
+            Array style as given by quantipy.chain.array_style
+        cell_types: list
+            The dataframes cell types as given by quantipy.chain.contents
+        chart_type: str
+            Holds the chart type. Can be set when class is instantiated.
+            If not set a chart type will be auto set when using a get method.
 
     """
 
-    def __init__(self, dataframe, cell_items, array_style, chart_type):
+    def __init__(self, dataframe, cell_types, array_style, chart_type=None):
         self.array_style = array_style
-        self.cell_items = cell_items
+        self.cell_items = cell_types
         self.df = dataframe # type: pd.DataFrame
         self.__frames = []
         self.chart_type = chart_type
@@ -348,7 +356,8 @@ class PptxDataFrame(object):
             df_copy = self.df.iloc[:,categories]
 
         pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style,self.chart_type)
-        pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
+        if self.chart_type is None:
+            pptx_df_copy.chart_type = auto_charttype(df_copy, self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in categories]
 
         return pptx_df_copy
@@ -1189,7 +1198,7 @@ class PptxChain(object):
             df.iloc[:, indexes] /= 100
 
         # Make a PptxDataFrame instance
-        chart_df = PptxDataFrame(df,cell_contents,self.array_style,None)
+        chart_df = PptxDataFrame(df, cell_contents, self.array_style)
         # Choose a basic Chart type that will fit dataframe TODO Move this to init of Class PptxDataFrame
         chart_df.chart_type = auto_charttype(df, self.array_style)
 
