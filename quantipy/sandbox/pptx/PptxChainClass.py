@@ -18,12 +18,19 @@ MAX_PIE_ELMS = 4
 def float2String(input, ndigits=0):
     """
     Round and converts the input, if int/float or list of, to a string.
-    :param
-        input: int/float or list of int/float
-        ndigits: number of decimals to round to
-    :return:
-        output: string or list of strings depeneding on the input
+
+    Parameters
+    ----------
+    input: int/float or list of int/float
+    ndigits: int
+        number of decimals to round to
+
+    Returns
+    -------
+    output: string or list of strings
+         depending on the input
     """
+
     output = input
     if not isinstance(input, list):
         output = [output]
@@ -52,15 +59,20 @@ def uniquify(l):
 def strip_levels(df, rows=None, columns=None):
     """
     Function that strips a MultiIndex DataFrame for specified row and column index
-    Can be used with all DP-systems
-    :param
-    rows: Int, default None
-        Row index to remove
-    columns: Int, default None
-        Column index to remove
-    :return:
-    df_strip: A pandas.Dataframe
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+    rows: int
+        Row index to remove, default None
+    columns: int
+        Column index to remove, default None
+
+    Returns
+    -------
+    df_strip: pandas.DataFrame
         The input dataframe stripped for specified levels
+
     """
     df_strip = df.copy()
     if rows is not None:
@@ -79,13 +91,16 @@ def as_numeric(df):
     '%' to ''
     '-' to '0'
     '*' to '0'
-    Can be used with all DP-systems
-    :param
-    df: Pandas.Dataframe
-        A dataframe of any structure, also multiindex
-    :return:
-    df: A pandas.Dataframe
-        dataframe with values as float
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+
+    Returns
+    -------
+    pandas.DataFrame
+        with values as float
+
     """
 
     if not df.values.dtype in ['float64', 'int64']:
@@ -97,9 +112,16 @@ def as_numeric(df):
 def is_grid_slice(chain):
     """
     Returns True if chain is a grid slice
-    :param
-        chain: the chain instance
-    :return: True id grid slice
+
+    Parameters
+    ----------
+    chain: quantipy.Chain
+
+    Returns
+    -------
+    bool
+        True if grid slice
+
     """
     pattern = '\[\{.*?\}\].'
     found = re.findall(pattern, chain.name)
@@ -111,12 +133,26 @@ def get_indexes_from_list(lst, find, exact=True):
     """
     Helper function that search for element in a list and
     returns a list of indexes for element match
-    E.g. get_indexes_from_list([1,2,3,1,5,1], 1) returns [0,3,5]
-    :param
-        lst: a list
-        find: the element to find. Can be a list
-        exact: If False the index are returned if find in value
-    :return: a list of ints
+    E.g.
+    get_indexes_from_list([1,2,3,1,5,1], 1) returns [0,3,5]
+    get_indexes_from_list(['apple','banana','orange','lemon'], 'orange') -> returns [2]
+    get_indexes_from_list(['apple','banana','lemon',['orange', 'peach']], 'orange') -> returns []
+    get_indexes_from_list(['apple','banana','lemon',['orange', 'peach']], ['orange'], False) -> returns [3]
+
+    Parameters
+    ----------
+    lst: list
+        The list to look in
+    find: any
+        the element to find, can be a list
+    exact: bool
+        If False then index are returned if find in lst-item otherwise
+        only if find = lst-item
+
+    Returns
+    -------
+    list of int
+
     """
     if exact == True:
         return [index for index, value in enumerate(lst) if value == find]
@@ -131,10 +167,21 @@ def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
     """
     Auto suggest chart type based on dataframe analysis
     TODO Move this to Class PptxDataFrame()
-    :param
-        df: a Pandas Dataframe, not multiindex
-        array_style: array_style as returned from Chain Class
-    :return: charttype ('bar_clustered', 'bar_stacked', 'bar_stacked_100', 'pie')
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Not multiindex
+    array_style: int
+        array_style as returned from Chain Class
+    max_pie_elms: int
+        Max number of elements in Pie chart
+
+    Returns
+    -------
+    str
+        One of charttypes ('bar_clustered', 'bar_stacked_100', 'pie')
+
     """
     if array_style == -1: # Not array summary
         chart_type = 'bar_clustered'
@@ -151,7 +198,16 @@ def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
 def fill_gaps(l):
     """
     Return l replacing empty strings with the value from the previous position.
+
+    Parameters
+    ----------
+    l: list
+
+    Returns
+    -------
+    list
     """
+
     lnew = []
     for i in l:
         if i == '':
@@ -164,7 +220,16 @@ def fill_gaps(l):
 def fill_index_labels(df):
     """
     Fills in blank labels in the second level of df's multi-level index.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+
+    Returns
+    -------
+    pandas.DataFrame
     """
+
     _0, _1 = zip(*df.index.values.tolist())
     _1new = fill_gaps(_1)
     dfnew = df.copy()
@@ -175,17 +240,34 @@ def fill_index_labels(df):
 def fill_column_values(df, icol=0):
     """
     Fills empty values in the targeted column with the value above it.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+    icol: int
+
+    Returns
+    -------
+    pandas.DataFrame
     """
+
     v = df.iloc[:,icol].fillna('').values.tolist()
     vnew = fill_gaps(v)
-    dfnew = df.copy()
+    dfnew = df.copy() # type: pd.DataFrame
     dfnew.iloc[:,icol] = vnew
     return dfnew
 
 
 class PptxDataFrame(object):
     """
-    Class for handling the dataframe to be charted
+    Class for handling the dataframe to be charted.
+    The class is instantiated from the class PptxChain and holds
+    the chains dataframe, flattened and ready for charting.
+    A series of get cell-types methods can be used to select specific cell-types.
+
+    Attributes
+    
+
     """
 
     def __init__(self, dataframe, cell_items, array_style, chart_type):
@@ -199,6 +281,17 @@ class PptxDataFrame(object):
         return self.df
 
     def to_table(self, decimals=2, pct_decimals=2):
+        """
+
+        Parameters
+        ----------
+        decimals
+        pct_decimals
+
+        Returns
+        -------
+
+        """
 
         df = self.df
         if df.empty:
@@ -397,7 +490,7 @@ class PptxDataFrame(object):
 
         return row_list
 
-    def get(self, cell_types, sort=True):
+    def get(self, cell_types, original_order=True):
         """
         Method to get specific elements from chains dataframe
 
@@ -435,7 +528,7 @@ class PptxDataFrame(object):
         for cell_type in cell_types:
             cell_types_list.extend(method_map[cell_type]())
 
-        if sort:  cell_types_list.sort()
+        if original_order:  cell_types_list.sort()
 
         new_pptx_df = self._select_categories(cell_types_list)
 
