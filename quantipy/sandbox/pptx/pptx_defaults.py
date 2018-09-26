@@ -130,7 +130,6 @@ default_side_table['top_member_textframe_kwargs']['font_kwargs']['font_size'] = 
 
 default_side_table['top_member_cell_kwargs'] = default_cell_kwargs.copy()
 default_side_table['top_member_cell_kwargs']['vertical_alignment'] = 'middle'
-default_side_table['values_suffix'] = '%'
 
 default_side_table['side_member_textframe_kwargs']['font_kwargs'] = default_font.copy()
 default_side_table['side_member_textframe_kwargs']['font_kwargs']['font_size'] = 8
