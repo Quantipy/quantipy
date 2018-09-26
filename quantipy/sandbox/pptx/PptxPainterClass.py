@@ -214,7 +214,9 @@ class PptxPainter(object):
                 if not pptx_frame().empty:
                     side_table_draft = self.draft_side_table(pptx_frame())
                     pct_index = [index for index, value in enumerate(pptx_frame.cell_items) if 'is_c_pct' in value]
-                    side_table_draft['values_suffix_columns'] = pct_index
+                    if pct_index:
+                        side_table_draft['values_suffix'] = '%'
+                        side_table_draft['values_suffix_columns'] = pct_index
                     self.queue_side_table(settings=side_table_draft)
             if slide_item.startswith('chart'):
                 cell_items = slide_item.split(':')[1]
