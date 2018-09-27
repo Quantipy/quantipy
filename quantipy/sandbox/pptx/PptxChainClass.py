@@ -265,17 +265,19 @@ class PptxDataFrame(object):
     the chains dataframe, flattened and ready for charting.
     A series of get cell-types methods can be used to select specific cell-types.
 
-    Attributes:
-        df: pandas.DataFrame
-            The actual dataframe ready to use with PptxPainter
-        array_style: int
-            Array style as given by quantipy.chain.array_style
-        cell_types: list
-            The dataframes cell types as given by quantipy.chain.contents
+    Parameters:
+    ----------
+    df: pandas.DataFrame
+        The actual dataframe ready to use with PptxPainter
+    array_style: int
+        Array style as given by quantipy.chain.array_style
+    cell_types: list
+        The dataframes cell types as given by quantipy.chain.contents
 
     """
 
     def __init__(self, dataframe, cell_types, array_style):
+
         self.array_style = array_style
         self.cell_items = cell_types
         self.df = dataframe # type: pd.DataFrame
@@ -286,14 +288,19 @@ class PptxDataFrame(object):
 
     def to_table(self, decimals=2, pct_decimals=2):
         """
+        Returns self.df formatted to be added to a table in a slide.
+        Basically just rounds values and if cell type = % then multiply values with 100
+        # todo : should'nt be here, move to PptxPainter
 
         Parameters
         ----------
-        decimals
-        pct_decimals
-
+        decimals:  int
+            Number of decimals for not percentage cell_types
+        pct_decimals: int
+            Number of decimals for percentage cell_types
         Returns
         -------
+        self
 
         """
 
@@ -333,7 +340,7 @@ class PptxDataFrame(object):
 
     def _select_categories(self,categories):
         """
-        Returns a copy of self.df only including the categories requested
+        Returns a copy of self.df having only the categories requested
 
         Parameters
         ----------
@@ -358,13 +365,14 @@ class PptxDataFrame(object):
 
     def get_means(self):
         """
-        Return a copy of the PptxDataFrame only containing mean type categories
+        Return a copy of the PptxDataFrame containing only mean type categories
 
         Returns
         -------
-        A PptxDataFrame instance
+        PptxDataFrame
 
         """
+        return self.get('means')
 
     def get_nets(self):
         """
@@ -372,9 +380,11 @@ class PptxDataFrame(object):
 
         Returns
         -------
-        A PptxDataFrame instance
+        PptxDataFrame
 
         """
+        return self.get('net')
+
 
     def get_cpct(self):
         """
@@ -382,9 +392,10 @@ class PptxDataFrame(object):
 
         Returns
         -------
-        A PptxDataFrame instance
+        PptxDataFrame
 
         """
+        return self.get('c_pct')
 
     def get_propstest(self):
         """
@@ -392,9 +403,10 @@ class PptxDataFrame(object):
 
         Returns
         -------
-        A PptxDataFrame instance
+        PptxDataFrame
 
         """
+        return self.get('tests')
 
     def get_stats(self):
         """
@@ -402,9 +414,10 @@ class PptxDataFrame(object):
 
         Returns
         -------
-        A PptxDataFrame instance
+        PptxDataFrame
 
         """
+        return self.get('stats')
 
     def _get_propstest_index(self):
         """
@@ -495,16 +508,23 @@ class PptxDataFrame(object):
 
     def get(self, cell_types, original_order=True):
         """
-        Method to get specific elements from chains dataframe
+        Method to get specific cell types from chains dataframe.
+        Will return a copy of the PptxDataFrame instance containing only
+        the requested cell types.
+        Available types are 'c_pct, net, mean, test, stat'
 
         Parameters
         ----------
         cell_types : str
-            A string of comma separated cell types to return. Available types are 'c_pct, net, mean'
+            A string of comma separated cell types to return.
+        original_order: Bool
+            Only relevant if more than one cell type is requested.
+            If True, cell types are returned in the same order as input dataframe.
+            If False, cell types will be returned in the order they are requested.
 
         Returns
         -------
-        A PptxDataFrame instance
+        PptxDataFrame
 
         """
         method_map = {'c_pct': self._get_cpct_index,
@@ -540,16 +560,25 @@ class PptxDataFrame(object):
 
 class PptxChain(object):
     """
-    This class is a wrapper around Chain class to prepare for PPTX charting
+    This class is a wrapper around Chain class to prepare for PPTX charting.
+
+    Parameters
+    ----------
+    chain: quantipy.sandbox.sandbox.Chain
+    is_varname_in_qtext: Bool
+        Set to True if question name is included in question text
+    crossbreak: str
+        Select a crossbreak to include in charts. Default is None
+    base_type: str
+        Select the base type to show in base descriptions: 'weighted' or 'unweighted'
+    decimals: int
+        Select the number of decimals to include from Chain.dataframe
+    verbose: Bool
+
     """
 
     def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', decimals=2, verbose=True):
-        """
-        :param
-            chain: An instance of Chain class
-            is_varname_in_qtext: Is var name included in the painted chain dataframe? (False, True, 'full', 'ignore')
-            crossbreak:
-        """
+
         self._chart_type = None
         self._sig_test = None # type: list # is updated by ._select_crossbreak()
         self.crossbreak_qtext = None # type: str # is updated by ._select_crossbreak()
@@ -568,7 +597,7 @@ class PptxChain(object):
         self.is_grid_summary = True if chain.array_style in [0,1] else False
         self.crossbreak = self._check_crossbreaks(crossbreak) if crossbreak else [BASE_COL]
         self.x_key_short_name = self._get_short_question_name()
-        self.chain_df = self._select_crossbreak()
+        self.chain_df = self._select_crossbreak() # type: pd.DataFrame
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes is None else [x[0] for x in self.xbase_indexes]
         self.xbase_count = ""
@@ -619,51 +648,27 @@ class PptxChain(object):
 
     @property
     def chart_type(self):
-        if self._chart_type is None:
-            self._chart_type = self.chart_df.chart_type
         return self._chart_type
 
     @chart_type.setter
     def chart_type(self, chart_type):
         self._chart_type = chart_type
 
-    def select_base(self,base_type='weighted'):
-        """
-        Sets self.xbase_label and self.xbase_count
-        :param base_type: str
-        :return: None set self
-        """
-        if not self.xbase_indexes:
-            msg = "No 'Base' element found"
-            warnings.warn(msg)
-            return None
-
-        if base_type: base_type = base_type.lower()
-        if not base_type in ['unweighted','weighted']:
-            raise TypeError('base_type misspelled, choose weighted or unweighted')
-
-        cell_contents = [x[2] for x in self.xbase_indexes]
-        if base_type == 'weighted':
-            index = [x for x, items in enumerate(cell_contents) if 'is_weighted' in items]
-        else:
-            index = [x for x, items in enumerate(cell_contents) if not 'is_weighted' in items]
-
-        if not index: index=[0]
-
-        # print "self.xbase_indexes: ", self.xbase_indexes
-        total_base = self.xbase_indexes[index[0]][3]
-        total_base = np.around(total_base, decimals=self._decimals)
-        self.xbase_count = float2String(total_base)
-        self.xbase_label = self.xbase_labels[index[0]]
-        self.xbase_index = self.xbase_indexes[index[0]][1]
-        self.ybases = self._get_y_bases()
-
     def _base_indexes(self):
         """
-        Returns a list of label, index, cell_content and value of bases found in x keys.
-        :return: list
-        """
+        Finds all categories of type 'is_counts' and 'is_c_base' and then returns
+        a list of tuples holding (label, index, cell_content, value) for each base.
+        Method only used when instantiating Class.
+        Poppulates self.xbase_indexes
 
+        Eg. [(u'Unweighted base', 0, ['is_counts', 'is_c_base'], 1003.0),
+             (u'Base', 1, ['weight_1', 'is_weighted', 'is_counts', 'is_c_base'], 1002.9999999398246)]
+
+        Returns
+        -------
+        list
+
+        """
         cell_contents = self._chain.describe()
         if self.array_style == 0:
             row = min([k for k, va in cell_contents.items()
@@ -695,10 +700,102 @@ class PptxChain(object):
 
         return zip(xlabels, base_indexes, cell_contents, base_counts)
 
+    def select_base(self,base_type='weighted'):
+        """
+        Uses self.xbase_indexes to set
+        self.xbase_label,
+        self.xbase_count,
+        self.xbase_index
+        self.ybases
+
+        Parameters
+        ----------
+        base_type: str
+            String to define which base type to use: 'weighted' or 'unweighted'
+
+        Returns
+        -------
+        None, sets self
+
+        """
+
+        if not self.xbase_indexes:
+            msg = "No 'Base' element found"
+            warnings.warn(msg)
+            return None
+
+        if base_type: base_type = base_type.lower()
+        if not base_type in ['unweighted','weighted']:
+            raise TypeError('base_type misspelled, choose weighted or unweighted')
+
+        cell_contents = [x[2] for x in self.xbase_indexes]
+        if base_type == 'weighted':
+            index = [x for x, items in enumerate(cell_contents) if 'is_weighted' in items]
+        else:
+            index = [x for x, items in enumerate(cell_contents) if not 'is_weighted' in items]
+
+        if not index: index=[0]
+
+        # print "self.xbase_indexes: ", self.xbase_indexes
+        total_base = self.xbase_indexes[index[0]][3]
+        total_base = np.around(total_base, decimals=self._decimals)
+        self.xbase_count = float2String(total_base)
+        self.xbase_label = self.xbase_labels[index[0]]
+        self.xbase_index = self.xbase_indexes[index[0]][1]
+        self.ybases = self._get_y_bases()
+
+    def _get_y_bases(self):
+        """
+        Retrieves the y-keys base label and base size from the dataframe.
+        If no crossbreak is requested the output is a list with one tuple, eg. [(u'Total', '1003')].
+        If eg. 'gender' is selected as crossbreak the output is [(u'Female', '487'), (u'Male', '516')]
+
+        Only used in method select_base.
+
+        Returns
+        -------
+        list
+            List of tuples [(base label, base size)]
+
+        """
+        base_index = self.xbase_index
+
+        if not self.is_grid_summary:
+
+            # Construct a list of tuples with (base label, base size, test letter)
+            base_values = self.chain_df.iloc[base_index, :].values.tolist()
+            base_values = np.around(base_values, decimals=self._decimals).tolist()
+            base_values = float2String(base_values)
+            base_labels = list(self.chain_df.columns.get_level_values('Values'))
+            if self._chain.sig_levels:
+                base_test   = list(self.chain_df.columns.get_level_values('Test-IDs'))
+                bases = zip(base_labels, base_values, base_test)
+            else:
+                bases = zip(base_labels, base_values)
+
+        else: # Array summary
+            # Find base columns
+
+            # Construct a list of tuples with (base label, base size)
+            base_values = self.chain_df.T.iloc[base_index,:].values.tolist()
+            base_values = np.around(base_values, decimals=self._decimals).tolist()
+            base_values = float2String(base_values)
+            base_labels = list(self.chain_df.index.get_level_values(-1))
+            bases = zip(base_labels, base_values)
+
+        #print ybases
+        return bases
+
     def _index_map(self):
         """
-        Map not painted index with painted index into a list of tuples (notpainted, painted)
-        :return:
+        Map not painted self._chain.dataframe.index with painted index into a list of tuples (notpainted, painted)
+        If grid summary, columns are
+
+        [('All', u'Base'), (1, u'1 gang'), ('', u''), (2, u'2 gange'), ('', u''), (3, u'3 gange'), ('', u''), (4, u'4 gange'), ('', u''), (5, u'5 gange'), ('', u''), (6, u'Mere end 5 gange'), ('', u''), (7, u'Nej, har ikke v\xe6ret p\xe5 skiferie'), ('', u''), (8, u'Ved ikke'), ('', u''), ('sum', u'Totalsum')]
+
+        Returns
+        -------
+
         """
         if self._chain.painted:  # UnPaint if painted
             self._chain.toggle_labels()
@@ -1119,41 +1216,6 @@ class PptxChain(object):
             if item not in row:
                 return False
         return True
-
-    def _get_y_bases(self):
-        """
-        Retrieves the base label and base size from the dataframe
-        :param chain: the chain instance
-        :return: ybases - list of tuples [(base label, base size)]
-        """
-
-        base_index = self.xbase_index
-
-        if not self.is_grid_summary:
-
-            # Construct a list of tuples with (base label, base size, test letter)
-            base_values = self.chain_df.iloc[base_index, :].values.tolist()
-            base_values = np.around(base_values, decimals=self._decimals).tolist()
-            base_values = float2String(base_values)
-            base_labels = list(self.chain_df.columns.get_level_values('Values'))
-            if self._chain.sig_levels:
-                base_test   = list(self.chain_df.columns.get_level_values('Test-IDs'))
-                bases = zip(base_labels, base_values, base_test)
-            else:
-                bases = zip(base_labels, base_values)
-
-        else: # Array summary
-            # Find base columns
-
-            # Construct a list of tuples with (base label, base size)
-            base_values = self.chain_df.T.iloc[base_index,:].values.tolist()
-            base_values = np.around(base_values, decimals=self._decimals).tolist()
-            base_values = float2String(base_values)
-            base_labels = list(self.chain_df.index.get_level_values(-1))
-            bases = zip(base_labels, base_values)
-
-        #print ybases
-        return bases
 
     def prepare_dataframe(self):
         """
