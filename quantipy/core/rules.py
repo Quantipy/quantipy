@@ -221,8 +221,8 @@ class Rules(object):
         else:
             vk = 'x|f|:||{}|counts'.format(weight)
             view_weight = self.view_name.split('|')[-2]
-            link_weights = [k.split('|')[-2] for k in self.link.keys()
-                            if not 'base' in k.split('|')[-1]]
+            link_weights = set([k.split('|')[-2] for k in self.link.keys()
+                                if not 'base' in k.split('|')[-1]])
             if not (weight == view_weight or len(link_weights)>1):
                 msg = "\n{}: view-weight and weight to sort on differ ('{}' vs '{}')\n"
                 warnings.warn(msg.format(col, view_weight, weight or None))
