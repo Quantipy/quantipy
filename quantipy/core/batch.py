@@ -466,12 +466,14 @@ class Batch(qp.DataSet):
                             raise KeyError('{} is not included.'.format(pos))
                         elif not v in self.xks:
                             self.xks.insert(self.xks.index(pos), v)
+                        if self.is_array(v) and not v in self.summaries:
+                            self.summaries.append(v)
             elif not self.var_exists(x):
                 raise KeyError('{} is not included.'.format(x))
             elif x not in self.xks:
                 self.xks.extend(self.unroll(x, both='all'))
-            if self.is_array(x) and not x in self.summaries:
-                self.summaries.append(x)
+                if self.is_array(x) and not x in self.summaries:
+                    self.summaries.append(x)
         self._update()
         return None
 
