@@ -4,6 +4,7 @@ from collections import OrderedDict
 import copy
 import quantipy as qp
 import numpy as np
+import warnings
 
 class Rules(object):
 
@@ -100,6 +101,8 @@ class Rules(object):
                 if expanded_nets_w and not sort_weight in expanded_nets_w:
                     sort_weight = expanded_nets_w[0]
             return sort_weight
+        else:
+            None
 
     # ------------------------------------------------------------------------
     # display
@@ -201,7 +204,7 @@ class Rules(object):
                     f = self._get_frequency_via_stack(col_key, axis, self._sort_weight)
             # get df for hiding + slicing
             else:
-                f = self._get_frequency_via_stack(col_key, axis, '')
+                f = self._get_frequency_via_stack(col_key, axis, None)
 
             # get rules slicer
             f = f.T if self.array_summary and axis == 1 else f
@@ -213,7 +216,14 @@ class Rules(object):
         return None
 
     def _get_frequency_via_stack(self, col, axis, weight):
-        vk = 'x|f|:||{}|counts'.format(weight)
+        if weight is None:
+            vk = 'x|f|:|||counts'
+        else:
+            vk = 'x|f|:||{}|counts'.format(weight)
+            view_weight = self.view_name.split('|')[-2]
+            if not weight == view_weight:
+                msg = "\n{}: view-weight and weight to sort on differ ('{}' vs '{}')\n"
+                warnings.warn(msg.format(col, view_weight, weight or None))
         try:
             if self.transposed_summary:
                 f = self.link_base['@'][col][vk].dataframe.T
