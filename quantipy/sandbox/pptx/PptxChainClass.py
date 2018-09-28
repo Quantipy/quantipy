@@ -566,7 +566,10 @@ class PptxChain(object):
     ----------
     chain: quantipy.sandbox.sandbox.Chain
     is_varname_in_qtext: Bool
-        Set to True if question name is included in question text
+        Is question name is included in question text?
+            False:  No question name included in question text
+            True:   Question name included in question text, mask items has short question name included.
+            'Full': Question name included in question text, mask items has full question name included.
     crossbreak: str
         Select a crossbreak to include in charts. Default is None
     base_type: str
@@ -1173,9 +1176,18 @@ class PptxChain(object):
 
     def _check_crossbreaks(self, crossbreaks):
         """
-        Checks for existence of the requested crossbreaks
-        :param crossbreaks:
-        :return:
+        Checks the crossbreaks input for duplicates and that crossbreak exist in the chain.
+
+        Parameters
+        ----------
+        crossbreaks: list
+            List of strings
+
+        Returns
+        -------
+        list
+            The crossbreaks list stripped for duplicates and not existing crossbreaks
+
         """
         if not isinstance(crossbreaks, list):
             crossbreaks = [crossbreaks]
@@ -1196,10 +1208,13 @@ class PptxChain(object):
 
     def _get_short_question_name(self):
         """
-        Retrieves question name
-        :param
-            chain: the chain instance
-        :return: question_name (as string)
+        Retrieves 'short' question name.
+        Used in __init__ to poppulate self.x_key_short_name
+
+        Returns
+        -------
+        str
+
         """
         if not self.is_grid_summary: # Not grid summary
             if self.is_mask_item: # Is grid slice
@@ -1223,16 +1238,17 @@ class PptxChain(object):
     def get_question_text(self, include_varname=False):
         """
         Retrieves the question text from the dataframe.
-        Assumes that self.chain_df has one of the following setups  regarding question name self._var_name_in_qtext:
-            False:  No question name included in question text
-            True:   Question text included in question text, mask items has short question name included.
-            'Full': Question text included in question text, mask items has full question name included.
+        If include_varname=True then the question text will be prefixed the var name.
 
-        :param
-            include_varname: Include question name in question text (bool)
-        :return: question_txt (as string)
+        Parameters
+        ----------
+        include_varname: Bool
+
+        Returns
+        -------
+        str
+
         """
-
         # Get variable name
         var_name = self.x_key_name
         if self.is_mask_item:
@@ -1261,15 +1277,24 @@ class PptxChain(object):
 
     def _mask_question_text(self, question_text):
         """
-        Adds to a mask items question text the array question text
-        if not allready there
-        :param
-            question_text: the question text from the mask item
-        :return:
-            question_text appended the array question text
+        If chain is a mask item (a grid slice), then the parent question text
+        is added to question text unless already included.
+
+        Final question text in the form "parent_question_text - mask_question_text"
+
+        Only used in self.get_question_text().
+
+        Parameters
+        ----------
+        question_text: str
+
+        Returns
+        -------
+        str
+
         """
         if self.source == "native":
-            meta=self._chain._meta
+            meta = self._chain._meta
             cols = meta['columns']
             masks = meta['masks']
             if self.is_mask_item:
@@ -1283,11 +1308,15 @@ class PptxChain(object):
 
     def _is_base_row(self, row):
         """
-        Return True if Row is a Base row
-        :param
-            row: The row to check (list)
-        :return:
-            True or False
+        Return True if Row is a Base row.
+
+        Parameters
+        ----------
+        row
+
+        Returns
+        -------
+
         """
         for item in BASE_ROW:
             if item not in row:
