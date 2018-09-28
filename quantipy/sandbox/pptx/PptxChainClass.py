@@ -1306,23 +1306,6 @@ class PptxChain(object):
 
         return question_text
 
-    def _is_base_row(self, row):
-        """
-        Return True if Row is a Base row.
-
-        Parameters
-        ----------
-        row
-
-        Returns
-        -------
-
-        """
-        for item in BASE_ROW:
-            if item not in row:
-                return False
-        return True
-
     def prepare_dataframe(self):
         """
         Prepares the dataframe for charting, that is takes self.chain_df and
