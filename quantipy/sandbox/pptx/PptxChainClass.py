@@ -1308,11 +1308,15 @@ class PptxChain(object):
 
     def prepare_dataframe(self):
         """
-        Prepares the dataframe for charting, that is takes self.chain_df and
-        removes all outer levels and prepares the dataframe for PptxPainter.
-        :return: copy of chain.dataframe containing only rows and cols that are to be charted
-        """
+        Prepares self.chain_df for charting, that is removes all outer levels
+        and prepares the dataframe for PptxPainter.
 
+        Returns
+        -------
+        pd.DataFrame
+            An edited copy of self.chain_df
+
+        """
         # Strip outer level
         df = strip_levels(self.chain_df, rows=0, columns=0)
         df = strip_levels(df, columns=1)
