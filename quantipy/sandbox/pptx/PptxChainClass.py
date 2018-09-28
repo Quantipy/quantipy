@@ -1294,10 +1294,10 @@ class PptxChain(object):
 
         """
         if self.source == "native":
-            meta = self._chain._meta
-            cols = meta['columns']
-            masks = meta['masks']
             if self.is_mask_item:
+                meta = self._chain._meta
+                cols = meta['columns']
+                masks = meta['masks']
                 parent = cols[self.x_key_name]['parent'].keys()[0].split('@')[-1]
                 m_text = masks[parent]['text']
                 text = m_text.get('x edit', m_text).get(meta['lib']['default text'])
