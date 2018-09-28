@@ -750,7 +750,7 @@ class PptxChain(object):
         If no crossbreak is requested the output is a list with one tuple, eg. [(u'Total', '1003')].
         If eg. 'gender' is selected as crossbreak the output is [(u'Female', '487'), (u'Male', '516')]
 
-        Only used in method select_base.
+        Only used in method select_base to poppulate self.ybases.
 
         Returns
         -------
@@ -788,13 +788,19 @@ class PptxChain(object):
 
     def _index_map(self):
         """
-        Map not painted self._chain.dataframe.index with painted index into a list of tuples (notpainted, painted)
-        If grid summary, columns are
+        Map not painted self._chain.dataframe.index with painted index into
+        a list of tuples (notpainted, painted).
+        If grid summary, self._chain.dataframe.columns are map'ed instead.
 
-        [('All', u'Base'), (1, u'1 gang'), ('', u''), (2, u'2 gange'), ('', u''), (3, u'3 gange'), ('', u''), (4, u'4 gange'), ('', u''), (5, u'5 gange'), ('', u''), (6, u'Mere end 5 gange'), ('', u''), (7, u'Nej, har ikke v\xe6ret p\xe5 skiferie'), ('', u''), (8, u'Ved ikke'), ('', u''), ('sum', u'Totalsum')]
+        Example:
+        [('All', u'Base'), (1, u'Yes'), ('', u''), (2, u'No'), ('', u''), (8, u'Dont know'),
+        ('', u''), ('sum', u'Totalsum')]
+
+        Only used to poppulate self.index_map in __init__
 
         Returns
         -------
+        list
 
         """
         if self._chain.painted:  # UnPaint if painted
@@ -814,10 +820,16 @@ class PptxChain(object):
 
     def _select_crossbreak(self):
         """
-        Takes self._chain.dataframe and returns only the columns stated in self.crossbreak
-        :return:
-        """
+        Takes self._chain.dataframe and returns a copy with only the columns
+        stated in self.crossbreak.
 
+        Only used to poppulate self.chain_df in __init__.
+
+        Returns
+        -------
+        pd.DataFrame
+
+        """
         cell_items = self._chain.cell_items.split('_')
 
         if not self.is_grid_summary:
@@ -866,18 +878,43 @@ class PptxChain(object):
 
     @property
     def ybase_values(self):
+        """
+        Returns a list with y base values picked from self.ybases.
+
+        Returns
+        -------
+        list
+
+        """
         if not hasattr(self, "_ybase_values"):
             self._ybase_values=[x[1] for x in self.ybases]
         return self._ybase_values
 
     @property
     def ybase_value_labels(self):
+        """
+        Returns a list with y base labels picked from self.ybases.
+
+        Returns
+        -------
+        list
+
+        """
         if not hasattr(self, "_ybase_value_labels"):
             self._ybase_value_labels=[x[0] for x in self.ybases]
         return self._ybase_value_labels
 
     @property
     def ybase_test_labels(self):
+        """
+        Returns a list with y base test labels picked from self.ybases.
+        Eg. ['A', 'B']
+        Returns
+        -------
+        list
+
+        """
+
         if not hasattr(self, "_ybase_test_labels"):
             if self.is_grid_summary:
                 self._ybase_test_labels = None
@@ -886,7 +923,25 @@ class PptxChain(object):
         return self._ybase_test_labels
 
     def add_test_letter_to_column_labels(self, sep=" ", prefix=None, circumfix='()'):
+        """
+        Adds test letter to dataframe column labels.
 
+        Parameters
+        ----------
+        sep: str
+            A string to separate the column label from the test letter, default is a single space.
+        prefix: str
+            An optional prefix.
+        circumfix: str
+            A two char string used to enclose the test letter.
+            Default '()'
+
+        Returns
+        -------
+        None
+            changes self.chain_df
+
+        """
         # Checking input
         if circumfix is None:
             circumfix = list(('',) * 2)
@@ -916,23 +971,32 @@ class PptxChain(object):
 
     def place_vals_in_labels(self, base_position=0, orientation='side', values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
-        Takes values from a given column or row and inserts it to the df's row or column labels.
-        Can be used to insert base values in side labels for a grid summary
-        :param
-        base_position: Int, Default 0
-            Which row/column to pick the base element from
-        orientation: Str: 'side' or 'column', Default 'side'
-            Add base to row or column labels.
+        Takes values from input list and adds them to self.chain_df's categories,
+        Meaning rows if grid summary, otherwise columns.
+
+        Can be used to insert base values in side labels for a grid summary.
+
+        Parameters
+        ----------
+        base_position: for future usage
+        orientation: for future usage
         values: list
-            the list of values to insert
+            a list with same number of values as categories in self.chain_df
         sep: str
-            the string to use to separate the value from the label
+            A string to separate the categories from the insert, default is a single space.
         prefix: str
-            A string to insert as a prefix to the label
+            A prefix to add to the insert. Default 'n='
         circumfix: str
-            A character couple to surround the value
+            A two char string used to enclose the insert.
+            Default '()'
         setup: str
             A string telling when to insert value ('always', 'if_differs', 'never')
+
+        Returns
+        -------
+        None
+            Changes self.chain_df
+
         """
         if setup=='never': return
 
@@ -1001,14 +1065,27 @@ class PptxChain(object):
 
     def set_base_text(self, base_value_circumfix="()", base_label_suf=":", base_description_suf=" - ", base_value_label_sep=", ", base_label=None):
         """
-        Returns the full base text made up of base_label, base_description and ybases, with some delimiters
-        :param
-            base_value_circumfix: chars to surround the base value
-            base_label_suf: char to put after base_label
-            base_description_suf: When more than one column, use this char after base_description
-            base_value_label_sep: char to separate column label, if more than one
-            base_label: str adhoc to use for base label
-        :return:
+        Returns the full base text made up of base_label, base_description and ybases, with some delimiters.
+        Setup is "base_label + base_description + base_value"
+
+        Parameters
+        ----------
+        base_value_circumfix: str
+            Two chars to surround the base value
+        base_label_suf: str
+            A string to add after the base label
+        base_description_suf: str
+            A string to add after the base_description
+        base_value_label_sep: str
+            A string to separate base_values if more than one
+        base_label: str
+            An optional string to use instead of self.xbase_label
+
+        Returns
+        -------
+        str
+            Sets self._base_text
+
         """
         # Checking input
         if base_value_circumfix is None:
