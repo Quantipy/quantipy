@@ -44,10 +44,10 @@ def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
     df : pandas.DataFrame
         The dataframe instance from which ChartData will be created.
     number_format : str, default="0%"
-    	The pptx number format for the intended ChartData. See:
-    	http://python-pptx.readthedocs.io/en/latest/api/chart-data.html?highlight=number_format#pptx.chart.data.CategoryChartData.number_format
+        The pptx number format for the intended ChartData. See:
+        http://python-pptx.readthedocs.io/en/latest/api/chart-data.html?highlight=number_format#pptx.chart.data.CategoryChartData.number_format
     xl_number_format : str, default="0.00%"
-    	The xlsx number format for the Excel sheet behind the intended Chart. See:
+        The xlsx number format for the Excel sheet behind the intended Chart. See:
 
     Returns
     -------
@@ -119,22 +119,22 @@ def return_slide_layout_by_name(pptx, slide_layout_name):
 class PptxPainter(object):
     """
     A convenience wrapper around the python-pptx library
+
+    Makes a Presentation instance and also defines a default slide layout if specified.
+
+    Parameters
+    ----------
+    path_to_presentation: str
+        Full path to PowerPoint template
+    slide_layout: int
+        A PowerPoint slide layout.
+        To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
+    shape_properties: quantipy.sandbox.pptx.PptxDefaultsClass.PptxDefaults
+        An instance of PptxDefaults
+
     """
 
     def __init__(self, path_to_presentation, slide_layout=None, shape_properties=None):
-        """
-        Makes a Presentation instance and also defines a default slide layout if specified.
-
-        Parameters
-        ----------
-        path_to_presentation: str
-            Full path to PowerPoint book
-        slide_layout: int
-            A PowerPoint slide layout.
-            To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
-        shape_properties: quantipy.sandbox.pptx.PptxDefaultsClass.PptxDefaults
-            An instance of PptxDefaults
-        """
 
         self.presentation  = Presentation(path_to_presentation) # TODO PptxPainter - Path checking # type: Presentation
         if slide_layout is None:
@@ -172,19 +172,41 @@ class PptxPainter(object):
     def queue_slide_items(self, pptx_chain, slide_items):
         """
         Helper function to queue a full automated slide.
-        Includes queueing of header with question text, chart and footer with base description
+        Includes queueing of header with question text, a table or chart with optional side table,
+        and footer with base description.
 
         Parameters
         ----------
         pptx_chain: quantipy.sandbox.pptx.PptxChainClass.PptxChain
             An instance of a PptxChain
         slide_items: basestring
-            A string of slide items, separated with +, eg. 'chart+table'
-            Supported items are 'chart' and 'table'
-            An item cannot appear more than once
+            A string of slide items with cell types in the form 'slide_item:cell_types'.
+            Available slide items are:
+                'chart'
+                'sidetable'
+                'table'
+            Every slide item needs a comma separated list of cell types to include in the chart or table.
+            Available cell types are: 'pct, net, mean, stats, tests'
+
+            A slide_items_string could look like: 'chart:pct,net'
+            Separate multiple slide items with '+' eg. : 'chart:pct+side_table:net'
+            One slide item type can only appear once in a slide_items_string.
+
         Returns
         -------
         None
+            calls:
+            self.draft_textbox_header()
+            self.draft_textbox_footer()
+            self.queue_textbox()
+            self.draft_table()
+            self.queue_table()
+            self.draft_side_table()
+            self.queue_side_table()
+            self.draft_autochart()
+            self.queue_chart()
+            self._check_shapes()
+
         """
 
         valid_slide_items = ['chart','table','side_table']
@@ -229,7 +251,22 @@ class PptxPainter(object):
 
         return None
 
-    def _check_shapes(self,adjust='chart'):
+    def _check_shapes(self, adjust='chart'):
+        """
+        Purpose is to check and adjust all queued items for any collisions:
+        Currently checks if charts and side_tables colide and then adjust the chart.
+
+        Parameters
+        ----------
+        adjust: str
+            A not implemented future option to select what to adjust.
+
+        Returns
+        -------
+        None
+            edits self.slide_kwargs
+
+        """
 
         # Find the side_table with the lowest 'left' number
         table_max_left=12240000
@@ -247,36 +284,61 @@ class PptxPainter(object):
     def clear_tables(self):
         """
         Initilalize the slide_kwargs "tables" dict
-        :return: None, removes all keys from self.slide_kwargs['tables']
+
+        Returns
+        -------
+        None
+            Removes all keys from self.slide_kwargs['tables']
         """
         self.clear_queue('tables')
 
     def clear_side_tables(self):
         """
-        Initilalize the slide_kwargs "tables" dict
-        :return: None, removes all keys from self.slide_kwargs['tables']
+        Initilalize the slide_kwargs "side_tables" dict
+
+        Returns
+        -------
+        None
+            Removes all keys from self.slide_kwargs['side_tables']
         """
         self.clear_queue('side_tables')
 
     def clear_charts(self):
         """
         Initilalize the slide_kwargs "charts" dict
-        :return: None, removes all keys from self.slide_kwargs['charts']
+
+        Returns
+        -------
+        None
+            Removes all keys from self.slide_kwargs['charts']
         """
         self.clear_queue('charts')
 
     def clear_textboxes(self):
         """
-        Initilalize the slide_kwargs "txtboxes" dict
-        :return: None, removes all keys from self.slide_kwargs['txtboxes']
+        Initilalize the slide_kwargs "text_boxes" dict
+
+        Returns
+        -------
+        None
+            Removes all keys from self.slide_kwargs['text_boxes']
         """
         self.clear_queue('textboxs')
 
     def clear_queue(self, key):
         """
-        Initialize the shape dicts in slide_kwargs
-        :param key: String ('all', 'charts', textboxes','tables')
-        :return: None, removes all keys from requested dict in self.slide_kwargs
+        Initialize the requested shape dict in slide_kwargs
+
+        Parameters
+        ----------
+        key: str
+            'all', 'charts', textboxes','tables', 'side_tables'
+
+        Returns
+        -------
+        None
+            Removes requested keys from self.slide_kwargs
+
         """
         if key=='all':
             for item in self.slide_kwargs.keys():
@@ -292,11 +354,18 @@ class PptxPainter(object):
 
     def set_slide_layout(self, slide_layout):
         """
-        Method to set a Slide Layout
-        :param
-            slide_layout: Int
-                To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
-        :return: Instance of SlideLayout set to the specified slide layout
+        Method to set a Slide Layout.
+
+        Parameters
+        ----------
+        slide_layout: int or str
+            To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
+
+        Returns
+        -------
+        pptx.slide.SlideLayout
+            Instance of SlideLayout set to the specified slide layout
+
         """
         if isinstance(slide_layout, int):
             return self.presentation.slide_layouts[slide_layout]
@@ -305,14 +374,16 @@ class PptxPainter(object):
 
     def add_slide(self, slide_layout=None):
         """
-        Method that creates a Slide instance
-        :param
-            slide_layout: Int
-                The Slide Layout to use.
-                To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
-                If no Slide layout is specified then self.default_slide_layout will be used
+        Method that creates a Slide instance.
 
-        :return: None - sets the self.slide property
+        Parameters
+        ----------
+        slide_layout: int or str
+            To see available Slide Layouts in a PPTX, select the Viev menu and click Slide Master.
+
+        Returns
+        -------
+
         """
         if slide_layout is None:
             if self.default_slide_layout is None:

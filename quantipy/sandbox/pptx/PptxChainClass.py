@@ -338,7 +338,7 @@ class PptxDataFrame(object):
 
         return self
 
-    def _select_categories(self,categories):
+    def _select_categories(self, categories):
         """
         Returns a copy of self.df having only the categories requested
 
