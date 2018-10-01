@@ -2281,9 +2281,24 @@ class DataSet(object):
         Drop references from ['sets']['data file']['items'] if they do not exist
         in the ``DataSet`` columns or masks definitions.
         """
-        items = self._meta['sets']['data file']['items']
-        n_items = [i for i in items if self.var_exists(i.split('@')[-1])]
-        self._meta['sets']['data file']['items'] = n_items
+        file_list = list(set(self._meta['sets']['data file']['items']))
+        for item in file_list[:]:
+            collection = item.split('@')[0]
+            variable = item.split('@')[1]
+            if not variable in self:
+                file_list.remove(item)
+            elif collection == 'masks':
+                for s in self._get_source_ref(variable):
+                    while s in file_list:
+                        file_list.remove(s)
+            elif self._is_array_item(variable):
+                parent = self.parents(variable)[0]
+                if not parent in file_list:
+                    idx = file_list.index(item)
+                    file_list[idx] = parent
+                while item in file_list:
+                    file_list.remove(item)
+        self._meta['sets']['data file']['items'] = file_list
         return None
 
     def _fix_varnames(self):
@@ -3166,7 +3181,8 @@ class DataSet(object):
     @modify(to_list=['dataset'])
     @verify(variables={'on': 'columns', 'left_on': 'columns'})
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
-               overwrite_text=False, from_set=None, inplace=True, verbose=True):
+               overwrite_text=False, from_set=None, inplace=True,
+               merge_existing=None, verbose=True):
 
         """
         Merge Quantipy datasets together using an index-wise identifer.
@@ -3215,7 +3231,8 @@ class DataSet(object):
             id_backup = None
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
-            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
+            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose,
+            merge_existing=merge_existing)
         if id_backup is not None:
             merged_data[right_on] = id_backup
         if inplace:
@@ -6073,8 +6090,8 @@ class DataSet(object):
             if 'rules' not in self._meta['columns'][n]:
                 self._meta['columns'][n]['rules'] = {'x': {}, 'y': {}}
             if not isinstance(slicer, list): slicer = [slicer]
-            slicer = self._clean_codes_against_meta(n, slicer)
-            rule_update = {'slicex': {'values': slicer}}
+            sl = self._clean_codes_against_meta(n, slicer)
+            rule_update = {'slicex': {'values': sl}}
             for ax in axis:
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
@@ -6276,18 +6293,18 @@ class DataSet(object):
             for ax in axis:
                 if collection == 'masks' and ax == 'x' and not hide_values:
                     sources = self.sources(n)
-                    hide = [sources[idx-1]
+                    h = [sources[idx-1]
                             for idx, s in enumerate(sources, start=1) if idx in hide]
                 else:
-                    hide = self._clean_codes_against_meta(n, hide)
-                    if set(hide) == set(self._get_valuemap(n, 'codes')):
+                    h = self._clean_codes_against_meta(n, hide)
+                    if set(h) == set(self._get_valuemap(n, 'codes')):
                         msg = "Cannot hide all values of '{}'' on '{}'-axis"
                         raise ValueError(msg.format(n, ax))
                 if collection == 'masks' and ax == 'x' and hide_values:
                     for s in self.sources(n):
-                        self.hiding(s, hide, 'x')
+                        self.hiding(s, h, 'x')
                 else:
-                    rule_update = {'dropx': {'values': hide}}
+                    rule_update = {'dropx': {'values': h}}
                     self._meta[collection][n]['rules'][ax].update(rule_update)
         return None
 
@@ -6387,7 +6404,8 @@ class DataSet(object):
         return None
 
     @verify(variables={'var': 'both', 'ignore': 'both'})
-    def set_missings(self, var, missing_map='default', ignore=None):
+    def set_missings(self, var, missing_map='default', hide_on_y=True,
+                     ignore=None):
         """
         Flag category definitions for exclusion in aggregations.
 
@@ -6419,14 +6437,20 @@ class DataSet(object):
             self._set_default_missings(ignore)
         else:
             if isinstance(missing_map, list):
-                missing_map = {'exclude': missing_map}
+                m_map = {'exclude': missing_map}
+            else:
+                m_map = org_copy.deepcopy(missing_map)
             for v in var:
                 if v in ignore: continue
-                missing_map = self._clean_missing_map(v, missing_map)
+                v_m_map = self._clean_missing_map(v, m_map)
                 if self._has_missings(v):
-                    self._meta['columns'][v].update({'missings': missing_map})
+                    self._meta['columns'][v].update({'missings': v_m_map})
                 else:
-                    self._meta['columns'][v]['missings'] = missing_map
+                    self._meta['columns'][v]['missings'] = v_m_map
+            if hide_on_y:
+                print missing_map
+                self.hiding(var, missing_map, 'y', True)
+
         return None
 
     # ------------------------------------------------------------------------
