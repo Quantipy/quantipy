@@ -3,9 +3,14 @@ import re
 import warnings
 import numpy as np
 import pandas as pd
-from quantipy.sandbox.sandbox import Chain
-import topy.core.ygpy.tools as t
-t.use_encoding('utf-8')
+import sys
+
+default_stdout = sys.stdout
+default_stderr = sys.stderr
+reload(sys)
+sys.setdefaultencoding('utf-8')
+sys.stdout = default_stdout
+sys.stderr = default_stderr
 
 BASE_COL = '@'
 BASE_ROW = ['is_counts', 'is_c_base']
