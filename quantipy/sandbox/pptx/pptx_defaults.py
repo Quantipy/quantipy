@@ -1,11 +1,5 @@
 # encoding: utf-8
 
-# from pptx.util import (
-#    Emu,
-#    Pt,
-#    Cm,
-#    Inches)
-
 from collections import OrderedDict
 
 import pandas as pd

@@ -3,7 +3,6 @@ import re
 import warnings
 import numpy as np
 import pandas as pd
-from quantipy.sandbox.sandbox import Chain
 import topy.core.ygpy.tools as t
 t.use_encoding('utf-8')
 
