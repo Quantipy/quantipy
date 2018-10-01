@@ -223,7 +223,7 @@ class Rules(object):
             view_weight = self.view_name.split('|')[-2]
             link_weights = [k.split('|')[-2] for k in self.link.keys()
                             if not 'base' in k.split('|')[-1]]
-            if not (weight == view_weight or weight not in link_weights):
+            if not (weight == view_weight or weight in link_weights):
                 msg = "\n{}: view-weight and weight to sort on differ ('{}' vs '{}')\n"
                 warnings.warn(msg.format(col, view_weight, weight or None))
         try:
