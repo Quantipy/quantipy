@@ -621,7 +621,8 @@ class Rules(object):
                     if len(value)==1:
                         value = set(value)
                     else:
-                        value = set([int(i) for i in list(value[1:-1].split(','))])
+                        value = set([int(i) if i.isdigit() else i
+                                     for i in list(value[1:-1].split(','))])
                     value = cols.intersection(value)
                     if not value:
                         value = ''
