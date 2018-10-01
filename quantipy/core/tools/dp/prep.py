@@ -1117,10 +1117,9 @@ def _compatible_types(left_column, right_column):
             'float', 'delimited set', 'string', 'date', 'time', 'array'],
         'float': [
             'delimited set', 'string', 'date', 'time', 'array'],
-        'single': [
-            'delimited set', 'string', 'date', 'time', 'array'],
+        'single': all_types,
         'delimited set': [
-            'string', 'date', 'time', 'array'],
+            'string', 'date', 'time', 'array', 'int', 'float'],
         'string': [
             'int', 'float', 'single', 'delimited set', 'date', 'time', 'array'],
         'date': [
@@ -1133,10 +1132,8 @@ def _compatible_types(left_column, right_column):
             'single'],
         'float': [
             'int', 'single'],
-        'single': [
-            'int', 'float'],
         'delimited set': [
-            'single', 'int', 'float'],
+            'single'],
         'string': [
             'boolean']
     }
