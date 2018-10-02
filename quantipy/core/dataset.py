@@ -6311,7 +6311,7 @@ class DataSet(object):
     @modify(to_list=['name', 'fix'])
     @verify(variables={'name': 'both'})
     def sorting(self, name, on='@', within=False, between=False, fix=None,
-                ascending=False, sort_by_weight=None):
+                ascending=False, sort_by_weight='auto'):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
