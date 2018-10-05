@@ -168,7 +168,18 @@ class Rules(object):
             # get df (-slice) to apply rule on
             if 'sortx' in rule_axis:
                 sort_on = rule_axis['sortx'].get('sort_on', '@')
+
+                sort_on_stat = False
+                sort_on_net = False
+
+                if isinstance(sort_on, (str, unicode)):
+                    sort_on_mean = sort_on in [
+                        'median', 'stddev', 'sem', 'max', 'min', 'mean',
+                        'upper_q', 'lower_q']
+                    sort_on_net = sort_on.startswith('net')
+
                 expanded_net = self._find_expanded_nets(views, rule_axis)
+
                 # sort expanded nets
                 if expanded_net and not self.array_summary:
                     if not sort_on == '@':
@@ -184,11 +195,10 @@ class Rules(object):
                         self.y_slicer = r_slicer
                     return None
                 # get df-desc-slice to sort on
-                elif sort_on in ['median', 'stddev', 'sem', 'max', 'min',
-                                 'mean', 'upper_q', 'lower_q']:
+                elif sort_on_stat:
                     f = self._get_descriptive_via_stack(col_key, sort_on)
                 # get df-net-slice to sort on
-                elif 'net' in sort_on:
+                elif sort_on_net:
                     f = self._get_net_via_stack(col_key, sort_on)
                 # get df-freq-slice to sort on
                 else:
