@@ -1363,7 +1363,8 @@ class ChainManager(object):
 
             chain = chain.get(data_key, filter_key, self._force_list(x_key),
                               self._force_list(y_key), views, rules=rules,
-                              prioritize=prioritize, orient=orient)
+                              rules_weight=rules_weight, prioritize=prioritize,
+                              orient=orient)
 
             folders = self.folder_names
             if folder in folders:
@@ -2290,7 +2291,7 @@ class Chain(object):
         return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
-            orient='x', prioritize=True):
+            rules_weight=None, orient='x', prioritize=True):
         """ Get the concatenated Chain.DataFrame
         """
         self._meta = self.stack[data_key].meta
@@ -2320,7 +2321,8 @@ class Chain(object):
                     continue
 
                 if prioritize: link = self._drop_substituted_views(link)
-                found_views, y_frames = self._concat_views(link, views)
+                found_views, y_frames = self._concat_views(
+                    link, views, rules_weight)
                 found.append(found_views)
 
                 try:
@@ -2530,7 +2532,7 @@ class Chain(object):
             df.columns = df.columns.set_levels([varname], level=0, inplace=False)
         return df
 
-    def _concat_views(self, link, views, found=None):
+    def _concat_views(self, link, views, rules_weight, found=None):
         """ Concatenates the Views of a Chain.
         """
         frames = []
@@ -2561,7 +2563,7 @@ class Chain(object):
                     else:
                         use_grp_type = self._group_style
 
-                    found, grouped = self._concat_views(link, view, found=found)
+                    found, grouped = self._concat_views(link, view, rules_weight, found=found)
                     if grouped:
                         frames.append(self._group_views(grouped, use_grp_type))
                 else:
@@ -2611,7 +2613,7 @@ class Chain(object):
 
                     rules_weight = None
                     if self._has_rules:
-                        rules = Rules(link, view, axes=self._has_rules)
+                        rules = Rules(link, view, self._has_rules, rules_weight)
                         # print rules.show_rules()
                         # rules.get_slicer()
                         # print rules.show_slicers()
