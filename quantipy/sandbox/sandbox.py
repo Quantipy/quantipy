@@ -681,7 +681,7 @@ class ChainManager(object):
             return cm
 
 
-    def cut(self, values, ci=None):
+    def cut(self, values, ci=None, tests=True):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
 
@@ -690,7 +690,7 @@ class ChainManager(object):
         values : (list of) str
             The string must indicate the raw (i.e. the unpainted) second level
             axis value, e.g. ``'mean'``, ``'net_1'``, etc.
-        ci : {'counts', 'c%', None}, default None
+        cell_items : {'counts', 'c%', None}, default None
             The cell item version to target if multiple frequency representations
             are present.
 
@@ -703,7 +703,8 @@ class ChainManager(object):
             values[values.index('cbase')] = 'All'
         for c in self.chains:
             if c.sig_test_letters: c._remove_letter_header()
-            idxs, names, order = c._view_idxs(values, names=True, ci=ci)
+            idxs, names, order = c._view_idxs(
+                values, keep_tests=tests, names=True, ci=ci)
             idxs = [i for _, i in sorted(zip(order, idxs))]
             names = [n for _, n in sorted(zip(order, names))]
             if c.ci_count > 1: c._non_grouped_axis()
@@ -749,8 +750,14 @@ class ChainManager(object):
         chains = self.chains
         totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
         concat_dfs = []
+        new_labels = []
         for c in chains:
+
             df = c.dataframe
+
+            # GET FORMER FIRST LEVEL LABELS
+            new_labels.append(df.index.get_level_values(0).values.tolist()[0])
+
             df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
             df.index.set_levels(levels=[x_label], level=0, inplace=True)
             if not c.array_style == 0:
@@ -759,6 +766,11 @@ class ChainManager(object):
                 df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
             concat_dfs.append(df)
         new_df = pd.concat(concat_dfs, axis=0)
+
+        # UPDATE LEVEL 1 WITH FORMER FIRST LEVEL (0)
+        new_df.index.set_levels(levels=new_labels, level=1, inplace=True)
+        new_df.index.set_labels(labels=range(0, len(new_labels)), level=1, inplace=True)
+
         self.chains[0]._frame = new_df
         self.reorder([0])
         self.chains[0]._custom_views = custom_views
@@ -2282,7 +2294,7 @@ class Chain(object):
                     stat=self._stat(parts),
                     siglevel=self._siglevel(parts))
 
-    def _view_idxs(self, view_tags, ignore_tests=True, names=False, ci=None):
+    def _view_idxs(self, view_tags, keep_tests=True, names=False, ci=None):
         """
         """
         if not isinstance(view_tags, list): view_tags = [view_tags]
@@ -2304,7 +2316,7 @@ class Chain(object):
             else:
                 rows.append(r)
         invalids = []
-        if ignore_tests:
+        if not keep_tests:
             invalids.extend(['is_propstest', 'is_meanstest'])
         if ci == 'counts':
             invalids.append('is_c_pct')
@@ -2313,6 +2325,7 @@ class Chain(object):
         idxs = []
         names = []
         order = []
+
         for i, row in enumerate(rows):
             if any([invalid in row[1] for invalid in invalids]): continue
             if row[0] in view_tags:
