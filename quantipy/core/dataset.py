@@ -3059,6 +3059,7 @@ class DataSet(object):
 
         return None
 
+    @modify(to_list=['logic'])
     def add_filter_var(self, name, logic, overwrite=False):
         """
         Create filter-var, that allows index slicing using ``manifest_filter``
@@ -3068,8 +3069,21 @@ class DataSet(object):
         name: str
             Name and label of the new filter-variable, which gets also listed
             in DataSet.filters
-        logic: complex logic
+        logic: complex logic/ str, list of complex logic/ str
             Logic to keep cases.
+            Complex logic should be provided in form of:
+            ```
+            {
+            'label': 'any text',
+            'logic': {var: keys} / intersection/ ....
+            }
+
+            If a str (column-name) is provided, automatically a logic is
+            created that keeps all cases which are not empty for this column.
+            If logic is a list, each included list-item becomes a category of
+            the new filter-variable and all cases are kept that satify all
+            conditions (intersection)
+
         overwrite: bool, default False
             Overwrite an already existing filter-variable.
         """
@@ -3081,14 +3095,34 @@ class DataSet(object):
             elif not overwrite:
                 msg = "Cannot add filter-variable '{}', it's already included."
                 raise ValueError(msg.format(name))
-        self.add_meta(name, 'single', name, [(1, 'active')])
-        self[self.take(logic), name] = 1
+            else:
+                self.drop(name)
+                if self._verbose_infos:
+                    print 'Overwriting {}'.format(name)
+        values = [(0, 'keep', None)]
+        for x, l in enumerate(logic, 1):
+            if isinstance(l, basestring):
+                if not l in self:
+                    raise KeyError("{} is not included in Dataset".format(l))
+                val = (x, '{} not empty'.format(l), {l: not_count(0)})
+            elif isinstance(l, dict):
+                if not ('label' in l and 'logic' in l):
+                    raise KeyError("Filter logic must contain 'label' and 'logic'")
+                val = (x, l['label'], l['logic'])
+            else:
+                raise TypeError('Included logic must be (list of) str or dict.')
+            values.append(val)
+
+        self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
+        self.recode(name, {x: z for x, y, z in values[1:]})
+        self.recode(name, {0: {name: has_count(len(values)-1)}}, append=True)
         self.filters.append(name)
         if not 'filters' in self._meta['info']:
             self._meta['info']['filters'] = []
         self._meta['info']['filters'].append(name)
         return None
 
+    @modify(to_list=['logic'])
     def extend_filter_var(self, name, logic, suffix='ext'):
         """
         Extend logic of an existing filter-variable.
@@ -3097,7 +3131,7 @@ class DataSet(object):
         ----------
         name: str
             Name of the existing filter variable.
-        logic: complex logic
+        logic: (list of) complex logic/ str
             Additional logic to keep cases (intersection with existing logic).
         suffix: str
             Addition to the filter-name to create a new filter. If it is None
@@ -3107,12 +3141,31 @@ class DataSet(object):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         if suffix:
             f_name = '{}_{}'.format(name, suffix)
-            overwrite = False
+            if f_name in self:
+                msg = "Please change suffix: '{}' is already in dataset."
+                raise KeyError(msg.format(f_name))
+            self.copy(name, suffix)
+            self._meta['info']['filters'].append(f_name)
+
         else:
             f_name = name
-            overwrite = True
-        f_logic = intersection([{name: 1}, logic])
-        self.add_filter_var(f_name, f_logic, overwrite)
+        self.uncode(f_name, {0: {f_name: 0}})
+        values = []
+        for x, l in enumerate(logic, max(self.codes(f_name))+1):
+            if isinstance(l, basestring):
+                if not l in self:
+                    raise KeyError("{} is not included in Dataset".format(l))
+                val = (x, '{} not empty'.format(l), {l: not_count(0)})
+            elif isinstance(l, dict):
+                if not ('label' in l and 'logic' in l):
+                    raise KeyError("Filter logic must contain 'label' and 'logic'")
+                val = (x, l['label'], l['logic'])
+            else:
+                raise TypeError('Included logic must be (list of) str or dict.')
+            values.append(val)
+        self.extend_values(f_name, values)
+        self.recode(f_name, {x: z for x, y, z in values}, append=True)
+        self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
         return None
 
     def manifest_filter(self, name):
