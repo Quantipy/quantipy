@@ -2281,7 +2281,7 @@ class DataSet(object):
         Drop references from ['sets']['data file']['items'] if they do not exist
         in the ``DataSet`` columns or masks definitions.
         """
-        file_list = list(set(self._meta['sets']['data file']['items']))
+        file_list = self._meta['sets']['data file']['items']
         for item in file_list[:]:
             collection = item.split('@')[0]
             variable = item.split('@')[1]
@@ -2298,7 +2298,10 @@ class DataSet(object):
                     file_list[idx] = parent
                 while item in file_list:
                     file_list.remove(item)
-        self._meta['sets']['data file']['items'] = file_list
+        f_list = []
+        for item in file_list:
+            if not item in f_list: f_list.append(item)
+        self._meta['sets']['data file']['items'] = f_list
         return None
 
     def _fix_varnames(self):
