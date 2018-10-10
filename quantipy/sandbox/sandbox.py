@@ -1754,7 +1754,7 @@ class Chain(object):
         for m in zip(tests, levels):
             l = '.{}'.format(m[1])
             t = m[0]
-            if m in sig_levels:
+            if t in sig_levels:
                 sig_levels[t].append(l)
             else:
                 sig_levels[t] = [l]
