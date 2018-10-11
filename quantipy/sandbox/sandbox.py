@@ -3085,6 +3085,7 @@ class Chain(object):
             tk_transl = text_keys[axis]
         else:
             tk_transl = self._default_text
+        c_text = copy.deepcopy(self._custom_texts) if self._custom_texts else {}
         for i, value in enumerate(levels[1]):
             if str(value).startswith('#pad'):
                 level_1_text.append(value)
@@ -3101,8 +3102,8 @@ class Chain(object):
                         text = self._specify_base(i, text_keys[axis], bases)
                     else:
                         text = self._transl[tk_transl][value]
-                        if self._custom_texts and value in self._custom_texts:
-                            add_text = self._custom_texts[value].pop(0)
+                        if value in c_text:
+                            add_text = c_text[value].pop(0)
                             text = '{} {}'.format(text, add_text)
                     level_1_text.append(text)
                 elif value == 'All (eff.)':
