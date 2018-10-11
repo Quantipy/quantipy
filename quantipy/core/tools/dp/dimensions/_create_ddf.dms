@@ -33,7 +33,7 @@ Event(OnJobStart)
 
     'Line separator const.
     Const adCR = 13, adCRLF = -1, adLF = 10
-    	
+
 	Set dmgrGlobal.CaseData = CreateObject("ADODB.Stream")
 
 	dmgrGlobal.CaseData.CharSet = "utf-8"
@@ -49,66 +49,20 @@ Event(OnJobStart)
 	End Select
 	dmgrGlobal.CaseData.Open()
 	dmgrGlobal.CaseData.LoadFromFile(MASTER_INPUT+"_datastore.csv")
-	
+
 	Set dmgrGlobal.Columns = dmgrGlobal.CaseData.ReadText(-2)
-    
+
 	'Set decimal separator
 	Dim oExcel
 	dmgrJob.GlobalVariables.Add("DecimalSeparator")
-	dmgrJob.GlobalVariables.DecimalSeparator = "."  
+	dmgrJob.GlobalVariables.DecimalSeparator = "."
 	Set oExcel = createobject("Excel.Application")
-	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","    
+	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","
 
 End Event
 
 
 Event(OnNextCase)
-
-	Function DateString(string)
-
-		Dim splitter
-		Dim datetime, sdate, stime
-		Dim date_parts, syear, smonth, sday
-
-		If Find(string, "T") > -1 Then
-			splitter = "T"
-		Else
-			splitter = " "
-		End If
-
-		string = Left(string, 19)
-		datetime = Split(string, splitter)
-		sdate = datetime[0]
-
-		if Len(datetime) = 1 Then
-			stime = "00:00:01"
-		Else
-			stime = datetime[1]
-		End If
-
-		date_parts = Split(sdate, "-")
-		If len(date_parts) <> 3 Then
-			DateString = Null
-		Else
-			syear = date_parts[0]
-			smonth = date_parts[1]
-			sday = date_parts[2]
-
-			If Not cLong(syear) > 1900 Then
-				DateString = Null
-			Else
-				Select Case DATE_FORMAT
-					Case "DM", "DDMM", "DMY", "DDMMYY", "DDMMYYYY"
-						DateString = sday +" "+ smonth +" "+ syear +" "+ stime
-					Case "MD", "MMDD", "MDY", "MMDDYY", "MMDDYYYY"
-						DateString = smonth +" "+ sday +" "+ syear +" "+ stime
-					Case Else
-						Debug.Log("Unknown DATE_FORMAT.")
-				End Select
-			End If
-		End If
-
-	End Function
 
 	Dim i, oA, oA_value
 	Dim columns, col, data
@@ -137,9 +91,9 @@ Event(OnNextCase)
 					oA = NULL
 				Else
 					oA_value=data[i]
-					if dmgrJob.GlobalVariables.DecimalSeparator = "," Then 
+					if dmgrJob.GlobalVariables.DecimalSeparator = "," Then
 						oA_value = Replace(CText(oA_value),".",",")
-					End If	
+					End If
 					oA = oA_value
 				End If
 			Case 2
@@ -160,7 +114,9 @@ Event(OnNextCase)
 				If data[i] = "" Then
 					oA = Null
 				Else
-					oA = DateString(data[i])
+                   Dim parts
+                   parts = data[i].Split(".")
+                   oA = cDate(parts[0])
 				End If
 		End Select
 		i = i + 1

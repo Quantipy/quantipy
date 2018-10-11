@@ -92,9 +92,11 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (March)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-27-02-2018">Latest (27/02/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (01/10/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
@@ -202,7 +204,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -299,6 +301,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -357,7 +360,7 @@
 <dt id="quantipy.Quantity">
 <em class="property">class </em><code class="descclassname">quantipy.</code><code class="descname">Quantity</code><span class="sig-paren">(</span><em>link</em>, <em>weight=None</em>, <em>base_all=False</em>, <em>ignore_flags=False</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Quantity object is the main Quantipy aggregation engine.</p>
-<p>Consists of a link&#8217;s data matrix representation and sectional defintion
+<p>Consists of a link’s data matrix representation and sectional defintion
 of weight vector (wv), x-codes section (xsect) and y-codes section
 (ysect). The instance methods handle creation, retrieval and manipulation
 of the data input matrices and section definitions as well as the majority
@@ -377,21 +380,21 @@ of statistical calculations.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>axis</strong> (<em>{None</em><em>, </em><em>'x'</em><em>, </em><em>'y'}</em><em>, </em><em>deafult None</em>) &#8211; When axis is None, the frequency of all cells from the uni- or
+<li><strong>axis</strong> (<em>{None</em><em>, </em><em>'x'</em><em>, </em><em>'y'}</em><em>, </em><em>deafult None</em>) – When axis is None, the frequency of all cells from the uni- or
 multivariate distribution is presented. If the axis is specified
-to be either &#8216;x&#8217; or &#8216;y&#8217; the margin per axis becomes the resulting
+to be either ‘x’ or ‘y’ the margin per axis becomes the resulting
 aggregation.</li>
-<li><strong>raw_sum</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True will perform a simple summation over the cells given the
+<li><strong>raw_sum</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True will perform a simple summation over the cells given the
 axis parameter. This ignores net counting of qualifying answers in
 favour of summing over all answers given when considering margins.</li>
-<li><strong>cum_sum</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True a cumulative sum of the elements along the given axis is
+<li><strong>cum_sum</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True a cumulative sum of the elements along the given axis is
 returned.</li>
-<li><strong>effective</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True, compute effective counts instead of traditional (weighted)
+<li><strong>effective</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, compute effective counts instead of traditional (weighted)
 counts.</li>
-<li><strong>margin</strong> (<em>bool</em><em>, </em><em>deafult True</em>) &#8211; Controls whether the margins of the aggregation result are shown.
+<li><strong>margin</strong> (<em>bool</em><em>, </em><em>deafult True</em>) – Controls whether the margins of the aggregation result are shown.
 This also applies to margin aggregations themselves, since they
 contain a margin in (form of the total number of cases) as well.</li>
-<li><strong>as_df</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; Controls whether the aggregation is transformed into a Quantipy-
+<li><strong>as_df</strong> (<em>bool</em><em>, </em><em>default True</em>) – Controls whether the aggregation is transformed into a Quantipy-
 multiindexed (following the Question/Values convention)
 pandas.DataFrame or will be left in its numpy.array format.</li>
 </ul>
@@ -411,7 +414,7 @@ to the <code class="docutils literal"><span class="pre">result</span></code> pro
 <dl class="method">
 <dt id="quantipy.Quantity.exclude">
 <code class="descname">exclude</code><span class="sig-paren">(</span><em>codes</em>, <em>axis='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.exclude" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wrapper for _missingfy(...keep_codes=False, ..., keep_base=False, ...)
+<dd><p>Wrapper for _missingfy(…keep_codes=False, …, keep_base=False, …)
 Excludes specified codes from aggregation.</p>
 </dd></dl>
 
@@ -430,18 +433,18 @@ Excludes specified codes from aggregation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>groups</strong> (<em>list</em><em>, </em><em>dict of lists</em><em> or </em><em>logic expression</em>) &#8211; <p>The group/net code defintion(s) in form of...</p>
+<li><strong>groups</strong> (<em>list</em><em>, </em><em>dict of lists</em><em> or </em><em>logic expression</em>) – <p>The group/net code defintion(s) in form of…</p>
 <ul>
 <li>a simple list: <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></code></li>
 <li>a dict of list: <code class="docutils literal"><span class="pre">{'grp</span> <span class="pre">A':</span> <span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3],</span> <span class="pre">'grp</span> <span class="pre">B':</span> <span class="pre">[4,</span> <span class="pre">5,</span> <span class="pre">6]}</span></code></li>
 <li>a logical expression: <code class="docutils literal"><span class="pre">not_any([1,</span> <span class="pre">2])</span></code></li>
 </ul>
 </li>
-<li><strong>axis</strong> ({<code class="docutils literal"><span class="pre">'x'</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>}, default <code class="docutils literal"><span class="pre">'x'</span></code>) &#8211; The axis to group codes on.</li>
-<li><strong>expand</strong> ({None, <code class="docutils literal"><span class="pre">'before'</span></code>, <code class="docutils literal"><span class="pre">'after'</span></code>}, default <code class="docutils literal"><span class="pre">None</span></code>) &#8211; If <code class="docutils literal"><span class="pre">'before'</span></code>, the codes that are grouped will be kept and placed
+<li><strong>axis</strong> ({<code class="docutils literal"><span class="pre">'x'</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>}, default <code class="docutils literal"><span class="pre">'x'</span></code>) – The axis to group codes on.</li>
+<li><strong>expand</strong> ({None, <code class="docutils literal"><span class="pre">'before'</span></code>, <code class="docutils literal"><span class="pre">'after'</span></code>}, default <code class="docutils literal"><span class="pre">None</span></code>) – If <code class="docutils literal"><span class="pre">'before'</span></code>, the codes that are grouped will be kept and placed
 before the grouped aggregation; vice versa for <code class="docutils literal"><span class="pre">'after'</span></code>. Ignored
 on logical expressions found in <code class="docutils literal"><span class="pre">groups</span></code>.</li>
-<li><strong>complete</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True, codes that define the Link on the given <code class="docutils literal"><span class="pre">axis</span></code> but are
+<li><strong>complete</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, codes that define the Link on the given <code class="docutils literal"><span class="pre">axis</span></code> but are
 not present in the <code class="docutils literal"><span class="pre">groups</span></code> defintion(s) will be placed in their
 natural position within the aggregation, respecting the value of
 <code class="docutils literal"><span class="pre">expand</span></code>.</li>
@@ -461,7 +464,7 @@ natural position within the aggregation, respecting the value of
 <dl class="method">
 <dt id="quantipy.Quantity.limit">
 <code class="descname">limit</code><span class="sig-paren">(</span><em>codes</em>, <em>axis='x'</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.limit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wrapper for _missingfy(...keep_codes=True, ..., keep_base=True, ...)
+<dd><p>Wrapper for _missingfy(…keep_codes=True, …, keep_base=True, …)
 Restrict the data matrix entires to contain the specified codes only.</p>
 </dd></dl>
 
@@ -473,7 +476,7 @@ Restrict the data matrix entires to contain the specified codes only.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>on</strong> (<em>{'y'</em><em>, </em><em>'x'}</em><em>, </em><em>default 'y'</em>) &#8211; Defines the base to normalize the result on. <code class="docutils literal"><span class="pre">'y'</span></code> will
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>on</strong> (<em>{'y'</em><em>, </em><em>'x'}</em><em>, </em><em>default 'y'</em>) – Defines the base to normalize the result on. <code class="docutils literal"><span class="pre">'y'</span></code> will
 produce column percentages, <code class="docutils literal"><span class="pre">'x'</span></code> will produce row
 percentages.</td>
 </tr>
@@ -493,14 +496,14 @@ percentages.</td>
 <dl class="method">
 <dt id="quantipy.Quantity.rescale">
 <code class="descname">rescale</code><span class="sig-paren">(</span><em>scaling</em>, <em>drop=False</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
-<dd><p>Modify the object&#8217;s <code class="docutils literal"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
+<dd><p>Modify the object’s <code class="docutils literal"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>scaling</strong> (<em>dict</em>) &#8211; Mapping of old_code: new_code, given as of type int or float.</li>
-<li><strong>drop</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True, codes not included in the scaling dict will be excluded.</li>
+<li><strong>scaling</strong> (<em>dict</em>) – Mapping of old_code: new_code, given as of type int or float.</li>
+<li><strong>drop</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, codes not included in the scaling dict will be excluded.</li>
 </ul>
 </td>
 </tr>
@@ -523,14 +526,14 @@ percentages.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>stat</strong> (<em>{'summary'</em><em>, </em><em>'mean'</em><em>, </em><em>'median'</em><em>, </em><em>'var'</em><em>, </em><em>'stddev'</em><em>, </em><em>'sem'</em><em>, </em><em>varcoeff'</em><em>,</em><em></em>) &#8211; &#8216;min&#8217;, &#8216;lower_q&#8217;, &#8216;upper_q&#8217;, &#8216;max&#8217;}, default &#8216;summary&#8217;
+<li><strong>stat</strong> (<em>{'summary'</em><em>, </em><em>'mean'</em><em>, </em><em>'median'</em><em>, </em><em>'var'</em><em>, </em><em>'stddev'</em><em>, </em><em>'sem'</em><em>, </em><em>varcoeff'</em><em>,</em>) – ‘min’, ‘lower_q’, ‘upper_q’, ‘max’}, default ‘summary’
 The measure to calculate. Defaults to a summary output of the most
 important sample statistics.</li>
-<li><strong>axis</strong> (<em>{'x'</em><em>, </em><em>'y'}</em><em>, </em><em>default 'x'</em>) &#8211; The axis which is reduced in the aggregation, e.g. column vs. row
+<li><strong>axis</strong> (<em>{'x'</em><em>, </em><em>'y'}</em><em>, </em><em>default 'x'</em>) – The axis which is reduced in the aggregation, e.g. column vs. row
 means.</li>
-<li><strong>margin</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; Controls whether statistic(s) of the marginal distribution are
+<li><strong>margin</strong> (<em>bool</em><em>, </em><em>default True</em>) – Controls whether statistic(s) of the marginal distribution are
 shown.</li>
-<li><strong>as_df</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; Controls whether the aggregation is transformed into a Quantipy-
+<li><strong>as_df</strong> (<em>bool</em><em>, </em><em>default True</em>) – Controls whether the aggregation is transformed into a Quantipy-
 multiindexed (following the Question/Values convention)
 pandas.DataFrame or will be left in its numpy.array format.</li>
 </ul>
@@ -550,20 +553,20 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 <dl class="method">
 <dt id="quantipy.Quantity.swap">
 <code class="descname">swap</code><span class="sig-paren">(</span><em>var</em>, <em>axis='x'</em>, <em>update_axis_def=True</em>, <em>inplace=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.swap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Change the Quantity&#8217;s x- or y-axis keeping filter and weight setup.</p>
+<dd><p>Change the Quantity’s x- or y-axis keeping filter and weight setup.</p>
 <p>All edits and aggregation results will be removed during the swap.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>var</strong> (<em>str</em>) &#8211; New variable&#8217;s name used in axis swap.</li>
-<li><strong>axis</strong> ({&#8216;x&#8217;, &#8216;y&#8217;}, default <code class="docutils literal"><span class="pre">'x'</span></code>) &#8211; The axis to swap.</li>
-<li><strong>update_axis_def</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If self is of type <code class="docutils literal"><span class="pre">'array'</span></code>, the name and item definitions
+<li><strong>var</strong> (<em>str</em>) – New variable’s name used in axis swap.</li>
+<li><strong>axis</strong> ({‘x’, ‘y’}, default <code class="docutils literal"><span class="pre">'x'</span></code>) – The axis to swap.</li>
+<li><strong>update_axis_def</strong> (<em>bool</em><em>, </em><em>default False</em>) – If self is of type <code class="docutils literal"><span class="pre">'array'</span></code>, the name and item definitions
 (that are e.g. used in the <code class="docutils literal"><span class="pre">to_df()</span></code> method) can be updated to
-reflect the swapped axis variable or kept to show the original&#8217;s
+reflect the swapped axis variable or kept to show the original’s
 ones.</li>
-<li><strong>inplace</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; Whether to modify the Quantity inplace or return a new instance.</li>
+<li><strong>inplace</strong> (<em>bool</em><em>, </em><em>default True</em>) – Whether to modify the Quantity inplace or return a new instance.</li>
 </ul>
 </td>
 </tr>
@@ -603,7 +606,7 @@ at the test results are computed inside the instance of the object.</p>
 <dd><p>Compute the standard error (se) estimate of the tested metric.</p>
 <p>The calculation of the se is defined by the parameters of the setup.
 The main difference is the handling of variances. <strong>unpooled</strong>
-implicitly assumes variance inhomogenity between the column pairing&#8217;s
+implicitly assumes variance inhomogenity between the column pairing’s
 samples. <strong>pooled</strong> treats variances effectively as equal.</p>
 </dd></dl>
 
@@ -623,7 +626,7 @@ samples. <strong>pooled</strong> treats variances effectively as equal.</p>
 <dt id="quantipy.Test.run">
 <code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Test.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the testing algorithm and creates an output pd.DataFrame.</p>
-<p>The output is indexed according to Quantipy&#8217;s Questions-&gt;Values
+<p>The output is indexed according to Quantipy’s Questions-&gt;Values
 convention. Significant results between columns are presented as
 lists of integer y-axis codes where the column with the higher value
 is holding the codes of the columns with the lower values. NaN is
@@ -635,7 +638,7 @@ compared to the others.</p>
 <dt id="quantipy.Test.set_params">
 <code class="descname">set_params</code><span class="sig-paren">(</span><em>test_total=False</em>, <em>level='mid'</em>, <em>mimic='Dim'</em>, <em>testtype='pooled'</em>, <em>use_ebase=True</em>, <em>ovlp_correc=True</em>, <em>cwi_filter=False</em>, <em>flag_bases=None</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Test.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the test algorithm parameters and defines the type of test.</p>
-<p>This method sets the test&#8217;s global parameters and derives the
+<p>This method sets the test’s global parameters and derives the
 necessary measures for the computation of the test statistic.
 The default values correspond to the SPSS Dimensions Column Tests
 algorithms that control for bias introduced by weighting and
@@ -649,21 +652,21 @@ overlapping samples in the column pairs of multi-coded questions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>test_total</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If set to True, the test algorithms will also include an existent
+<li><strong>test_total</strong> (<em>bool</em><em>, </em><em>default False</em>) – If set to True, the test algorithms will also include an existent
 total (&#64;-) version of the original link and test against the
 unconditial data distribution.</li>
-<li><strong>level</strong> (<em>str</em><em> or </em><em>float</em><em>, </em><em>default 'mid'</em>) &#8211; The level of significance given either as per &#8216;low&#8217; = 0.1,
-&#8216;mid&#8217; = 0.05, &#8216;high&#8217; = 0.01 or as specific float, e.g. 0.15.</li>
-<li><strong>mimic</strong> (<em>{'askia'</em><em>, </em><em>'Dim'} default='Dim'</em>) &#8211; Will instruct the mimicking of a software specific test.</li>
-<li><strong>testtype</strong> (<em>str</em><em>, </em><em>default 'pooled'</em>) &#8211; Global definition of the tests.</li>
-<li><strong>use_ebase</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, will use the effective sample sizes instead of the
+<li><strong>level</strong> (<em>str</em><em> or </em><em>float</em><em>, </em><em>default 'mid'</em>) – The level of significance given either as per ‘low’ = 0.1,
+‘mid’ = 0.05, ‘high’ = 0.01 or as specific float, e.g. 0.15.</li>
+<li><strong>mimic</strong> (<em>{'askia'</em><em>, </em><em>'Dim'} default='Dim'</em>) – Will instruct the mimicking of a software specific test.</li>
+<li><strong>testtype</strong> (<em>str</em><em>, </em><em>default 'pooled'</em>) – Global definition of the tests.</li>
+<li><strong>use_ebase</strong> (<em>bool</em><em>, </em><em>default True</em>) – If True, will use the effective sample sizes instead of the
 the simple weighted ones when testing a weighted aggregation.</li>
-<li><strong>ovlp_correc</strong> (<em>bool</em><em>, </em><em>default True</em>) &#8211; If True, will consider and correct for respondent overlap when
+<li><strong>ovlp_correc</strong> (<em>bool</em><em>, </em><em>default True</em>) – If True, will consider and correct for respondent overlap when
 testing between multi-coded column pairs.</li>
-<li><strong>cwi_filter</strong> (<em>bool</em><em>, </em><em>default False</em>) &#8211; If True, will check an incoming count aggregation for cells that
+<li><strong>cwi_filter</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, will check an incoming count aggregation for cells that
 fall below a treshhold comparison aggregation that assumes counts
 to be independent.</li>
-<li><strong>flag_bases</strong> (<em>list of two int</em><em>, </em><em>default None</em>) &#8211; If provided, the output dataframe will replace results that have
+<li><strong>flag_bases</strong> (<em>list of two int</em><em>, </em><em>default None</em>) – If provided, the output dataframe will replace results that have
 been calculated on (eff.) bases below the first int with <code class="docutils literal"><span class="pre">'**'</span></code>
 and mark results in columns with bases below the second int with
 <code class="docutils literal"><span class="pre">'*'</span></code></li>
@@ -735,7 +738,7 @@ and mark results in columns with bases below the second int with
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

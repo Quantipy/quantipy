@@ -47,7 +47,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 30)
+		self.assertEqual(len(_get_meta(batch1).keys()), 31)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -64,7 +64,7 @@ class TestBatch(unittest.TestCase):
 				'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 				'cell_items', 'weights', 'sigproperties', 'additional',
-				'sample_size', 'language', 'name', 'total']
+				'sample_size', 'language', 'name', 'total', '_filter_slice']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
@@ -133,7 +133,8 @@ class TestBatch(unittest.TestCase):
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
 		verbatims = _get_meta(batch)['verbatims'][0]
 		self.assertEqual(len(verbatims['idx']), 118)
-		self.assertEqual(verbatims['columns'], ['RecordNo', 'q8a', 'q9a'])
+		self.assertEqual(verbatims['columns'], ['q8a', 'q9a'])
+		self.assertEqual(verbatims['break_by'], ['RecordNo'])
 		self.assertEqual(verbatims['title'], 'open ends')
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', split=True,
 							title=['open ends', 'open ends2'], overwrite=True)

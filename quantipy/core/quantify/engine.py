@@ -958,7 +958,8 @@ class Quantity(object):
             elif self.ydef is not None and len(self.ydef) == 0:
                 ydim = 2
             else:
-                ydim = len(self.ydef) + 1
+                ydim = len(self.ydef)
+                if not self.type == 'array': ydim += 1
         else:
             if self.xdef is not None:
                 if len(self.xdef) == 0:

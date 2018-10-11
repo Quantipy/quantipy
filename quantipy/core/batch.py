@@ -32,6 +32,14 @@ def meta_editor(self, dataset_func):
             self.edits_ds = self.clone()
         ds_clone = self.edits_ds
         var_edits = []
+        # args/ kwargs for min_value_count
+        if dataset_func.func_name == 'min_value_count':
+            if len(args) < 3 and not 'weight' in kwargs:
+                kwargs['weight'] = self.weights[0]
+            if len(args) < 4 and not 'condition' in kwargs:
+                if not self.filter == 'no_filter':
+                    kwargs['condition'] = self.filter.values()[0]
+
         for n in name:
             is_array = self.is_array(n)
             is_array_item = self._is_array_item(n)
@@ -69,8 +77,8 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-    if dataset_func.func_name in ['hiding', 'slicing']:
-        self._update()
+        if dataset_func.func_name in ['hiding', 'slicing', 'min_value_count']:
+            self._update()
     return edit
 
 def not_implemented(dataset_func):
@@ -121,6 +129,7 @@ class Batch(qp.DataSet):
             self.extended_filters_per_x = {}
             self.filter = 'no_filter'
             self.filter_names = ['no_filter']
+            self._filter_slice = None
             self.x_y_map = None
             self.x_filter_map = None
             self.y_on_y = []
@@ -145,6 +154,7 @@ class Batch(qp.DataSet):
         # DECORATED / OVERWRITTEN DataSet methods
         # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
         self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
+        self.min_value_count = meta_editor(self, qp.DataSet.min_value_count.__func__)
         self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
         self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
         self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
@@ -171,7 +181,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info']:
+                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info',
+                     '_filter_slice']:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -186,7 +197,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map', 'build_info']:
+                     'y_on_y_filter', 'y_filter_map', 'build_info',
+                     '_filter_slice']:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -234,20 +246,40 @@ class Batch(qp.DataSet):
         Remove instance from meta object.
         """
         name = self.name
+        adds = self._meta['sets']['batches'][name]['additions']
+        if adds:
+            for bname, bdef in self._meta['sets']['batches'].items():
+                if bname == name: continue
+                for add in adds[:]:
+                    if add in bdef['additions']:
+                        adds.remove(add)
+        for add in adds:
+            self._meta['sets']['batches'][add]['additional'] = False
+
         del(self._meta['sets']['batches'][name])
         if self._verbose_infos:
             print "Batch '%s' is removed from meta-object." % name
         self = None
         return None
 
+    def _rename_in_additions(self, find_bname, new_name):
+        for bname, bdef in self._meta['sets']['batches'].items():
+            if find_bname in bdef['additions']:
+                adds = bdef['additions']
+                adds[adds.index(find_bname)] = new_name
+                bdef['additions'] = adds
+        return None
+
     def rename(self, new_name):
         """
-        Rename instance.
+        Rename instance, updating ``DataSet`` references to the definiton, too.
         """
         if new_name in self._meta['sets']['batches']:
             raise KeyError("'%s' is already included!" % new_name)
         batches = self._meta['sets']['batches']
-        batches[new_name] = batches.pop(self.name)
+        org_name = self.name
+        batches[new_name] = batches.pop(org_name)
+        self._rename_in_additions(org_name, new_name)
         self.name = new_name
         self._update()
         return None
@@ -434,10 +466,14 @@ class Batch(qp.DataSet):
                             raise KeyError('{} is not included.'.format(pos))
                         elif not v in self.xks:
                             self.xks.insert(self.xks.index(pos), v)
+                        if self.is_array(v) and not v in self.summaries:
+                            self.summaries.append(v)
             elif not self.var_exists(x):
                 raise KeyError('{} is not included.'.format(x))
             elif x not in self.xks:
                 self.xks.extend(self.unroll(x, both='all'))
+                if self.is_array(x) and not x in self.summaries:
+                    self.summaries.append(x)
         self._update()
         return None
 
@@ -702,10 +738,13 @@ class Batch(qp.DataSet):
         if self.additional:
             err_msg = "Cannot add open end DataFrames to as_addition()-Batches!"
             raise NotImplementedError(err_msg)
+        dupes = [v for v in oe if v in break_by]
+        if dupes:
+            raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
+            ds = qp.DataSet('open_end')
+            ds.from_components(self._data, self._meta, reset=False)
             if self.filter != 'no_filter':
-                ds = qp.DataSet('open_end')
-                ds.from_components(self._data, self._meta, reset=False)
                 f = self.filter.values()[0]
                 if filter_by: f = intersection([f, filter_by])
                 slicer = ds.take(f).tolist()
@@ -720,7 +759,8 @@ class Batch(qp.DataSet):
             oe = {
                 'title': title,
                 'idx': slicer,
-                'columns': break_by + oe,
+                'columns': oe,
+                'break_by': break_by,
                 'incl_nan': incl_nan,
                 'drop_empty': drop_empty,
                 'replace': replacements}
@@ -731,6 +771,8 @@ class Batch(qp.DataSet):
             else:
                 self.verbatims.append(oe)
 
+        if len(oe) + len(break_by) == 0:
+            raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
             if not len(oe) == len(title):
                 msg = "Cannot derive verbatim DataFrame 'title' with more than 1 'oe'"
@@ -1050,7 +1092,9 @@ class Batch(qp.DataSet):
         """
         f = self.filter
         if f == 'no_filter':
-            self.sample_size = len(self._data.index)
+            idx = self._data.index
         else:
-            self.sample_size = len(self._dsfilter(self, 'sample', f.values()[0])._data.index)
+            idx = self._dsfilter(self, 'sample', f.values()[0])._data.index
+        self.sample_size = len(idx)
+        self._filter_slice = idx.values.tolist()
         return None

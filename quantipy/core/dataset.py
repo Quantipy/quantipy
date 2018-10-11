@@ -52,6 +52,10 @@ VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR',
              'ar-AR', 'es-ES', 'it-IT']
 VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
 
+BLACKLIST_VARIABLES = ['batches', 'columns', 'info', 'items', 'lib', 'masks',
+                       'name', 'parent', 'properties', 'text', 'type', 'sets',
+                       'subtype', 'values']
+
 class DataSet(object):
     """
     A set of casedata (required) and meta data (optional).
@@ -185,9 +189,20 @@ class DataSet(object):
 
     def created(self):
         return [v for v in self.variables() if self.get_property(v, 'created')]
-
+    
     def batches(self):
-        return self._meta['sets']['batches'].keys()
+        if 'batches' in self._meta['sets']:
+            return self._meta['sets']['batches'].keys()
+        else:
+            return []
+
+    def _stat_view_recodes(self):
+        return [v for v in self.variables() if
+                self.get_property(v, 'recoded_stat')]
+
+    def _net_view_recodes(self):
+        return [v for v in self.variables() if
+                self.get_property(v, 'recoded_net')]
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -443,6 +458,7 @@ class DataSet(object):
             self.set_dim_suffix()
             self.undimensionize()
         if d_comp is True: self.dimensionize()
+        self._rename_blacklist_vars()
         return None
 
     def read_dimensions(self, path_meta, path_data):
@@ -475,6 +491,7 @@ class DataSet(object):
             self.set_dim_suffix()
             self.undimensionize()
         if d_comp is True: self.dimensionize()
+        self._rename_blacklist_vars()
         return None
 
     @verify(text_keys='text_key')
@@ -502,6 +519,7 @@ class DataSet(object):
         if path_data.endswith('.txt'): path_data = path_data.replace('.txt', '')
         self._meta, self._data = r_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
         self._set_file_info(path_data, path_meta)
+        self._rename_blacklist_vars()
         return None
 
     def read_spss(self, path_sav, **kwargs):
@@ -524,11 +542,12 @@ class DataSet(object):
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
         self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
+        self._rename_blacklist_vars()
         return None
 
     @verify(text_keys='text_key')
     def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
-                         date_format="DMY", run=True, clean_up=True):
+                         run=True, clean_up=True):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -566,10 +585,12 @@ class DataSet(object):
         """
         ds_clone = self.clone()
         if not text_key: text_key = ds_clone.text_key
-        if not ds_clone._dimensions_comp:
-            msg = "Converting variable names into Dimensions equivalents..."
-            print msg
-            ds_clone.dimensionize()
+        if ds_clone._dimensions_comp:
+            ds_clone.undimensionize()
+        # check against weak dupes and rename automatically
+        ds_clone._rename_weak_dupes()
+        # naming rules for Dimensions are applied
+        ds_clone.dimensionize()
         meta, data = ds_clone._meta, ds_clone._data
         if path_ddf is None and path_mdd is None:
             path = ds_clone.path
@@ -587,7 +608,7 @@ class DataSet(object):
         path_mdd = path_mdd.replace('//', '/')
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
-                     date_format=date_format, run=run, clean_up=clean_up)
+                     run=run, clean_up=clean_up)
         file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
         return None
@@ -784,6 +805,7 @@ class DataSet(object):
         self.set_verbose_infomsg(False)
         self._set_file_info('', reset=reset)
         self.set_dim_suffix()
+        self._rename_blacklist_vars()
         return None
 
     def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
@@ -892,6 +914,7 @@ class DataSet(object):
         # subset the dataset variables...
         b_ds.subset(main_variables, inplace=True)
         b_ds.order(main_variables)
+        self._rename_blacklist_vars()
         return b_ds
 
 
@@ -968,9 +991,14 @@ class DataSet(object):
             add_batches = ds._meta['sets']['batches'][batch_name]['additions']
             if not adds: return None
             filters = []
+            mtextkey = ds._meta['sets']['batches'][batch_name]['language']
             for add_batch in add_batches:
                 if all_batches[add_batch]['filter'] != 'no_filter':
-                    filters.append((add_batch, all_batches[add_batch]['filter']))
+                    filters.append(
+                        (add_batch,
+                         all_batches[add_batch]['language'],
+                         all_batches[add_batch]['filter'])
+                        )
             if not filters: return None
             cats = [(1, 'active')]
             fnames = []
@@ -978,9 +1006,13 @@ class DataSet(object):
                 fname = 'filter_{}'.format(no)
                 fnames.append(fname)
                 source = f[0]
-                flogic = f[1].values()[0]
-                flabel = f[1].keys()[0]
-                ds.add_meta(fname, 'single', flabel, cats)
+                ftextkey = f[1]
+                flogic = f[2].values()[0]
+                flabel = f[2].keys()[0]
+                ds.add_meta(fname, 'single', flabel, cats, text_key=ftextkey)
+                if not mtextkey == ftextkey:
+                    ds.set_variable_text(fname, flabel, text_key=mtextkey)
+                    ds.set_value_texts(fname, {1: 'active'}, text_key=mtextkey)
                 ds._meta['columns'][fname]['properties']['recoded_filter'] = source
                 ds[ds.take(flogic), fname] = 1
             return fnames
@@ -1023,6 +1055,7 @@ class DataSet(object):
                 variables += yks
         if filter_vars: variables += filter_vars
         variables = list(set([v for v in variables if not v in ['@', None]]))
+        variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
@@ -1040,6 +1073,7 @@ class DataSet(object):
         # select text_keys
         if text_key:
             b_ds.select_text_keys(text_key)
+        self._rename_blacklist_vars()
         return b_ds
 
     @verify(variables={'unique_key': 'columns'})
@@ -1084,7 +1118,7 @@ class DataSet(object):
 
         if merge:
             self.hmerge(new_ds, on=unique_key, verbose=False)
-
+        self._rename_blacklist_vars()
         return new_ds
 
     def _set_file_info(self, path_data, path_meta=None, reset=True):
@@ -1120,6 +1154,45 @@ class DataSet(object):
             len(self._data.columns)-1,
             self._dimensions_comp
         ).encode('utf-8')
+        return None
+
+    def _rename_weak_dupes(self):
+        dupes = self.names()
+        if isinstance(dupes, pd.DataFrame):
+            if len(dupes.index) > 2:
+                msg = 'More than two weak duplicates found for a variable. '
+                msg += 'Auto-rename not possible. Please rename manually!\n'
+                dupes = '\n'.join([
+                    '{}: {}'.format(col, [c for c in dupes[col] if c])
+                    for col in dupes
+                ])
+                msg += dupes
+                raise ValueError(msg)
+            for col in dupes:
+                first_d = dupes[col].values.tolist()[0]
+                new_name = '_{}'.format(first_d)
+                if self.resolve_name(new_name):
+                    msg = 'Auto rename not possible: {} is already included!'
+                    raise KeyError(msg.format(new_name))
+                self.rename(first_d, new_name)
+                print "A weak duplicate has been renamed: '{}' to '{}'".format(first_d, new_name)
+            print ''
+        return None
+
+    def _rename_blacklist_vars(self):
+        blacklist_txt = (u'Variables identified as part of a blacklist: {}. \n'
+                         u'They have been renamed by adding "_" as prefix')
+        blacklist_var = []
+        for var in BLACKLIST_VARIABLES:
+            n_var = '_%s' % var
+            if var in self and not n_var in self:
+                self.rename(var, u'_{}'.format(var))
+                blacklist_var.append(var)
+            elif var in self:
+                w = "{} cannot be renamed because {} is already used".format(var, n_var)
+                warnings.warn(w)
+        if blacklist_var:
+            print blacklist_txt.format(blacklist_var).encode('utf-8')
         return None
 
     # ------------------------------------------------------------------------
@@ -1266,30 +1339,38 @@ class DataSet(object):
                     if str_tag in v: found.append(v)
         return found
 
-    def names(self):
+    def names(self, ignore_items=True):
         """
-        Find all semi-duplicate variable names that are different only by case.
+        Find all weak-duplicate variable names that are different only by case.
 
-        .. note:: Will return self.variables() if no semi-duplicates are found.
+        .. note:: Will return self.variables() if no weak-duplicates are found.
 
         Returns
         -------
-        semi_dupes : pd.DataFrame
+        weak_dupes : pd.DataFrame
             An overview of case-sensitive spelling differences in otherwise
             equal variable names.
         """
         all_names = self.variables()
+        if not ignore_items:
+            all_names = self.unroll(all_names, both='all')
         lower_names = [n.lower() for n in all_names]
         multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
-        if not multiple_names: return all_names
-        semi_dupes = OrderedDict()
+        if not multiple_names: return self.variables()
+        weak_dupes = OrderedDict()
         for name in all_names:
             if name.lower() in multiple_names:
-                if not name.lower() in semi_dupes:
-                    semi_dupes[name.lower()] = [name]
-                else:
-                    semi_dupes[name.lower()].append(name)
-        return pd.DataFrame(semi_dupes)
+                if not name.lower() in weak_dupes:
+                    weak_dupes[name.lower()] = [name]
+                elif not name in weak_dupes[name.lower()]:
+                    weak_dupes[name.lower()].append(name)
+        max_wd = max(len(v) for v in weak_dupes.values())
+        for k, v in weak_dupes.items():
+            while not len(v) == max_wd:
+                v.append(None)
+            weak_dupes[k] = v
+
+        return pd.DataFrame(weak_dupes)
 
     def resolve_name(self, name):
         """
@@ -1391,9 +1472,9 @@ class DataSet(object):
         def _text_from_textobj(textobj, text_key, axis_edit):
             if axis_edit:
                 a_edit = '{} edits'.format(axis_edit)
-                return textobj.get(a_edit, {}).get(text_key, None)
+                return textobj.get(a_edit, {}).get(text_key, '')
             else:
-                return textobj.get(text_key, None)
+                return textobj.get(text_key, '')
 
         if text_key is None: text_key = self.text_key
         shorten = False if not self._is_array_item(name) else shorten
@@ -1689,10 +1770,13 @@ class DataSet(object):
             return [parent for parent in self._meta['columns'][name]['parent']]
 
     def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
-                 rules=False, xtotal=False):
+                 rules=False, xtotal=False, f=None):
         """
         """
         meta, data = self.split()
+        if f:
+            slicer = self.take(f)
+            data = data.copy().iloc[slicer]
         y = '@' if not y else y
         get = 'count' if not pct else 'normalize'
         show = 'values' if not text else 'text'
@@ -1837,20 +1921,49 @@ class DataSet(object):
         else:
             return arr_name
 
+    @modify(to_list='name')
+    @verify(variables={'name': 'both'})
+    def _prevent_one_cat_set(self, name=None):
+        if not name:
+            name = self.delimited_sets()
+        else:
+            name = [n for n in name if self.is_delimited_set(n)]
+        msg = "Prevent one-category delimited set: Convert '{}' to single."
+        for n in name:
+            if len(self.codes(n)) == 1:
+                self.convert(n, 'single')
+                print msg.format(n)
+        return None
+
+    def _check_against_weak_dupes(self, name):
+        included = self.resolve_name(name)
+        if included and self._verbose_infos:
+            w = "weak duplicate is created, {} found in DataSet. Please rename."
+            warnings.warn(w.format(included))
+
     def _verify_variable_meta_not_exist(self, name, is_array):
         """
         """
-        msg = ''
-        if not is_array:
-            if name in self._meta['columns']:
-                msg = "Overwriting meta for '{}', column already exists!"
-        else:
-            if name in self._meta['masks']:
-                msg = "Overwriting meta for '{}', mask already exists!"
-        if msg and self._verbose_infos:
-            print msg.format(name)
-        else:
-            return None
+        if not name in self: return None
+        if name in self.columns() or self._is_array_item(name):
+            if not is_array and self._verbose_infos:
+                print "Overwriting meta for '{}', column already exists!".format(name)
+            elif is_array:
+                raise ValueError("{} already exists as column.".format(name))
+        elif name in self.masks():
+            if is_array and self._verbose_infos:
+                print "Overwriting meta for '{}', mask already exists!".format(name)
+            elif not is_array:
+                raise ValueError("{} already exists as mask.".format(name))
+
+    @staticmethod
+    def _in_blacklist(name):
+        """
+        """
+        if name in BLACKLIST_VARIABLES:
+            msg = "Invalid variable name. '{}' is in the blacklist. "
+            msg += "Please consider another variable name"
+            raise ValueError(msg.format(name))
 
     def _clean_codes_against_meta(self, name, codes):
         valid = [c for c in codes if c in self._get_valuemap(name, 'codes')]
@@ -2167,9 +2280,27 @@ class DataSet(object):
         Drop references from ['sets']['data file']['items'] if they do not exist
         in the ``DataSet`` columns or masks definitions.
         """
-        items = self._meta['sets']['data file']['items']
-        n_items = [i for i in items if self.var_exists(i.split('@')[-1])]
-        self._meta['sets']['data file']['items'] = n_items
+        file_list = self._meta['sets']['data file']['items']
+        for item in file_list[:]:
+            collection = item.split('@')[0]
+            variable = item.split('@')[1]
+            if not variable in self:
+                file_list.remove(item)
+            elif collection == 'masks':
+                for s in self._get_source_ref(variable):
+                    while s in file_list:
+                        file_list.remove(s)
+            elif self._is_array_item(variable):
+                parent = self.parents(variable)[0]
+                if not parent in file_list:
+                    idx = file_list.index(item)
+                    file_list[idx] = parent
+                while item in file_list:
+                    file_list.remove(item)
+        f_list = []
+        for item in file_list:
+            if not item in f_list: f_list.append(item)
+        self._meta['sets']['data file']['items'] = f_list
         return None
 
     def _fix_varnames(self):
@@ -2222,6 +2353,7 @@ class DataSet(object):
         self.repair_text_edits()
         self.restore_item_texts()
         self._clean_datafile_set()
+        self._prevent_one_cat_set()
         return None
 
     # ------------------------------------------------------------------------
@@ -2768,6 +2900,8 @@ class DataSet(object):
                         rolled_up.append(item_map[v])
                 else:
                     rolled_up.append(v)
+            else:
+                rolled_up.append(v)
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
@@ -2831,7 +2965,7 @@ class DataSet(object):
                         if isinstance(origin_res, list):
                             if len(origin_res) > 1:
                                 msg = "Unable to regroup to {}, ".format(origin)
-                                msg += "found semi-duplicate derived names:\n"
+                                msg += "found weak duplicate derived names:\n"
                                 msg += "{}".format(origin_res)
                                 warnings.warn(msg)
                                 origin_res = origin
@@ -3049,7 +3183,8 @@ class DataSet(object):
     @modify(to_list=['dataset'])
     @verify(variables={'on': 'columns', 'left_on': 'columns'})
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
-               overwrite_text=False, from_set=None, inplace=True, verbose=True):
+               overwrite_text=False, from_set=None, inplace=True,
+               merge_existing=None, verbose=True):
 
         """
         Merge Quantipy datasets together using an index-wise identifer.
@@ -3098,7 +3233,8 @@ class DataSet(object):
             id_backup = None
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
-            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose)
+            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose,
+            merge_existing=merge_existing)
         if id_backup is not None:
             merged_data[right_on] = id_backup
         if inplace:
@@ -3317,6 +3453,7 @@ class DataSet(object):
     # Recoding
     # ------------------------------------------------------------------------
 
+    @modify(to_list=['categories', 'items'])
     @verify(text_keys='text_key')
     def add_meta(self, name, qtype, label, categories=None, items=None,
         text_key=None, replace=True):
@@ -3359,29 +3496,32 @@ class DataSet(object):
             ``DataSet`` is modified inplace, meta data and ``_data`` columns
             will be added
         """
+        # verify name
+        self._in_blacklist(name)
         make_array_mask = True if items else False
-        test_name = name
-        self._verify_variable_meta_not_exist(test_name, make_array_mask)
+        self._verify_variable_meta_not_exist(name, make_array_mask)
+
+        # verify qtype
+        valid = ['delimited set', 'single', 'float', 'int', 'date', 'string']
+        categorical = ['delimited set', 'single']
+        numerical = ['int', 'float']
+        if not qtype in valid:
+            raise NotImplementedError('Type {} data unsupported'.format(qtype))
+        elif qtype in categorical and not categories:
+            val_err = "Must provide 'categories' when requesting data of type {}."
+            raise ValueError(val_err.format(qtype))
+        elif qtype == 'delimited set' and len(categories) == 1:
+            qtype = 'single'
+            print 'Only one category is given, qtype is switched to single.'
+        elif qtype in numerical and categories:
+            val_err = "Numerical data of type {} does not accept 'categories'."
+            raise ValueError(val_err.format(qtype))
+
         if not text_key: text_key = self.text_key
         if make_array_mask:
             self._add_array(name, qtype, label, items, categories, text_key)
             return None
-        categorical = ['delimited set', 'single']
-        numerical = ['int', 'float']
-        if not qtype in ['delimited set', 'single', 'float', 'int',
-                         'date', 'string']:
-            raise NotImplementedError('Type {} data unsupported'.format(qtype))
-        if qtype in categorical and not categories:
-            val_err = "Must provide 'categories' when requesting data of type {}."
-            raise ValueError(val_err.format(qtype))
-        elif qtype in numerical and categories:
-            val_err = "Numerical data of type {} does not accept 'categories'."
-            raise ValueError(val_err.format(qtype))
-        else:
-            if not isinstance(categories, list) and qtype in categorical:
-                raise TypeError("'Categories' must be a list of labels "
-                                "('str') or  a list of tuples of codes ('int') "
-                                "and lables ('str').")
+
         new_meta = {'text': {text_key: label},
                     'type': qtype,
                     'name': name,
@@ -3589,10 +3729,11 @@ class DataSet(object):
                     ind = df_items.index('masks@{}'.format(var))
                     n_items = df_items[:ind] + self._get_source_ref(var) + df_items[ind+1:]
                     meta['sets']['data file']['items'] = n_items
-                    values = meta['lib']['values'][var]
-                    for source in self.sources(var):
-                        meta['columns'][source]['values'] = values
-                        meta['columns'][source]['parent'] = {}
+                    if self._has_categorical_data(var):
+                        values = meta['lib']['values'][var]
+                        for source in self.sources(var):
+                            meta['columns'][source]['values'] = values
+                            meta['columns'][source]['parent'] = {}
 
         df_items = meta['sets']['data file']['items']
         n_items = [i for i in df_items if not i.split('@')[-1] in name]
@@ -3602,6 +3743,21 @@ class DataSet(object):
             if not self.is_array(var): data_drop.append(var)
             remove_loop(meta, var)
         data.drop(data_drop, 1, inplace=True)
+        return None
+
+    @modify(to_list=['name'])
+    @verify(variables={'name': 'both'})
+    def unbind(self, name):
+        """
+        Remove mask-structure for arrays
+        """
+        remove = []
+        for n in name:
+            if not self.is_array(n): continue
+            self.drop(n, ignore_items=True)
+            remove.append(n)
+        if remove and self._verbose_infos:
+            print "Remove mask structure for: '{}'".format("', '".join(remove))
         return None
 
     @modify(to_list=['copy_only', 'copy_not'])
@@ -3663,8 +3819,8 @@ class DataSet(object):
             name = self._dims_free_arr_name(name)
 
         check_name = self._dims_compat_arr_name(copy_name)
-
         if self.var_exists(check_name): self.drop(check_name)
+        self._check_against_weak_dupes(check_name)
 
         if is_array:
             # copy meta and create rename mapper for array items
@@ -3855,7 +4011,6 @@ class DataSet(object):
         # Create the new meta data entry for the transposed array structure
         if not new_name:
             new_name = '{}_trans'.format(self._dims_free_arr_name(name))
-            dims_compat_name = self._dims_compat_arr_name(new_name)
         qtype = 'delimited set'
         self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
         # Do the case data transformation by looping through items and
@@ -3875,7 +4030,7 @@ class DataSet(object):
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
         if self._verbose_infos:
-            print 'Transposed array: {} into {}'.format(org_name, dims_compat_name)
+            print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     @verify(variables={'target': 'columns'})
     def recode(self, target, mapper, default=None, append=False,
@@ -4323,10 +4478,13 @@ class DataSet(object):
         if self.var_exists(newname):
             if safe:
                 raise ValueError('{} does already exist.'.format(name))
+            self.drop(newname, ignore_items=True)
         var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
         if not all(self.var_exists(v) for v in var_list):
             raise KeyError("'variables' must be included in DataSet.")
+        elif not len(set(var_list)) == len(var_list):
+            raise ValueError("'variables' contains duplicates!")
         to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
@@ -4503,6 +4661,8 @@ class DataSet(object):
         """
         Change type from ``int``/``date``/``string`` to ``single``.
 
+        ``delimited sets`` can be converted if only one category is defined.
+
         Parameters
         ----------
         name : str
@@ -4514,9 +4674,9 @@ class DataSet(object):
         """
         org_type = self._get_type(name)
         if org_type == 'single': return None
-        valid = ['int', 'date', 'string']
+        valid = ['int', 'date', 'string', 'delimited set']
+        msg = 'Cannot convert variable {} of type {} to single!'
         if not org_type in valid:
-            msg = 'Cannot convert variable {} of type {} to single!'
             raise TypeError(msg.format(name, org_type))
         text_key = self.text_key
         if org_type == 'int':
@@ -4538,6 +4698,12 @@ class DataSet(object):
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
             if replace_map:
                 self._data[name].replace(replace_map, inplace=True)
+        elif org_type == 'delimited set':
+            if not len(self.codes(name)) == 1:
+                raise TypeError(msg.format(name, org_type))
+            self._data[name] = self._data[name].apply(lambda x:
+                int(x.replace(';', '')) if isinstance(x, basestring) else np.NaN)
+            values_obj = self._get_value_loc(name)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
         return None
@@ -4594,6 +4760,9 @@ class DataSet(object):
             msg = "Cannot rename '{}' into '{}'. Column name already exists!"
             raise ValueError(msg.format(name, new_name))
 
+        self._in_blacklist(new_name)
+        self._check_against_weak_dupes(new_name)
+
         if not self._dimensions_comp == 'ignore':
             self.undimensionize([name] + self.sources(name))
             name = self._dims_free_arr_name(name)
@@ -4631,14 +4800,41 @@ class DataSet(object):
             DataSet is modified inplace.
         """
 
+        def rename_properties(mapper):
+            """
+            Rename variable properties that reference other variables, i.e.
+            'recoded_net', 'recoded_stat' meta objects.
+            """
+            net_recs = self._net_view_recodes()
+            stat_recs = self._stat_view_recodes()
+            all_recs = set([r for r in net_recs + stat_recs if r in mapper])
+            for rec in all_recs:
+                is_array = rec in self.masks()
+                if is_array:
+                    props = self._meta['masks'][rec]['properties']
+                else:
+                    props = self._meta['columns'][rec]['properties']
+                rn = props.get('recoded_net', None)
+                if rn:
+                    org_ref = props['recoded_net']
+                    props['recoded_net'] = mapper[org_ref]
+                rs = props.get('recoded_stat', None)
+                if rs:
+                    org_ref = props['recoded_stat']
+                    props['recoded_stat'] = mapper[org_ref]
+            return None
+
         def rename_meta(meta, mapper):
             """
             Rename lib@values, masks, set items and columns using mapper.
             """
+            rename_properties(mapper)
             rename_lib_values(meta['lib']['values'], mapper)
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
             rename_sets(meta['sets'], mapper, keep_original)
+            if 'batches' in meta['sets']:
+                rename_batch_properties(meta['sets']['batches'], mapper)
             if not keep_original:
                 rename_set_items(meta['sets'], mapper)
 
@@ -4715,6 +4911,29 @@ class DataSet(object):
                             if item in mapper:
                                 items[i] = mapper[item]
 
+        def rename_batch_properties(batches, mapper):
+
+            def _iterate_props(obj, mapper):
+                if isinstance(obj, bool):
+                    pass
+                elif isinstance(obj, basestring):
+                    return mapper.get(obj)
+                elif isinstance(obj, dict):
+                    for k, v in obj.items():
+                        if _iterate_props(k, mapper):
+                            obj[_iterate_props(k, mapper)] = _iterate_props(v, mapper) or v
+                            del obj[k]
+                        else:
+                            obj[k] = _iterate_props(v, mapper) or v
+                elif isinstance(obj, list):
+                    return [_iterate_props(a, mapper) or a for a in obj]
+                elif isinstance(obj, tuple):
+                    return tuple(_iterate_props(a, mapper) or a for a in obj)
+
+            for batch, defs in batches.items():
+                _iterate_props(defs, mapper)
+
+
         def rename_set_items(sets, mapper):
             """
             Rename standard set object items using mapper.
@@ -4748,37 +4967,58 @@ class DataSet(object):
             maps non-Dimensions naming conventions to Dimensions naming
             conventions.
         """
+
+        def fix(string):
+            tags = [
+                "'", '"', ' ', '&', '.', '/', '-',
+                '(', ')', '[', ']', '{', '}'
+            ]
+            for tag in tags:
+                string = string.replace(tag, '_')
+            return string
+
         masks = self._meta['masks']
         columns = self._meta['columns']
         suffix = self._dimensions_suffix
 
+        if not names: names = self.variables()
         mapper = {}
-        if not names:
-            names = masks.keys()
-        for mask_name, mask in masks.iteritems():
-            if mask_name in names:
+        for org_mn, mask in masks.iteritems():
+            if org_mn in names:
+                mask_name = fix(org_mn)
                 new_mask_name = '{mn}.{mn}{s}'.format(mn=mask_name, s=suffix)
-                mapper[mask_name] = new_mask_name
+                mapper[org_mn] = new_mask_name
 
-                mask_mapper = 'masks@{mn}'.format(mn=mask_name)
+                mask_mapper = 'masks@{mn}'.format(mn=org_mn)
                 new_mask_mapper = 'masks@{nmn}'.format(nmn=new_mask_name)
                 mapper[mask_mapper] = new_mask_mapper
 
-                values_mapper = 'lib@values@{mn}'.format(mn=mask_name)
+                values_mapper = 'lib@values@{mn}'.format(mn=org_mn)
                 new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
                 mapper[values_mapper] = new_values_mapper
 
-                items = masks[mask_name]['items']
+                items = masks[org_mn]['items']
                 for i, item in enumerate(items):
-                    col_name = item['source'].split('@')[-1]
+                    org_cn = item['source'].split('@')[-1]
+                    col_name = fix(org_cn)
                     new_col_name = '{mn}[{{{cn}}}].{mn}{s}'.format(
                         mn=mask_name, cn=col_name, s=suffix
                     )
-                    mapper[col_name] = new_col_name
+                    mapper[org_cn] = new_col_name
 
-                    col_mapper = 'columns@{cn}'.format(cn=col_name)
+                    col_mapper = 'columns@{cn}'.format(cn=org_cn)
                     new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
                     mapper[col_mapper] = new_col_mapper
+
+        for col_name, col in columns.iteritems():
+            if col_name in names and not self._is_array_item(col_name):
+                new_col_name = fix(col_name)
+                if new_col_name == col_name: continue
+                mapper[col_name] = new_col_name
+
+                col_mapper = 'columns@{cn}'.format(cn=col_name)
+                new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
+                mapper[col_mapper] = new_col_mapper
 
         return mapper
 
@@ -4844,7 +5084,11 @@ class DataSet(object):
             raise ValueError('File is already dimensionized.')
         mapper = self.dimensionizing_mapper(names)
         self.rename_from_mapper(mapper)
-        if not names: self.set_dim_comp(True)
+        if not names:
+            self.set_dim_comp(True)
+            if 'type' in self:
+                self.rename('type', '_type')
+        return None
 
     @modify(to_list='names')
     @verify(variables={'names': 'both'})
@@ -4947,6 +5191,8 @@ class DataSet(object):
         else:
             self.uncode(name, {x: {name: x} for x in remove})
             self._verify_data_vs_meta_codes(name)
+        # convert delimited set to single if only one cat is left
+        self._prevent_one_cat_set(name)
         return None
 
     @modify(to_list='ext_values')
@@ -5184,7 +5430,7 @@ class DataSet(object):
                     new_text_key = new_tk
         if not new_text_key:
             raise ValueError('{} is no existing text_key'.format(copy_from))
-        if not copy_to in text_dict.keys() or update_existing:
+        if not text_dict.get(copy_to) or update_existing:
             if new_text_key in ['x edits', 'y edits']:
                 text = text_dict[new_text_key][copy_to]
             else:
@@ -5846,8 +6092,8 @@ class DataSet(object):
             if 'rules' not in self._meta['columns'][n]:
                 self._meta['columns'][n]['rules'] = {'x': {}, 'y': {}}
             if not isinstance(slicer, list): slicer = [slicer]
-            slicer = self._clean_codes_against_meta(n, slicer)
-            rule_update = {'slicex': {'values': slicer}}
+            sl = self._clean_codes_against_meta(n, slicer)
+            rule_update = {'slicex': {'values': sl}}
             for ax in axis:
                 self._meta['columns'][n]['rules'][ax].update(rule_update)
         return None
@@ -5968,6 +6214,47 @@ class DataSet(object):
         return hidden
 
     @modify(to_list='name')
+    @verify(variables={'name': 'columns'}, axis='axis')
+    def min_value_count(self, name, min=50, weight=None, condition=None,
+                        axis='y', verbose=True):
+        """
+        Wrapper for self.hiding(), which is hiding low value_counts.
+
+        Parameters
+        ----------
+        variables: str/ list of str
+            Name(s) of the variable(s) whose values are checked against the
+            defined border.
+        min: int
+            If the amount of counts for a value is below this number, the
+            value is hidden.
+        weight: str, default None
+            Name of the weight, which is used to calculate the weigthed counts.
+        condition: complex logic
+            The data, which is used to calculate the counts, can be filtered
+            by the included condition.
+        axis: {'y', 'x', ['x', 'y']}, default None
+            The axis on which the values are hidden.
+        """
+        for v in name:
+            df = self.crosstab(v, w=weight, text=False, f=condition)[v]['@'][v]
+            hide = []
+            for i, c in zip(df.index, df.values):
+                if c < min:
+                    hide.append(i)
+            if hide:
+                codes = self.codes(v)
+                if verbose:
+                    if 'All' in hide or all(c in hide for c in codes):
+                        msg = '{}: All values have less counts than {}.'
+                        print msg.format(v, min)
+                    else:
+                        print '{}: Hide values {}'.format(v, hide)
+                hide = [h for h in hide if not h == 'All']
+                self.hiding(v, hide, axis)
+        return None
+
+    @modify(to_list='name')
     @verify(variables={'name': 'both'}, axis='axis')
     def hiding(self, name, hide, axis='y', hide_values=True):
         """
@@ -6008,25 +6295,25 @@ class DataSet(object):
             for ax in axis:
                 if collection == 'masks' and ax == 'x' and not hide_values:
                     sources = self.sources(n)
-                    hide = [sources[idx-1]
+                    h = [sources[idx-1]
                             for idx, s in enumerate(sources, start=1) if idx in hide]
                 else:
-                    hide = self._clean_codes_against_meta(n, hide)
-                    if set(hide) == set(self._get_valuemap(n, 'codes')):
+                    h = self._clean_codes_against_meta(n, hide)
+                    if set(h) == set(self._get_valuemap(n, 'codes')):
                         msg = "Cannot hide all values of '{}'' on '{}'-axis"
                         raise ValueError(msg.format(n, ax))
                 if collection == 'masks' and ax == 'x' and hide_values:
                     for s in self.sources(n):
-                        self.hiding(s, hide, 'x')
+                        self.hiding(s, h, 'x')
                 else:
-                    rule_update = {'dropx': {'values': hide}}
+                    rule_update = {'dropx': {'values': h}}
                     self._meta[collection][n]['rules'][ax].update(rule_update)
         return None
 
-    @modify(to_list='name')
+    @modify(to_list=['name', 'fix'])
     @verify(variables={'name': 'both'})
     def sorting(self, name, on='@', within=False, between=False, fix=None,
-                ascending=False, sort_by_weight=None):
+                ascending=False, sort_by_weight='auto'):
         """
         Set or update ``rules['x']['sortx']`` meta for the named column.
 
@@ -6063,25 +6350,22 @@ class DataSet(object):
             if on == '@' and is_array:
                 for source in self.sources(n):
                     self.sorting(source, fix=fix, within=within,
-                                 between=between, ascending=ascending)
+                                 between=between, ascending=ascending,
+                                 sort_by_weight=sort_by_weight)
             else:
                 if 'rules' not in self._meta[collection][n]:
                     self._meta[collection][n]['rules'] = {'x': {}, 'y': {}}
-                if fix:
-                    if not isinstance(fix, list): fix = [fix]
-                else:
-                    fix = []
                 if not is_array:
-                    fix = self._clean_codes_against_meta(n, fix)
+                    n_fix = self._clean_codes_against_meta(n, fix)
                 else:
-                    fix = self._clean_items_against_meta(n, fix)
-                rule_update = {'sortx': {'ascending': ascending,
-                                         'within': within,
-                                         'between': between,
-                                         'fixed': fix,
-                                         'sort_on': on,
-                                         'with_weight': sort_by_weight}}
-                self._meta[collection][n]['rules']['x'].update(rule_update)
+                    n_fix = self._clean_items_against_meta(n, fix)
+                rule_update = {'ascending': ascending,
+                               'within': within,
+                               'between': between,
+                               'fixed': n_fix,
+                               'sort_on': on,
+                               'with_weight': sort_by_weight}
+                self._meta[collection][n]['rules']['x']['sortx'] = rule_update
         return None
 
     def _clean_missing_map(self, var, missing_map):
@@ -6123,7 +6407,8 @@ class DataSet(object):
         return None
 
     @verify(variables={'var': 'both', 'ignore': 'both'})
-    def set_missings(self, var, missing_map='default', ignore=None):
+    def set_missings(self, var, missing_map='default', hide_on_y=True,
+                     ignore=None):
         """
         Flag category definitions for exclusion in aggregations.
 
@@ -6155,14 +6440,20 @@ class DataSet(object):
             self._set_default_missings(ignore)
         else:
             if isinstance(missing_map, list):
-                missing_map = {'exclude': missing_map}
+                m_map = {'exclude': missing_map}
+            else:
+                m_map = org_copy.deepcopy(missing_map)
             for v in var:
                 if v in ignore: continue
-                missing_map = self._clean_missing_map(v, missing_map)
+                v_m_map = self._clean_missing_map(v, m_map)
                 if self._has_missings(v):
-                    self._meta['columns'][v].update({'missings': missing_map})
+                    self._meta['columns'][v].update({'missings': v_m_map})
                 else:
-                    self._meta['columns'][v]['missings'] = missing_map
+                    self._meta['columns'][v]['missings'] = v_m_map
+            if hide_on_y:
+                print missing_map
+                self.hiding(var, missing_map, 'y', True)
+
         return None
 
     # ------------------------------------------------------------------------
@@ -6506,9 +6797,13 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if not batches.get(name.decode('utf8')):
+        if batches.get(name.decode('utf8')):
+            b = name.decode('utf8')
+        elif batches.get(name):
+            b = name
+        else:
             raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, name.decode('utf8'))
+        return qp.Batch(self, b)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):

@@ -190,7 +190,10 @@ def get_categories_mrs(meta, vtype, vvalues, child, child_name, text_key):
     mval = 1 if vtype == 'single' else len(vvalues)
     var_code.append(MaxValue(0, child, mval))
     for value in vvalues:
-        name = '{}a{}'.format(child_name, value['value'])
+        if value['value'] < 0:
+            name = '{}aminus{}'.format(child_name, -1 * value['value'])
+        else:
+            name = '{}a{}'.format(child_name, value['value'])
         labels = DimLabels(name, text_key)
         labels.add_text(value['text'])
         var_code.extend([
@@ -298,19 +301,18 @@ def mask_to_mrs(meta, name, text_key):
 
     return mask_code, lang, ltype
 
-def create_ddf(master_input, path_dms, CRLF, date_format):
+def create_ddf(master_input, path_dms, CRLF):
     dms_dummy_path = os.path.dirname(__file__)
     dms = open(os.path.join(dms_dummy_path, '_create_ddf.dms'), 'r')
     header = [
         u'#define MASTER_INPUT "{}"'.format(master_input).encode('utf-8'),
-        '#define DATE_FORMAT "{}"'.format(date_format),
         '#define CRLF "{}"'.format(CRLF),
     ]
     full_dms = header + [line.replace('\n', '') for line in dms]
     # NOTE:
     #-------------------------------------------------------------------------
     # dropping the second "line" which is an invisible line-break char
-    del full_dms[3]
+    del full_dms[2]
     with open(path_dms, 'w') as f:
         f.write('\n'.join(full_dms))
 
@@ -411,18 +413,21 @@ def convert_categorical(categorical):
         resp_prefix = categorical.name + 'a'
     if not cat.dtype == 'object':
         cat = cat.apply(lambda x:
-                        '{}{}'.format(resp_prefix, int(x))
+                        '{}{}'.format(resp_prefix, 
+                                      int(x) if int(x) > -1 else
+                                      'minus{}'.format(-1 * int(x)))
                         if not np.isnan(x) else np.NaN)
     else:
         cat = cat.apply(lambda x: str(x).split(';')[:-1])
-        cat = cat.apply(lambda x: ['{}{}'.format(resp_prefix, code)
+        cat = cat.apply(lambda x: ['{}{}'.format(resp_prefix, 
+                                                 code.replace('-', 'minus'))
                                    for code in x])
         cat = cat.apply(lambda x: str(x).replace('[', '').replace(']', ''))
         cat = cat.apply(lambda x: x.replace("'", '').replace(', ', ';'))
     return cat
 
 def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
-                             CRLF="CR", date_format='DMY', run=True, clean_up=True):
+                             CRLF="CR", run=True, clean_up=True):
     """
     DESCP
 
@@ -444,7 +449,7 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
 
     if not text_key: text_key = meta['lib']['default text']
     create_mdd(meta, data, path_mrs, path_mdd, text_key, run)
-    create_ddf(name, path_dms, CRLF, date_format)
+    create_ddf(name, path_dms, CRLF)
     get_case_data_inputs(meta, data, path_paired_csv, path_datastore)
     print 'Case and meta data validated and transformed.'
     if run:

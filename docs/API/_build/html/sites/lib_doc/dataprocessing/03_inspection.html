@@ -1,0 +1,776 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Inspecting variables &mdash; Quantipy 0.1.3 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Quantipy 0.1.3 documentation" href="../../../index.html"/>
+        <link rel="up" title="Data processing" href="00_overview.html"/>
+        <link rel="next" title="Editing metadata" href="04_editing.html"/>
+        <link rel="prev" title="DataSet management" href="02a_management.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Quantipy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.3
+              </div>
+            
+          
+
+          
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes/00_overview.html">Release notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest (01/10/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-13-11-2017">sd (13/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-17-10-2017">sd (17/10/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-15-09-2017">sd (15/09/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-31-08-2017">sd (31/08/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-08-06-2017">sd (08/06/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-05-2017">sd (04/05/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-04-2017">sd (24/04/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-06-04-2017">sd (06/04/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-29-03-2017">sd (29/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-20-03-2017">sd (20/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-07-03-2017">sd (07/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-02-2017">sd (24/02/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-16-02-2017">sd (16/02/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-01-2017">sd (04/01/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-8-12-2016">sd (8/12/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-23-11-2016">sd (23/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-16-11-2016">sd (16/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-11-11-2016">sd (11/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-09-11-2016">sd (09/11/2016)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/03_how_to_snippets.html">How-to-snippets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#the-compatibility-mode">The compatibility mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal"><span class="pre">array</span></code> data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/create_categorical_meta.html">Different ways of creating categorical values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html">Derotation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-is-derotation">What is derotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal"><span class="pre">DataSet.derotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal"><span class="pre">arrays</span></code>?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Data processing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_components.html">DataSet components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#case-and-meta-data">Case and meta data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#columns-and-masks-objects"><code class="docutils literal"><span class="pre">columns</span></code> and <code class="docutils literal"><span class="pre">masks</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal"><span class="pre">text</span></code> and <code class="docutils literal"><span class="pre">text_key</span></code> mappings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#categorical-values-object">Categorical <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#the-array-type">The <code class="docutils literal"><span class="pre">array</span></code> type</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="02_io.html">I/O</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="02_io.html#starting-from-native-components">Starting from native components</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#csv-json-pairs"><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="02_io.html#third-party-conversions">Third party conversions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#supported-conversions">Supported conversions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#spss-statistics">SPSS Statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#dimensions">Dimensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#decipher">Decipher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="02_io.html#ascribe">Ascribe</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="02a_management.html">DataSet management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="02a_management.html#setting-the-variable-order">Setting the variable order</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02a_management.html#cloning-filtering-and-subsetting">Cloning, filtering and subsetting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02a_management.html#merging">Merging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="02a_management.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="02a_management.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="02a_management.html#savepoints-and-state-rollback">Savepoints and state rollback</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Inspecting variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#querying-and-slicing-case-data">Querying and slicing case data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variable-and-value-existence">Variable and value existence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variable-types">Variable types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#slicing-dicing-metadata-objects">Slicing &amp; dicing  metadata objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="04_editing.html">Editing metadata</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#creating-meta-from-scratch">Creating meta from scratch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#renaming">Renaming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal"><span class="pre">text</span></code> info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#extending-the-values-object">Extending the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#removing-dataset-objects">Removing <code class="docutils literal"><span class="pre">DataSet</span></code> objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="05_transforming.html">Transforming variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="05_transforming.html#copying">Copying</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05_transforming.html#inplace-type-conversion">Inplace type conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05_transforming.html#banding-and-categorization">Banding and categorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="05_transforming.html#array-transformations">Array transformations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="06_logics.html">Logic and set operaters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="06_logics.html#ranges">Ranges</a></li>
+<li class="toctree-l3"><a class="reference internal" href="06_logics.html#complex-logic">Complex logic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#list-logic">“List” logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-all"><code class="docutils literal"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-count"><code class="docutils literal"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-count"><code class="docutils literal"><span class="pre">not_count</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="06_logics.html#boolean-slicers-and-code-existence">Boolean slicers and code existence</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="07_custom_recoding.html">Custom data recoding</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal"><span class="pre">recode()</span></code> method in detail</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#target"><code class="docutils literal"><span class="pre">target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#mapper"><code class="docutils literal"><span class="pre">mapper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#default"><code class="docutils literal"><span class="pre">default</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#append"><code class="docutils literal"><span class="pre">append</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#intersect"><code class="docutils literal"><span class="pre">intersect</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#initialize"><code class="docutils literal"><span class="pre">initialize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#fillna"><code class="docutils literal"><span class="pre">fillna</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="07_custom_recoding.html#custom-recode-examples">Custom recode examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#building-a-net-code">Building a net code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#create-and-fill">Create-and-fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#numerical-banding">Numerical banding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#complicated-segmentation">Complicated segmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#variable-creation">Variable creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#adding-derived-variables">Adding derived variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#interlocking-variables">Interlocking variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#condition-based-code-removal">Condition-based code removal</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal"><span class="pre">Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../batch/01_create_load.html">Creating/ Loading a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/02_variables.html">Adding variables to a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#x-keys-and-y-keys">x-keys and y-keys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#arrays">Arrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#verbatims-open-ends">Verbatims/ open ends</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#special-aggregations">Special aggregations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-significance-testing">Filter, weights and significance testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal"><span class="pre">qp.DataSet</span></code> methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../engine/00_overview.html">Analysis &amp; aggregation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../engine/01_links_stacks.html">Collecting aggregations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal"><span class="pre">qp.Stack</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/02_quantity.html">The computational engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/03_test.html">Significance testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/04_agg_methods.html">View aggregation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#basic-views">Basic views</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#non-categorical-variables">Non-categorical variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#descriptive-statistics">Descriptive statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#nets">Nets</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../engine/04_agg_methods.html#net-definitions">Net definitions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../engine/04_agg_methods.html#calculations">Calculations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#cumulative-sums">Cumulative sums</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#significance-tests">Significance tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#customizing-results">Customizing results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_ref/00overview.html">API references</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Chain.html">Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Cluster.html">Cluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/DataSet.html">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/quantify_engine.html">quantify.engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/QuantipyViews.html">QuantipyViews</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Stack.html">Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/View.html">View</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/ViewMapper.html">ViewMapper</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">Quantipy</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="00_overview.html">Data processing</a> &raquo;</li>
+      
+    <li>Inspecting variables</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/sites/lib_doc/dataprocessing/03_inspection.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="inspecting-variables">
+<h1>Inspecting variables<a class="headerlink" href="#inspecting-variables" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="querying-and-slicing-case-data">
+<h2>Querying and slicing case data<a class="headerlink" href="#querying-and-slicing-case-data" title="Permalink to this headline">¶</a></h2>
+<p>A <code class="docutils literal"><span class="pre">qp.DataSet</span></code> is mimicking <code class="docutils literal"><span class="pre">pandas</span></code>-like item access, i.e. passing a variable
+name into the <code class="docutils literal"><span class="pre">[]</span></code>-accessor will return a <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> view of the
+case data component. That means that we can chain any <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> method to
+the query:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;q9&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">     q9</span>
+<span class="go">0   99;</span>
+<span class="go">1  1;4;</span>
+<span class="go">2   98;</span>
+<span class="go">3  1;4;</span>
+<span class="go">4   99;</span>
+</pre></div>
+</div>
+<p>There is the same support for selecting multiple variables at once:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="p">[[</span><span class="s1">&#39;q9&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">     q9  gender</span>
+<span class="go">0   99;       1</span>
+<span class="go">1  1;4;       2</span>
+<span class="go">2   98;       1</span>
+<span class="go">3  1;4;       1</span>
+<span class="go">4   99;       1</span>
+</pre></div>
+</div>
+<p>To integrate <code class="docutils literal"><span class="pre">array</span></code> (<code class="docutils literal"><span class="pre">masks</span></code>) variables into this behaviour, passing an
+<code class="docutils literal"><span class="pre">array</span></code> name will automatically call its item list:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;q6&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">   q6_1  q6_2  q6_3</span>
+<span class="go">0     1     1     1</span>
+<span class="go">1     1   NaN     1</span>
+<span class="go">2     1   NaN     2</span>
+<span class="go">3     2   NaN     2</span>
+<span class="go">4     2    10    10</span>
+</pre></div>
+</div>
+<p>This can be combined with the <code class="docutils literal"><span class="pre">list</span></code>-based selection as well:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="p">[[</span><span class="s1">&#39;q6&#39;</span><span class="p">,</span> <span class="s1">&#39;q9&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">   q6_1  q6_2  q6_3    q9  gender</span>
+<span class="go">0     1     1     1   99;       1</span>
+<span class="go">1     1   NaN     1  1;4;       2</span>
+<span class="go">2     1   NaN     2   98;       1</span>
+<span class="go">3     2   NaN     2  1;4;       1</span>
+<span class="go">4     2    10    10   99;       1</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">DataSet</span></code> case data supports row-slicing based on complex logical conditions
+to inspect subsets of the data. We can use the <code class="docutils literal"><span class="pre">take()</span></code> with a <code class="docutils literal"><span class="pre">Quantipy</span></code>
+logic operation naturally for this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">condition</span> <span class="o">=</span> <span class="n">intersection</span><span class="p">(</span>
+<span class="gp">... </span>   <span class="p">[{</span><span class="s1">&#39;gender&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;religion&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">]},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;q9&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]}])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">take</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="p">[</span><span class="n">take</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;religion&#39;</span><span class="p">,</span> <span class="s1">&#39;q9&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">     gender  religion      q9</span>
+<span class="go">52        1         3  1;2;4;</span>
+<span class="go">357       1         3  1;3;4;</span>
+<span class="go">671       1         3  1;3;4;</span>
+<span class="go">783       1         3  2;3;4;</span>
+<span class="go">802       1         3      4;</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">Please find an overview of <code class="docutils literal"><span class="pre">Quantipy</span></code> logical operators and data slicing
+and masking in the <a class="reference internal" href="06_logics.html"><span class="doc">docs about complex logical conditions</span></a>!</p>
+</div>
+</div>
+<div class="section" id="variable-and-value-existence">
+<h2>Variable and value existence<a class="headerlink" href="#variable-and-value-existence" title="Permalink to this headline">¶</a></h2>
+<p>any, all, code_count, is_nan, var_exists, codes_in_data, is_like_numeric
+variables</p>
+<hr class="docutils" />
+<p>We can use <code class="docutils literal"><span class="pre">variables()</span></code> and <code class="docutils literal"><span class="pre">var_exists()</span></code> to generally test the membership
+of variables inside <code class="docutils literal"><span class="pre">DataSet</span></code>. The former is showing the list of all variables
+registered inside the <code class="docutils literal"><span class="pre">'data</span> <span class="pre">file'</span></code> <code class="docutils literal"><span class="pre">set</span></code>, the latter is checking if a variable’s
+<code class="docutils literal"><span class="pre">name</span></code> is found in either the <code class="docutils literal"><span class="pre">'columns'</span></code> or <code class="docutils literal"><span class="pre">'masks'</span></code> collection. For
+our example data, the variables are:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">variables</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>So a test for the <code class="docutils literal"><span class="pre">array</span></code> <code class="docutils literal"><span class="pre">'q5'</span></code> should be positive:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">var_exists</span><span class="p">(</span><span class="s1">&#39;q5&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>In addition to <code class="docutils literal"><span class="pre">Quantipy</span></code>’s complex logic operators, the <code class="docutils literal"><span class="pre">DataSet</span></code> class
+offers some quick case data operations for code existence tests. To return a
+<code class="docutils literal"><span class="pre">pandas.Series</span></code> of all empty rows inside a variable use <code class="docutils literal"><span class="pre">is_nan()</span></code> as per:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">is_nan</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">0    True</span>
+<span class="go">1    True</span>
+<span class="go">2    True</span>
+<span class="go">3    True</span>
+<span class="go">4    True</span>
+<span class="go">Name: q8, dtype: bool</span>
+</pre></div>
+</div>
+<p>Which we can also use to quickly check the number of missing cases…</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">is_nan</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+<span class="go">True     5888</span>
+<span class="go">False    2367</span>
+<span class="go">Name: q8, dtype: int64</span>
+</pre></div>
+</div>
+<p>… as well as use the result as slicer for the <code class="docutils literal"><span class="pre">DataSet</span></code> case data component,
+e.g. to show the non-empty rows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slicer</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">is_nan</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="o">~</span><span class="n">slicer</span><span class="p">,</span> <span class="s1">&#39;q8&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">Name: q8, dtype: int64</span>
+<span class="go">7       5;</span>
+<span class="go">11      5;</span>
+<span class="go">13    1;4;</span>
+<span class="go">14    4;5;</span>
+<span class="go">23    1;4;</span>
+<span class="go">Name: q8, dtype: object</span>
+</pre></div>
+</div>
+<p>Especially useful for <code class="docutils literal"><span class="pre">delimited</span> <span class="pre">set</span></code> and <code class="docutils literal"><span class="pre">array</span></code> data, the <code class="docutils literal"><span class="pre">code_count()</span></code>
+method is creating the <code class="docutils literal"><span class="pre">pandas.Series</span></code> of response values found. If applied on
+an <code class="docutils literal"><span class="pre">array</span></code>, the result is expressed across all source item variables:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">code_count</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+<span class="go">3    5100</span>
+<span class="go">2    3155</span>
+<span class="go">dtype: int64</span>
+</pre></div>
+</div>
+<p>… which means that not all cases contain answers in all three of the array’s items.</p>
+<p>With some basic <code class="docutils literal"><span class="pre">pandas</span></code> we can double-check this result:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;q6&#39;</span><span class="p">],</span> <span class="n">dataset</span><span class="o">.</span><span class="n">code_count</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">   q6_1  q6_2  q6_3  0</span>
+<span class="go">0     1   1.0     1  3</span>
+<span class="go">1     1   NaN     1  2</span>
+<span class="go">2     1   NaN     2  2</span>
+<span class="go">3     2   NaN     2  2</span>
+<span class="go">4     2  10.0    10  3</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">code_count()</span></code> can optionally ignore certain codes via the <code class="docutils literal"><span class="pre">count_only</span></code> and
+<code class="docutils literal"><span class="pre">count_not</span></code> parameters:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q2_count</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">code_count</span><span class="p">(</span><span class="s1">&#39;q2&#39;</span><span class="p">,</span> <span class="n">count_only</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;q2&#39;</span><span class="p">],</span> <span class="n">q2_count</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">         q2  0</span>
+<span class="go">0  1;2;3;5;  3</span>
+<span class="go">1      3;6;  1</span>
+<span class="go">2       NaN  0</span>
+<span class="go">3       NaN  0</span>
+<span class="go">4       NaN  0</span>
+</pre></div>
+</div>
+<p>Similarly, the <code class="docutils literal"><span class="pre">any()</span></code> and <code class="docutils literal"><span class="pre">all()</span></code> methods yield slicers for cases obeying
+the condition that at least one / all of the provided codes are found in the
+response. Again, for <code class="docutils literal"><span class="pre">array</span></code> variables the conditions are extended across all
+the items:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s1">&#39;q6&#39;</span><span class="p">]</span>
+<span class="go">      q6_1  q6_2  q6_3</span>
+<span class="go">374      5   5.0     5</span>
+<span class="go">2363     5   5.0     5</span>
+<span class="go">2377     5   5.0     5</span>
+<span class="go">4217     5   5.0     5</span>
+<span class="go">5530     5   5.0     5</span>
+<span class="go">5779     5   5.0     5</span>
+<span class="go">5804     5   5.0     5</span>
+<span class="go">6328     5   5.0     5</span>
+<span class="go">6774     5   5.0     5</span>
+<span class="go">7269     5   5.0     5</span>
+<span class="go">8148     5   5.0     5</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">96</span><span class="p">]),</span> <span class="s1">&#39;q8&#39;</span><span class="p">]</span>
+<span class="go">845     1;2;3;4;5;96;</span>
+<span class="go">6242      1;2;3;4;96;</span>
+<span class="go">7321      1;2;3;4;96;</span>
+<span class="go">Name: q8, dtype: object</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">96</span><span class="p">]),</span> <span class="s1">&#39;q8&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">13      1;4;</span>
+<span class="go">14      4;5;</span>
+<span class="go">23      1;4;</span>
+<span class="go">24    1;3;4;</span>
+<span class="go">25      1;4;</span>
+<span class="go">Name: q8, dtype: object</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="variable-types">
+<h2>Variable types<a class="headerlink" href="#variable-types" title="Permalink to this headline">¶</a></h2>
+<p>To get a summary of the all variables grouped by type, call <code class="docutils literal"><span class="pre">by_type()</span></code> on
+the <code class="docutils literal"><span class="pre">DataSet</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">by_type</span><span class="p">()</span>
+<span class="go">size: 8255     single delimited set array            int     float string        date      time N/A</span>
+<span class="go">0              gender            q2    q5  record_number    weight    q8a  start_time  duration</span>
+<span class="go">1            locality            q3    q7      unique_id  weight_a    q9a    end_time</span>
+<span class="go">2           ethnicity            q8    q6            age  weight_b</span>
+<span class="go">3            religion            q9            birth_day</span>
+<span class="go">4                  q1                        birth_month</span>
+<span class="go">5                 q2b                         birth_year</span>
+<span class="go">6                  q4</span>
+<span class="go">7                q5_1</span>
+<span class="go">8                q5_2</span>
+<span class="go">9                q5_3</span>
+<span class="go">10               q5_4</span>
+<span class="go">11               q5_5</span>
+<span class="go">12               q5_6</span>
+<span class="go">13               q6_1</span>
+<span class="go">14               q6_2</span>
+<span class="go">15               q6_3</span>
+<span class="go">16               q7_1</span>
+<span class="go">17               q7_2</span>
+<span class="go">18               q7_3</span>
+<span class="go">19               q7_4</span>
+<span class="go">20               q7_5</span>
+<span class="go">21               q7_6</span>
+</pre></div>
+</div>
+<p>We can restrict the output to certain types by providing the desired ones in
+the <code class="docutils literal"><span class="pre">types</span></code> parameter:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="n">types</span><span class="o">=</span><span class="s1">&#39;delimited set&#39;</span><span class="p">)</span>
+<span class="go">size: 8255 delimited set</span>
+<span class="go">0                     q2</span>
+<span class="go">1                     q3</span>
+<span class="go">2                     q8</span>
+<span class="go">3                     q9</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">by_type</span><span class="p">(</span><span class="n">types</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;delimited set&#39;</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">])</span>
+<span class="go">size: 8255 delimited set     float</span>
+<span class="go">0                     q2    weight</span>
+<span class="go">1                     q3  weight_a</span>
+<span class="go">2                     q8  weight_b</span>
+<span class="go">3                     q9       NaN</span>
+</pre></div>
+</div>
+<p>In addition to that, <code class="docutils literal"><span class="pre">DataSet</span></code> implements the following methods
+that return the corresponding variables as a <code class="docutils literal"><span class="pre">list</span></code> for easy iteration:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">DataSet</span><span class="o">.</span><span class="n">singles</span>
+       <span class="o">.</span><span class="n">delimied_sets</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">ints</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">floats</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">dates</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">strings</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">masks</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">columns</span><span class="p">()</span>
+       <span class="o">.</span><span class="n">sets</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">delimited_sets</span><span class="p">()</span>
+<span class="go">[u&#39;q3&#39;, u&#39;q2&#39;, u&#39;q9&#39;, u&#39;q8&#39;]</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">delimited_set</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">delimited_sets</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span> <span class="n">delimited_set</span>
+<span class="go">q3</span>
+<span class="go">q2</span>
+<span class="go">q9</span>
+<span class="go">q8</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="slicing-dicing-metadata-objects">
+<h2>Slicing &amp; dicing  metadata objects<a class="headerlink" href="#slicing-dicing-metadata-objects" title="Permalink to this headline">¶</a></h2>
+<p>Although it is possible to access a <code class="docutils literal"><span class="pre">DataSet</span></code> meta component via its <code class="docutils literal"><span class="pre">_meta</span></code>
+attribute directly, the prefered way to inspect and interact with with the metadata
+is to use <code class="docutils literal"><span class="pre">DataSet</span></code> methods. For instance, the easiest way to view the most
+important meta on a variable is to use the <code class="docutils literal"><span class="pre">meta()</span></code> method:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">)</span>
+<span class="go">delimited set                                      codes                         texts missing</span>
+<span class="go">q8: Which of the following do you regularly skip?</span>
+<span class="go">1                                                      1                     Breakfast    None</span>
+<span class="go">2                                                      2          Mid-morning snacking    None</span>
+<span class="go">3                                                      3                         Lunch    None</span>
+<span class="go">4                                                      4        Mid-afternoon snacking    None</span>
+<span class="go">5                                                      5                        Dinner    None</span>
+<span class="go">6                                                     96                  None of them    None</span>
+<span class="go">7                                                     98  Don&#39;t know (it varies a lot)    None</span>
+</pre></div>
+</div>
+<p>This output is extended with the <code class="docutils literal"><span class="pre">item</span></code> metadata if an <code class="docutils literal"><span class="pre">array</span></code> is passed:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">)</span>
+<span class="go">single                                             items                   item texts  codes                        texts missing</span>
+<span class="go">q6: How often do you take part in any of the fo...</span>
+<span class="go">1                                                   q6_1               Exercise alone      1     Once a day or more often    None</span>
+<span class="go">2                                                   q6_2       Join an exercise class      2               Every few days    None</span>
+<span class="go">3                                                   q6_3  Play any kind of team sport      3                  Once a week    None</span>
+<span class="go">4                                                                                          4             Once a fortnight    None</span>
+<span class="go">5                                                                                          5                 Once a month    None</span>
+<span class="go">6                                                                                          6        Once every few months    None</span>
+<span class="go">7                                                                                          7        Once every six months    None</span>
+<span class="go">8                                                                                          8                  Once a year    None</span>
+<span class="go">9                                                                                          9  Less often than once a year    None</span>
+<span class="go">10                                                                                        10                        Never    None</span>
+</pre></div>
+</div>
+<p>If the variable is not categorical, <code class="docutils literal"><span class="pre">meta()</span></code> returns simply:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="s1">&#39;weight_a&#39;</span><span class="p">)</span>
+<span class="go">                             float</span>
+<span class="go">weight_a: Weight (variant A)   N/A</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">DataSet</span></code> also provides a lot of methods to access and return the several
+meta objects of a variable to make various data processing tasks easier:</p>
+<p><strong>Variable labels</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.text()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;q8&#39;</span><span class="p">,</span> <span class="n">text_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">Which of the following do you regularly skip?</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">values</span></code> <strong>object</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.values()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="n">text_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">[(1, u&#39;Male&#39;), (2, u&#39;Female&#39;)]</span>
+</pre></div>
+</div>
+<p><strong>Category codes</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.codes()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">codes</span><span class="p">(</span><span class="s1">&#39;gender&#39;</span><span class="p">)</span>
+<span class="go">[1, 2]</span>
+</pre></div>
+</div>
+<p><strong>Category labels</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.value_texts()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">value_texts</span><span class="p">(</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="n">text_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">[u&#39;Male&#39;, u&#39;Female&#39;]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">items</span></code> <strong>object</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.items()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">,</span> <span class="n">text_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">[(u&#39;q6_1&#39;, u&#39;How often do you exercise alone?&#39;),</span>
+<span class="go"> (u&#39;q6_2&#39;, u&#39;How often do you take part in an exercise class?&#39;),</span>
+<span class="go"> (u&#39;q6_3&#39;, u&#39;How often do you play any kind of team sport?&#39;)]</span>
+</pre></div>
+</div>
+<p><strong>Item</strong> <code class="docutils literal"><span class="pre">'columns'</span></code> <strong>sources</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.sources()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">sources</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">)</span>
+<span class="go">[u&#39;q6_1&#39;, u&#39;q6_2&#39;, u&#39;q6_3&#39;]</span>
+</pre></div>
+</div>
+<p><strong>Item labels</strong>: <code class="xref py py-meth docutils literal"><span class="pre">quantipy.core.dataset.DataSet.item_texts()</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">item_texts</span><span class="p">(</span><span class="s1">&#39;q6&#39;</span><span class="p">,</span> <span class="n">text_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">[u&#39;How often do you exercise alone?&#39;,</span>
+<span class="go"> u&#39;How often do you take part in an exercise class?&#39;,</span>
+<span class="go"> u&#39;How often do you play any kind of team sport?&#39;]</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="04_editing.html" class="btn btn-neutral float-right" title="Editing metadata" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="02a_management.html" class="btn btn-neutral" title="DataSet management" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Quantipy dev team.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.1.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../../_static/custom.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

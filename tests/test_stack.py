@@ -1144,7 +1144,7 @@ class TestStackObject(unittest.TestCase):
                   [1.0, 'NONE', 4.0, 2.0, 'NONE', 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
                   ['NONE', 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
                   [1.0, 'NONE', 4.0, 2.0, 'NONE', 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-                  ['NONE', 3.0, 6.0, 'NONE', 'NONE', 6.0, 6.0, 6.0, 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
+                  [1.0, 3.0, 6.0, 'NONE', 1.0, 6.0, 6.0, 6.0, 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
         describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
         self.assertEqual(describe.index.tolist(), index)
         self.assertEqual(describe.columns.tolist(), cols)
@@ -1164,7 +1164,7 @@ class TestStackObject(unittest.TestCase):
                   ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'],
                   ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'],
                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-                  [3.0, 3.0, 3.0, 'NONE', 3.0, 3.0, 3.0]]
+                  [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
         self.assertEqual(describe.index.tolist(), index)
         self.assertEqual(describe.columns.tolist(), cols)
         self.assertEqual(describe.values.tolist(), values)
@@ -1175,7 +1175,7 @@ class TestStackObject(unittest.TestCase):
         stack.aggregate(['cbase', 'counts', 'c%'], batches='all', verbose=False)
         calcu = calc((2, '-', 1), 'difference', 'en-GB')
         stack.add_nets(['q1', 'q6'], [{'Net1': [1, 2]}, {'Net2': [3, 4]}], 'after',
-                       calcu, _batches='all', verbose=False)
+                       calcu, _batches='all', recode=False, verbose=False)
         index = ['x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:|y|weight_a|net',
                  'x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:||weight_a|net',
                  'x|f|:|y|weight_a|c%', 'x|f|:||weight_a|counts',
@@ -1186,7 +1186,7 @@ class TestStackObject(unittest.TestCase):
                   ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'],
                   ['NONE', 'NONE', 3.0, 'NONE', 'NONE', 'NONE', 'NONE'],
                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-                  [3.0, 3.0, 3.0, 'NONE', 3.0, 3.0, 3.0]]
+                  [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
         describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
         self.assertEqual(describe.index.tolist(), index)
         self.assertEqual(describe.columns.tolist(), cols)
@@ -1229,7 +1229,7 @@ class TestStackObject(unittest.TestCase):
                   ['NONE', 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
                   ['NONE', 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-                  [3.0, 3.0, 3.0, 'NONE', 3.0, 3.0, 3.0]]
+                  [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
         describe = stack.describe('view', 'x').replace(numpy.NaN, 'NONE')
         self.assertEqual(describe.index.tolist(), index)
         self.assertEqual(describe.columns.tolist(), cols)
