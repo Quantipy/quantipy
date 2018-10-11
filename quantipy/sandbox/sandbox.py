@@ -722,75 +722,57 @@ class ChainManager(object):
             c.edited = True
         return None
 
-    def join(self, x_label='auto', y_label='auto', drop=True):
+    def join(self, x_title='auto', y_title='auto', joined_index=True, 
+             show_view_names=False):
         """
         Join **all** ``qp.Chain```elements, concatenating along a merged x-axis.
 
         Parameters
         ----------
-        x_label : {str, 'auto'}, default 'auto'
+        x_title : {str, 'auto'}, default 'auto'
             A new text label for the merged x-axis.
-        y_label : {str, 'auto'}, default 'auto'
+        y_title : {str, 'auto'}, default 'auto'
             A new text label for the merged y-axis if multiple array summaries
             are the input.
-        drop : bool, default False
-            By default, the original ``qp.Chain`` elements will get removed from
-            the resulting ``qp.ChainManager`` structure.
 
         Returns
         -------
         None
         """
         custom_views = []
-        if x_label == 'auto':
-            x_label = ', '.join(c._x_keys[0] for c in self.chains)
-        if y_label == 'auto':
-            pass
+        if x_title == 'auto': x_title = 'Summary'
+        if y_title == 'auto': pass
         self.unfold()
         chains = self.chains
         totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
-        # elementmul = len(chains[0].describe()) - 1
         concat_dfs = []
-        # new_labels = []
         for c in chains:
             new_label = []
-            c._frame = c._apply_letter_header(c._frame)
-        
+            if c.sig_test_letters: c._frame = c._apply_letter_header(c._frame)
             df = c.dataframe
 
-            # GET FORMER FIRST LEVEL LABELS
-            title = [x_label]
+            # create a joined axis (non-summary join)
             new_label.append(df.index.get_level_values(0).values.tolist()[0])
             new_label.extend((len(c.describe()) - 1) * [''])
             names = ['Question', 'Values']
-            join_idx = pd.MultiIndex.from_product([title, new_label], names=names)
+            join_idx = pd.MultiIndex.from_product([[x_title], new_label], names=names)
+            df.index = join_idx
+
 
             df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
-            
-
-            # df.index.set_levels(levels=[x_label], level=0, inplace=True)
-            
+        
             if not c.array_style == 0:
                 custom_views.extend(c._views_per_rows())
             else:
-                df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
-
-            df.index = join_idx
-
-            # # UPDATE LEVEL 1 WITH FORMER FIRST LEVEL (0)
-            # df.index.set_labels(labels=range(0, len(new_label)), level=1, inplace=True)
-            # df.index.set_levels(levels=new_label, level=1, inplace=True)
+                df.columns.set_levels(levels=[y_title]*totalmul, level=0, inplace=True)
             
-
             concat_dfs.append(df)
         new_df = pd.concat(concat_dfs, axis=0)
-        # # UPDATE LEVEL 1 WITH FORMER FIRST LEVEL (0)
-        # new_df.index.set_levels(levels=new_labels, level=1, inplace=True)
-        # new_df.index.set_labels(labels=range(0, len(new_labels)), level=1, inplace=True)
-
+        
         self.chains[0]._frame = new_df
         self.reorder([0])
         self.chains[0]._custom_views = custom_views
+        
         return None
 
     def reorder(self, order, folder=None, inplace=True):
@@ -2328,9 +2310,9 @@ class Chain(object):
             elif 'is_c_pct' in r[1] and is_code:
                 rows.append(('c%', r[1]))
             elif 'is_propstest' in r[1]:
-                rows.append(('propstest', r[1]))
+                rows.append((r[0], r[1]))
             elif 'is_meanstest' in r[1]:
-                rows.append(('meanstest', r[1]))
+                rows.append((r[0], r[1]))
             else:
                 rows.append(r)
         invalids = []
@@ -2343,9 +2325,9 @@ class Chain(object):
         idxs = []
         names = []
         order = []
-
         for i, row in enumerate(rows):
-            if any([invalid in row[1] for invalid in invalids]): continue
+            if any([invalid in row[1] for invalid in invalids]):
+                continue
             if row[0] in view_tags:
                 order.append(view_tags.index(row[0]))
                 idxs.append(i)
