@@ -749,27 +749,44 @@ class ChainManager(object):
         self.unfold()
         chains = self.chains
         totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
+        # elementmul = len(chains[0].describe()) - 1
         concat_dfs = []
-        new_labels = []
+        # new_labels = []
         for c in chains:
-
+            new_label = []
+            c._frame = c._apply_letter_header(c._frame)
+        
             df = c.dataframe
 
             # GET FORMER FIRST LEVEL LABELS
-            new_labels.append(df.index.get_level_values(0).values.tolist()[0])
+            title = [x_label]
+            new_label.append(df.index.get_level_values(0).values.tolist()[0])
+            new_label.extend((len(c.describe()) - 1) * [''])
+            names = ['Question', 'Values']
+            join_idx = pd.MultiIndex.from_product([title, new_label], names=names)
 
             df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
-            df.index.set_levels(levels=[x_label], level=0, inplace=True)
+            
+
+            # df.index.set_levels(levels=[x_label], level=0, inplace=True)
+            
             if not c.array_style == 0:
                 custom_views.extend(c._views_per_rows())
             else:
                 df.columns.set_levels(levels=[y_label]*totalmul, level=0, inplace=True)
+
+            df.index = join_idx
+
+            # # UPDATE LEVEL 1 WITH FORMER FIRST LEVEL (0)
+            # df.index.set_labels(labels=range(0, len(new_label)), level=1, inplace=True)
+            # df.index.set_levels(levels=new_label, level=1, inplace=True)
+            
+
             concat_dfs.append(df)
         new_df = pd.concat(concat_dfs, axis=0)
-
-        # UPDATE LEVEL 1 WITH FORMER FIRST LEVEL (0)
-        new_df.index.set_levels(levels=new_labels, level=1, inplace=True)
-        new_df.index.set_labels(labels=range(0, len(new_labels)), level=1, inplace=True)
+        # # UPDATE LEVEL 1 WITH FORMER FIRST LEVEL (0)
+        # new_df.index.set_levels(levels=new_labels, level=1, inplace=True)
+        # new_df.index.set_labels(labels=range(0, len(new_labels)), level=1, inplace=True)
 
         self.chains[0]._frame = new_df
         self.reorder([0])
@@ -2248,7 +2265,7 @@ class Chain(object):
                     if sub_v in valid:
                         new_v.append(sub_v)
                 if isinstance(v, tuple):
-                    new_v = tuple(new_v)
+                    new_v = list(new_v)
                 if new_v:
                     if len(new_v) == 1: new_v = new_v[0]
                     if not flat:
