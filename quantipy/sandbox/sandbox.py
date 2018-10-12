@@ -709,7 +709,9 @@ class ChainManager(object):
             names = [n for _, n in sorted(zip(order, names))]
             if c.ci_count > 1: c._non_grouped_axis()
             if c.array_style == 0:
-                c._frame = c._frame.iloc[:, idxs]
+                c._fill_cells()
+                start, repeat = c._row_pattern(ci)
+                c._frame = c._frame.iloc[start::repeat, idxs]
             else:
                 c._frame = c._frame.iloc[idxs, :]
                 c.index = c._slice_edited_index(c.index, idxs)
@@ -2119,6 +2121,13 @@ class Chain(object):
             description = _describe(self.contents, None)
         return description
 
+    def _fill_cells(self):
+        """
+        """
+        self._frame = self._frame.fillna(method='ffill')
+        return None
+
+
     @lazy_property
     def _counts_first(self):
         for v in self.views:
@@ -2294,6 +2303,17 @@ class Chain(object):
                     stat=self._stat(parts),
                     siglevel=self._siglevel(parts))
 
+    def _row_pattern(self, target_ci):
+        """
+        """
+        cisplit = self.cell_items.split('_')
+        if target_ci == 'c%':
+            start = cisplit.index('colpct')
+        elif target_ci == 'counts':
+            start = cisplit.index('counts')
+        repeat = self.ci_count
+        return (start, repeat)
+
     def _view_idxs(self, view_tags, keep_tests=True, names=False, ci=None):
         """
         """
@@ -2301,7 +2321,19 @@ class Chain(object):
         rowmeta = self.named_rowmeta
         nested = self.array_style == 0
         if nested:
-            rowmeta = rowmeta[0]
+            if self.ci_count > 1:
+                # cisplit = self.cell_items.split('_')
+                # if ci == 'c%':
+                #     grab_rm = cisplit.index('colpct')
+                # elif ci == 'counts':
+                #     grab_rm = cisplit.index('counts')
+                # else:
+                #     print 'We need to support ci=None for array summary cut()...'
+                #     raise
+                
+                rowmeta = rowmeta[self._row_pattern(ci)[0]]
+            else:
+                rowmeta = rowmeta[0]
         rows = []
         for r in rowmeta:
             is_code = str(r[0]).isdigit()
