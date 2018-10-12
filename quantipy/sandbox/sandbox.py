@@ -722,6 +722,7 @@ class ChainManager(object):
                 else:
                     c._views[v] = names.count(v)
             c.edited = True
+        print names
         return None
 
     def join(self, x_title='auto', y_title='auto', joined_index=True, 
@@ -2239,7 +2240,6 @@ class Chain(object):
                                     vc = colpcts
                         else:
                             vc = counts if ci == 'counts' else colpcts
-
                         metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
@@ -2322,6 +2322,7 @@ class Chain(object):
         nested = self.array_style == 0
         if nested:
             if self.ci_count > 1:
+
                 # cisplit = self.cell_items.split('_')
                 # if ci == 'c%':
                 #     grab_rm = cisplit.index('colpct')
@@ -2330,8 +2331,8 @@ class Chain(object):
                 # else:
                 #     print 'We need to support ci=None for array summary cut()...'
                 #     raise
-                
-                rowmeta = rowmeta[self._row_pattern(ci)[0]]
+                rp_idx = self._row_pattern(ci)[0]
+                rowmeta = rowmeta[rp_idx]
             else:
                 rowmeta = rowmeta[0]
         rows = []
@@ -2363,8 +2364,8 @@ class Chain(object):
             if row[0] in view_tags:
                 order.append(view_tags.index(row[0]))
                 idxs.append(i)
-                if nested:
-                    names.append(self._views_per_rows()[i][i])
+                if nested: 
+                    names.append(self._views_per_rows()[rp_idx][i])
                 else:
                     names.append(self._views_per_rows()[i])
         return (idxs, order) if not names else (idxs, names, order)
