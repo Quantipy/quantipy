@@ -1972,13 +1972,22 @@ class Chain(object):
         if self.views:
             compl_views = [v for v in self.views if ']*:' in v]
             if not compl_views:
-                c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
-                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
+                
+                # c = any(v.split('|')[-1] == 'counts' for v in self.views)
+                # col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+                # row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
+
+                c = any(v.split('|')[3] == '' for v in self.views)
+                col_pct = any(v.split('|')[3] == 'y' for v in self.views)
+                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+
+                # print c
+                # print col_pct
+                # print row_pct
             else:
                 c = any(v.split('|')[3] == '' for v in compl_views)
                 col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
-                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+                row_pct = any(v.split('|')[3] == 'x' for v in compl_views)
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
             c_colrow_pct = c_colpct and c_rowpct
