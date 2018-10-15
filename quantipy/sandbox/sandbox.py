@@ -681,7 +681,7 @@ class ChainManager(object):
             return cm
 
 
-    def cut(self, values, ci=None, tests=True):
+    def cut(self, values, ci=None, base=False, tests=False):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
 
@@ -721,61 +721,60 @@ class ChainManager(object):
                     del c._views[v]
                 else:
                     c._views[v] = names.count(v)
+            if not tests: c.sig_test_letters = None
             c.edited = True
-        print names
+        
         return None
 
-    def join(self, x_title='auto', y_title='auto', joined_index=True, 
-             show_view_names=False):
+    def join(self, title='Summary'):
         """
-        Join **all** ``qp.Chain```elements, concatenating along a merged x-axis.
+        Join **all** ``qp.Chain```elements, concatenating along the matching axis.
 
         Parameters
         ----------
-        x_title : {str, 'auto'}, default 'auto'
-            A new text label for the merged x-axis.
-        y_title : {str, 'auto'}, default 'auto'
-            A new text label for the merged y-axis if multiple array summaries
-            are the input.
-
+        title : {str, 'auto'}, default 'auto'
+            The outer axis label text that ...
+        joint_axis : bool, default True
+            Text
+        
         Returns
         -------
         None
         """
         custom_views = []
-        if x_title == 'auto': x_title = 'Summary'
-        if y_title == 'auto': pass
         self.unfold()
         chains = self.chains
         totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
         concat_dfs = []
+        new_labels = []
         for c in chains:
             new_label = []
             if c.sig_test_letters: c._frame = c._apply_letter_header(c._frame)
             df = c.dataframe
 
-            # create a joined axis (non-summary join)
-            new_label.append(df.index.get_level_values(0).values.tolist()[0])
-            new_label.extend((len(c.describe()) - 1) * [''])
+            if not c.array_style == 0:
+                new_label.append(df.index.get_level_values(0).values.tolist()[0])
+                new_label.extend((len(c.describe()) - 1) * [''])
+            else:
+                new_label.extend(df.index.get_level_values(1).values.tolist())
             names = ['Question', 'Values']
-            join_idx = pd.MultiIndex.from_product([[x_title], new_label], names=names)
+            join_idx = pd.MultiIndex.from_product([[title], new_label], names=names)
             df.index = join_idx
-
 
             df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
         
             if not c.array_style == 0:
                 custom_views.extend(c._views_per_rows())
             else:
-                df.columns.set_levels(levels=[y_title]*totalmul, level=0, inplace=True)
-            
+                df.columns.set_levels(levels=[title]*totalmul, level=0, inplace=True)
+
             concat_dfs.append(df)
-        new_df = pd.concat(concat_dfs, axis=0)
+        
+        new_df = pd.concat(concat_dfs, axis=0, join='inner')
         
         self.chains[0]._frame = new_df
         self.reorder([0])
         self.chains[0]._custom_views = custom_views
-        
         return None
 
     def reorder(self, order, folder=None, inplace=True):
@@ -1971,17 +1970,26 @@ class Chain(object):
     def cell_items(self):
         if self.views:
             compl_views = [v for v in self.views if ']*:' in v]
-            if not compl_views:
-                # c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                # col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
-                # row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
-                c = any(v.split('|')[3] == '' for v in self.views)
-                col_pct = any(v.split('|')[3] == 'y' for v in self.views)
-                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
-            else:
-                c = any(v.split('|')[3] == '' for v in compl_views)
-                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
-                row_pct = any(v.split('|')[3] == 'x' for v in compl_views)
+            check_views = compl_views or self.views
+            # if not compl_views:
+            #     # c = any(v.split('|')[-1] == 'counts' for v in self.views)
+            #     # col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
+            #     # row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
+            non_freqs = ('d.', 't.')
+            c = any(v.split('|')[3] == '' and
+                    not v.split('|')[1].startswith(non_freqs)
+                    for v in check_views)
+            col_pct = any(v.split('|')[3] == 'y' and
+                          not v.split('|')[1].startswith(non_freqs)
+                          for v in check_views)
+            row_pct = any(v.split('|')[3] == 'x' and
+                          not v.split('|')[1].startswith(non_freqs)
+                          for v in check_views)
+            # else:
+            #     c = any(v.split('|')[3] == '' for v in compl_views)
+            #     col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
+            #     row_pct = any(v.split('|')[3] == 'x' for v in compl_views)
+            
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
             c_colrow_pct = c_colpct and c_rowpct
