@@ -38,5 +38,6 @@ docs/API/_templates/
 *.egg
 .eggs/
 .cache
+.pytest_cache/
 
 build
