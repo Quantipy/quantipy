@@ -173,7 +173,7 @@ class Rules(object):
                 sort_on_net = False
 
                 if isinstance(sort_on, (str, unicode)):
-                    sort_on_mean = sort_on in [
+                    sort_on_stat = sort_on in [
                         'median', 'stddev', 'sem', 'max', 'min', 'mean',
                         'upper_q', 'lower_q']
                     sort_on_net = sort_on.startswith('net')
