@@ -701,10 +701,12 @@ class ChainManager(object):
         if not isinstance(values, list): values = [values]
         if 'cbase' in values:
             values[values.index('cbase')] = 'All'
+        if base and not 'All' in values:
+            values = ['All'] + values
         for c in self.chains:
             if c.sig_test_letters: c._remove_letter_header()
             idxs, names, order = c._view_idxs(
-                values, keep_tests=tests, names=True, ci=ci)
+                values, keep_tests=tests, keep_bases=base, names=True, ci=ci)
             idxs = [i for _, i in sorted(zip(order, idxs))]
             names = [n for _, n in sorted(zip(order, names))]
             if c.ci_count > 1: c._non_grouped_axis()
@@ -732,11 +734,9 @@ class ChainManager(object):
 
         Parameters
         ----------
-        title : {str, 'auto'}, default 'auto'
-            The outer axis label text that ...
-        joint_axis : bool, default True
-            Text
-        
+        title : {str, 'auto'}, default 'Summary'
+            The new title for the joined axis' index representation.
+            
         Returns
         -------
         None
@@ -2325,7 +2325,7 @@ class Chain(object):
         repeat = self.ci_count
         return (start, repeat)
 
-    def _view_idxs(self, view_tags, keep_tests=True, names=False, ci=None):
+    def _view_idxs(self, view_tags, keep_tests=True, keep_bases=True, names=False, ci=None):
         """
         """
         if not isinstance(view_tags, list): view_tags = [view_tags]
@@ -2333,15 +2333,6 @@ class Chain(object):
         nested = self.array_style == 0
         if nested:
             if self.ci_count > 1:
-
-                # cisplit = self.cell_items.split('_')
-                # if ci == 'c%':
-                #     grab_rm = cisplit.index('colpct')
-                # elif ci == 'counts':
-                #     grab_rm = cisplit.index('counts')
-                # else:
-                #     print 'We need to support ci=None for array summary cut()...'
-                #     raise
                 rp_idx = self._row_pattern(ci)[0]
                 rowmeta = rowmeta[rp_idx]
             else:
@@ -2371,7 +2362,7 @@ class Chain(object):
         order = []
         for i, row in enumerate(rows):
             if any([invalid in row[1] for invalid in invalids]):
-                continue
+                if not (row[0] == 'All' and keep_bases): continue
             if row[0] in view_tags:
                 order.append(view_tags.index(row[0]))
                 idxs.append(i)
