@@ -1972,6 +1972,9 @@ class Stack(defaultdict):
                 xs = [x for x in xs if x in x_in_stack or isinstance(x, tuple)]
             v_typ = self.variable_types(dk, verbose=False)
             numerics = v_typ['int'] + v_typ['float']
+            masks = self[dk].meta['masks']
+            num_arrays = [m for m in masks if masks[m]['subtype'] in ['int', 'float']]
+            if num_arrays: numerics = numerics + num_arrays
             skipped = [x for x in xs if (x in numerics and not x in categorize)
                        and not isinstance(x, tuple)]
             total_len = len(xs)
@@ -2617,8 +2620,8 @@ class Stack(defaultdict):
 
                 ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
-
-                self._add_factor_meta(ds, v, (rescale, drop, exclude))
+                if not other_source:
+                    self._add_factor_meta(ds, v, (rescale, drop, exclude))
 
 
             view = qp.ViewMapper()

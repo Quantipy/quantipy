@@ -501,7 +501,7 @@ class TestDataSet(unittest.TestCase):
                                           'between': False,
                                           'ascending': False,
                                           'sort_on': '@',
-                                          'with_weight': None}},
+                                          'with_weight': 'auto'}},
                           'y': {}}
         # rule correctly set?: i.e. code 100 removed from fix list since it
         # does not appear in the values meta?

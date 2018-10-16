@@ -1363,7 +1363,8 @@ class ChainManager(object):
 
             chain = chain.get(data_key, filter_key, self._force_list(x_key),
                               self._force_list(y_key), views, rules=rules,
-                              prioritize=prioritize, orient=orient)
+                              rules_weight=rules_weight, prioritize=prioritize,
+                              orient=orient)
 
             folders = self.folder_names
             if folder in folders:
@@ -2290,7 +2291,7 @@ class Chain(object):
         return block_net_def
 
     def get(self, data_key, filter_key, x_keys, y_keys, views, rules=False,
-            orient='x', prioritize=True):
+            rules_weight=None, orient='x', prioritize=True):
         """ Get the concatenated Chain.DataFrame
         """
         self._meta = self.stack[data_key].meta
@@ -2320,7 +2321,8 @@ class Chain(object):
                     continue
 
                 if prioritize: link = self._drop_substituted_views(link)
-                found_views, y_frames = self._concat_views(link, views)
+                found_views, y_frames = self._concat_views(
+                    link, views, rules_weight)
                 found.append(found_views)
 
                 try:
@@ -2530,7 +2532,7 @@ class Chain(object):
             df.columns = df.columns.set_levels([varname], level=0, inplace=False)
         return df
 
-    def _concat_views(self, link, views, found=None):
+    def _concat_views(self, link, views, rules_weight, found=None):
         """ Concatenates the Views of a Chain.
         """
         frames = []
@@ -2561,7 +2563,7 @@ class Chain(object):
                     else:
                         use_grp_type = self._group_style
 
-                    found, grouped = self._concat_views(link, view, found=found)
+                    found, grouped = self._concat_views(link, view, rules_weight, found=found)
                     if grouped:
                         frames.append(self._group_views(grouped, use_grp_type))
                 else:
@@ -2611,7 +2613,7 @@ class Chain(object):
 
                     rules_weight = None
                     if self._has_rules:
-                        rules = Rules(link, view, axes=self._has_rules)
+                        rules = Rules(link, view, self._has_rules, rules_weight)
                         # print rules.show_rules()
                         # rules.get_slicer()
                         # print rules.show_slicers()
@@ -3083,6 +3085,7 @@ class Chain(object):
             tk_transl = text_keys[axis]
         else:
             tk_transl = self._default_text
+        c_text = copy.deepcopy(self._custom_texts) if self._custom_texts else {}
         for i, value in enumerate(levels[1]):
             if str(value).startswith('#pad'):
                 level_1_text.append(value)
@@ -3099,8 +3102,8 @@ class Chain(object):
                         text = self._specify_base(i, text_keys[axis], bases)
                     else:
                         text = self._transl[tk_transl][value]
-                        if self._custom_texts and value in self._custom_texts:
-                            add_text = self._custom_texts[value].pop(0)
+                        if value in c_text:
+                            add_text = c_text[value].pop(0)
                             text = '{} {}'.format(text, add_text)
                     level_1_text.append(text)
                 elif value == 'All (eff.)':
@@ -3129,8 +3132,20 @@ class Chain(object):
         return map(unicode, level_1_text)
 
     @staticmethod
-    def _is_multibase(views, basetype):
-        return len([v for v in views if v.split('|')[-1] == basetype]) > 1
+    def _unwgt_label(views, base_vk):
+        valid = ['cbase', 'cbase_gross', 'rbase', 'ebase']
+        basetype = base_vk.split('|')[-1]
+        views_split = [v.split('|') for v in views]
+        multibase = len([v for v in views_split if v[-1] == basetype]) > 1
+        weighted = base_vk.split('|')[-2]
+        w_diff = len([v for v in views_split
+                      if not v[-1] in valid and not v[-2] == weighted]) > 0
+        if weighted:
+            return False
+        elif multibase or w_diff:
+            return True
+        else:
+            return False
 
     def _add_base_text(self, base_val, tk, bases):
         if self._array_style == 0 and bases != 'all':
@@ -3152,30 +3167,28 @@ class Chain(object):
         tk_transl = tk if tk in self._transl else self._default_text
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
-        weighted = base_vk.split('|')[-2]
-        is_multibase = self._is_multibase(self._views.keys(), basetype)
-        if basetype == 'cbase_gross':
-            if weighted or (not weighted and not is_multibase):
-                base_value = self._transl[tk_transl]['gross All']
-            else:
+        unwgt_label = self._unwgt_label(self._views.keys(), base_vk)
+
+        if unwgt_label:
+            if basetype == 'cbase_gross':
                 base_value = self._transl[tk_transl]['no_w_gross_All']
-        elif basetype == 'ebase':
-            if weighted or (not weighted and not is_multibase):
-                base_value = 'Effective base'
-            else:
+            elif basetype == 'ebase':
                 base_value = 'Unweighted effective base'
+            else:
+                base_value = self._transl[tk_transl]['no_w_All']
         else:
-            if weighted or (not weighted and not is_multibase):
-                if not bases or (bases == 'simple-no-items'
-                                 and self._is_mask_item):
-                    return self._transl[tk_transl]['All']
+            if basetype == 'cbase_gross':
+                base_value = self._transl[tk_transl]['gross All']
+            elif basetype == 'ebase':
+                base_value = 'Effective base'
+            elif not bases or (bases == 'simple-no-items' and self._is_mask_item):
+                base_value = self._transl[tk_transl]['All']
+            else:
                 key = tk
                 if isinstance(tk, tuple):
                     _, key = tk
                 base_value = self._add_base_text(self._transl[tk_transl]['All'],
                                                  key, bases)
-            else:
-                base_value = self._transl[tk_transl]['no_w_All']
         return base_value
 
     def _get_text(self, value, text_key, item_text=False):

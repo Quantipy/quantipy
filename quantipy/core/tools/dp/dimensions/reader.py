@@ -394,7 +394,7 @@ def get_meta_values(xml, column, data, map_values=True):
             if len(byProperty_values) != len(set(byProperty_values)):
                 byProperty = False
                 byProperty_values = []
-                byProperty_key = None                
+                byProperty_key = None
         elif all(['Value' in bpv for bpv in byProperty_values]):
             byProperty_key = 'Value'
             byProperty_values = [bpv['Value'] for bpv in byProperty_values]
@@ -996,6 +996,26 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
             for item in meta['masks'][mask]['items']
             if not item is None
         ]
+
+    # clean datafile set
+    datafile = meta['sets']['data file']['items']
+    for item in datafile[:]:
+        collection = item.split('@')[0]
+        variable = item.split('@')[1]
+        parents = meta[collection][variable].get('parent', {})
+        if collection == 'masks':
+            for s in meta['sets'][variable]['items']:
+                while s in datafile:
+                    datafile.remove(s)
+        elif parents and parents.keys()[0].split('@')[1] in meta['masks']:
+            parent = parents.keys()[0].split('@')[1]
+            if not parent in datafile:
+                idx = datafile.index(item)
+                datafile[idx] = parent
+            while item in datafile:
+                datafile.remove(item)
+    meta['sets']['data file']['items'] = datafile
+
 
     for key, col in meta['columns'].iteritems():
         if col['type']=='string' and key in ddf:

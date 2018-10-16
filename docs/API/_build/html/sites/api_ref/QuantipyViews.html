@@ -92,9 +92,11 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (March)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-27-02-2018">Latest (27/02/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Upcoming (September)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html#latest-04-06-2018">Latest (04/06/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
@@ -202,7 +204,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">&#8220;List&#8221; logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
@@ -371,34 +373,34 @@ unique column pair combinations.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>link</strong> (<em>Quantipy Link object.</em>) &#8211; </li>
-<li><strong>name</strong> (<em>str</em>) &#8211; The shortname applied to the view.</li>
-<li><strong>kwargs</strong> (<em>dict</em>) &#8211; </li>
-<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong><strong></strong> (<em>Keyword</em>) &#8211; </li>
-<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; Sets an optional label in the meta component of the view that is
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong> (<em>Keyword</em>) – </li>
+<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) – Sets an optional label in the meta component of the view that is
 used when the view is passed into a Quantipy build (e.g. Excel,
 Powerpoint).</li>
-<li><strong>metric</strong> (<em>{'props'</em><em>, </em><em>'means'}</em><em>, </em><em>default 'props'</em>) &#8211; Determines whether a proportion or means test algorithm is
+<li><strong>metric</strong> (<em>{'props'</em><em>, </em><em>'means'}</em><em>, </em><em>default 'props'</em>) – Determines whether a proportion or means test algorithm is
 performed.</li>
-<li><strong>test_total</strong> (<em>bool</em><em>, </em><em>deafult False</em>) &#8211; If True, the each View&#8217;s y-axis column will be tested against the
+<li><strong>test_total</strong> (<em>bool</em><em>, </em><em>deafult False</em>) – If True, the each View’s y-axis column will be tested against the
 uncoditional total of its x-axis.</li>
-<li><strong>mimic</strong> (<em>{'Dim'</em><em>, </em><em>'askia'}</em><em>, </em><em>default 'Dim'</em>) &#8211; It is possible to mimic the test logics used in other statistical
+<li><strong>mimic</strong> (<em>{'Dim'</em><em>, </em><em>'askia'}</em><em>, </em><em>default 'Dim'</em>) – It is possible to mimic the test logics used in other statistical
 software packages by passing them as instructions. The method will
 then choose the appropriate test parameters.</li>
-<li><strong>level</strong> (<em>{'high'</em><em>, </em><em>'mid'</em><em>, </em><em>'low'}</em><em> or </em><em>float</em>) &#8211; Sets the level of significance to which the test is carried out.
+<li><strong>level</strong> (<em>{'high'</em><em>, </em><em>'mid'</em><em>, </em><em>'low'}</em><em> or </em><em>float</em>) – Sets the level of significance to which the test is carried out.
 Given as str the levels correspond to <code class="docutils literal"><span class="pre">'high'</span></code> = 0.01, <code class="docutils literal"><span class="pre">'mid'</span></code>
 = 0.05 and <code class="docutils literal"><span class="pre">'low'</span></code> = 0.1. If a float is passed the specified
 level will be used.</li>
-<li><strong>flags</strong> (<em>list of two int</em><em>, </em><em>default None</em>) &#8211; Base thresholds for Dimensions-like tests, e.g. [30, 100]. First
+<li><strong>flags</strong> (<em>list of two int</em><em>, </em><em>default None</em>) – Base thresholds for Dimensions-like tests, e.g. [30, 100]. First
 int is minimum base for reported results, second int controls small
 base indication.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
-<li><em>None</em> &#8211; Adds requested View to the Stack, storing it under the full
+<li><em>None</em> – Adds requested View to the Stack, storing it under the full
 view name notation key.</li>
-<li><em>.. note::</em> &#8211; Mimicking the askia software (<code class="docutils literal"><span class="pre">mimic</span></code> = <code class="docutils literal"><span class="pre">'askia'</span></code>)
+<li><em>.. note::</em> – Mimicking the askia software (<code class="docutils literal"><span class="pre">mimic</span></code> = <code class="docutils literal"><span class="pre">'askia'</span></code>)
 restricts the values to be one of <code class="docutils literal"><span class="pre">'high'</span></code>, <code class="docutils literal"><span class="pre">'low'</span></code>,
 <code class="docutils literal"><span class="pre">'mid'</span></code>. Any other value passed will make the algorithm fall
 back to <code class="docutils literal"><span class="pre">'low'</span></code>. Mimicking Dimensions (<code class="docutils literal"><span class="pre">mimic</span></code> =
@@ -423,9 +425,9 @@ marginal the results.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>link</strong> (<em>Quantipy Link object.</em>) &#8211; </li>
-<li><strong>name</strong> (<em>str</em>) &#8211; The shortname applied to the view.</li>
-<li><strong>kwargs</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
 </ul>
 </td>
 </tr>
@@ -451,16 +453,16 @@ Measures include statistics of centrality, dispersion and mass.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>link</strong> (<em>Quantipy Link object.</em>) &#8211; </li>
-<li><strong>name</strong> (<em>str</em>) &#8211; The shortname applied to the view.</li>
-<li><strong>kwargs</strong> (<em>dict</em>) &#8211; </li>
-<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong><strong></strong> (<em>Keyword</em>) &#8211; </li>
-<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; Sets an optional label suffix for the meta component of the view
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong> (<em>Keyword</em>) – </li>
+<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) – Sets an optional label suffix for the meta component of the view
 which will be appended to the statistic name and used when the
 view is passed into a Quantipy build (e.g. Excel, Powerpoint).</li>
-<li><strong>stats</strong> (<em>str</em><em>, </em><em>default 'mean'</em>) &#8211; The measure to compute.</li>
-<li><strong>exclude</strong> (<em>list of int</em>) &#8211; Codes that will not be considered calculating the result.</li>
-<li><strong>rescale</strong> (<em>dict</em>) &#8211; <p>A mapping of {old code: new code}, e.g.:</p>
+<li><strong>stats</strong> (<em>str</em><em>, </em><em>default 'mean'</em>) – The measure to compute.</li>
+<li><strong>exclude</strong> (<em>list of int</em>) – Codes that will not be considered calculating the result.</li>
+<li><strong>rescale</strong> (<em>dict</em>) – <p>A mapping of {old code: new code}, e.g.:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
  <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
  <span class="mi">2</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
@@ -471,7 +473,7 @@ view is passed into a Quantipy build (e.g. Excel, Powerpoint).</li>
 </pre></div>
 </div>
 </li>
-<li><strong>drop</strong> (<em>bool</em>) &#8211; If <code class="docutils literal"><span class="pre">rescale</span></code> provides a new scale defintion, <code class="docutils literal"><span class="pre">drop</span></code> will remove
+<li><strong>drop</strong> (<em>bool</em>) – If <code class="docutils literal"><span class="pre">rescale</span></code> provides a new scale defintion, <code class="docutils literal"><span class="pre">drop</span></code> will remove
 all codes that are not transformed. Acts as a shorthand for manually
 passing any remaining codes in <code class="docutils literal"><span class="pre">exclude</span></code>.</li>
 </ul>
@@ -501,14 +503,14 @@ summaries like simple and complex nets.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>link</strong> (<em>Quantipy Link object.</em>) &#8211; </li>
-<li><strong>name</strong> (<em>str</em>) &#8211; The shortname applied to the view.</li>
-<li><strong>kwargs</strong> (<em>dict</em>) &#8211; </li>
-<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong><strong></strong> (<em>Keyword</em>) &#8211; </li>
-<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; Sets an optional label in the meta component of the view that is
+<li><strong>link</strong> (<em>Quantipy Link object.</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – The shortname applied to the view.</li>
+<li><strong>kwargs</strong> (<em>dict</em>) – </li>
+<li><strong>arguments</strong><strong> (</strong><strong>specific</strong><strong>)</strong> (<em>Keyword</em>) – </li>
+<li><strong>text</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) – Sets an optional label in the meta component of the view that is
 used when the view is passed into a Quantipy build (e.g. Excel,
 Powerpoint).</li>
-<li><strong>logic</strong> (<em>list of int</em><em>, </em><em>list of dicts</em><em> or </em><em>core.tools.view.logic operation</em>) &#8211; <p>If a list is passed this instructs a simple net of the codes given
+<li><strong>logic</strong> (<em>list of int</em><em>, </em><em>list of dicts</em><em> or </em><em>core.tools.view.logic operation</em>) – <p>If a list is passed this instructs a simple net of the codes given
 as int. Multiple nets can be generated via a list of dicts that
 map names to lists of ints. For complex logical statements,
 expression are parsed to identify the qualifying rows in the data.
@@ -524,15 +526,15 @@ For example:</p>
 </pre></div>
 </div>
 </li>
-<li><strong>calc</strong> (<em>TODO</em>) &#8211; </li>
-<li><strong>calc_only</strong> (<em>TODO</em>) &#8211; </li>
+<li><strong>calc</strong> (<em>TODO</em>) – </li>
+<li><strong>calc_only</strong> (<em>TODO</em>) – </li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
-<li><em>None</em> &#8211; Adds requested View to the Stack, storing it under the full
+<li><em>None</em> – Adds requested View to the Stack, storing it under the full
 view name notation key.</li>
-<li><em>.. note:: Net codes take into account if a variable is</em> &#8211; multi-coded. The net will therefore consider qualifying
+<li><em>.. note:: Net codes take into account if a variable is</em> – multi-coded. The net will therefore consider qualifying
 cases and not the raw sum of the frequencies
 per category, i.e. no multiple counting of cases.</li>
 </ul>
@@ -598,7 +600,7 @@ per category, i.e. no multiple counting of cases.</li>
       <script type="text/javascript" src="../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../_static/doctools.js"></script>
       <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

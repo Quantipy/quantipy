@@ -30,7 +30,6 @@ tests/Example Data (A).cache
 
 *.js
 
-docs/API/_build/
 docs/API/_static/
 docs/API/_templates/
 
