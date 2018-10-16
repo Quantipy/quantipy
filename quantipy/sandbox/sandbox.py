@@ -1977,13 +1977,16 @@ class Chain(object):
             #     # row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
             non_freqs = ('d.', 't.')
             c = any(v.split('|')[3] == '' and
-                    not v.split('|')[1].startswith(non_freqs)
+                    not v.split('|')[1].startswith(non_freqs) and
+                    not v.split('|')[-1] == 'cbase'
                     for v in check_views)
             col_pct = any(v.split('|')[3] == 'y' and
-                          not v.split('|')[1].startswith(non_freqs)
+                          not v.split('|')[1].startswith(non_freqs) and
+                          not v.split('|')[-1] == 'cbase'
                           for v in check_views)
             row_pct = any(v.split('|')[3] == 'x' and
-                          not v.split('|')[1].startswith(non_freqs)
+                          not v.split('|')[1].startswith(non_freqs) and
+                          not v.split('|')[-1] == 'cbase'
                           for v in check_views)
             # else:
             #     c = any(v.split('|')[3] == '' for v in compl_views)
