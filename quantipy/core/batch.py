@@ -108,7 +108,6 @@ class Batch(qp.DataSet):
         self.valid_tks = dataset.valid_tks
         self.text_key = dataset.text_key
         self.sample_size = None
-        self.filters = dataset.filters # global dataset filters
         self._verbose_errors = dataset._verbose_errors
         self._verbose_infos = dataset._verbose_infos
 

@@ -48,13 +48,16 @@ import os
 from itertools import product, chain
 from collections import OrderedDict, Counter
 
-VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR',
-             'ar-AR', 'es-ES', 'it-IT']
-VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
+VALID_TKS = [
+    'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR',
+    'es-ES', 'it-IT']
 
-BLACKLIST_VARIABLES = ['batches', 'columns', 'info', 'items', 'lib', 'masks',
-                       'name', 'parent', 'properties', 'text', 'type', 'sets',
-                       'subtype', 'values']
+VAR_SUFFIXES = [
+    '_rc', '_net', ' (categories', ' (NET', '_rec']
+
+BLACKLIST_VARIABLES = [
+    'batches', 'columns', 'info', 'items', 'lib', 'masks', 'name', 'parent',
+    'properties', 'text', 'type', 'sets', 'subtype', 'values', 'filter']
 
 class DataSet(object):
     """
@@ -66,7 +69,6 @@ class DataSet(object):
         self.path = None
         self.name = name
         self.filtered = 'no_filter'
-        self.filters = []
         self._data = None
         self._meta = None
         self.text_key = None
@@ -189,16 +191,19 @@ class DataSet(object):
         return self._get_columns('string')
 
     def created(self):
-        return [v for v in self.variables() if self.get_property(v, 'created')]
+        return self._by_property('created')
+
+    def filters(self):
+        return self._by_property('recoded_filter')
 
     def _stat_view_recodes(self):
-        return [v for v in self.variables() if
-                self.get_property(v, 'recoded_stat')]
+        return self._by_property('recoded_stat')
 
     def _net_view_recodes(self):
-        return [v for v in self.variables() if
-                self.get_property(v, 'recoded_net')]
+        return self._by_property('recoded_net')
 
+    def _by_property(self, prop):
+        return [v for v in self.variables() if self.get_property(v, prop)]
 
     def batches(self):
         if 'batches' in self._meta['sets']:
@@ -373,6 +378,9 @@ class DataSet(object):
             return True
         else:
             return False
+
+    def is_filter(self, var):
+        return True if self.get_property(var, recoded_filter) else False
 
     def _has_missings(self, var):
         if self.is_array(var): var = self.sources(var)[0]
@@ -1089,7 +1097,6 @@ class DataSet(object):
         self.path = '/'.join(path_data.split('/')[:-1]) + '/'
         self.text_key = self._meta['lib'].get('default text')
         self.valid_tks = self._meta['lib'].get('valid text', VALID_TKS)
-        self.filters = self._meta['info'].get('filters', [])
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
         self._data.index = list(xrange(0, len(self._data.index)))
@@ -3167,7 +3174,7 @@ class DataSet(object):
             Overwrite an already existing filter-variable.
         """
         if name in self:
-            if overwrite and not name in self.filters:
+            if overwrite and not self.is_filter(name):
                 msg = "Cannot add filter-variable '{}', a non-filter"
                 msg +=" variable is already included"
                 raise ValueError(msg.format(name))
@@ -3179,26 +3186,11 @@ class DataSet(object):
                 if self._verbose_infos:
                     print 'Overwriting {}'.format(name)
         values = [(0, 'keep', None)]
-        for x, l in enumerate(logic, 1):
-            if isinstance(l, basestring):
-                if not l in self:
-                    raise KeyError("{} is not included in Dataset".format(l))
-                val = (x, '{} not empty'.format(l), {l: not_count(0)})
-            elif isinstance(l, dict):
-                if not ('label' in l and 'logic' in l):
-                    raise KeyError("Filter logic must contain 'label' and 'logic'")
-                val = (x, l['label'], l['logic'])
-            else:
-                raise TypeError('Included logic must be (list of) str or dict.')
-            values.append(val)
-
+        values += self._transform_filter_logics(logic, 1)
         self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
         self.recode(name, {x: z for x, y, z in values[1:]})
         self.recode(name, {0: {name: has_count(len(values)-1)}}, append=True)
-        self.filters.append(name)
-        if not 'filters' in self._meta['info']:
-            self._meta['info']['filters'] = []
-        self._meta['info']['filters'].append(name)
+        self._set_property(name, 'recoded_filter', True)
         return None
 
     @modify(to_list=['logic'])
@@ -3216,7 +3208,7 @@ class DataSet(object):
             Addition to the filter-name to create a new filter. If it is None
             the existing filter-variable is overwritten.
         """
-        if not name in self.filters:
+        if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         if suffix:
             f_name = '{}_{}'.format(name, suffix)
@@ -3224,13 +3216,19 @@ class DataSet(object):
                 msg = "Please change suffix: '{}' is already in dataset."
                 raise KeyError(msg.format(f_name))
             self.copy(name, suffix)
-            self._meta['info']['filters'].append(f_name)
-
+            self._set_property(f_name, 'recoded_filter', True)
         else:
             f_name = name
         self.uncode(f_name, {0: {f_name: 0}})
+        values = self._transform_filter_logics(logic, max(self.codes(f_name))+1)
+        self.extend_values(f_name, values)
+        self.recode(f_name, {x: z for x, y, z in values}, append=True)
+        self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
+        return None
+
+    def _transform_filter_logics(self, logic, start):
         values = []
-        for x, l in enumerate(logic, max(self.codes(f_name))+1):
+        for x, l in enumerate(logic, start):
             if isinstance(l, basestring):
                 if not l in self:
                     raise KeyError("{} is not included in Dataset".format(l))
@@ -3242,10 +3240,7 @@ class DataSet(object):
             else:
                 raise TypeError('Included logic must be (list of) str or dict.')
             values.append(val)
-        self.extend_values(f_name, values)
-        self.recode(f_name, {x: z for x, y, z in values}, append=True)
-        self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
-        return None
+        return values
 
     def manifest_filter(self, name):
         """
@@ -3254,11 +3249,11 @@ class DataSet(object):
         Parameters
         ----------
         name: str
-            Name of the filter_variable (valid names in self.filters).
+            Name of the filter_variable.
         """
-        if not name in self.filters:
+        if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
-        return self.take({name: 1})
+        return self.take({name: 0})
 
     # ------------------------------------------------------------------------
     # extending / merging
@@ -3824,8 +3819,6 @@ class DataSet(object):
         meta['sets']['data file']['items'] = n_items
         data_drop = []
         for var in name:
-            if var in self.filters:
-                self.filters.remove(var)
             if not self.is_array(var): data_drop.append(var)
             remove_loop(meta, var)
         data.drop(data_drop, 1, inplace=True)
@@ -4896,19 +4889,10 @@ class DataSet(object):
             stat_recs = self._stat_view_recodes()
             all_recs = set([r for r in net_recs + stat_recs if r in mapper])
             for rec in all_recs:
-                is_array = rec in self.masks()
-                if is_array:
-                    props = self._meta['masks'][rec]['properties']
-                else:
-                    props = self._meta['columns'][rec]['properties']
-                rn = props.get('recoded_net', None)
-                if rn:
-                    org_ref = props['recoded_net']
-                    props['recoded_net'] = mapper[org_ref]
-                rs = props.get('recoded_stat', None)
-                if rs:
-                    org_ref = props['recoded_stat']
-                    props['recoded_stat'] = mapper[org_ref]
+                rn = self.get_property(rec, 'recoded_net')
+                if rn: self._set_property(rec, 'recoded_net', mapper[rn])
+                rs = self.get_property(rec, 'recoded_stat')
+                if rs: self._set_property(rec, 'recoded_stat', mapper[rs])
             return None
 
         def rename_meta(meta, mapper):
@@ -6105,6 +6089,7 @@ class DataSet(object):
         else:
             return None
 
+    @modify(to_list='name')
     @verify(variables={'name': 'both'})
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
         """
@@ -6132,19 +6117,27 @@ class DataSet(object):
         valid_props = ['base_text', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        self._set_property(name, prop_name, prop_value, ignore_items)
+        return None
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'both'})
+    def _set_property(self, name, prop_name, prop_value, ignore_items=False):
+        """
+        Access and set the value of a meta object's ``properties`` collection.
+
+        Note: This method allows the setting for any property, so it should only
+        be used by developers.
+        """
         prop_update = {prop_name: prop_value}
-        if self.is_array(name):
-            if not 'properties' in self._meta['masks'][name]:
-                self._meta['masks'][name]['properties'] = {}
-            self._meta['masks'][name]['properties'].update(prop_update)
-            if not ignore_items:
-                items = self.sources(name)
-                for i in items:
-                    self.set_property(i, prop_name, prop_value)
-        else:
-            if not 'properties' in self._meta['columns'][name]:
-                self._meta['columns'][name]['properties'] = {}
-            self._meta['columns'][name]['properties'].update(prop_update)
+        for n in name:
+            collection = 'masks' if self.is_array(n) else 'columns'
+            if not 'properties' in self._meta[collection][n]:
+                self._meta[collection][n]['properties'] = {}
+            self._meta[collection][n]['properties'].update(prop_update)
+            if ignore_items: continue
+            for s in self.sources(n):
+                self._set_property(s, prop_name, prop_value)
         return None
 
     @modify(to_list='name')
@@ -6471,7 +6464,10 @@ class DataSet(object):
         return valid_map
 
     def _set_default_missings(self, ignore=None):
-        excludes = ['weißnicht', 'keineangabe', 'weißnicht/keineangabe',
+        excludes = [
+            u'weißnicht',
+            'keineangabe',
+            u'weißnicht/keineangabe',
                     'keineangabe/weißnicht', 'kannmichnichterinnern',
                     'weißichnicht', 'nichtindeutschland']
         d = self.describe()
