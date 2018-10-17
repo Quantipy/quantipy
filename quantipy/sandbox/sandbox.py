@@ -680,7 +680,6 @@ class ChainManager(object):
         else:
             return cm
 
-
     def cut(self, values, ci=None, base=False, tests=False):
         """
         Isolate selected axis values in the ``Chain.dataframe``.
@@ -690,9 +689,13 @@ class ChainManager(object):
         values : (list of) str
             The string must indicate the raw (i.e. the unpainted) second level
             axis value, e.g. ``'mean'``, ``'net_1'``, etc.
-        cell_items : {'counts', 'c%', None}, default None
+        ci : {'counts', 'c%', None}, default None
             The cell item version to target if multiple frequency representations
             are present.
+        base : bool, default False
+            Controls keeping any existing base view aggregations.
+        tests : bool, default False
+            Controls keeping any existing significance test view aggregations.
 
         Returns
         -------
@@ -723,7 +726,10 @@ class ChainManager(object):
                     del c._views[v]
                 else:
                     c._views[v] = names.count(v)
-            if not tests: c.sig_test_letters = None
+            if not tests:
+                c.sig_test_letters = None
+            else:
+                c._frame = c._apply_letter_header(c._frame)
             c.edited = True
         
         return None
@@ -749,7 +755,9 @@ class ChainManager(object):
         new_labels = []
         for c in chains:
             new_label = []
-            if c.sig_test_letters: c._frame = c._apply_letter_header(c._frame)
+            if c.sig_test_letters: 
+                c._remove_letter_header()
+                c._frame = c._apply_letter_header(c._frame)
             df = c.dataframe
 
             if not c.array_style == 0:
@@ -1971,10 +1979,6 @@ class Chain(object):
         if self.views:
             compl_views = [v for v in self.views if ']*:' in v]
             check_views = compl_views or self.views
-            # if not compl_views:
-            #     # c = any(v.split('|')[-1] == 'counts' for v in self.views)
-            #     # col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
-            #     # row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
             non_freqs = ('d.', 't.')
             c = any(v.split('|')[3] == '' and
                     not v.split('|')[1].startswith(non_freqs) and
@@ -1988,15 +1992,9 @@ class Chain(object):
                           not v.split('|')[1].startswith(non_freqs) and
                           not v.split('|')[-1] == 'cbase'
                           for v in check_views)
-            # else:
-            #     c = any(v.split('|')[3] == '' for v in compl_views)
-            #     col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
-            #     row_pct = any(v.split('|')[3] == 'x' for v in compl_views)
-            
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
             c_colrow_pct = c_colpct and c_rowpct
-
             single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
             if single_ci:
                 if c:
