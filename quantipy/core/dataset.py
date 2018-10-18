@@ -891,7 +891,6 @@ class DataSet(object):
         if w: batch_vars.extend(w)
         return batch_vars
 
-
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def _from_batch(self, batch_name, include='identity', text_key=[],
@@ -901,15 +900,22 @@ class DataSet(object):
         # get the main batch definition to construct a dataset from...
         batch_def = self._meta['sets']['batches'][batch_name]
         # filter it if needed:
-        if batch_def['filter'] == 'no_filter':
+        f = batch_def['filter']
+        if f == 'no_filter':
             b_ds = self.clone()
+        elif isinstance(f, basestring):
+            b_ds = self.filter(batch_name, {f: 0})
         else:
-            b_ds = self.filter(batch_name, batch_def['filter'].values()[0])
+            b_ds = self.filter(batch_name, f.values()[0])
         # build the variable collection based in Batch setup & requirements:
         main_variables = b_ds._vars_from_batch(batch_def, 'batch-full')
         if additions in ['full', 'filters']:
-            print 'manifest_filters() needed, add filters to list...'
-            pass
+            if batch_def['additions']:
+                for add_batch in batch_def['additions']:
+                    f = add_batch['filter']
+                    if not f == 'no_filter' and isinstance(f, basestring):
+                        if not f in main_variables:
+                            main_variables.append(f)
         if additions in ['full', 'variables']:
             if batch_def['additions']:
                 for add_batch in batch_def['additions']:
@@ -926,7 +932,6 @@ class DataSet(object):
         b_ds.order(main_variables)
         self._rename_blacklist_vars()
         return b_ds
-
 
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
@@ -1007,10 +1012,13 @@ class DataSet(object):
             msg = 'Batch-textkey {} is not included in {}.'
             raise ValueError(msg.format(batch['language'], text_key))
         # Create a new instance by filtering or cloning
-        if not batch['filter']:
+        f = batch['filter']
+        if f == 'no_filter':
             b_ds = self.clone()
+        elif isinstance(f, basestring):
+            b_ds = self.filter(batch_name, {f: 0})
         else:
-            b_ds = self.filter(batch_name, {batch['filter']: 1})
+            b_ds = self.filter(batch_name, f.values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
         variables = include
