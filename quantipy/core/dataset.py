@@ -380,7 +380,7 @@ class DataSet(object):
             return False
 
     def is_filter(self, var):
-        return True if self.get_property(var, recoded_filter) else False
+        return True if self.get_property(var, 'recoded_filter') else False
 
     def _has_missings(self, var):
         if self.is_array(var): var = self.sources(var)[0]
@@ -3163,7 +3163,7 @@ class DataSet(object):
             'label': 'any text',
             'logic': {var: keys} / intersection/ ....
             }
-
+            ```
             If a str (column-name) is provided, automatically a logic is
             created that keeps all cases which are not empty for this column.
             If logic is a list, each included list-item becomes a category of
@@ -3194,7 +3194,7 @@ class DataSet(object):
         return None
 
     @modify(to_list=['logic'])
-    def extend_filter_var(self, name, logic, suffix='ext'):
+    def extend_filter_var(self, name, logic, extend_as=None):
         """
         Extend logic of an existing filter-variable.
 
@@ -3204,18 +3204,25 @@ class DataSet(object):
             Name of the existing filter variable.
         logic: (list of) complex logic/ str
             Additional logic to keep cases (intersection with existing logic).
-        suffix: str
+            Complex logic should be provided in form of:
+            ```
+            {
+            'label': 'any text',
+            'logic': {var: keys} / intersection/ ....
+            }
+            ```
+        extend_as: str, default None
             Addition to the filter-name to create a new filter. If it is None
             the existing filter-variable is overwritten.
         """
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
-        if suffix:
-            f_name = '{}_{}'.format(name, suffix)
+        if extend_as:
+            f_name = '{}_{}'.format(name, extend_as)
             if f_name in self:
-                msg = "Please change suffix: '{}' is already in dataset."
+                msg = "Please change 'extend_as': '{}' is already in dataset."
                 raise KeyError(msg.format(f_name))
-            self.copy(name, suffix)
+            self.copy(name, extend_as)
             self._set_property(f_name, 'recoded_filter', True)
         else:
             f_name = name
