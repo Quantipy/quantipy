@@ -777,11 +777,12 @@ class ChainManager(object):
                 df.columns.set_levels(levels=[title]*totalmul, level=0, inplace=True)
 
             concat_dfs.append(df)
-        
-        new_df = pd.concat(concat_dfs, axis=0, join='inner')
-        
+    
+        new_df = pd.concat(concat_dfs, axis=0, join='inner')    
         self.chains[0]._frame = new_df
         self.reorder([0])
+        self.rename({self.single_names[0]: title})
+        self.fold()
         self.chains[0]._custom_views = custom_views
         return None
 
