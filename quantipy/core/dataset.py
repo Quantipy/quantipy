@@ -3250,6 +3250,22 @@ class DataSet(object):
             values.append(val)
         return values
 
+    @modify(to_list=['values'])
+    def reduce_filter_var(self, name, values):
+        """
+        Remove values from filter-variables and recalculate the filter.
+        """
+        if not self.is_filter(name):
+            raise KeyError('{} is no valid filter-variable.'.format(name))
+        if 0 in values:
+            raise ValueError('Cannot remove the 0-keep value from filter var')
+        elif len([x for x in self.codes(name) if not x in values]) <= 1:
+            raise ValueError('Cannot remove all values from filter var.')
+        self.uncode(name, {0: {name: 0}})
+        self.remove_values(name, values)
+        self.recode(name, {0: {name: has_count(len(self.codes(name))-1)}}, append=True)
+        return None
+
     def manifest_filter(self, name):
         """
         Get index slicer from filter-variables.
