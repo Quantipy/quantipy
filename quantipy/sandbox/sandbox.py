@@ -488,7 +488,7 @@ class ChainManager(object):
         """
         if not isinstance(other_cm, ChainManager):
             raise ValueError("other_cm must be a quantipy.ChainManager instance.")
-        if not index == -1:
+        if index > -1:
             before_c = self.__chains[:index+1]
             after_c = self.__chains[index+1:]
             new_chains = before_c + other_cm.__chains + after_c
