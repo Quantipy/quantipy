@@ -18,7 +18,7 @@ default_font = OrderedDict([
     ('font_underline', False),
     ('font_color', (89, 89, 89)),
     ('font_color_brightness', 0),
-    ('font_color_theme', None)
+    ('font_color_theme', None),
 ])
 
 # Chart Legend
@@ -47,7 +47,7 @@ default_textframe = OrderedDict([
     ('margin_bottom', 46800),  # Cm(0.13)
     ('vertical_alignment', 'top'),
     ('horizontal_alignment', 'left'),
-    ('font_kwargs', default_font.copy())
+    ('font_kwargs', default_font.copy()),
 ])
 
 # ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ default_textbox = OrderedDict([
     ('textbox_fill_solid', False),
     ('textbox_color', (100, 0, 0)),
     ('textbox_color_brightness', 0),
-    ('textframe_kwargs', default_textframe.copy())
+    ('textframe_kwargs', default_textframe.copy()),
 ])
 
 # ---------------------------------------------------------------------------
