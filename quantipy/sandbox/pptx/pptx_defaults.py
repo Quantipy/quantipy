@@ -188,7 +188,10 @@ default_chart = OrderedDict([
 
     # Number format
     ('number_format', '0.00%'),
-    ('xl_number_format', '0.00%')
+    ('xl_number_format', '0.00%'),
+    # Sig_testing
+    ('sig_test_visible', False),
+    ('sig_test_results', None),
 ])
 
 # --------------------------
