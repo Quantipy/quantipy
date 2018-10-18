@@ -3234,6 +3234,7 @@ class DataSet(object):
         return None
 
     def _transform_filter_logics(self, logic, start):
+        if not logic: logic = ['@1']
         values = []
         for x, l in enumerate(logic, start):
             if isinstance(l, basestring):
