@@ -651,7 +651,13 @@ class PptxChain(object):
         # Get the sig testing
         sig_df = self.prepare_dataframe()
         sig_df = sig_df.get_propstest()
-        self._sig_test = sig_df.df.values.tolist()
+        _sig_test = sig_df.df.values.tolist()
+
+        # Assume that all items in the list of sig tests has same length
+        check_list = map(lambda x: len(x), _sig_test)
+        assert check_list.count(check_list[0]) == len(check_list), 'List of sig test results is not uniform'
+
+        self._sig_test = [zip(*_sig_test)[i] for i in range(len(_sig_test[0]))]
         return self._sig_test
 
     @property
