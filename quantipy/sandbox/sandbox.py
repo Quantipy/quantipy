@@ -1754,7 +1754,7 @@ class Chain(object):
         for m in zip(tests, levels):
             l = '.{}'.format(m[1])
             t = m[0]
-            if m in sig_levels:
+            if t in sig_levels:
                 sig_levels[t].append(l)
             else:
                 sig_levels[t] = [l]
@@ -2953,7 +2953,7 @@ class Chain(object):
         pattern = r'\, (?=\W|$)'
 
         for column in self.structure.columns:
-            if not column in self._meta['columns']: return None
+            if not column in self._meta['columns']: continue
 
             meta = self._meta['columns'][column]
 
@@ -2975,20 +2975,23 @@ class Chain(object):
                         for item in values
                     }
                     series = self.structure[column]
-                    series = (series.str.split(';')
-                                    .apply(pd.Series, 1)
-                                    .stack(dropna=False)
-                                    .map(value_mapper.get) #, na_action='ignore')
-                                    .unstack())
-                    first = series[series.columns[0]]
-                    rest = [series[c] for c in series.columns[1:]]
-                    self.structure[column] = (
-                        first
-                            .str.cat(rest, sep=', ', na_rep='')
-                            .str.slice(0, -2)
-                            .replace(to_replace=pattern, value='', regex=True)
-                            .replace(to_replace='', value=na_rep)
-                    )
+                    try:
+                        series = (series.str.split(';')
+                                        .apply(pd.Series, 1)
+                                        .stack(dropna=False)
+                                        .map(value_mapper.get) #, na_action='ignore')
+                                        .unstack())
+                        first = series[series.columns[0]]
+                        rest = [series[c] for c in series.columns[1:]]
+                        self.structure[column] = (
+                            first
+                                .str.cat(rest, sep=', ', na_rep='')
+                                .str.slice(0, -2)
+                                .replace(to_replace=pattern, value='', regex=True)
+                                .replace(to_replace='', value=na_rep)
+                        )
+                    except AttributeError:
+                        continue
                 else:
                     value_mapper = {
                         item['value']: item['text'][text_key]
