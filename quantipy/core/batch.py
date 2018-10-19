@@ -127,9 +127,8 @@ class Batch(qp.DataSet):
             self.extended_yks_per_x = {}
             self.exclusive_yks_per_x = {}
             self.extended_filters_per_x = {}
-            self.filter = None # local batch filter
-            self.filter_names = [] # local batch filters
-            self._filter_slice = None
+            self.filter = None
+            self.filter_names = []
             self.x_y_map = None
             self.x_filter_map = None
             self.y_on_y = []
@@ -182,7 +181,7 @@ class Batch(qp.DataSet):
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
                      'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info',
-                     '_filter_slice']:
+                     ]:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
@@ -198,7 +197,7 @@ class Batch(qp.DataSet):
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
                      'y_on_y_filter', 'y_filter_map', 'build_info',
-                     '_filter_slice']:
+                     ]:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
@@ -667,15 +666,12 @@ class Batch(qp.DataSet):
         None
         """
         name = filter_name.encode('utf-8', errors='ignore')
-        if name in self:
-            if name in self._meta['info'].get('filters', []):
-                if filter_logic is None:
-                    pass
-                elif not self.manifest_filter(name).tolist() == self.take(filter_logic).tolist():
-                    msg = "filter_name is already used for a filter with an other logic"
-                    raise ValueError(msg)
+        if self.is_filter(name) and not filter_logic is None:
+            raise ValueError("'{}' is already a filter-variable. Cannot "
+                             "apply a new logic.")
         else:
-            self.add_filter_var(filter_name, filter_logic, False)
+            self.add_filter_var(name, filter_logic, False)
+
         self.filter = name
         if not name in self.filter_names:
             self.filter_names.append(name)
@@ -738,19 +734,27 @@ class Batch(qp.DataSet):
         if dupes:
             raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
-            ds = qp.DataSet('open_end')
-            ds.from_components(self._data, self._meta, reset=False)
-            if self.filter:
-                if filter_by:
-                    f = intersection([{self.filter: 1}, filter_by])
-                    slicer = ds.take(f).tolist()
+            if filter_by:
+                if self.filter:
+                    f_name = '{}_{}'.format(self.filter, title)
                 else:
-                    slicer = self.manifest_filter(self.filter).tolist()
-            elif filter_by:
-                f = filter_by
-                slicer = ds.take(f).tolist()
+                    f_name = title
+                if self.is_filter(f_name):
+                    logic = intersection([{self.filter: 0, filter_by}])
+                    if not self.take(logic).index.tolist() == self.manifest_filter(f_name):
+                        msg = "'{}' is already in use with an other logic."
+                        raise ValueError(msg.format(f_name))
+                else:
+                    logic = {
+                        'label': title,
+                        'logic': filter_by}
+                    if self.filter:
+                        self.extend_filter_var(self.filter, logic, title)
+                    else:
+                        self.add_filter_var(title, logic)
+                slicer = f_name
             else:
-                slicer = self._data.index.tolist()
+                slicer = self.filter
             if any(oe['title'] == title for oe in self.verbatims) and not overwrite:
                 print 'Cannot include %s, as it is already included' % title
                 return None
@@ -1073,5 +1077,4 @@ class Batch(qp.DataSet):
         else:
             idx = self._data.index
         self.sample_size = len(idx)
-        self._filter_slice = idx.values.tolist()
         return None
