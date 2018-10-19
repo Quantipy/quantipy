@@ -903,6 +903,14 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
+    def _get_ykey_mapping(self):
+        ys = []
+        letters = string.ascii_uppercase + string.ascii_lowercase
+        for c in self.chains:
+            if c._y_keys not in ys:
+                ys.append(c._y_keys)
+        return zip(ys, letters)
+
     def describe(self, by_folder=False, show_hidden=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
@@ -927,8 +935,10 @@ class ChainManager(object):
         names = []
         array_sum = []
         sources = []
+        banner_ids = []
         item_pos = []
         hidden = []
+        bannermap = self._get_ykey_mapping()
         for pos, chains in enumerate(self):
             is_folder = isinstance(chains, dict)
             if is_folder:
@@ -948,15 +958,18 @@ class ChainManager(object):
                 folders.extend(folder_name * len(chains))
                 array_sum.extend([True if c.array_style > -1 else False
                                  for c in chains])
-                sources.extend(c.source for c in chains)
-
+                sources.extend(c.source if not c.edited else 'edited'
+                               for c in chains)
+                for c in chains:
+                    for m in bannermap:
+                        if m[0] == c._y_keys: banner_ids.append(m[1])
             else:
-                variables.extend([chains[0].name])#(chains[0].structure.columns.tolist())
-                names.extend([chains[0].name])# for _ in xrange(chains[0].structure.shape[1])])
-                # names.extend(chains[0].structure.columns.tolist())
+                variables.extend([chains[0].name])
+                names.extend([chains[0].name])
                 folders.extend(folder_name)
                 array_sum.extend([False])
                 sources.extend(c.source for c in chains)
+                banner_ids.append(None)
             for c in chains:
                 if c.hidden:
                     hidden.append(True)
@@ -968,6 +981,7 @@ class ChainManager(object):
                    folder_items,
                    variables,
                    sources,
+                   banner_ids,
                    array_sum,
                    hidden]
         df_cols = ['Position',
@@ -976,6 +990,7 @@ class ChainManager(object):
                    'Item',
                    'Variable',
                    'Source',
+                   'Banner id',
                    'Array',
                    'Hidden']
         df = pd.DataFrame(df_data).T
