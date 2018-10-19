@@ -901,7 +901,7 @@ class DataSet(object):
         batch_def = self._meta['sets']['batches'][batch_name]
         # filter it if needed:
         f = batch_def['filter']
-        if f == 'no_filter':
+        if f is None:
             b_ds = self.clone()
         elif isinstance(f, basestring):
             b_ds = self.filter(batch_name, {f: 0})
@@ -913,7 +913,7 @@ class DataSet(object):
             if batch_def['additions']:
                 for add_batch in batch_def['additions']:
                     f = add_batch['filter']
-                    if not f == 'no_filter' and isinstance(f, basestring):
+                    if not f is None and isinstance(f, basestring):
                         if not f in main_variables:
                             main_variables.append(f)
         if additions in ['full', 'variables']:
@@ -1013,7 +1013,7 @@ class DataSet(object):
             raise ValueError(msg.format(batch['language'], text_key))
         # Create a new instance by filtering or cloning
         f = batch['filter']
-        if f == 'no_filter':
+        if f is None:
             b_ds = self.clone()
         elif isinstance(f, basestring):
             b_ds = self.filter(batch_name, {f: 0})
@@ -1035,7 +1035,7 @@ class DataSet(object):
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
             if additions in ['full', 'filters']:
-                variables +=  batch['filter_names']
+                variables += batch['filter_names']
         variables = list(set([v for v in variables if not v in ['@', None]]))
         variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
@@ -6959,7 +6959,6 @@ class DataSet(object):
             xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
-            f  = batch['filter']
             my  = batch['yks']
 
             total_len = len(xys) + len(batch['y_on_y'])
@@ -6969,13 +6968,13 @@ class DataSet(object):
                     if fs[y[0]] is None:
                         fi = 'no_filter'
                     else:
-                        fi = {fs[y[0]]: {fs[y[0]]: 1}}
+                        fi = {fs[y[0]]: {fs[y[0]]: 0}}
                     stack.add_link(dk, fi, x='@', y=y)
                 else:
                     if fs[x] is None:
                         fi = 'no_filter'
                     else:
-                        fi = {fs[x]: {fs[x]: 1}}
+                        fi = {fs[x]: {fs[x]: 0}}
                     stack.add_link(dk, fi, x=x, y=y)
                 if verbose:
                     done = float(idx) / float(total_len) *100
