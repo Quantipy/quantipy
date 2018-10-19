@@ -189,6 +189,12 @@ class DataSet(object):
 
     def created(self):
         return [v for v in self.variables() if self.get_property(v, 'created')]
+    
+    def batches(self):
+        if 'batches' in self._meta['sets']:
+            return self._meta['sets']['batches'].keys()
+        else:
+            return []
 
     def _stat_view_recodes(self):
         return [v for v in self.variables() if
@@ -197,13 +203,6 @@ class DataSet(object):
     def _net_view_recodes(self):
         return [v for v in self.variables() if
                 self.get_property(v, 'recoded_net')]
-
-
-    def batches(self):
-        if 'batches' in self._meta['sets']:
-            return self._meta['sets']['batches'].keys()
-        else:
-            return []
 
     def set_verbose_errmsg(self, verbose=True):
         """
