@@ -726,10 +726,11 @@ class ChainManager(object):
                     del c._views[v]
                 else:
                     c._views[v] = names.count(v)
-            if not tests:
-                c.sig_test_letters = None
-            else:
-                c._frame = c._apply_letter_header(c._frame)
+            if not c._array_style == 0:
+                if not tests:
+                    c.sig_test_letters = None
+                else:
+                    c._frame = c._apply_letter_header(c._frame)
             c.edited = True
         
         return None
