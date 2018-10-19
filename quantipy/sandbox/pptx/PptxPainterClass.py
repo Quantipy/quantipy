@@ -2,6 +2,7 @@
 
 import re
 from lxml import etree
+import warnings
 
 # Imports from Python-PPTX
 from pptx import Presentation
@@ -181,13 +182,13 @@ class PptxPainter(object):
                     }
 
     @staticmethod
-    def get_chart_values(chart):
+    def get_plot_values(plot):
         """
         Return a list of dicts with serie name as dict-key and serie values as dict-value
 
         Parameters
         ----------
-        chart: pptx.chart.chart.Chart
+        plot: pptx.chart.plot._BasePlot
 
         Returns
         -------
@@ -196,26 +197,20 @@ class PptxPainter(object):
         """
         series = [
             {series.name: [str(s) for s in series.values]}
-            for series in chart.series
+            for series in plot.series
         ]
 
         return series
 
-    def show_data_labels(self, chart, position=None, decimals=0):
+    def show_data_labels(self, plot, decimals=0):
         """
         Explicitly sets datalabels to allow for datalabel editing.
 
         Parameters
         ----------
-        chart : pptx.chart.chart.Chart
-            The chart object for which datalabels need should be shown.
-        position : str, default=None
-            The position, relative to the data point, that the datalabel
-            should be appear in. Must be one of the following, or None:
-                'above', 'below', 'best', 'center', 'inside_base',
-                'inside_end', 'left', 'mixed', 'outside_end', 'right'
-            If None then the position already set for the chart will
-            be used.
+        plot: pptx.chart.plot._BasePlot
+            The plot object for which datalabels need should be shown.
+        decimals: the number of decimals to show
 
         Returns
         -------
@@ -223,13 +218,12 @@ class PptxPainter(object):
         """
 
         # Get number format and font from data labels
-        data_labels = chart.plots[0].data_labels
+        data_labels = plot.data_labels
         number_format = data_labels.number_format  # '0%'
-        # print (number_format)
         font = data_labels.font
 
-        chart_values = self.get_chart_values(chart)
-        for s, series in enumerate(chart_values):
+        plot_values = self.get_plot_values(plot)
+        for s, series in enumerate(plot_values):
             values = [
                 value
                 for value in series.values()[0]
@@ -245,9 +239,9 @@ class PptxPainter(object):
                         str_value = str(value)
                 else:
                     str_value = ""
-                point = chart.series[s].points[v]
-                d_label = point.data_label
-                frame = d_label.text_frame
+                point = plot.series[s].points[v]
+                data_label = point.data_label
+                frame = data_label.text_frame
                 frame.text = str_value
                 pgraph = frame.paragraphs[0]
                 for run in pgraph.runs:
@@ -260,16 +254,13 @@ class PptxPainter(object):
                     run.font.size = font.size
                     run.font.underline = font.underline
 
-                if position is not None:
-                    point.data_label.position = data_label_pos_dct(position)
-
-    def edit_datalabel(self, chart, series, point, text, prepend=False, append=False, position=None, rgb=None):
+    def edit_datalabel(self, plot, series, point, text, prepend=False, append=False, rgb=None):
         """
         Add/append data label text.
 
         Parameters
         ----------
-        chart: pptx.chart.chart.Chart
+        plot: pptx.chart.plot._BasePlot
             An instance of a Chart object.
         serie: int
             The serie where the data label should be edited
@@ -283,8 +274,6 @@ class PptxPainter(object):
             Set to True to prepend text to existing data label
         append: bool
             Set to True to append text to existing data label
-        position: basestring
-            String to define the position of the data label.
         rgb: tuple
             Tuple with three ints defining each RGB color
 
@@ -293,8 +282,9 @@ class PptxPainter(object):
         None
 
         """
-        data_label = chart.series[series].points[point].data_label
+        data_label = plot.series[series].points[point].data_label
         frame = data_label.text_frame
+
         run = frame.paragraphs[0].runs[0]
         original_text = frame.text
         if prepend:
@@ -305,8 +295,6 @@ class PptxPainter(object):
             run.text = text
         if rgb is not None:
             run.font.color.rgb = RGBColor(*rgb)
-        if position is not None:
-            data_label.position = data_label_pos_dct(position)
 
     def queue_slide_items(self, pptx_chain, slide_items):
         """
@@ -1566,85 +1554,3 @@ class PptxPainter(object):
                 #paragraph.line_spacing = Pt(6)
                 cell.text = str(subval)
 
-    @staticmethod
-    def edit_datalabel(chart, series, point, text, prepend=False, append=False,
-                       position=None, rgb=None):
-        """
-        Add/append data label text.
-        """
-        data_label = chart.series[series].points[point].data_label
-        frame = data_label.text_frame
-        if prepend:
-            original_text = frame.text
-            frame.text = text
-            pgraph = frame.add_paragraph()
-            pgraph.text = original_text
-            run = frame.paragraphs[0].runs[0]
-        elif append:
-            pgraph = frame.add_paragraph()
-            pgraph.text = text
-            run = frame.paragraphs[-1].runs[0]
-        else:
-            frame.text = text
-            run = frame.paragraphs[0].runs[0]
-        if rgb is not None:
-            run.font.color.rgb = RGBColor(*rgb)
-        if position is not None:
-            data_label.position = data_label_pos_dct(position)
-
-    def show_data_labels(self, chart, position=None):
-        """
-        Explicitly sets datalabels to allow for datalabel editing.
-
-        Parameters
-        ----------
-        chart : pptx.chart.chart.Chart
-            The chart object for which datalabels need should be shown.
-        position : str, default=None
-            The position, relative to the data point, that the datalabel
-            should be appear in. Must be one of the following, or None:
-                'above', 'below', 'best', 'center', 'inside_base',
-                'inside_end', 'left', 'mixed', 'outside_end', 'right'
-            If None then the position already set for the chart will
-            be used.
-
-        Returns
-        -------
-        None
-        """
-
-        chart_values = self.get_chart_values(chart)
-        for s, series in enumerate(chart_values):
-            values = [
-                value
-                for value in series.values()[0]
-                if self.convertable(value, float)
-            ]
-            for v, value in enumerate(values):
-                point = chart.series[s].points[v]
-                frame = point.data_label.text_frame
-                frame.text = "" if value is None else str(value)
-                if position is not None:
-                    point.data_label.position = data_label_pos_dct(position)
-
-    @staticmethod
-    def get_chart_values(chart):
-
-        series = [
-            {series.name: [str(s) for s in series.values]}
-            for series in chart.series
-        ]
-
-        return series
-
-    @staticmethod
-    def convertable(obj, func):
-        """
-        Returns True if obj can be convertedby func without an error.
-        """
-
-        try:
-            func(obj)
-            return True
-        except ValueError:
-            return False
