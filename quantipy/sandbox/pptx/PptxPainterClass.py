@@ -30,11 +30,11 @@ from enumerations import (
 )
 
 from PptxDefaultsClass import PptxDefaults
+from PptxChainClass import float2String
 import pandas as pd
 import copy
 
 
-# chartdata_from_dataframe taken from topy.core.pandas_pptx.py
 def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
     """
     Return a CategoryChartData instance from the given Pandas DataFrame.
@@ -97,7 +97,6 @@ def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
     return cd
 
 
-# return_slide_layout_by_name is taken from quantipy.core.builds.powerpoint.visual_editor.py
 def return_slide_layout_by_name(pptx, slide_layout_name):
     """
     Loop over the slide layout object and find slide layout by name, return slide layout
@@ -114,6 +113,18 @@ def return_slide_layout_by_name(pptx, slide_layout_name):
         raise Exception(
             'Slide layout: {sld_layout} not found\n'.format(
                 sld_layout=slide_layout_name))
+
+
+def convertable(obj, func):
+    """
+    Returns True if obj can be converted by func without an error.
+    """
+
+    try:
+        func(obj)
+        return True
+    except ValueError:
+        return False
 
 
 class PptxPainter(object):
@@ -169,6 +180,27 @@ class PptxPainter(object):
                     'side_tables': {},
                     }
 
+    @staticmethod
+    def get_chart_values(chart):
+        """
+        Return a list of dicts with serie name as dict-key and serie values as dict-value
+
+        Parameters
+        ----------
+        chart: pptx.chart.chart.Chart
+
+        Returns
+        -------
+        list
+
+        """
+        series = [
+            {series.name: [str(s) for s in series.values]}
+            for series in chart.series
+        ]
+
+        return series
+
     def show_data_labels(self, chart, position=None, decimals=0):
         """
         Explicitly sets datalabels to allow for datalabel editing.
@@ -196,7 +228,7 @@ class PptxPainter(object):
         # print (number_format)
         font = data_labels.font
 
-        chart_values = get_chart_values(chart)
+        chart_values = self.get_chart_values(chart)
         for s, series in enumerate(chart_values):
             values = [
                 value
