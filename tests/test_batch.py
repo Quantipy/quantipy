@@ -29,10 +29,12 @@ def _get_batch(name, dataset=None, full=False):
 	if not dataset: dataset = _get_dataset()
 	batch = qp.Batch(dataset, name)
 	if full:
+		if not 'men only' in dataset:
+			dataset.add_filter_var('men only', {'gender': 1})
 		batch.add_x(['q1', 'q2', 'q6', 'age'])
 		batch.add_y(['gender', 'q2'])
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo')
-		batch.add_filter('men only', {'gender': 1})
+		batch.add_filter('men only')
 		batch.set_weights('weight_a')
 	return batch, dataset
 
@@ -47,7 +49,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 31)
+		self.assertEqual(len(_get_meta(batch1).keys()), 29)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -64,7 +66,7 @@ class TestBatch(unittest.TestCase):
 				'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 				'cell_items', 'weights', 'sigproperties', 'additional',
-				'sample_size', 'language', 'name', 'total', '_filter_slice']
+				'sample_size', 'language', 'name', 'total']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
@@ -132,7 +134,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_filter('men only', {'gender': 1})
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
 		verbatims = _get_meta(batch)['verbatims'][0]
-		self.assertEqual(len(verbatims['idx']), 118)
+		self.assertEqual(verbatims['filter'], 'men only_open ends')
 		self.assertEqual(verbatims['columns'], ['q8a', 'q9a'])
 		self.assertEqual(verbatims['break_by'], ['RecordNo'])
 		self.assertEqual(verbatims['title'], 'open ends')
@@ -142,7 +144,7 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(len(verbatims), 2)
 
 	def test_add_filter(self):
-		batch, ds = _get_batch('test', full=True)
+		batch, ds = _get_batch('test', full=False)
 		batch.add_x(['q1', 'q2b'])
 		batch.add_y('gender')
 		batch.add_filter('men only', {'gender': 1})
@@ -164,8 +166,8 @@ class TestBatch(unittest.TestCase):
 
 	def test_copy(self):
 		batch1, ds = _get_batch('test', full=True)
-		batch2 = batch1.copy('test_copy')
-		batch3 = batch1.copy('test_copy2', as_addition=True)
+		batch2 = batch1.clone('test_copy')
+		batch3 = batch1.clone('test_copy2', as_addition=True)
 		attributes = ['xks', 'yks', 'filter', 'filter_names', 'x_y_map',
 				      'x_filter_map', 'y_on_y', 'forced_names', 'summaries',
 					  'transposed_arrays', 'extended_yks_global', 'extended_yks_per_x',
@@ -295,7 +297,7 @@ class TestBatch(unittest.TestCase):
 		batch, ds = _get_batch('test', full=True)
 		b_meta = _get_meta(batch)
 		batch.add_y_on_y('cross', {'age': frange('20-30')}, 'extend')
-		batch.add_y_on_y('back', 'no_filter', 'replace')
+		batch.add_y_on_y('back', None, 'replace')
 		self.assertEqual(b_meta['y_filter_map']['back'], None)
 		self.assertEqual(b_meta['y_on_y'], ['cross', 'back'])
 

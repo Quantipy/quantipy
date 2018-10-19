@@ -29,7 +29,7 @@ def meta_editor(self, dataset_func):
         if not isinstance(name, list): name = [name]
         # create DataSet clone to leave global meta data untouched
         if self.edits_ds is None:
-            self.edits_ds = self.clone()
+            self.edits_ds = qp.DataSet.clone(self)
         ds_clone = self.edits_ds
         var_edits = []
         # args/ kwargs for min_value_count
@@ -110,6 +110,7 @@ class Batch(qp.DataSet):
         self.sample_size = None
         self._verbose_errors = dataset._verbose_errors
         self._verbose_infos = dataset._verbose_infos
+        self._dimensions_comp = dataset._dimensions_comp
 
         # RENAMED DataSet methods
         self._dsfilter = qp.DataSet.filter.__func__
@@ -132,8 +133,7 @@ class Batch(qp.DataSet):
             self.x_y_map = None
             self.x_filter_map = None
             self.y_on_y = []
-            self.y_on_y_filter = {}
-            self.y_filter_map = None
+            self.y_filter_map = {}
             self.forced_names = {}
             self.summaries = []
             self.transposed_arrays = {}
@@ -171,7 +171,6 @@ class Batch(qp.DataSet):
         """
         self._map_x_to_y()
         self._map_x_to_filter()
-        self._map_y_main_filter()
         self._samplesize_from_batch_filter()
         for attr in ['xks', 'yks', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
@@ -180,7 +179,7 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info',
+                     'unwgt_counts', 'y_filter_map', 'build_info',
                      ]:
             attr_update = {attr: self.__dict__.get(attr)}
             self._meta['sets']['batches'][self.name].update(attr_update)
@@ -196,12 +195,12 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map', 'build_info',
+                     'y_filter_map', 'build_info',
                      ]:
             attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
             self.__dict__.update(attr_load)
 
-    def copy(self, name, b_filter=None, as_addition=False):
+    def clone(self, name, b_filter=None, as_addition=False):
         """
         Create a copy of Batch instance.
 
@@ -404,7 +403,7 @@ class Batch(qp.DataSet):
         self.additional = True
         self.verbatims = []
         self.y_on_y = []
-        self.y_on_y_filter = {}
+        self.y_filter_map = {}
         if self._verbose_infos:
             msg = ("Batch '{}' specified as addition to Batch '{}'. Any open end "
                    "summaries and 'y_on_y' agg. have been removed!")
@@ -666,9 +665,10 @@ class Batch(qp.DataSet):
         None
         """
         name = filter_name.encode('utf-8', errors='ignore')
-        if self.is_filter(name) and not filter_logic is None:
-            raise ValueError("'{}' is already a filter-variable. Cannot "
-                             "apply a new logic.")
+        if self.is_filter(name):
+            if not filter_logic is None:
+                raise ValueError("'{}' is already a filter-variable. Cannot "
+                                 "apply a new logic.")
         else:
             self.add_filter_var(name, filter_logic, False)
 
@@ -740,7 +740,7 @@ class Batch(qp.DataSet):
                 else:
                     f_name = '{}_f'.format(title)
                 if self.is_filter(f_name):
-                    logic = intersection([{self.filter: 0, filter_by}])
+                    logic = intersection([{self.filter: 0}, filter_by])
                     if not self.take(logic).index.tolist() == self.manifest_filter(f_name):
                         msg = "'{}' is already in use with an other logic."
                         raise ValueError(msg.format(f_name))
@@ -754,11 +754,10 @@ class Batch(qp.DataSet):
             else:
                 slicer = self.filter
             if any(oe['title'] == title for oe in self.verbatims) and not overwrite:
-                print 'Cannot include %s, as it is already included' % title
                 return None
             oe = {
                 'title': title,
-                'idx': slicer,
+                'filter': slicer,
                 'columns': oe,
                 'break_by': break_by,
                 'incl_nan': incl_nan,
@@ -911,10 +910,28 @@ class Batch(qp.DataSet):
         if not isinstance(name, basestring):
             raise TypeError("'name' attribute for add_y_on_y must be a str!")
         elif not main_filter in ['extend', 'replace'] or main_filter is None:
-            raise ValueError("'main_filter' mus be either 'extend' or 'replace'.")
+            raise ValueError("'main_filter' must be either 'extend' or 'replace'.")
         if not name in self.y_on_y:
             self.y_on_y.append(name)
-        self.y_on_y_filter[name] = (main_filter, y_filter)
+        if y_filter is not None:
+            logic = {'label': name, 'logic': y_filter}
+            if main_filter == 'extend':
+                if self.filter:
+                    f_name = '{}_{}'.format(self.filter, name)
+                    self.extend_filter_var(self.filter, logic, name)
+                else:
+                    f_name = '{}_f'.format(name)
+                    self.add_filter_var(f_name, logic)
+            elif main_filter == 'replace':
+                f_name = '{}_f'.format(name)
+                self.add_filter_var(f_name, logic)
+        else:
+            if main_filter == 'replace':
+                f_name = None
+            else:
+                f_name = self.filter
+
+        self.y_filter_map[name] = f_name
         self._update()
         return None
 
@@ -984,19 +1001,7 @@ class Batch(qp.DataSet):
         for x in self.xks:
             if self._is_array_item(x):
                 continue
-            if x in self.extended_filters_per_x:
-                logic = self.extended_filters_per_x[x]
-                if not self.filter:
-                    name = 'no_filter_{}'.format(x)
-                    if not name in self.filters:
-                        self.add_filter_var(name, logic)
-                else:
-                    name = '{}_{}'.format(self.filter, x)
-                    if not name in self.filters:
-                        self.extend_filter_var(self.filter, logic, x)
-            else:
-                name = self.filter
-
+            name = self.extended_filters_per_x.get(x, self.filter)
             mapping[x] = name
             if self.is_array(x):
                 for x2 in self.sources(x):
@@ -1005,41 +1010,6 @@ class Batch(qp.DataSet):
             if name and not name in self.filter_names:
                 self.filter_names.append(name)
         self.x_filter_map = mapping
-        return None
-
-    def _map_y_main_filter(self):
-        """
-        Get all y_on_y filters and map them with the main filter.
-
-        Returns
-        -------
-        None
-        """
-        mapping = {}
-        for y_on_y in self.y_on_y:
-            ext_rep, y_f = self.y_on_y_filter[y_on_y]
-            if y_f == 'no_filter':
-                f = None
-            elif not self.filter:
-                if not y_f:
-                    f = None
-                else:
-                    f = 'no_filter_{}'.format(y_on_y)
-                    if not f in self.filters:
-                        self.add_filter_var(f, y_f)
-            else:
-                if not y_f:
-                    f = self.filter
-                elif ext_rep == 'extend':
-                    f = '{}_{}'.format(self.filter, y_on_y)
-                    if not f in self.filters:
-                        self.extend_filter_var(self.filter, y_f, y_on_y)
-                elif ext_rep == 'replace':
-                    f = y_on_y
-                    if not f in self.filters:
-                        self.add_filter_var(f, y_f)
-            mapping[y_on_y] = f
-        self.y_filter_map = mapping
         return None
 
     def _check_forced_names(self, variables):

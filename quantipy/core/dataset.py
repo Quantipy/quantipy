@@ -380,7 +380,7 @@ class DataSet(object):
             return False
 
     def is_filter(self, var):
-        return True if self.get_property(var, 'recoded_filter') else False
+        return True if var in self and self.get_property(var, 'recoded_filter') else False
 
     def _has_missings(self, var):
         if self.is_array(var): var = self.sources(var)[0]
@@ -3199,7 +3199,11 @@ class DataSet(object):
         values = [(0, 'keep', None)]
         values += self._transform_filter_logics(logic, 1)
         self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
-        self.recode(name, {x: z for x, y, z in values[1:]})
+        try:
+            self.recode(name, {x: z for x, y, z in values[1:]})
+        except:
+            print values
+            self.recode(name, {x: z for x, y, z in values[1:]})
         self.recode(name, {0: {name: has_count(len(values)-1)}}, append=True)
         self._set_property(name, 'recoded_filter', True)
         return None
@@ -3254,7 +3258,10 @@ class DataSet(object):
                 val = (x, '{} not empty'.format(l), {l: not_count(0)})
             elif isinstance(l, dict):
                 if not ('label' in l and 'logic' in l):
-                    raise KeyError("Filter logic must contain 'label' and 'logic'")
+                    l = {'label': str(x), 'logic': l}
+                    if self._verbose_infos:
+                        msg = "Filter logic must contain 'label' and 'logic'"
+                        warnings.warn(msg)
                 val = (x, l['label'], l['logic'])
             else:
                 raise TypeError('Included logic must be (list of) str or dict.')
