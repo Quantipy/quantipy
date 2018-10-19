@@ -982,8 +982,8 @@ class ChainManager(object):
                    folder_items,
                    variables,
                    sources,
-                   banner_ids,
                    array_sum,
+                   banner_ids,
                    hidden]
         df_cols = ['Position',
                    'Name',
@@ -991,8 +991,8 @@ class ChainManager(object):
                    'Item',
                    'Variable',
                    'Source',
-                   'Banner id',
                    'Array',
+                   'Banner id',
                    'Hidden']
         df = pd.DataFrame(df_data).T
         df.columns = df_cols
