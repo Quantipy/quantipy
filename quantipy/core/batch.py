@@ -738,20 +738,18 @@ class Batch(qp.DataSet):
                 if self.filter:
                     f_name = '{}_{}'.format(self.filter, title)
                 else:
-                    f_name = title
+                    f_name = '{}_f'.format(title)
                 if self.is_filter(f_name):
                     logic = intersection([{self.filter: 0, filter_by}])
                     if not self.take(logic).index.tolist() == self.manifest_filter(f_name):
                         msg = "'{}' is already in use with an other logic."
                         raise ValueError(msg.format(f_name))
                 else:
-                    logic = {
-                        'label': title,
-                        'logic': filter_by}
+                    logic = {'label': title, 'logic': filter_by}
                     if self.filter:
                         self.extend_filter_var(self.filter, logic, title)
                     else:
-                        self.add_filter_var(title, logic)
+                        self.add_filter_var(f_name, logic)
                 slicer = f_name
             else:
                 slicer = self.filter
@@ -877,7 +875,14 @@ class Batch(qp.DataSet):
             if not isinstance(variables, (list, tuple)):
                 variables = [variables]
             for v in variables:
-                self.extended_filters_per_x.update({v: logic})
+                if self.filter:
+                    log = {'label': v, 'logic': logic}
+                    f_name = '{}_{}'.format(self.filter, v)
+                    self.extend_filter_var(self.filter, log, v)
+                else:
+                    f_name = '{}_f'.format(v)
+                    self.add_filter_var(f_name, log)
+                self.extended_filters_per_x.update({v: f_name})
         self._update()
         return None
 
