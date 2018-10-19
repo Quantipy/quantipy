@@ -476,7 +476,7 @@ class ChainManager(object):
             A ChainManager instance to draw the elements from.
         index : int, default -1
             The positional index after which new elements will be added.
-            Defaults to -1, i.e. elements are appended index the end.
+            Defaults to -1, i.e. elements are appended at the end.
         safe_names : bool, default False
             If True and any duplicated element names are found after the
             operation, names will be made unique (by appending '_1', '_2', '_3',
