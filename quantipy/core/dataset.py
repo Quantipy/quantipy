@@ -3199,11 +3199,7 @@ class DataSet(object):
         values = [(0, 'keep', None)]
         values += self._transform_filter_logics(logic, 1)
         self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
-        try:
-            self.recode(name, {x: z for x, y, z in values[1:]})
-        except:
-            print values
-            self.recode(name, {x: z for x, y, z in values[1:]})
+        self.recode(name, {x: z for x, y, z in values[1:]})
         self.recode(name, {0: {name: has_count(len(values)-1)}}, append=True)
         self._set_property(name, 'recoded_filter', True)
         return None
@@ -3264,7 +3260,12 @@ class DataSet(object):
                         warnings.warn(msg)
                 val = (x, l['label'], l['logic'])
             else:
-                raise TypeError('Included logic must be (list of) str or dict.')
+                try:
+                    l[0].__name__ in ['_intersection', '_union']
+                    val = (x, str(x), l)
+                except:
+                    msg = 'Included logic must be (list of) str or dict/complex logic.'
+                    raise TypeError(msg)
             values.append(val)
         return values
 
@@ -3293,6 +3294,8 @@ class DataSet(object):
         name: str
             Name of the filter_variable.
         """
+        if not name:
+            return self._data.index
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         return self.take({name: 0})
