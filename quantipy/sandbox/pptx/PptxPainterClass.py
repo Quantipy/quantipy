@@ -1019,7 +1019,11 @@ class PptxPainter(object):
 
                   # Number format
                   number_format='0.00%',
-                  xl_number_format='0.00%'
+                  xl_number_format='0.00%',
+
+                  # Sig test
+                  sig_test_visible = False,
+                  sig_test_results = None,
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1183,6 +1187,12 @@ class PptxPainter(object):
             if data_labels_num_format is not None:
                 data_labels.number_format = data_labels_num_format
             data_labels.number_format_is_linked = data_labels_num_format_is_linked
+
+            if not sig_test_results: sig_test_visible = False
+            if len(dataframe.columns) == 1: sig_test_visible = False
+            if sig_test_visible:
+                pass
+
 
         # # ================================ series
         # for i, ser in enumerate(dataframe.columns):
