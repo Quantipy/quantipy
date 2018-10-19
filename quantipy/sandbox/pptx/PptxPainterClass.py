@@ -169,6 +169,113 @@ class PptxPainter(object):
                     'side_tables': {},
                     }
 
+    def show_data_labels(self, chart, position=None, decimals=0):
+        """
+        Explicitly sets datalabels to allow for datalabel editing.
+
+        Parameters
+        ----------
+        chart : pptx.chart.chart.Chart
+            The chart object for which datalabels need should be shown.
+        position : str, default=None
+            The position, relative to the data point, that the datalabel
+            should be appear in. Must be one of the following, or None:
+                'above', 'below', 'best', 'center', 'inside_base',
+                'inside_end', 'left', 'mixed', 'outside_end', 'right'
+            If None then the position already set for the chart will
+            be used.
+
+        Returns
+        -------
+        None
+        """
+
+        # Get number format and font from data labels
+        data_labels = chart.plots[0].data_labels
+        number_format = data_labels.number_format  # '0%'
+        # print (number_format)
+        font = data_labels.font
+
+        chart_values = get_chart_values(chart)
+        for s, series in enumerate(chart_values):
+            values = [
+                value
+                for value in series.values()[0]
+                if convertable(value, float)
+            ]
+            for v, value in enumerate(values):
+                if value is not None:
+                    if number_format == '0%':
+                        value = round(float(value) * 100, decimals)
+
+                        str_value = float2String(value) + '%'
+                    else:
+                        str_value = str(value)
+                else:
+                    str_value = ""
+                point = chart.series[s].points[v]
+                d_label = point.data_label
+                frame = d_label.text_frame
+                frame.text = str_value
+                pgraph = frame.paragraphs[0]
+                for run in pgraph.runs:
+                    run.font.bold = font.bold
+                    # run.font.color.rgb = font.color.rgb
+                    # run.font.fill.fore_color.rgb = font.fill.fore_color.rgb
+
+                    run.font.italic = font.italic
+                    run.font.name = font.name
+                    run.font.size = font.size
+                    run.font.underline = font.underline
+
+                if position is not None:
+                    point.data_label.position = data_label_pos_dct(position)
+
+    def edit_datalabel(self, chart, series, point, text, prepend=False, append=False, position=None, rgb=None):
+        """
+        Add/append data label text.
+
+        Parameters
+        ----------
+        chart: pptx.chart.chart.Chart
+            An instance of a Chart object.
+        serie: int
+            The serie where the data label should be edited
+            chart.series[serie]
+        point: int
+            The point where the data label should be edited
+            chart.series[serie].points[point]
+        text: basestring
+            The text to add/append to data label
+        prepend: bool
+            Set to True to prepend text to existing data label
+        append: bool
+            Set to True to append text to existing data label
+        position: basestring
+            String to define the position of the data label.
+        rgb: tuple
+            Tuple with three ints defining each RGB color
+
+        Returns
+        -------
+        None
+
+        """
+        data_label = chart.series[series].points[point].data_label
+        frame = data_label.text_frame
+        run = frame.paragraphs[0].runs[0]
+        original_text = frame.text
+        if prepend:
+            run.text = u'{}{}'.format(text, original_text)
+        elif append:
+            run.text = u'{}{}'.format(original_text, text)
+        else:
+            run.text = text
+        if rgb is not None:
+            run.font.color.rgb = RGBColor(*rgb)
+        if position is not None:
+            data_label.position = data_label_pos_dct(position)
+
     def queue_slide_items(self, pptx_chain, slide_items):
         """
         Helper function to queue a full automated slide.
