@@ -958,7 +958,8 @@ class ChainManager(object):
                 folders.extend(folder_name * len(chains))
                 array_sum.extend([True if c.array_style > -1 else False
                                  for c in chains])
-                sources.extend(c.source for c in chains)
+                sources.extend(c.source if not c.edited else 'edited'
+                               for c in chains)
                 for c in chains:
                     for m in bannermap:
                         if m[0] == c._y_keys: banner_ids.append(m[1])
