@@ -1179,8 +1179,13 @@ class PptxPainter(object):
             if not sig_test_results: sig_test_visible = False
             if len(dataframe.columns) == 1: sig_test_visible = False
             if sig_test_visible:
-                pass
-
+                series = plot.series
+                for l, serie in enumerate(series):
+                    for m, point in enumerate(serie.points):
+                        text_list = sig_test_results
+                        text = text_list[l][m]
+                        text = text if text == '' else u' ({})'.format(text)
+                        self.edit_datalabel(plot, l, m, text, prepend=False, append=True)
 
         # # ================================ series
         # for i, ser in enumerate(dataframe.columns):
