@@ -241,10 +241,26 @@ class PptxPainter(object):
                         side_table_draft['values_suffix_columns'] = pct_index
                     self.queue_side_table(settings=side_table_draft)
             if slide_item.startswith('chart'):
+                sig_test = False
                 cell_items = slide_item.split(':')[1]
+
+                ''' 
+                Makes no sense to actually have 'test' as a cell_item.
+                Will remove it from cell_items and set flag sig_test as True
+                '''
+                cell_items = cell_items.split(',')
+                if 'test' in cell_items:
+                    sig_test = True
+                    cell_items.remove('test')
+                cell_items = ','.join(cell_items)
+
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
+                    if sig_test:
+                        chart_draft['sig_test_visible'] = True
+                        chart_draft['sig_test_results'] = pptx_chain.sig_test
+
                     self.queue_chart(settings=chart_draft)
 
         self._check_shapes()
