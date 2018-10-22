@@ -460,6 +460,12 @@ class ChainManager(object):
         self._toggle_vis(chains, 'unhide')
         return None
 
+    def clone(self):
+        """
+        Return a full (deep) copy of self.
+        """
+        return copy.deepcopy(self)
+
     def insert(self, other_cm, index=-1, safe_names=False):
         """
         Add elements from another ``ChainManager`` instance to self.
@@ -470,7 +476,7 @@ class ChainManager(object):
             A ChainManager instance to draw the elements from.
         index : int, default -1
             The positional index after which new elements will be added.
-            Defaults to -1, i.e. elements are appended index the end.
+            Defaults to -1, i.e. elements are appended at the end.
         safe_names : bool, default False
             If True and any duplicated element names are found after the
             operation, names will be made unique (by appending '_1', '_2', '_3',
@@ -482,7 +488,7 @@ class ChainManager(object):
         """
         if not isinstance(other_cm, ChainManager):
             raise ValueError("other_cm must be a quantipy.ChainManager instance.")
-        if not index == -1:
+        if index > -1:
             before_c = self.__chains[:index+1]
             after_c = self.__chains[index+1:]
             new_chains = before_c + other_cm.__chains + after_c
@@ -598,7 +604,7 @@ class ChainManager(object):
                 self.__chains[self._singles_to_idx()[s.name]] = {s.name: [s]}
         return None
 
-    def unfold(self, folder):
+    def unfold(self, folder=None):
         """
         Remove folder but keep the collected items.
 
@@ -607,24 +613,31 @@ class ChainManager(object):
 
         Parameters
         ----------
-        folder : str
-            The name of the folder to drop and extract items from.
+        folder : (list of) str, default None
+            The name of the folder to drop and extract items from. If not
+            provided all folders will be unfolded.
 
         Returns
         -------
         None
         """
-        if not folder in self.folder_names:
-            err = "A folder named '{}' does not exist!".format(folder)
-            raise KeyError(err)
-        old_pos = self._idx_from_name(folder)
-        items = self[folder]
-        start = self.__chains[: old_pos]
-        end = self.__chains[old_pos + 1: ]
-        self.__chains = start + items + end
+        if not folder:
+            folder = self.folder_names
+        else:
+            if not isinstance(folder, list): folder = [folder]
+            invalid = [f for f in folder if f not in self.folder_names]
+            if invalid:
+                err = "Folder(s) named '{}' not found.".format(invalid)
+                raise KeyError(err)
+        for f in folder:
+            old_pos = self._idx_from_name(f)
+            items = self[f]
+            start = self.__chains[: old_pos]
+            end = self.__chains[old_pos + 1: ]
+            self.__chains = start + items + end
         return None
 
-    def remove(self, chains, folder=None):
+    def remove(self, chains, folder=None, inplace=True):
         """
         Remove (folders of) ``qp.Chain`` items by providing a list of  indices
         or names.
@@ -637,27 +650,144 @@ class ChainManager(object):
         folder : str, default None
             If a folder name is provided, items will be dropped within that
             folder only instead of removing all found instances.
+        inplace : bool, default True
+            By default the new order is applied inplace, set to ``False`` to
+            return a new object instead.
 
         Returns
         -------
         None
         """
+        if inplace:
+            cm = self
+        else:
+            cm = self.clone()
         if folder:
-            org_chains, org_index = self._set_to_folderitems(folder)
+            org_chains, org_index = cm._set_to_folderitems(folder)
         if not isinstance(chains, list): chains = [chains]
-        remove_idxs= [c if isinstance(c, int) else self._idx_from_name(c)
+        remove_idxs= [c if isinstance(c, int) else cm._idx_from_name(c)
                       for c in chains]
-        if self._dupes_in_chainref(remove_idxs):
+        if cm._dupes_in_chainref(remove_idxs):
             err = "Cannot remove with duplicate chain references: {}"
             raise ValueError(err.format(remove_idxs))
         new_items = []
-        for pos, c in enumerate(self):
+        for pos, c in enumerate(cm):
             if not pos in remove_idxs: new_items.append(c)
-        self.__chains = new_items
-        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
+        cm.__chains = new_items
+        if folder: cm._rebuild_org_folder(folder, org_chains, org_index)
+        if inplace:
+            return None
+        else:
+            return cm
+
+    def cut(self, values, ci=None, base=False, tests=False):
+        """
+        Isolate selected axis values in the ``Chain.dataframe``.
+
+        Parameters
+        ----------
+        values : (list of) str
+            The string must indicate the raw (i.e. the unpainted) second level
+            axis value, e.g. ``'mean'``, ``'net_1'``, etc.
+        ci : {'counts', 'c%', None}, default None
+            The cell item version to target if multiple frequency representations
+            are present.
+        base : bool, default False
+            Controls keeping any existing base view aggregations.
+        tests : bool, default False
+            Controls keeping any existing significance test view aggregations.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(values, list): values = [values]
+        if 'cbase' in values:
+            values[values.index('cbase')] = 'All'
+        if base and not 'All' in values:
+            values = ['All'] + values
+        for c in self.chains:
+            if c.sig_test_letters: c._remove_letter_header()
+            idxs, names, order = c._view_idxs(
+                values, keep_tests=tests, keep_bases=base, names=True, ci=ci)
+            idxs = [i for _, i in sorted(zip(order, idxs))]
+            names = [n for _, n in sorted(zip(order, names))]
+            if c.ci_count > 1: c._non_grouped_axis()
+            if c.array_style == 0:
+                c._fill_cells()
+                start, repeat = c._row_pattern(ci)
+                c._frame = c._frame.iloc[start::repeat, idxs]
+            else:
+                c._frame = c._frame.iloc[idxs, :]
+                c.index = c._slice_edited_index(c.index, idxs)
+            new_views = OrderedDict()
+            for v in c.views.copy():
+                if not v in names:
+                    del c._views[v]
+                else:
+                    c._views[v] = names.count(v)
+            if not c._array_style == 0:
+                if not tests:
+                    c.sig_test_letters = None
+                else:
+                    c._frame = c._apply_letter_header(c._frame)
+            c.edited = True
+        
         return None
 
-    def reorder(self, order, folder=None):
+    def join(self, title='Summary'):
+        """
+        Join **all** ``qp.Chain```elements, concatenating along the matching axis.
+
+        Parameters
+        ----------
+        title : {str, 'auto'}, default 'Summary'
+            The new title for the joined axis' index representation.
+            
+        Returns
+        -------
+        None
+        """
+        custom_views = []
+        self.unfold()
+        chains = self.chains
+        totalmul = len(chains[0]._frame.columns.get_level_values(0).tolist())
+        concat_dfs = []
+        new_labels = []
+        for c in chains:
+            new_label = []
+            if c.sig_test_letters: 
+                c._remove_letter_header()
+                c._frame = c._apply_letter_header(c._frame)
+            df = c.dataframe
+
+            if not c.array_style == 0:
+                new_label.append(df.index.get_level_values(0).values.tolist()[0])
+                new_label.extend((len(c.describe()) - 1) * [''])
+            else:
+                new_label.extend(df.index.get_level_values(1).values.tolist())
+            names = ['Question', 'Values']
+            join_idx = pd.MultiIndex.from_product([[title], new_label], names=names)
+            df.index = join_idx
+
+            df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
+        
+            if not c.array_style == 0:
+                custom_views.extend(c._views_per_rows())
+            else:
+                df.columns.set_levels(levels=[title]*totalmul, level=0, inplace=True)
+
+            concat_dfs.append(df)
+    
+        new_df = pd.concat(concat_dfs, axis=0, join='inner')    
+        self.chains[0]._frame = new_df
+        self.reorder([0])
+        self.rename({self.single_names[0]: title})
+        self.fold()
+        self.chains[0]._custom_views = custom_views
+        return None
+
+    def reorder(self, order, folder=None, inplace=True):
         """
         Reorder (folders of) ``qp.Chain`` items by providing a list of new
         indices or names.
@@ -672,11 +802,18 @@ class ChainManager(object):
             If a folder name is provided, items will be sorted within that
             folder instead of applying the sorting to the general items
             collection.
+        inplace : bool, default True
+            By default the new order is applied inplace, set to ``False`` to
+            return a new object instead.
 
         Returns
         -------
         None
         """
+        if inplace:
+            cm = self
+        else:
+            cm = self.clone()
         if folder:
             org_chains, org_index = self._set_to_folderitems(folder)
         if not isinstance(order, list):
@@ -688,13 +825,16 @@ class ChainManager(object):
                 new_idx_order.append(o)
             else:
                 new_idx_order.append(self._idx_from_name(o))
-        if self._dupes_in_chainref(new_idx_order):
+        if cm._dupes_in_chainref(new_idx_order):
             err = "Cannot reorder from duplicate qp.Chain references: {}"
             raise ValueError(err.format(new_idx_order))
         items = [self.__chains[idx] for idx in new_idx_order]
-        self.__chains = items
-        if folder: self._rebuild_org_folder(folder, org_chains, org_index)
-        return None
+        cm.__chains = items
+        if folder: cm._rebuild_org_folder(folder, org_chains, org_index)
+        if inplace:
+            return None
+        else:
+            return cm
 
     def rename(self, names, folder=None):
         """
@@ -764,6 +904,14 @@ class ChainManager(object):
                 native_stat_names.append(val)
         return native_stat_names
 
+    def _get_ykey_mapping(self):
+        ys = []
+        letters = string.ascii_uppercase + string.ascii_lowercase
+        for c in self.chains:
+            if c._y_keys not in ys:
+                ys.append(c._y_keys)
+        return zip(ys, letters)
+
     def describe(self, by_folder=False, show_hidden=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
@@ -788,8 +936,10 @@ class ChainManager(object):
         names = []
         array_sum = []
         sources = []
+        banner_ids = []
         item_pos = []
         hidden = []
+        bannermap = self._get_ykey_mapping()
         for pos, chains in enumerate(self):
             is_folder = isinstance(chains, dict)
             if is_folder:
@@ -809,15 +959,18 @@ class ChainManager(object):
                 folders.extend(folder_name * len(chains))
                 array_sum.extend([True if c.array_style > -1 else False
                                  for c in chains])
-                sources.extend(c.source for c in chains)
-
+                sources.extend(c.source if not c.edited else 'edited'
+                               for c in chains)
+                for c in chains:
+                    for m in bannermap:
+                        if m[0] == c._y_keys: banner_ids.append(m[1])
             else:
-                variables.extend([chains[0].name])#(chains[0].structure.columns.tolist())
-                names.extend([chains[0].name])# for _ in xrange(chains[0].structure.shape[1])])
-                # names.extend(chains[0].structure.columns.tolist())
+                variables.extend([chains[0].name])
+                names.extend([chains[0].name])
                 folders.extend(folder_name)
                 array_sum.extend([False])
                 sources.extend(c.source for c in chains)
+                banner_ids.append(None)
             for c in chains:
                 if c.hidden:
                     hidden.append(True)
@@ -829,6 +982,7 @@ class ChainManager(object):
                    folder_items,
                    variables,
                    sources,
+                   banner_ids,
                    array_sum,
                    hidden]
         df_cols = ['Position',
@@ -837,6 +991,7 @@ class ChainManager(object):
                    'Item',
                    'Variable',
                    'Source',
+                   'Banner id',
                    'Array',
                    'Hidden']
         df = pd.DataFrame(df_data).T
@@ -961,10 +1116,10 @@ class ChainManager(object):
             # new_chain._meta['var_meta'] = basic_chain_defintion[-1]
             # new_chain._extract_base_descriptions()
             new_chain._views = OrderedDict()
-            new_chain._views_per_rows
-            for vk in new_chain._views_per_rows:
+            new_chain._views_per_rows()
+            for vk in new_chain._views_per_rows():
                 if not vk in new_chain._views:
-                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+                    new_chain._views[vk] = new_chain._views_per_rows().count(vk)
             return new_chain
 
         def mine_mtd(tab_collection, paint, chain_coll, folder=None):
@@ -1139,9 +1294,9 @@ class ChainManager(object):
             new_chain._meta['var_meta'] = basic_chain_defintion[-1]
             new_chain._extract_base_descriptions()
             new_chain._views = OrderedDict()
-            for vk in new_chain._views_per_rows:
+            for vk in new_chain._views_per_rows():
                 if not vk in new_chain._views:
-                    new_chain._views[vk] = new_chain._views_per_rows.count(vk)
+                    new_chain._views[vk] = new_chain._views_per_rows().count(vk)
             return new_chain
 
             # self.name = name              OK!
@@ -1599,6 +1754,8 @@ class Chain(object):
         self.name = name
         self.structure = structure
         self.source = 'native'
+        self.edited = False
+        self._custom_views = None
         self.double_base = False
         self.grouping = None
         self.sig_test_letters = None
@@ -1623,6 +1780,75 @@ class Chain(object):
         self._flag_bases = None
         self._is_mask_item = False
         self._shapes = None
+
+    class _TransformedChainDF(object):
+        """
+        """
+        def __init__(self, chain):
+            c = chain.clone()
+            self.df = c._frame
+            self._org_idx = self.df.index
+            self._edit_idx = range(0, len(self._org_idx))
+            self._idx_valmap = {n: o for n, o in
+                                zip(self._edit_idx,
+                                    self._org_idx.get_level_values(1))}
+            self.df.index = self._edit_idx
+
+            self._org_col = self.df.columns
+            self._edit_col = range(0, len(self._org_col))
+            self._col_valmap = {n: o for n, o in
+                                zip(self._edit_col,
+                                    self._org_col.get_level_values(1))}
+            self.df.columns = self._edit_col
+            return None
+
+        def _updated_index_tuples(self, axis):
+            """
+            """
+            if axis == 1:
+                current = self.df.columns.values.tolist()
+                mapped = self._col_valmap
+                org_tuples = self._org_col.tolist()
+            else:
+                current = self.df.index.values.tolist()
+                mapped = self._idx_valmap
+                org_tuples = self._org_idx.tolist()
+            merged = [mapped[val] if val in mapped else val for val in current]
+            new_tuples = []
+            i = d = 0
+            for merged_val in merged:
+                idx = i-d if i-d != len(org_tuples) else i-d-1
+                if org_tuples[idx][1] == merged_val:
+                    new_tuples.append(org_tuples[idx])
+                else:
+                    new_tuples.append(('*', merged_val))
+                    d += 1
+                i += 1
+            return new_tuples
+
+        def _reindex(self):
+            """
+            """
+            names = ['Question', 'Values']
+            tuples = self._updated_index_tuples(axis=0)
+            self.df.index = pd.MultiIndex.from_tuples(tuples, names=names)
+            tuples = self._updated_index_tuples(axis=1)
+            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=names)
+            return None
+
+    def export(self):
+        """
+        """
+        return self._TransformedChainDF(self)
+
+    def assign(self, transformed_chain_df):
+        """
+        """
+        if not isinstance(transformed_chain_df, self._TransformedChainDF):
+            raise ValueError("Must pass an exported ``Chain`` instance!")
+        transformed_chain_df._reindex()
+        self._frame = transformed_chain_df.df
+        return None
 
     def __str__(self):
         if self.structure is not None:
@@ -1650,6 +1876,11 @@ class Chain(object):
     def __len__(self):
         """Returns the total number of cells in the Chain.dataframe"""
         return (len(getattr(self, 'index', [])) * len(getattr(self, 'columns', [])))
+
+    def clone(self):
+        """
+        """
+        return copy.deepcopy(self)
 
     @lazy_property
     def _default_text(self):
@@ -1764,18 +1995,23 @@ class Chain(object):
     def cell_items(self):
         if self.views:
             compl_views = [v for v in self.views if ']*:' in v]
-            if not compl_views:
-                c = any(v.split('|')[-1] == 'counts' for v in self.views)
-                col_pct = any(v.split('|')[-1] == 'c%' for v in self.views)
-                row_pct = any(v.split('|')[-1] == 'r%' for v in self.views)
-            else:
-                c = any(v.split('|')[3] == '' for v in compl_views)
-                col_pct = any(v.split('|')[3] == 'y' for v in compl_views)
-                row_pct = any(v.split('|')[3] == 'x' for v in self.views)
+            check_views = compl_views or self.views
+            non_freqs = ('d.', 't.')
+            c = any(v.split('|')[3] == '' and
+                    not v.split('|')[1].startswith(non_freqs) and
+                    not v.split('|')[-1] == 'cbase'
+                    for v in check_views)
+            col_pct = any(v.split('|')[3] == 'y' and
+                          not v.split('|')[1].startswith(non_freqs) and
+                          not v.split('|')[-1] == 'cbase'
+                          for v in check_views)
+            row_pct = any(v.split('|')[3] == 'x' and
+                          not v.split('|')[1].startswith(non_freqs) and
+                          not v.split('|')[-1] == 'cbase'
+                          for v in check_views)
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
             c_colrow_pct = c_colpct and c_rowpct
-
             single_ci = not (c_colrow_pct or c_colpct or c_rowpct)
             if single_ci:
                 if c:
@@ -1828,7 +2064,6 @@ class Chain(object):
     def contents(self):
         if self.structure:
             return
-
         nested = self._array_style == 0
         if nested:
             dims = self._frame.shape
@@ -1836,7 +2071,7 @@ class Chain(object):
                         for row in range(0, dims[0])}
         else:
             contents = dict()
-        for row, idx in enumerate(self._views_per_rows):
+        for row, idx in enumerate(self._views_per_rows()):
             if nested:
                 for i, v in idx.items():
                     if v:
@@ -1916,6 +2151,13 @@ class Chain(object):
             description = _describe(self.contents, None)
         return description
 
+    def _fill_cells(self):
+        """
+        """
+        self._frame = self._frame.fillna(method='ffill')
+        return None
+
+
     @lazy_property
     def _counts_first(self):
         for v in self.views:
@@ -1926,8 +2168,7 @@ class Chain(object):
                 else:
                     return False
 
-    # @lazy_property
-    @property
+    #@property    
     def _views_per_rows(self):
         """
         """
@@ -1972,60 +2213,63 @@ class Chain(object):
         else:
             #  Native Chain views
             # ----------------------------------------------------------------
-            if self._array_style != 0:
-                metrics = []
-                if self.orientation == 'x':
-                    for view in self._valid_views():
-                        view = self._force_list(view)
-                        initial = view[0]
-                        size = self.views[initial]
-                        metrics.extend(view * size)
-                else:
-                    for view_part in self.views:
+            if self.edited and (self._custom_views and not self.array_style == 0):
+                return self._custom_views
+            else:
+                if self._array_style != 0:
+                    metrics = []
+                    if self.orientation == 'x':
                         for view in self._valid_views():
                             view = self._force_list(view)
                             initial = view[0]
-                            size = view_part[initial]
+                            size = self.views[initial]
                             metrics.extend(view * size)
-            else:
-                counts = []
-                colpcts =  []
-                rowpcts = []
-                metrics = []
-                ci = self.cell_items
-                for v in self.views.keys():
-                    parts = v.split('|')
-                    is_completed = ']*:' in v
-                    if not self._is_c_pct(parts):
-                        counts.extend([v]*self.views[v])
-                    if self._is_r_pct(parts):
-                        rowpcts.extend([v]*self.views[v])
-                    if (self._is_c_pct(parts) or self._is_base(parts) or
-                        self._is_stat(parts)):
-                        colpcts.extend([v]*self.views[v])
-                    # else:
-                    #     if ci == 'counts_colpct' and self.grouping:
-                    #         if not self._is_counts(parts):
-                    #         # ...or self._is_c_base(parts):
-                    #             colpcts.append(None)
-                    #     else:
-                    #         colpcts.extend([v] * self.views[v])
-                dims = self._frame.shape
-                for row in range(0, dims[0]):
-                    if ci == 'counts_colpct' and self.grouping:
-                        if row % 2 == 0:
-                            if self._counts_first:
-                                vc = counts
-                            else:
-                                vc = colpcts
-                        else:
-                            if not self._counts_first:
-                                vc = counts
-                            else:
-                                vc = colpcts
                     else:
-                        vc = counts if ci == 'counts' else colpcts
-                    metrics.append({col: vc[col] for col in range(0, dims[1])})
+                        for view_part in self.views:
+                            for view in self._valid_views():
+                                view = self._force_list(view)
+                                initial = view[0]
+                                size = view_part[initial]
+                                metrics.extend(view * size)
+                else:
+                    counts = []
+                    colpcts =  []
+                    rowpcts = []
+                    metrics = []
+                    ci = self.cell_items
+                    for v in self.views.keys():
+                        parts = v.split('|')
+                        is_completed = ']*:' in v
+                        if not self._is_c_pct(parts):
+                            counts.extend([v]*self.views[v])
+                        if self._is_r_pct(parts):
+                            rowpcts.extend([v]*self.views[v])
+                        if (self._is_c_pct(parts) or self._is_base(parts) or
+                            self._is_stat(parts)):
+                            colpcts.extend([v]*self.views[v])
+                        # else:
+                        #     if ci == 'counts_colpct' and self.grouping:
+                        #         if not self._is_counts(parts):
+                        #         # ...or self._is_c_base(parts):
+                        #             colpcts.append(None)
+                        #     else:
+                        #         colpcts.extend([v] * self.views[v])
+                    dims = self._frame.shape
+                    for row in range(0, dims[0]):
+                        if ci == 'counts_colpct' and self.grouping:
+                            if row % 2 == 0:
+                                if self._counts_first:
+                                    vc = counts
+                                else:
+                                    vc = colpcts
+                            else:
+                                if not self._counts_first:
+                                    vc = counts
+                                else:
+                                    vc = colpcts
+                        else:
+                            vc = counts if ci == 'counts' else colpcts
+                        metrics.append({col: vc[col] for col in range(0, dims[1])})
         return metrics
 
     def _valid_views(self, flat=False):
@@ -2041,13 +2285,16 @@ class Chain(object):
                     if sub_v in valid:
                         new_v.append(sub_v)
                 if isinstance(v, tuple):
-                    new_v = tuple(new_v)
+                    new_v = list(new_v)
                 if new_v:
                     if len(new_v) == 1: new_v = new_v[0]
                     if not flat:
                         clean_view_list.append(new_v)
                     else:
-                        clean_view_list.extend(new_v)
+                        if isinstance(new_v, list):
+                            clean_view_list.extend(new_v)
+                        else:
+                            clean_view_list.append(new_v)
         return clean_view_list
 
 
@@ -2084,6 +2331,123 @@ class Chain(object):
                     is_stat=self._is_stat(parts),
                     stat=self._stat(parts),
                     siglevel=self._siglevel(parts))
+
+    def _row_pattern(self, target_ci):
+        """
+        """
+        cisplit = self.cell_items.split('_')
+        if target_ci == 'c%':
+            start = cisplit.index('colpct')
+        elif target_ci == 'counts':
+            start = cisplit.index('counts')
+        repeat = self.ci_count
+        return (start, repeat)
+
+    def _view_idxs(self, view_tags, keep_tests=True, keep_bases=True, names=False, ci=None):
+        """
+        """
+        if not isinstance(view_tags, list): view_tags = [view_tags]
+        rowmeta = self.named_rowmeta
+        nested = self.array_style == 0
+        if nested:
+            if self.ci_count > 1:
+                rp_idx = self._row_pattern(ci)[0]
+                rowmeta = rowmeta[rp_idx]
+            else:
+                rowmeta = rowmeta[0]
+        rows = []
+        for r in rowmeta:
+            is_code = str(r[0]).isdigit()
+            if 'is_counts' in r[1] and is_code:
+                rows.append(('counts', r[1]))
+            elif 'is_c_pct' in r[1] and is_code:
+                rows.append(('c%', r[1]))
+            elif 'is_propstest' in r[1]:
+                rows.append((r[0], r[1]))
+            elif 'is_meanstest' in r[1]:
+                rows.append((r[0], r[1]))
+            else:
+                rows.append(r)
+        invalids = []
+        if not keep_tests:
+            invalids.extend(['is_propstest', 'is_meanstest'])
+        if ci == 'counts':
+            invalids.append('is_c_pct')
+        elif ci == 'c%':
+            invalids.append('is_counts')
+        idxs = []
+        names = []
+        order = []
+        for i, row in enumerate(rows):
+            if any([invalid in row[1] for invalid in invalids]):
+                if not (row[0] == 'All' and keep_bases): continue
+            if row[0] in view_tags:
+                order.append(view_tags.index(row[0]))
+                idxs.append(i)
+                if nested: 
+                    names.append(self._views_per_rows()[rp_idx][i])
+                else:
+                    names.append(self._views_per_rows()[i])
+        return (idxs, order) if not names else (idxs, names, order)
+
+
+    @staticmethod
+    def _remove_grouped_blanks(viewindex_labs):
+        """
+        """
+        full = []
+        for v in viewindex_labs:
+            if v == '':
+                full.append(last)
+            else:
+                last = v
+                full.append(last)
+        return full
+
+    def _slice_edited_index(self, axis, positions):
+        """
+        """
+        l_zero = axis.get_level_values(0).values.tolist()[0]
+        l_one = axis.get_level_values(1).values.tolist()
+        l_one = [l_one[p] for p in positions]
+        axis_tuples = [(l_zero, lab) for lab in l_one]
+        if self.array_style == 0:
+            names = ['Array', 'Questions']
+        else:
+            names = ['Question', 'Values']
+        return pd.MultiIndex.from_tuples(axis_tuples, names=names)
+
+
+    def _non_grouped_axis(self):
+        """
+        """
+        axis = self._frame.index
+        l_zero = axis.get_level_values(0).values.tolist()[0]
+        l_one = axis.get_level_values(1).values.tolist()
+        l_one = self._remove_grouped_blanks(l_one)
+        axis_tuples = [(l_zero, lab) for lab in l_one]
+        if self.array_style == 0:
+            names = ['Array', 'Questions']
+        else:
+            names = ['Question', 'Values']
+        self._frame.index = pd.MultiIndex.from_tuples(axis_tuples, names=names)
+        return None
+
+    @property
+    def named_rowmeta(self):
+        if self.painted:
+            self.toggle_labels()
+        d = self.describe()
+        if self.array_style == 0:
+            n = self._frame.columns.get_level_values(1).values.tolist()
+            n = self._remove_grouped_blanks(n)
+            mapped = {rowid: zip(n, rowmeta) for rowid, rowmeta in d.items()}
+        else:
+            n = self._frame.index.get_level_values(1).values.tolist()
+            n = self._remove_grouped_blanks(n)
+            mapped = zip(n, d)
+        if not self.painted: self.toggle_labels()
+        return mapped
 
     @lazy_property
     def _nested_y(self):
@@ -2245,7 +2609,7 @@ class Chain(object):
             self.toggle_labels()
         else:
             repaint = False
-        vpr = self._views_per_rows
+        vpr = self._views_per_rows()
         if row_id is not None:
             vpr = [v[1] for v in vpr[row_id].items()]
             idx = self.dataframe.columns.get_level_values(1).tolist()
@@ -2368,7 +2732,6 @@ class Chain(object):
 
         return self
 
-
     def _toggle_bases(self, keep_weighted=True):
         df = self._frame
         is_array = self._array_style == 0
@@ -2387,6 +2750,8 @@ class Chain(object):
             drop_rows = has_wgt_b
             names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
 
+        drop_labs = [df.index[r] if not is_array else df.columns[r]
+                     for r in drop_rows]
         if is_array:
             drop_labs = [df.columns[r] for r in drop_rows]
             keep_rows = [x for x, y in enumerate(self._frame.columns.get_level_values(1).tolist())
@@ -2399,7 +2764,6 @@ class Chain(object):
         for v in self.views.copy():
             if v in names:
                 del self._views[v]
-        self._frame = df.drop(drop_labs, axis=1 if is_array else 0)
 
         if is_array:
             self.columns = self._slice_edited_index(self.columns, keep_rows)
@@ -2419,7 +2783,6 @@ class Chain(object):
         else:
             names = ['Question', 'Values']
         return pd.MultiIndex.from_tuples(axis_tuples, names=names)
-
 
     def _drop_substituted_views(self, link):
         if any(isinstance(sect, (list, tuple)) for sect in self._given_views):
@@ -3126,7 +3489,7 @@ class Chain(object):
                                     if int(value) == item['value']:
                                         text = self._get_text(item, text_keys[axis])
                                         level_1_text.append(text)
-                        except ValueError:
+                        except (ValueError, UnboundLocalError):
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
                                     if value in gtm.keys():
@@ -3239,19 +3602,17 @@ class Chain(object):
             values = self._meta['columns'][column].get('values', [])
         elif column in self._meta['masks']:
             values = self._meta['lib']['values'].get(column, [])
-
         if isinstance(values, (str, unicode)):
             keys = values.split('@')
             values = self._meta[keys.pop(0)]
             while keys:
                 values = values[keys.pop(0)]
-
         return values
 
     def _add_view_level(self, shorten=False):
         """ Insert a third Index level containing View keys into the DataFrame.
         """
-        vnames = self._views_per_rows
+        vnames = self._views_per_rows()
         if shorten:
             vnames = [v.split('|')[-1] for v in vnames]
         self._frame['View'] = pd.Series(vnames, index=self._frame.index)
