@@ -1021,7 +1021,7 @@ class DataSet(object):
             b_ds = self.filter(batch_name, f.values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
-        variables = include[:]
+        variables = ['@1'] + include[:]
         adds = batch['additions'] if additions in ['full', 'variables'] else []
         remove = []
         for b_name, ba in batches.items():
@@ -7003,7 +7003,46 @@ class DataSet(object):
     def parrot(self):
         from IPython.display import Image
         from IPython.display import display
+        import random
+        name = [
+            '/hd/parrot', '/hd/opensourceparrot', '/hd/middleparrot',
+            '/hd/rightparrot', '/aussieparrot', '/gothparrot', '/oldtimeyparrot',
+            '/boredparrot', '/hd/shuffleparrot', '/shufflefurtherparrot',
+            '/hd/congaparrot', '/reversecongaparrot', '/hd/partyparrot',
+            '/hd/sadparrot', '/parrotcop', '/hd/fastparrot', '/hd/ultrafastparrot',
+            '/slowparrot', '/slomoparrot', '/parrotdad', '/hd/dealwithitparrot',
+            '/fiestaparrot', '/pizzaparrot', '/hamburgerparrot', '/bananaparrot',
+            '/chillparrot', '/explodyparrot', '/shufflepartyparrot', '/ice-cream-parrot',
+            '/sassyparrot', '/confusedparrot', '/aussiecongaparrot',
+            '/aussiereversecongaparrot', '/parrotwave1', '/parrotwave2',
+            '/parrotwave3', '/parrotwave4', '/parrotwave5', '/parrotwave6',
+            '/parrotwave7', '/hd/congapartyparrot', '/moonwalkingparrot',
+            '/thumbsupparrot', '/coffeeparrot', '/hd/parrotmustache',
+            '/hd/christmasparrot', '/parrotsleep', '/parrotbeer', '/darkbeerparrot',
+            '/blondesassyparrot', '/bluescluesparrot', '/hd/gentlemanparrot',
+            '/margaritaparrot', '/dreidelparrot', '/harrypotterparrot',
+            '/upvotepartyparrot', '/twinsparrot', '/tripletsparrot',
+            '/stableparrot', '/shipitparrot', '/skiparrot', '/loveparrot',
+            '/halalparrot', '/hd/wendyparrot', '/hd/popcornparrot', '/hd/donutparrot',
+            '/evilparrot', '/hd/discoparrot', '/matrixparrot', '/papalparrot',
+            '/stalkerparrot', '/hd/scienceparrot', '/hd/prideparrot',
+            '/hd/revolutionparrot', '/fidgetparrot', '/hd/beretparrot',
+            '/tacoparrot', '/ryangoslingparrot', '/luckyparrot',
+            '/hd/birthdaypartyparrot', '/hd/jediparrot', '/hd/sithparrot',
+            '/angryparrot', '/invisibleparrot', '/rotatingparrot', '/cryptoparrot',
+            '/hd/sushiparrot', '/hd/pumpkinparrot', '/hd/angelparrot', '/hd/bluntparrot',
+            '/hd/sintparrot', '/hd/pirateparrot', '/hd/ceilingparrot', '/hd/mardigrasparrot',
+            '/sovjetparrot', '/portalparrot', '/hd/hardhatparrot', '/hd/flyingmoneyparrot',
+            '/portalorangeparrot', '/portalblueparrot', '/hd/bunnyparrot',
+            '/hd/norwegianblueparrot', '/hd/transparront', '/fixparrot',
+            '/brazilianplayerparrot', '/brazilianfanparrot', '/hd/marshmallowparrot',
+            '/hd/whitewalkerparrot', '/hd/trans-parrot', '/hd/calvinist_parrot']
+        url = "https://cultofthepartyparrot.com/parrots/{}.gif"
+        url = url.format(random.choice(name))
         try:
-            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
+            return display(Image(
+                url=url))
         except:
             print ':sad_parrot: Looks like the parrot url is not longer there!'
+
+
