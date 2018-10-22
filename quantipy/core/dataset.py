@@ -7038,10 +7038,8 @@ class DataSet(object):
             '/brazilianplayerparrot', '/brazilianfanparrot', '/hd/marshmallowparrot',
             '/hd/whitewalkerparrot', '/hd/trans-parrot', '/hd/calvinist_parrot']
         url = "https://cultofthepartyparrot.com/parrots/{}.gif"
-        url = url.format(random.choice(name))
         try:
-            return display(Image(
-                url=url))
+            return display(Image(url=url.format(random.choice(name))))
         except:
             print ':sad_parrot: Looks like the parrot url is not longer there!'
 
