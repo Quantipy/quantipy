@@ -1021,7 +1021,7 @@ class DataSet(object):
             b_ds = self.filter(batch_name, f.values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
-        variables = include
+        variables = include[:]
         adds = batch['additions'] if additions in ['full', 'variables'] else []
         remove = []
         for b_name, ba in batches.items():
