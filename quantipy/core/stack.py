@@ -2718,13 +2718,15 @@ class Stack(defaultdict):
                                                   'test_total': sigpro.get('test_total', None),
                                                   'groups': 'Tests'})
                     for yy in batch['y_on_y']:
-                        self.add_link(filters=y_f[yy], x=yks[1:], y=yks,
+                        f = 'no_filter' if y_f[yy] is None else {y_f[yy]: 0}
+                        self.add_link(filters=f, x=yks[1:], y=yks,
                                       views=vm_tests, weights=weight)
                     total_len = len(x_y)
                     for idx, xy in enumerate(x_y, 1):
                         x, y = xy
                         if x == '@': continue
-                        self.add_link(filters=x_f[x], x=x, y=y,
+                        f = 'no_filter' if x_f[x] is None else {x_f[x]: 0}
+                        self.add_link(filters=f, x=x, y=y,
                                        views=vm_tests, weights=weight)
                         if verbose:
                             done = float(idx) / float(total_len) *100
