@@ -668,7 +668,7 @@ class Batch(qp.DataSet):
         if self.is_filter(name):
             if not filter_logic is None:
                 raise ValueError("'{}' is already a filter-variable. Cannot "
-                                 "apply a new logic.")
+                                 "apply a new logic.".format(name))
         else:
             self.add_filter_var(name, filter_logic, False)
 
