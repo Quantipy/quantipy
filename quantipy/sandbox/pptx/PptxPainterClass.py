@@ -378,6 +378,8 @@ class PptxPainter(object):
                 cell_items = cell_items.split(',')
                 if 'test' in cell_items:
                     sig_test = True
+                    pptx_chain.add_test_letter_to_column_labels()
+                    pptx_chain.chart_df = pptx_chain.prepare_dataframe()
                     cell_items.remove('test')
                 cell_items = ','.join(cell_items)
 
@@ -1179,13 +1181,13 @@ class PptxPainter(object):
             if not sig_test_results: sig_test_visible = False
             if len(dataframe.columns) == 1: sig_test_visible = False
             if sig_test_visible:
-                series = plot.series
-                for l, serie in enumerate(series):
-                    for m, point in enumerate(serie.points):
-                        text_list = sig_test_results
-                        text = text_list[l][m]
-                        text = text if text == '' else u' ({})'.format(text)
-                        self.edit_datalabel(plot, l, m, text, prepend=False, append=True)
+                self.show_data_labels(plot, decimals=0)
+                for serie, column in enumerate(sig_test_results[::-1]):
+                    for point, test_result in enumerate(column[::-1]):
+                        if not isinstance(test_result, basestring): continue
+                        if '*' in test_result: continue
+                        text =  u' ({})'.format(test_result)
+                        self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
         # # ================================ series
         # for i, ser in enumerate(dataframe.columns):
