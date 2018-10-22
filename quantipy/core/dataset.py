@@ -7000,44 +7000,47 @@ class DataSet(object):
 
 # ============================================================================
 
-    def parrot(self):
+    @staticmethod
+    def parrot():
         from IPython.display import Image
         from IPython.display import display
         import random
         name = [
-            '/hd/parrot', '/hd/opensourceparrot', '/hd/middleparrot',
-            '/hd/rightparrot', '/aussieparrot', '/gothparrot', '/oldtimeyparrot',
-            '/boredparrot', '/hd/shuffleparrot', '/shufflefurtherparrot',
-            '/hd/congaparrot', '/reversecongaparrot', '/hd/partyparrot',
-            '/hd/sadparrot', '/parrotcop', '/hd/fastparrot', '/hd/ultrafastparrot',
-            '/slowparrot', '/slomoparrot', '/parrotdad', '/hd/dealwithitparrot',
-            '/fiestaparrot', '/pizzaparrot', '/hamburgerparrot', '/bananaparrot',
-            '/chillparrot', '/explodyparrot', '/shufflepartyparrot', '/ice-cream-parrot',
-            '/sassyparrot', '/confusedparrot', '/aussiecongaparrot',
-            '/aussiereversecongaparrot', '/parrotwave1', '/parrotwave2',
-            '/parrotwave3', '/parrotwave4', '/parrotwave5', '/parrotwave6',
-            '/parrotwave7', '/hd/congapartyparrot', '/moonwalkingparrot',
-            '/thumbsupparrot', '/coffeeparrot', '/hd/parrotmustache',
-            '/hd/christmasparrot', '/parrotsleep', '/parrotbeer', '/darkbeerparrot',
-            '/blondesassyparrot', '/bluescluesparrot', '/hd/gentlemanparrot',
-            '/margaritaparrot', '/dreidelparrot', '/harrypotterparrot',
-            '/upvotepartyparrot', '/twinsparrot', '/tripletsparrot',
-            '/stableparrot', '/shipitparrot', '/skiparrot', '/loveparrot',
-            '/halalparrot', '/hd/wendyparrot', '/hd/popcornparrot', '/hd/donutparrot',
-            '/evilparrot', '/hd/discoparrot', '/matrixparrot', '/papalparrot',
-            '/stalkerparrot', '/hd/scienceparrot', '/hd/prideparrot',
-            '/hd/revolutionparrot', '/fidgetparrot', '/hd/beretparrot',
-            '/tacoparrot', '/ryangoslingparrot', '/luckyparrot',
-            '/hd/birthdaypartyparrot', '/hd/jediparrot', '/hd/sithparrot',
-            '/angryparrot', '/invisibleparrot', '/rotatingparrot', '/cryptoparrot',
-            '/hd/sushiparrot', '/hd/pumpkinparrot', '/hd/angelparrot', '/hd/bluntparrot',
-            '/hd/sintparrot', '/hd/pirateparrot', '/hd/ceilingparrot', '/hd/mardigrasparrot',
-            '/sovjetparrot', '/portalparrot', '/hd/hardhatparrot', '/hd/flyingmoneyparrot',
-            '/portalorangeparrot', '/portalblueparrot', '/hd/bunnyparrot',
-            '/hd/norwegianblueparrot', '/hd/transparront', '/fixparrot',
-            '/brazilianplayerparrot', '/brazilianfanparrot', '/hd/marshmallowparrot',
-            '/hd/whitewalkerparrot', '/hd/trans-parrot', '/hd/calvinist_parrot']
-        url = "https://cultofthepartyparrot.com/parrots/{}.gif"
+            '/angryparrot', '/aussiecongaparrot', '/aussieparrot',
+            '/aussiereversecongaparrot', '/bananaparrot', '/blondesassyparrot',
+            '/bluescluesparrot', '/boredparrot', '/brazilianfanparrot',
+            '/brazilianplayerparrot', '/chillparrot', '/coffeeparrot',
+            '/confusedparrot', '/cryptoparrot', '/darkbeerparrot',
+            '/dreidelparrot', '/evilparrot', '/explodyparrot', '/fidgetparrot',
+            '/fiestaparrot', '/fixparrot', '/gothparrot', '/halalparrot',
+            '/hamburgerparrot', '/harrypotterparrot', '/ice-cream-parrot',
+            '/invisibleparrot', '/loveparrot', '/luckyparrot', '/margaritaparrot',
+            '/matrixparrot', '/moonwalkingparrot', '/oldtimeyparrot', '/papalparrot',
+            '/parrotbeer', '/parrotcop', '/parrotdad', '/parrotsleep',
+            '/parrotwave1', '/parrotwave2', '/parrotwave3', '/parrotwave4',
+            '/parrotwave5', '/parrotwave6', '/parrotwave7', '/pizzaparrot',
+            '/portalblueparrot', '/portalorangeparrot', '/portalparrot',
+            '/reversecongaparrot', '/rotatingparrot', '/ryangoslingparrot',
+            '/sassyparrot', '/shipitparrot', '/shufflefurtherparrot',
+            '/shufflepartyparrot', '/skiparrot', '/slomoparrot', '/slowparrot',
+            '/sovjetparrot', '/stableparrot', '/stalkerparrot', '/tacoparrot',
+            '/thumbsupparrot', '/tripletsparrot', '/twinsparrot', '/upvotepartyparrot']
+        hd_names = [
+            '/angelparrot', '/beretparrot', '/birthdaypartyparrot',
+            '/bluntparrot', '/bunnyparrot', '/calvinist_parrot',
+            '/ceilingparrot', '/christmasparrot', '/congaparrot',
+            '/congapartyparrot', '/dealwithitparrot', '/discoparrot',
+            '/donutparrot', '/fastparrot', '/flyingmoneyparrot',
+            '/gentlemanparrot', '/hardhatparrot', '/jediparrot',
+            '/mardigrasparrot', '/marshmallowparrot', '/middleparrot',
+            '/norwegianblueparrot', '/opensourceparrot', '/parrot',
+            '/parrotmustache', '/partyparrot', '/pirateparrot', '/popcornparrot',
+            '/prideparrot', '/pumpkinparrot', '/revolutionparrot', '/rightparrot',
+            '/sadparrot', '/scienceparrot', '/shuffleparrot', '/sintparrot',
+            '/sithparrot', '/sushiparrot', '/trans-parrot', '/transparront',
+            '/ultrafastparrot', '/wendyparrot', '/whitewalkerparrot']
+        name += ['/hd%s' % n for n in hd_names]
+        url = "https://cultofthepartyparrot.com/parrots{}.gif"
         try:
             return display(Image(url=url.format(random.choice(name))))
         except:
