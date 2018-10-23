@@ -1547,7 +1547,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
                         lambda x, y: _merge_delimited_sets(str(x)+str(y)))
             updata_left.reset_index(inplace=True)
             for col in col_updates:
-                data_left[col] = updata_left[col]
+                data_left[col] = updata_left[col].astype(data_left[col].dtype)
 
         # append completely new columns
         if verbose:
@@ -1575,8 +1575,6 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             print '\n'
 
     return meta_left, data_left
-
-
 
 def vmerge(dataset_left=None, dataset_right=None, datasets=None,
            on=None, left_on=None, right_on=None,
