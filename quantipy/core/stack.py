@@ -779,6 +779,7 @@ class Stack(defaultdict):
                             else:
                                 dataset = qp.DataSet('stack')
                                 dataset.from_components(self[dk].data, self[dk].meta)
+                                print logic
                                 f_dataset = dataset.filter(filter_def, logic, inplace=False)
                                 self[dk][filter_def].data = f_dataset._data
                                 self[dk][filter_def].meta = f_dataset._meta
@@ -2718,14 +2719,14 @@ class Stack(defaultdict):
                                                   'test_total': sigpro.get('test_total', None),
                                                   'groups': 'Tests'})
                     for yy in batch['y_on_y']:
-                        f = ['no_filter'] if y_f[yy] is None else (y_f[yy], {y_f[yy]: 0})
+                        f = ['no_filter'] if y_f[yy] is None else {y_f[yy]: 0}
                         self.add_link(filters=f, x=yks[1:], y=yks,
                                       views=vm_tests, weights=weight)
                     total_len = len(x_y)
                     for idx, xy in enumerate(x_y, 1):
                         x, y = xy
                         if x == '@': continue
-                        f = ['no_filter'] if x_f[x] is None else (x_f[x], {x_f[x]: 0})
+                        f = ['no_filter'] if x_f[x] is None else {x_f[x]: 0}
                         self.add_link(filters=f, x=x, y=y,
                                        views=vm_tests, weights=weight)
                         if verbose:
