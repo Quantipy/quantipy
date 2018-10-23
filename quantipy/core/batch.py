@@ -429,6 +429,7 @@ class Batch(qp.DataSet):
         None
         """
         if '@' in varlist: varlist.remove('@')
+        if '@1' in varlist: varlist.remove('@1')
         for v in varlist:
             if not v in self.variables:
                 self.variables.append(v)
