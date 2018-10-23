@@ -1466,7 +1466,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     """
     def _merge_delimited_sets(x):
         codes = []
-        x = x.replace('nan', '')
+        x = str(x).replace('nan', '')
         for c in x.split(';'):
             if not c:
                 continue
@@ -1494,10 +1494,11 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     data_left = dataset_left[1].copy()
 
     if isinstance(dataset_right, tuple): dataset_right = [dataset_right]
-
     for ds_right in dataset_right:
         meta_right = copy.deepcopy(ds_right[0])
         data_right = ds_right[1].copy()
+        slicer = data_right[right_on].isin(data_left[left_on].values.tolist())
+        data_right = data_right.loc[slicer, :]
 
         if verbose:
             print '\n', 'Checking metadata...'
@@ -1521,44 +1522,40 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         if verbose:
             print '\n', 'Merging data...'
 
+        # update columns which are in left and in right data
         if col_updates:
-            updata_left = data_left.set_index([left_on])[col_updates].copy()
+            updata_left = data_left.copy()
+            updata_left['org_idx'] = updata_left.index.tolist()
+            updata_left = updata_left.set_index([left_on])[col_updates+['org_idx']]
+            updata_right = data_right.set_index(
+                right_on, drop=not update_right_on)[col_updates].copy()
             sets = [c for c in col_updates
                     if meta_left['columns'][c]['type'] == 'delimited set']
             non_sets = [c for c in col_updates if not c in sets]
-            if update_right_on:
-                updata_right = data_right.set_index(right_on, drop=False)[col_updates].copy()
-            else:
-                updata_right = data_right.set_index(right_on)[col_updates].copy()
 
             if verbose:
                 print '------ updating data for known columns'
             updata_left.update(updata_right[non_sets])
-            for update_col in non_sets:
-                if verbose:
-                    print "..{}".format(update_col)
-                try:
-                    data_left[update_col] = updata_left[update_col].astype(
-                        data_left[update_col].dtype).values
-                except:
-                    data_left[update_col] = updata_left[update_col].astype(
-                        'object').values
             if merge_existing:
                 for col in sets:
                     if not (merge_existing == 'all' or col in merge_existing):
                         continue
                     if verbose:
-                        print "..{}".format(update_col)
-                    merge_set = data_left[col].astype(str) + data_right[col].astype(str)
-                    data_left[col] = merge_set.apply(lambda x: _merge_delimited_sets(x))
+                        print "..{}".format(col)
+                    updata_left[col] = updata_left[col].combine(
+                        updata_right[col],
+                        lambda x, y: _merge_delimited_sets(str(x)+str(y)))
+            updata_left.reset_index(inplace=True)
+            for col in col_updates:
+                data_left[col] = updata_left[col]
 
+        # append completely new columns
         if verbose:
             print '------ appending new columns'
         new_cols = [col for col in cols if not col in col_updates]
         if update_right_on:
             new_cols.append(right_on)
 
-        # This will be passed into pd.DataFrame.merge()
         kwargs = {'left_on': left_on,
                   'right_on': right_on,
                   'how': 'left'}
