@@ -1035,8 +1035,6 @@ class DataSet(object):
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
             if additions in ['full', 'filters']:
-                print b_name
-                print ba['filter_names']
                 variables += ba['filter_names']
         variables = list(set([v for v in variables if not v in ['@', None]]))
         variables = b_ds.roll_up(variables)
