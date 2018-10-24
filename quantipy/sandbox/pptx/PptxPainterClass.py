@@ -1185,7 +1185,17 @@ class PptxPainter(object):
                 for serie, column in enumerate(sig_test_results[::-1]):
                     for point, test_result in enumerate(column[::-1]):
                         if not isinstance(test_result, basestring): continue
-                        if '*' in test_result: continue
+                        for text in ['*.',
+                                     '*',
+                                     '**.',
+                                     '**',
+                                     '\'@L\'.',
+                                     '\'@L\'',
+                                     '\'@H\'.',
+                                     '\'@H\'',
+                                     ]:
+                            test_result = test_result.replace(text,'')
+                        if test_result == '': continue
                         text =  u' ({})'.format(test_result)
                         self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
