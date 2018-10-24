@@ -414,6 +414,7 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+
     @modify(to_list='varlist')
     def add_variables(self, varlist):
         """
@@ -428,6 +429,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
+        self.variables = []
         if '@' in varlist: varlist.remove('@')
         if '@1' in varlist: varlist.remove('@1')
         for v in varlist:
