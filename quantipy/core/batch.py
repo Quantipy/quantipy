@@ -669,11 +669,13 @@ class Batch(qp.DataSet):
             if not (filter_logic is None or overwrite):
                 raise ValueError("'{}' is already a filter-variable. Cannot "
                                  "apply a new logic.".format(name))
-            else:
+            elif overwrite:
                 self.drop(name)
                 print 'Overwrite filter var: {}'.format(name)
+                self.add_filter_var(name, filter_logic, overwrite)
 
-        self.add_filter_var(name, filter_logic, False)
+        else:
+            self.add_filter_var(name, filter_logic, overwrite)
         self.filter = name
         if not name in self.filter_names:
             self.filter_names.append(name)
