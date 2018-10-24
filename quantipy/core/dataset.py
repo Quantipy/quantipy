@@ -1035,7 +1035,9 @@ class DataSet(object):
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
             if additions in ['full', 'filters']:
-                variables += batch['filter_names']
+                print b_name
+                print ba['filter_names']
+                variables += ba['filter_names']
         variables = list(set([v for v in variables if not v in ['@', None]]))
         variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
@@ -3205,7 +3207,7 @@ class DataSet(object):
         return None
 
     @modify(to_list=['logic'])
-    def extend_filter_var(self, name, logic, extend_as=None):
+    def extend_filter_var(self, name, logic, extend_as=None, check=None):
         """
         Extend logic of an existing filter-variable.
 
@@ -3979,7 +3981,7 @@ class DataSet(object):
                 self._data[copy_name] = np.NaN
 
         # run the renaming for the copied variable
-        self.rename_from_mapper(renames, keep_original=True)
+        self.rename_from_mapper(renames, keep_original=True, ignore_batch_props=True)
         # set type 'created'
         if is_array:
             for s in self.sources(copy_name):
@@ -4908,7 +4910,8 @@ class DataSet(object):
 
         return None
 
-    def rename_from_mapper(self, mapper, keep_original=False):
+    def rename_from_mapper(self, mapper, keep_original=False,
+                           ignore_batch_props=False):
         """
         Rename meta objects and data columns using mapper.
 
@@ -4940,7 +4943,7 @@ class DataSet(object):
                 if rs: self._set_property(rec, 'recoded_stat', mapper[rs])
             return None
 
-        def rename_meta(meta, mapper):
+        def rename_meta(meta, mapper, ignore_batch_props):
             """
             Rename lib@values, masks, set items and columns using mapper.
             """
@@ -4949,7 +4952,7 @@ class DataSet(object):
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
             rename_sets(meta['sets'], mapper, keep_original)
-            if 'batches' in meta['sets']:
+            if 'batches' in meta['sets'] and not ignore_batch_props:
                 rename_batch_properties(meta['sets']['batches'], mapper)
             if not keep_original:
                 rename_set_items(meta['sets'], mapper)
@@ -5064,7 +5067,7 @@ class DataSet(object):
                 except (AttributeError, KeyError, TypeError, ValueError):
                     pass
 
-        rename_meta(self._meta, mapper)
+        rename_meta(self._meta, mapper, ignore_batch_props)
         if not keep_original: self._data.rename(columns=mapper, inplace=True)
 
     def dimensionizing_mapper(self, names=None):
