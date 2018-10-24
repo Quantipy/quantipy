@@ -649,7 +649,7 @@ class Batch(qp.DataSet):
                 if isinstance(x, tuple): x = {x[0]: x[1]}
         return None
 
-    def add_filter(self, filter_name, filter_logic=None):
+    def add_filter(self, filter_name, filter_logic=None, overwrite=False):
         """
         Apply a (global) filter to all the variables found in the Batch.
 
@@ -666,12 +666,14 @@ class Batch(qp.DataSet):
         """
         name = filter_name.encode('utf-8', errors='ignore')
         if self.is_filter(name):
-            if not filter_logic is None:
+            if not (filter_logic is None or overwrite):
                 raise ValueError("'{}' is already a filter-variable. Cannot "
                                  "apply a new logic.".format(name))
-        else:
-            self.add_filter_var(name, filter_logic, False)
+            else:
+                self.drop(name)
+                print 'Overwrite filter var: {}'.format(name)
 
+        self.add_filter_var(name, filter_logic, False)
         self.filter = name
         if not name in self.filter_names:
             self.filter_names.append(name)
