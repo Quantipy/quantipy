@@ -3240,6 +3240,7 @@ class DataSet(object):
         self.uncode(f_name, {0: {f_name: 0}})
         values = self._transform_filter_logics(logic, max(self.codes(f_name))+1)
         self.extend_values(f_name, values)
+        self.set_variable_text(f_name, '{} _ {}'.format(self.text(f_name), extend_as))
         self.recode(f_name, {x: z for x, y, z in values}, append=True)
         self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
         return None
