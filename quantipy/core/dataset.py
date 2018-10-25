@@ -3301,6 +3301,27 @@ class DataSet(object):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         return self.take({name: 0})
 
+    @modify(to_list=['name2'])
+    @verify(variables={'name1': 'both', 'name2': 'both'})
+    def compare_filter(self, name1, name2):
+        """
+        Show if filters result in the same index.
+
+        Parameters
+        ----------
+        name1: str
+            Name of the first filter variable
+        name2: str/ list of st
+            Name(s) of the filter variable(s) to compare with.
+        """
+        if not all(self.is_filter(f) for f in [name1] + name2):
+            raise ValueError('Can only compare filter variables')
+        equal = True
+        for f in name2:
+            if not all(self.manifest_filter(name1) == self.manifest_filter(f)):
+                equal = False
+        return equal
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------

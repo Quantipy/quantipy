@@ -36,9 +36,15 @@ def meta_editor(self, dataset_func):
         if dataset_func.func_name == 'min_value_count':
             if len(args) < 3 and not 'weight' in kwargs:
                 kwargs['weight'] = self.weights[0]
+
             if len(args) < 4 and not 'condition' in kwargs:
                 if not self.filter == 'no_filter':
                     kwargs['condition'] = self.filter.values()[0]
+        # args/ kwargs for sorting
+        elif dataset_func.func_name == 'sorting':
+            if len(args) < 7 and not 'sort_by_weight' in kwargs:
+                kwargs['sort_by_weight'] = self.weights[0]
+
 
         for n in name:
             is_array = self.is_array(n)
@@ -77,7 +83,7 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-        if dataset_func.func_name in ['hiding', 'slicing', 'min_value_count']:
+        if dataset_func.func_name in ['hiding', 'slicing', 'min_value_count', 'sorting']:
             self._update()
     return edit
 
