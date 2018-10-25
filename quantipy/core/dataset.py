@@ -3184,6 +3184,7 @@ class DataSet(object):
         overwrite: bool, default False
             Overwrite an already existing filter-variable.
         """
+        name = name.encode('utf8')
         if name in self:
             if overwrite and not self.is_filter(name):
                 msg = "Cannot add filter-variable '{}', a non-filter"
