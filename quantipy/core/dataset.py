@@ -48,13 +48,16 @@ import os
 from itertools import product, chain
 from collections import OrderedDict, Counter
 
-VALID_TKS = ['en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR',
-             'ar-AR', 'es-ES', 'it-IT']
-VAR_SUFFIXES = ['_rc', '_net', ' (categories', ' (NET', '_rec']
+VALID_TKS = [
+    'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR',
+    'es-ES', 'it-IT']
 
-BLACKLIST_VARIABLES = ['batches', 'columns', 'info', 'items', 'lib', 'masks',
-                       'name', 'parent', 'properties', 'text', 'type', 'sets',
-                       'subtype', 'values']
+VAR_SUFFIXES = [
+    '_rc', '_net', ' (categories', ' (NET', '_rec']
+
+BLACKLIST_VARIABLES = [
+    'batches', 'columns', 'info', 'items', 'lib', 'masks', 'name', 'parent',
+    'properties', 'text', 'type', 'sets', 'subtype', 'values', 'filter']
 
 class DataSet(object):
     """
@@ -188,21 +191,25 @@ class DataSet(object):
         return self._get_columns('string')
 
     def created(self):
-        return [v for v in self.variables() if self.get_property(v, 'created')]
+        return self._by_property('created')
+
+    def filters(self):
+        return self._by_property('recoded_filter')
+
+    def _stat_view_recodes(self):
+        return self._by_property('recoded_stat')
+
+    def _net_view_recodes(self):
+        return self._by_property('recoded_net')
+
+    def _by_property(self, prop):
+        return [v for v in self.variables() if self.get_property(v, prop)]
 
     def batches(self):
         if 'batches' in self._meta['sets']:
             return self._meta['sets']['batches'].keys()
         else:
             return []
-
-    def _stat_view_recodes(self):
-        return [v for v in self.variables() if
-                self.get_property(v, 'recoded_stat')]
-
-    def _net_view_recodes(self):
-        return [v for v in self.variables() if
-                self.get_property(v, 'recoded_net')]
 
     def set_verbose_errmsg(self, verbose=True):
         """
@@ -371,6 +378,9 @@ class DataSet(object):
             return True
         else:
             return False
+
+    def is_filter(self, var):
+        return True if var in self and self.get_property(var, 'recoded_filter') else False
 
     def _has_missings(self, var):
         if self.is_array(var): var = self.sources(var)[0]
@@ -881,7 +891,6 @@ class DataSet(object):
         if w: batch_vars.extend(w)
         return batch_vars
 
-
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
     def _from_batch(self, batch_name, include='identity', text_key=[],
@@ -891,15 +900,22 @@ class DataSet(object):
         # get the main batch definition to construct a dataset from...
         batch_def = self._meta['sets']['batches'][batch_name]
         # filter it if needed:
-        if batch_def['filter'] == 'no_filter':
+        f = batch_def['filter']
+        if f is None:
             b_ds = self.clone()
+        elif isinstance(f, basestring):
+            b_ds = self.filter(batch_name, {f: 0})
         else:
-            b_ds = self.filter(batch_name, batch_def['filter'].values()[0])
+            b_ds = self.filter(batch_name, f.values()[0])
         # build the variable collection based in Batch setup & requirements:
         main_variables = b_ds._vars_from_batch(batch_def, 'batch-full')
         if additions in ['full', 'filters']:
-            print 'manifest_filters() needed, add filters to list...'
-            pass
+            if batch_def['additions']:
+                for add_batch in batch_def['additions']:
+                    f = add_batch['filter']
+                    if not f is None and isinstance(f, basestring):
+                        if not f in main_variables:
+                            main_variables.append(f)
         if additions in ['full', 'variables']:
             if batch_def['additions']:
                 for add_batch in batch_def['additions']:
@@ -916,7 +932,6 @@ class DataSet(object):
         b_ds.order(main_variables)
         self._rename_blacklist_vars()
         return b_ds
-
 
     @modify(to_list=['text_key', 'include'])
     @verify(text_keys='text_key', variables={'include': 'both'})
@@ -986,37 +1001,6 @@ class DataSet(object):
                                 ds._meta['columns'][name].pop('rules')
                         return None
 
-        def _manifest_filters(ds, batch_name):
-            all_batches = ds._meta['sets']['batches']
-            add_batches = ds._meta['sets']['batches'][batch_name]['additions']
-            if not adds: return None
-            filters = []
-            mtextkey = ds._meta['sets']['batches'][batch_name]['language']
-            for add_batch in add_batches:
-                if all_batches[add_batch]['filter'] != 'no_filter':
-                    filters.append(
-                        (add_batch,
-                         all_batches[add_batch]['language'],
-                         all_batches[add_batch]['filter'])
-                        )
-            if not filters: return None
-            cats = [(1, 'active')]
-            fnames = []
-            for no, f in enumerate(filters, start=1):
-                fname = 'filter_{}'.format(no)
-                fnames.append(fname)
-                source = f[0]
-                ftextkey = f[1]
-                flogic = f[2].values()[0]
-                flabel = f[2].keys()[0]
-                ds.add_meta(fname, 'single', flabel, cats, text_key=ftextkey)
-                if not mtextkey == ftextkey:
-                    ds.set_variable_text(fname, flabel, text_key=mtextkey)
-                    ds.set_value_texts(fname, {1: 'active'}, text_key=mtextkey)
-                ds._meta['columns'][fname]['properties']['recoded_filter'] = source
-                ds[ds.take(flogic), fname] = 1
-            return fnames
-
         batches = self._meta['sets'].get('batches', {})
         if not batch_name in batches:
             msg = 'No Batch named "{}" is included in DataSet.'
@@ -1028,23 +1012,17 @@ class DataSet(object):
             msg = 'Batch-textkey {} is not included in {}.'
             raise ValueError(msg.format(batch['language'], text_key))
         # Create a new instance by filtering or cloning
-        if batch['filter'] == 'no_filter':
+        f = batch['filter']
+        if f is None:
             b_ds = self.clone()
+        elif isinstance(f, basestring):
+            b_ds = self.filter(batch_name, {f: 0})
         else:
-            b_ds = self.filter(batch_name, batch['filter'].values()[0])
+            b_ds = self.filter(batch_name, f.values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
-        if additions in ['full', 'variables']:
-            adds = batch['additions']
-        else:
-            adds = []
-        if additions in ['full', 'filters']:
-            filter_vars = _manifest_filters(b_ds, batch_name)
-        else:
-            filter_vars = []
-
-        variables = include
-
+        variables = ['@1'] + include[:]
+        adds = batch['additions'] if additions in ['full', 'variables'] else []
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['variables']
@@ -1053,7 +1031,8 @@ class DataSet(object):
             variables += ba['weights']
             for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
-        if filter_vars: variables += filter_vars
+            if additions in ['full', 'filters']:
+                variables += ba['filter_names']
         variables = list(set([v for v in variables if not v in ['@', None]]))
         variables = b_ds.roll_up(variables)
         b_ds.subset(variables, inplace=True)
@@ -1062,8 +1041,6 @@ class DataSet(object):
         b_ds.set_text_key(batch['language'])
         for b in b_ds._meta['sets']['batches'].keys():
             if not b in [batch_name] + adds: b_ds._meta['sets']['batches'].pop(b)
-        b_ds._meta['sets']['batches'][batch_name]['filter'] = 'no_filter'
-        b_ds._meta['sets']['batches'][batch_name]['filter_names'] = ['no_filter']
         # apply edits
         if apply_edits:
             b_edits = b_ds._meta['sets']['batches'][batch_name]['meta_edits']
@@ -3176,6 +3153,174 @@ class DataSet(object):
 
         return None
 
+    @modify(to_list=['logic'])
+    def add_filter_var(self, name, logic, overwrite=False):
+        """
+        Create filter-var, that allows index slicing using ``manifest_filter``
+
+        Parameters
+        ----------
+        name: str
+            Name and label of the new filter-variable, which gets also listed
+            in DataSet.filters
+        logic: complex logic/ str, list of complex logic/ str
+            Logic to keep cases.
+            Complex logic should be provided in form of:
+            ```
+            {
+            'label': 'any text',
+            'logic': {var: keys} / intersection/ ....
+            }
+            ```
+            If a str (column-name) is provided, automatically a logic is
+            created that keeps all cases which are not empty for this column.
+            If logic is a list, each included list-item becomes a category of
+            the new filter-variable and all cases are kept that satify all
+            conditions (intersection)
+
+        overwrite: bool, default False
+            Overwrite an already existing filter-variable.
+        """
+        name = name.encode('utf8')
+        if name in self:
+            if overwrite and not self.is_filter(name):
+                msg = "Cannot add filter-variable '{}', a non-filter"
+                msg +=" variable is already included"
+                raise ValueError(msg.format(name))
+            elif not overwrite:
+                msg = "Cannot add filter-variable '{}', it's already included."
+                raise ValueError(msg.format(name))
+            else:
+                self.drop(name)
+                if self._verbose_infos:
+                    print 'Overwriting {}'.format(name)
+        values = [(0, 'keep', None)]
+        values += self._transform_filter_logics(logic, 1)
+        self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
+        self.recode(name, {x: z for x, y, z in values[1:]})
+        self.recode(name, {0: {name: has_count(len(values)-1)}}, append=True)
+        self._set_property(name, 'recoded_filter', True)
+        return None
+
+    @modify(to_list=['logic'])
+    def extend_filter_var(self, name, logic, extend_as=None):
+        """
+        Extend logic of an existing filter-variable.
+
+        Parameters
+        ----------
+        name: str
+            Name of the existing filter variable.
+        logic: (list of) complex logic/ str
+            Additional logic to keep cases (intersection with existing logic).
+            Complex logic should be provided in form of:
+            ```
+            {
+            'label': 'any text',
+            'logic': {var: keys} / intersection/ ....
+            }
+            ```
+        extend_as: str, default None
+            Addition to the filter-name to create a new filter. If it is None
+            the existing filter-variable is overwritten.
+        """
+        if not self.is_filter(name):
+            raise KeyError('{} is no valid filter-variable.'.format(name))
+        if extend_as:
+            f_name = '{}_{}'.format(name, extend_as)
+            if f_name in self:
+                msg = "Please change 'extend_as': '{}' is already in dataset."
+                raise KeyError(msg.format(f_name))
+            self.copy(name, extend_as)
+            self._set_property(f_name, 'recoded_filter', True)
+        else:
+            f_name = name
+        self.uncode(f_name, {0: {f_name: 0}})
+        values = self._transform_filter_logics(logic, max(self.codes(f_name))+1)
+        self.extend_values(f_name, values)
+        self.recode(f_name, {x: z for x, y, z in values}, append=True)
+        self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
+        text = '{} _ {}'.format(self.text(f_name), extend_as)
+        self._meta['columns'][f_name]['text'][self.text_key] = text
+        return None
+
+    def _transform_filter_logics(self, logic, start):
+        if not logic: logic = ['@1']
+        values = []
+        for x, l in enumerate(logic, start):
+            if isinstance(l, basestring):
+                if not l in self:
+                    raise KeyError("{} is not included in Dataset".format(l))
+                val = (x, '{} not empty'.format(l), {l: not_count(0)})
+            elif isinstance(l, dict):
+                if not ('label' in l and 'logic' in l):
+                    l = {'label': str(x), 'logic': l}
+                    if self._verbose_infos:
+                        msg = "Filter logic must contain 'label' and 'logic'"
+                        warnings.warn(msg)
+                val = (x, l['label'], l['logic'])
+            else:
+                try:
+                    l[0].__name__ in ['_intersection', '_union']
+                    val = (x, str(x), l)
+                except:
+                    msg = 'Included logic must be (list of) str or dict/complex logic.'
+                    raise TypeError(msg)
+            values.append(val)
+        return values
+
+    @modify(to_list=['values'])
+    def reduce_filter_var(self, name, values):
+        """
+        Remove values from filter-variables and recalculate the filter.
+        """
+        if not self.is_filter(name):
+            raise KeyError('{} is no valid filter-variable.'.format(name))
+        if 0 in values:
+            raise ValueError('Cannot remove the 0-keep value from filter var')
+        elif len([x for x in self.codes(name) if not x in values]) <= 1:
+            raise ValueError('Cannot remove all values from filter var.')
+        self.uncode(name, {0: {name: 0}})
+        self.remove_values(name, values)
+        self.recode(name, {0: {name: has_count(len(self.codes(name))-1)}}, append=True)
+        return None
+
+    def manifest_filter(self, name):
+        """
+        Get index slicer from filter-variables.
+
+        Parameters
+        ----------
+        name: str
+            Name of the filter_variable.
+        """
+        if not name:
+            return self._data.index
+        if not self.is_filter(name):
+            raise KeyError('{} is no valid filter-variable.'.format(name))
+        return self.take({name: 0})
+
+    @modify(to_list=['name2'])
+    @verify(variables={'name1': 'both', 'name2': 'both'})
+    def compare_filter(self, name1, name2):
+        """
+        Show if filters result in the same index.
+
+        Parameters
+        ----------
+        name1: str
+            Name of the first filter variable
+        name2: str/ list of st
+            Name(s) of the filter variable(s) to compare with.
+        """
+        if not all(self.is_filter(f) for f in [name1] + name2):
+            raise ValueError('Can only compare filter variables')
+        equal = True
+        for f in name2:
+            if not all(self.manifest_filter(name1) == self.manifest_filter(f)):
+                equal = False
+        return equal
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
@@ -3743,6 +3888,7 @@ class DataSet(object):
             if not self.is_array(var): data_drop.append(var)
             remove_loop(meta, var)
         data.drop(data_drop, 1, inplace=True)
+
         return None
 
     @modify(to_list=['name'])
@@ -3854,7 +4000,7 @@ class DataSet(object):
                 self._data[copy_name] = np.NaN
 
         # run the renaming for the copied variable
-        self.rename_from_mapper(renames, keep_original=True)
+        self.rename_from_mapper(renames, keep_original=True, ignore_batch_props=True)
         # set type 'created'
         if is_array:
             for s in self.sources(copy_name):
@@ -4783,7 +4929,8 @@ class DataSet(object):
 
         return None
 
-    def rename_from_mapper(self, mapper, keep_original=False):
+    def rename_from_mapper(self, mapper, keep_original=False,
+                           ignore_batch_props=False):
         """
         Rename meta objects and data columns using mapper.
 
@@ -4809,22 +4956,13 @@ class DataSet(object):
             stat_recs = self._stat_view_recodes()
             all_recs = set([r for r in net_recs + stat_recs if r in mapper])
             for rec in all_recs:
-                is_array = rec in self.masks()
-                if is_array:
-                    props = self._meta['masks'][rec]['properties']
-                else:
-                    props = self._meta['columns'][rec]['properties']
-                rn = props.get('recoded_net', None)
-                if rn:
-                    org_ref = props['recoded_net']
-                    props['recoded_net'] = mapper[org_ref]
-                rs = props.get('recoded_stat', None)
-                if rs:
-                    org_ref = props['recoded_stat']
-                    props['recoded_stat'] = mapper[org_ref]
+                rn = self.get_property(rec, 'recoded_net')
+                if rn: self._set_property(rec, 'recoded_net', mapper[rn])
+                rs = self.get_property(rec, 'recoded_stat')
+                if rs: self._set_property(rec, 'recoded_stat', mapper[rs])
             return None
 
-        def rename_meta(meta, mapper):
+        def rename_meta(meta, mapper, ignore_batch_props):
             """
             Rename lib@values, masks, set items and columns using mapper.
             """
@@ -4833,7 +4971,7 @@ class DataSet(object):
             rename_masks(meta['masks'], mapper, keep_original)
             rename_columns(meta['columns'], mapper, keep_original)
             rename_sets(meta['sets'], mapper, keep_original)
-            if 'batches' in meta['sets']:
+            if 'batches' in meta['sets'] and not ignore_batch_props:
                 rename_batch_properties(meta['sets']['batches'], mapper)
             if not keep_original:
                 rename_set_items(meta['sets'], mapper)
@@ -4948,7 +5086,7 @@ class DataSet(object):
                 except (AttributeError, KeyError, TypeError, ValueError):
                     pass
 
-        rename_meta(self._meta, mapper)
+        rename_meta(self._meta, mapper, ignore_batch_props)
         if not keep_original: self._data.rename(columns=mapper, inplace=True)
 
     def dimensionizing_mapper(self, names=None):
@@ -6018,6 +6156,7 @@ class DataSet(object):
         else:
             return None
 
+    @modify(to_list='name')
     @verify(variables={'name': 'both'})
     def set_property(self, name, prop_name, prop_value, ignore_items=False):
         """
@@ -6045,19 +6184,27 @@ class DataSet(object):
         valid_props = ['base_text', '_no_valid_items', '_no_valid_values']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        self._set_property(name, prop_name, prop_value, ignore_items)
+        return None
+
+    @modify(to_list='name')
+    @verify(variables={'name': 'both'})
+    def _set_property(self, name, prop_name, prop_value, ignore_items=False):
+        """
+        Access and set the value of a meta object's ``properties`` collection.
+
+        Note: This method allows the setting for any property, so it should only
+        be used by developers.
+        """
         prop_update = {prop_name: prop_value}
-        if self.is_array(name):
-            if not 'properties' in self._meta['masks'][name]:
-                self._meta['masks'][name]['properties'] = {}
-            self._meta['masks'][name]['properties'].update(prop_update)
-            if not ignore_items:
-                items = self.sources(name)
-                for i in items:
-                    self.set_property(i, prop_name, prop_value)
-        else:
-            if not 'properties' in self._meta['columns'][name]:
-                self._meta['columns'][name]['properties'] = {}
-            self._meta['columns'][name]['properties'].update(prop_update)
+        for n in name:
+            collection = 'masks' if self.is_array(n) else 'columns'
+            if not 'properties' in self._meta[collection][n]:
+                self._meta[collection][n]['properties'] = {}
+            self._meta[collection][n]['properties'].update(prop_update)
+            if ignore_items: continue
+            for s in self.sources(n):
+                self._set_property(s, prop_name, prop_value)
         return None
 
     @modify(to_list='name')
@@ -6384,7 +6531,10 @@ class DataSet(object):
         return valid_map
 
     def _set_default_missings(self, ignore=None):
-        excludes = ['weißnicht', 'keineangabe', 'weißnicht/keineangabe',
+        excludes = [
+            u'weißnicht',
+            'keineangabe',
+            u'weißnicht/keineangabe',
                     'keineangabe/weißnicht', 'kannmichnichterinnern',
                     'weißichnicht', 'nichtindeutschland']
         d = self.describe()
@@ -6831,16 +6981,23 @@ class DataSet(object):
             xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
-            f  = batch['filter']
             my  = batch['yks']
 
             total_len = len(xys) + len(batch['y_on_y'])
             for idx, xy in enumerate(xys, start=1):
                 x, y = xy
                 if x == '@':
-                    stack.add_link(dk, fs[y[0]], x='@', y=y)
+                    if fs[y[0]] is None:
+                        fi = 'no_filter'
+                    else:
+                        fi = {fs[y[0]]: {fs[y[0]]: 0}}
+                    stack.add_link(dk, fi, x='@', y=y)
                 else:
-                    stack.add_link(dk, fs[x], x=x, y=y)
+                    if fs[x] is None:
+                        fi = 'no_filter'
+                    else:
+                        fi = {fs[x]: {fs[x]: 0}}
+                    stack.add_link(dk, fi, x=x, y=y)
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',
@@ -6848,7 +7005,11 @@ class DataSet(object):
                     print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
             for idx, y_on_y in enumerate(batch['y_on_y'], len(xys)+1):
-                stack.add_link(dk, fy[y_on_y], x=my[1:], y=my)
+                if fy[y_on_y] is None:
+                    fi = 'no_filter'
+                else:
+                    fi = {fy[y_on_y]: {fy[y_on_y]: 1}}
+                stack.add_link(dk, fi, x=my[1:], y=my)
                 if verbose:
                     done = float(idx) / float(total_len) *100
                     print '\r',
@@ -6858,13 +7019,3 @@ class DataSet(object):
             if verbose:
                 print '\n'
         return stack
-
-# ============================================================================
-
-    def parrot(self):
-        from IPython.display import Image
-        from IPython.display import display
-        try:
-            return display(Image(url="https://m.popkey.co/3a9f4b/jZZ83.gif"))
-        except:
-            print ':sad_parrot: Looks like the parrot url is not longer there!'

@@ -1110,7 +1110,6 @@ class TestStackObject(unittest.TestCase):
         b3, ds = _get_batch('test3', ds, False)
         b1.add_downbreak(['q1', 'q6', 'age'])
         b1.add_crossbreak(['gender', 'q2'])
-        b1.add_filter('men only', {'gender': 1})
         b1.extend_filter({'q1':{'age': [20, 21, 22]}})
         b1.set_weights('weight_a')
         b2.add_downbreak(['q1', 'q6'])
