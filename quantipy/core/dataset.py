@@ -189,7 +189,7 @@ class DataSet(object):
 
     def created(self):
         return [v for v in self.variables() if self.get_property(v, 'created')]
-    
+
     def batches(self):
         if 'batches' in self._meta['sets']:
             return self._meta['sets']['batches'].keys()
@@ -1047,7 +1047,7 @@ class DataSet(object):
 
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
-            variables += ba['xks'] + ba['yks']
+            variables += ba['xks'] + ba['yks'] + ba['variables']
             for oe in ba['verbatims']:
                 variables += oe['columns']
             variables += ba['weights']
