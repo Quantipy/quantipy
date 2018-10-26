@@ -45,7 +45,6 @@ def meta_editor(self, dataset_func):
             if len(args) < 7 and not 'sort_by_weight' in kwargs:
                 kwargs['sort_by_weight'] = self.weights[0]
 
-
         for n in name:
             is_array = self.is_array(n)
             is_array_item = self._is_array_item(n)
@@ -129,6 +128,7 @@ class Batch(qp.DataSet):
             sets['batches'][name] = {'name': name, 'additions': []}
             self.xks = []
             self.yks = ['@']
+            self._variables = []
             self.total = True
             self.extended_yks_global = None
             self.extended_yks_per_x = {}
@@ -178,7 +178,8 @@ class Batch(qp.DataSet):
         self._map_x_to_y()
         self._map_x_to_filter()
         self._samplesize_from_batch_filter()
-        for attr in ['xks', 'yks', 'filter', 'filter_names',
+        attrs = self.__dict__
+        for attr in ['xks', 'yks', 'variables', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
                      'extended_yks_global', 'extended_yks_per_x',
@@ -187,14 +188,15 @@ class Batch(qp.DataSet):
                      'sample_size', 'language', 'name', 'skip_items', 'total',
                      'unwgt_counts', 'y_filter_map', 'build_info',
                      ]:
-            attr_update = {attr: self.__dict__.get(attr)}
+            attr_update = {attr: attrs.get(attr, attrs.get('_{}'.format(attr)))}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
     def _load_batch(self):
         """
         Fill batch attributes with information from meta.
         """
-        for attr in ['xks', 'yks', 'filter', 'filter_names',
+        bdefs = self._meta['sets']['batches'][self.name]
+        for attr in ['xks', 'yks', 'variables', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
                      'extended_yks_global', 'extended_yks_per_x',
@@ -203,7 +205,7 @@ class Batch(qp.DataSet):
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
                      'y_filter_map', 'build_info',
                      ]:
-            attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
+            attr_load = {attr: bdefs.get(attr, bdefs.get('_{}'.format(attr)))}
             self.__dict__.update(attr_load)
 
     def clone(self, name, b_filter=None, as_addition=False):
@@ -417,6 +419,55 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+
+    @modify(to_list='varlist')
+    def add_variables(self, varlist):
+        """
+        Text
+
+        Parameters
+        ----------
+        varlist : list
+            A list of variable names.
+
+        Returns
+        -------
+        None
+        """
+        self._variables = []
+        if '@' in varlist: varlist.remove('@')
+        if '@1' in varlist: varlist.remove('@1')
+        for v in varlist:
+            if not v in self._variables:
+                self._variables.append(v)
+        self._update()
+        return None
+
+
+    @modify(to_list='dbrk')
+    def add_downbreak(self, dbrk):
+        """
+        Set the downbreak (x) variables of the Batch.
+
+        Parameters
+        ----------
+        dbrk: str, list of str, dict, list of dict
+            Names of variables that are used as downbreaks. Forced names for
+            Excel outputs can be given in a dict, for example:
+            xks = ['q1', {'q2': 'forced name for q2'}, 'q3', ....]
+
+        Returns
+        -------
+        None
+        """
+        clean_xks = self._check_forced_names(dbrk)
+        self.xks = self.unroll(clean_xks, both='all')
+        self._update()
+        masks = [x for x in self.xks if x in self.masks()]
+        self.make_summaries(masks, [], _verbose=False)
+        return None
+
+
     @modify(to_list='xks')
     def add_x(self, xks):
         """
@@ -433,12 +484,9 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        clean_xks = self._check_forced_names(xks)
-        self.xks = self.unroll(clean_xks, both='all')
-        self._update()
-        masks = [x for x in self.xks if x in self.masks()]
-        self.make_summaries(masks, [], _verbose=False)
-        return None
+        w = "'add_x()' will be deprecated in a future version. Please use 'add_downbreak()' instead!"
+        warnings.warn(w)
+        self.add_downbreak(xks)
 
     @modify(to_list=['ext_xks'])
     def extend_x(self, ext_xks):
@@ -612,7 +660,31 @@ class Batch(qp.DataSet):
             if self._verbose_infos:
                 print 'sigtests are removed from batch.'
         self.total = total
-        self.add_y(self.yks)
+        self.add_crossbreak(self.yks)
+        return None
+
+    @modify(to_list='xbrk')
+    @verify(variables={'xbrk': 'both'}, categorical='xbrk')
+    def add_crossbreak(self, xbrk):
+        """
+        Set the y (crossbreak/banner) variables of the Batch.
+
+        Parameters
+        ----------
+        xbrk: str, list of str
+            Variables that are added as crossbreaks. '@'/ total is added
+            automatically.
+
+        Returns
+        -------
+        None
+        """
+        yks = [y for y in xbrk if not y=='@']
+        yks = self.unroll(yks)
+        if self.total:
+            yks = ['@'] + yks
+        self.yks = yks
+        self._update()
         return None
 
     @modify(to_list='yks')
@@ -631,13 +703,9 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        yks = [y for y in yks if not y=='@']
-        yks = self.unroll(yks)
-        if self.total:
-            yks = ['@'] + yks
-        self.yks = yks
-        self._update()
-        return None
+        w = "'add_y()' will be deprecated in a future version. Please use 'add_crossbreak()' instead!"
+        warnings.warn(w)
+        self.add_crossbreak(yks)
 
     def add_x_per_y(self, x_on_y_map):
         """

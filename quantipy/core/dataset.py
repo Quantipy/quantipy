@@ -1023,12 +1023,9 @@ class DataSet(object):
         # Get a subset of variables (xks, yks, oe, weights)
         variables = ['@1'] + include[:]
         adds = batch['additions'] if additions in ['full', 'variables'] else []
-        remove = []
         for b_name, ba in batches.items():
-            if not b_name in [batch_name] + adds:
-                remove.append(b_name)
-                continue
-            variables += ba['xks'] + ba['yks']
+            if not b_name in [batch_name] + adds: continue
+            variables += ba['xks'] + ba['yks'] + ba['variables']
             for oe in ba['verbatims']:
                 variables += oe['columns']
             variables += ba['weights']
@@ -1042,8 +1039,8 @@ class DataSet(object):
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
         b_ds.set_text_key(batch['language'])
-        for b in remove:
-            b_ds._meta['sets']['batches'].pop(b)
+        for b in b_ds._meta['sets']['batches'].keys():
+            if not b in [batch_name] + adds: b_ds._meta['sets']['batches'].pop(b)
         # apply edits
         if apply_edits:
             b_edits = b_ds._meta['sets']['batches'][batch_name]['meta_edits']
@@ -3206,7 +3203,7 @@ class DataSet(object):
         return None
 
     @modify(to_list=['logic'])
-    def extend_filter_var(self, name, logic, extend_as=None, check=None):
+    def extend_filter_var(self, name, logic, extend_as=None):
         """
         Extend logic of an existing filter-variable.
 
@@ -3241,9 +3238,10 @@ class DataSet(object):
         self.uncode(f_name, {0: {f_name: 0}})
         values = self._transform_filter_logics(logic, max(self.codes(f_name))+1)
         self.extend_values(f_name, values)
-        self.set_variable_text(f_name, '{} _ {}'.format(self.text(f_name), extend_as))
         self.recode(f_name, {x: z for x, y, z in values}, append=True)
         self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
+        text = '{} _ {}'.format(self.text(f_name), extend_as)
+        self._meta['columns'][f_name]['text'][self.text_key] = text
         return None
 
     def _transform_filter_logics(self, logic, start):

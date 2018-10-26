@@ -33,8 +33,8 @@ class TestViewManager(unittest.TestCase):
         else:
             w = None
         batch = dataset.add_batch('viewmanager', weights=w, tests=[0.05] if tests else None)
-        batch.add_x(x)
-        batch.add_y(y)
+        batch.add_downbreak(x)
+        batch.add_crossbreak(y)
         stack = dataset.populate()
         basic_views = ['cbase', 'counts', 'c%', 'counts_sum', 'c%_sum']
         stack.aggregate(views=basic_views, verbose=False)

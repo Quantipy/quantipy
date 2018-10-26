@@ -1856,7 +1856,7 @@ class Stack(defaultdict):
         """
         """
         def _append_loop(mapping, x, fi, w, ys):
-            fi = fi.encode('utf8')
+            if fi: fi = fi.encode('utf8')
             fn = 'no_filter' if fi is None else fi
             f = 'no_filter' if fi is None else {fi: {fi: 0}}
             if not x in mapping:
@@ -2720,16 +2720,22 @@ class Stack(defaultdict):
                                                   'test_total': sigpro.get('test_total', None),
                                                   'groups': 'Tests'})
                     for yy in batch['y_on_y']:
-                        fy = y_f[yy].encode('utf8')
-                        f = ['no_filter'] if fy is None else {fy: {fy: 0}}
+                        if y_f[yy]:
+                            fy = y_f[yy].encode('utf8')
+                            f = {fy: {fy: 0}}
+                        else:
+                            f = ['no_filter']
                         self.add_link(filters=f, x=yks[1:], y=yks,
                                       views=vm_tests, weights=weight)
                     total_len = len(x_y)
                     for idx, xy in enumerate(x_y, 1):
                         x, y = xy
                         if x == '@': continue
-                        fx = x_f[x].encode('utf8')
-                        f = ['no_filter'] if fx is None else {fx: {fx: 0}}
+                        if x_f[x]:
+                            fx = x_f[x].encode('utf8')
+                            f = {fx: {fx: 0}}
+                        else:
+                            f = ['no_filter']
                         self.add_link(filters=f, x=x, y=y,
                                        views=vm_tests, weights=weight)
                         if verbose:
