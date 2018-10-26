@@ -29,16 +29,21 @@ def meta_editor(self, dataset_func):
         if not isinstance(name, list): name = [name]
         # create DataSet clone to leave global meta data untouched
         if self.edits_ds is None:
-            self.edits_ds = self.clone()
+            self.edits_ds = qp.DataSet.clone(self)
         ds_clone = self.edits_ds
         var_edits = []
         # args/ kwargs for min_value_count
         if dataset_func.func_name == 'min_value_count':
             if len(args) < 3 and not 'weight' in kwargs:
                 kwargs['weight'] = self.weights[0]
+
             if len(args) < 4 and not 'condition' in kwargs:
                 if not self.filter == 'no_filter':
                     kwargs['condition'] = self.filter.values()[0]
+        # args/ kwargs for sorting
+        elif dataset_func.func_name == 'sorting':
+            if len(args) < 7 and not 'sort_by_weight' in kwargs:
+                kwargs['sort_by_weight'] = self.weights[0]
 
         for n in name:
             is_array = self.is_array(n)
@@ -77,7 +82,7 @@ def meta_editor(self, dataset_func):
                 if ds_clone._has_categorical_data(n):
                     self.meta_edits['lib'][n] = ds_clone._meta['lib']['values'][n]
             self.meta_edits[n] = meta
-        if dataset_func.func_name in ['hiding', 'slicing', 'min_value_count']:
+        if dataset_func.func_name in ['hiding', 'slicing', 'min_value_count', 'sorting']:
             self._update()
     return edit
 
@@ -103,13 +108,14 @@ class Batch(qp.DataSet):
         self.name = name
         meta, data = dataset.split()
         self._meta = meta
-        self._data = data.copy()
+        self._data = data
         self.edits_ds = None
         self.valid_tks = dataset.valid_tks
         self.text_key = dataset.text_key
         self.sample_size = None
         self._verbose_errors = dataset._verbose_errors
         self._verbose_infos = dataset._verbose_infos
+        self._dimensions_comp = dataset._dimensions_comp
 
         # RENAMED DataSet methods
         self._dsfilter = qp.DataSet.filter.__func__
@@ -122,20 +128,18 @@ class Batch(qp.DataSet):
             sets['batches'][name] = {'name': name, 'additions': []}
             self.xks = []
             self.yks = ['@']
-            self.variables = []
+            self._variables = []
             self.total = True
             self.extended_yks_global = None
             self.extended_yks_per_x = {}
             self.exclusive_yks_per_x = {}
             self.extended_filters_per_x = {}
-            self.filter = 'no_filter'
-            self.filter_names = ['no_filter']
-            self._filter_slice = None
+            self.filter = None
+            self.filter_names = []
             self.x_y_map = None
             self.x_filter_map = None
             self.y_on_y = []
-            self.y_on_y_filter = {}
-            self.y_filter_map = None
+            self.y_filter_map = {}
             self.forced_names = {}
             self.summaries = []
             self.transposed_arrays = {}
@@ -162,7 +166,7 @@ class Batch(qp.DataSet):
         self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
         self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
         # UNALLOWED DataSet methods
-        self.add_meta = not_implemented(qp.DataSet.add_meta.__func__)
+        # self.add_meta = not_implemented(qp.DataSet.add_meta.__func__)
         self.derive = not_implemented(qp.DataSet.derive.__func__)
         self.remove_items = not_implemented(qp.DataSet.remove_items.__func__)
         self.set_missings = not_implemented(qp.DataSet.set_missings.__func__)
@@ -173,8 +177,8 @@ class Batch(qp.DataSet):
         """
         self._map_x_to_y()
         self._map_x_to_filter()
-        self._map_y_main_filter()
         self._samplesize_from_batch_filter()
+        attrs = self.__dict__
         for attr in ['xks', 'yks', 'variables', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
@@ -182,15 +186,16 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_on_y_filter', 'y_filter_map', 'build_info',
-                     '_filter_slice']:
-            attr_update = {attr: self.__dict__.get(attr)}
+                     'unwgt_counts', 'y_filter_map', 'build_info',
+                     ]:
+            attr_update = {attr: attrs.get(attr, attrs.get('_{}'.format(attr)))}
             self._meta['sets']['batches'][self.name].update(attr_update)
 
     def _load_batch(self):
         """
         Fill batch attributes with information from meta.
         """
+        bdefs = self._meta['sets']['batches'][self.name]
         for attr in ['xks', 'yks', 'variables', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
@@ -198,12 +203,12 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_on_y_filter', 'y_filter_map', 'build_info',
-                     '_filter_slice']:
-            attr_load = {attr: self._meta['sets']['batches'][self.name].get(attr)}
+                     'y_filter_map', 'build_info',
+                     ]:
+            attr_load = {attr: bdefs.get(attr, bdefs.get('_{}'.format(attr)))}
             self.__dict__.update(attr_load)
 
-    def copy(self, name, b_filter=None, as_addition=False):
+    def clone(self, name, b_filter=None, as_addition=False):
         """
         Create a copy of Batch instance.
 
@@ -406,7 +411,7 @@ class Batch(qp.DataSet):
         self.additional = True
         self.verbatims = []
         self.y_on_y = []
-        self.y_on_y_filter = {}
+        self.y_filter_map = {}
         if self._verbose_infos:
             msg = ("Batch '{}' specified as addition to Batch '{}'. Any open end "
                    "summaries and 'y_on_y' agg. have been removed!")
@@ -423,18 +428,18 @@ class Batch(qp.DataSet):
         Parameters
         ----------
         varlist : list
-            A list of variable names. 
+            A list of variable names.
 
         Returns
         -------
         None
         """
-        self.variables = []
+        self._variables = []
         if '@' in varlist: varlist.remove('@')
         if '@1' in varlist: varlist.remove('@1')
         for v in varlist:
-            if not v in self.variables:
-                self.variables.append(v)
+            if not v in self._variables:
+                self._variables.append(v)
         self._update()
         return None
 
@@ -643,7 +648,7 @@ class Batch(qp.DataSet):
             self.make_summaries(a, [])
         for array in arrays:
             self.transposed_arrays[array] = replace
-        self._update()
+            self._update()
         return None
 
     def add_total(self, total=True):
@@ -718,7 +723,7 @@ class Batch(qp.DataSet):
                 if isinstance(x, tuple): x = {x[0]: x[1]}
         return None
 
-    def add_filter(self, filter_name, filter_logic):
+    def add_filter(self, filter_name, filter_logic=None, overwrite=False):
         """
         Apply a (global) filter to all the variables found in the Batch.
 
@@ -733,23 +738,21 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        filter_name = filter_name.encode('utf-8', errors='ignore')
-        if any(filter_name in b['filter_names'] and
-               not b['filter'][filter_name] == filter_logic
-               for b in self._meta['sets']['batches'].values()
-               if not b['name'] == self.name):
-            msg = "filter_name is already used in an other batch with an other logic"
-            raise ValueError(msg)
-        if not (filter_name in self.filter_names or self.filter == 'no_filter'):
-            old_name = self.filter.keys()[0]
-            n_filter = old_name + ' - ' + filter_name
-            n_logic  = intersection([self.filter.values()[0], filter_logic])
-            self.filter = {n_filter: n_logic}
-            self.filter_names.remove(old_name)
-            self.filter_names.append(n_filter)
+        name = filter_name.encode('utf-8', errors='ignore')
+        if self.is_filter(name):
+            if not (filter_logic is None or overwrite):
+                raise ValueError("'{}' is already a filter-variable. Cannot "
+                                 "apply a new logic.".format(name))
+            elif overwrite:
+                self.drop(name)
+                print 'Overwrite filter var: {}'.format(name)
+                self.add_filter_var(name, filter_logic, overwrite)
+
         else:
-            self.filter = {filter_name: filter_logic}
-            self.filter_names = [filter_name]
+            self.add_filter_var(name, filter_logic, overwrite)
+        self.filter = name
+        if not name in self.filter_names:
+            self.filter_names.append(name)
         self._update()
         return None
 
@@ -757,8 +760,8 @@ class Batch(qp.DataSet):
         """
         Remove all defined (global + extended) filters from Batch.
         """
-        self.filter = 'no_filter'
-        self.filter_names = ['no_filter']
+        self.filter = None
+        self.filter_names = []
         self.extended_filters_per_x = {}
         self._update()
         return None
@@ -809,23 +812,30 @@ class Batch(qp.DataSet):
         if dupes:
             raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
-            ds = qp.DataSet('open_end')
-            ds.from_components(self._data, self._meta, reset=False)
-            if self.filter != 'no_filter':
-                f = self.filter.values()[0]
-                if filter_by: f = intersection([f, filter_by])
-                slicer = ds.take(f).tolist()
-            elif filter_by:
-                f = filter_by
-                slicer = ds.take(f).tolist()
+            if filter_by:
+                if self.filter:
+                    f_name = '{}_{}'.format(self.filter, title)
+                else:
+                    f_name = '{}_f'.format(title)
+                if self.is_filter(f_name):
+                    logic = intersection([{self.filter: 0}, filter_by])
+                    if not self.take(logic).index.tolist() == self.manifest_filter(f_name):
+                        msg = "'{}' is already in use with an other logic."
+                        raise ValueError(msg.format(f_name))
+                else:
+                    logic = {'label': title, 'logic': filter_by}
+                    if self.filter:
+                        self.extend_filter_var(self.filter, logic, title)
+                    else:
+                        self.add_filter_var(f_name, logic)
+                slicer = f_name
             else:
-                slicer = self._data.index.tolist()
+                slicer = self.filter
             if any(oe['title'] == title for oe in self.verbatims) and not overwrite:
-                print 'Cannot include %s, as it is already included' % title
                 return None
             oe = {
                 'title': title,
-                'idx': slicer,
+                'filter': slicer,
                 'columns': oe,
                 'break_by': break_by,
                 'incl_nan': incl_nan,
@@ -939,19 +949,17 @@ class Batch(qp.DataSet):
         None
         """
         for variables, logic in ext_filters.items():
-            if not isinstance(variables, tuple) or len(variables) == 1:
+            if not isinstance(variables, (list, tuple)):
                 variables = [variables]
             for v in variables:
-                new_filter = self._combine_filters({v: logic})
-                if not new_filter.keys()[0] in self.filter_names:
-                    self.filter_names.append(new_filter.keys()[0])
-                self.extended_filters_per_x.update({v: new_filter})
-                if self.is_array(v):
-                    for s in self.sources(v):
-                        new_filter = self._combine_filters({s: logic})
-                        if not new_filter.keys()[0] in self.filter_names:
-                            self.filter_names.append(new_filter.keys()[0])
-                        self.extended_filters_per_x.update({s: new_filter})
+                if self.filter:
+                    log = {'label': v, 'logic': logic}
+                    f_name = '{}_{}'.format(self.filter, v)
+                    self.extend_filter_var(self.filter, log, v)
+                else:
+                    f_name = '{}_f'.format(v)
+                    self.add_filter_var(f_name, log)
+                self.extended_filters_per_x.update({v: f_name})
         self._update()
         return None
 
@@ -977,13 +985,31 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        if not isinstance(name, str):
+        if not isinstance(name, basestring):
             raise TypeError("'name' attribute for add_y_on_y must be a str!")
         elif not main_filter in ['extend', 'replace'] or main_filter is None:
-            raise ValueError("'main_filter' mus be either 'extend' or 'replace'.")
+            raise ValueError("'main_filter' must be either 'extend' or 'replace'.")
         if not name in self.y_on_y:
             self.y_on_y.append(name)
-        self.y_on_y_filter[name] = {main_filter: y_filter}
+        if y_filter is not None:
+            logic = {'label': name, 'logic': y_filter}
+            if main_filter == 'extend':
+                if self.filter:
+                    f_name = '{}_{}'.format(self.filter, name)
+                    self.extend_filter_var(self.filter, logic, name)
+                else:
+                    f_name = '{}_f'.format(name)
+                    self.add_filter_var(f_name, logic)
+            elif main_filter == 'replace':
+                f_name = '{}_f'.format(name)
+                self.add_filter_var(f_name, logic)
+        else:
+            if main_filter == 'replace':
+                f_name = None
+            else:
+                f_name = self.filter
+
+        self.y_filter_map[name] = f_name
         self._update()
         return None
 
@@ -1049,47 +1075,19 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        mapping = OrderedDict()
-        for x in self.xks:
-            mapping[x] = org_copy.deepcopy(self.filter)
-            if x in self.extended_filters_per_x:
-                mapping[x] = self.extended_filters_per_x[x]
-            if x in self._meta['masks']:
-                xks = self.sources(x)
-                for x2 in xks:
-                    mapping[x2] = org_copy.deepcopy(self.filter)
-                    if x2 in self.extended_filters_per_x:
-                        mapping[x2] = self.extended_filters_per_x[x2]
-        self.x_filter_map = mapping
-        return None
-
-    def _map_y_main_filter(self):
-        """
-        Get all y_on_y filters and map them with the main filter.
-
-        Returns
-        -------
-        None
-        """
         mapping = {}
-        for y_on_y in self.y_on_y:
-            ext_rep, y_f = self.y_on_y_filter[y_on_y].items()[0]
-            if not y_f:
-                f = self.filter
-            elif ext_rep == 'extend' and y_f == 'no_filter':
-                f = self.filter
-            elif ext_rep == 'replace' and y_f == 'no_filter':
-                f = 'no_filter'
-            elif ext_rep == 'extend':
-                if self.filter == 'no_filter':
-                    f = y_f
-                else:
-                    f = intersection([self.filter.values()[0], y_f])
-                f = {y_on_y: f}
-            elif ext_rep == 'replace':
-                f = {y_on_y: y_f}
-            mapping[y_on_y] = f
-        self.y_filter_map = mapping
+        for x in self.xks:
+            if self._is_array_item(x):
+                continue
+            name = self.extended_filters_per_x.get(x, self.filter)
+            mapping[x] = name
+            if self.is_array(x):
+                for x2 in self.sources(x):
+                    if x2 in self.xks:
+                        mapping[x2] = name
+            if name and not name in self.filter_names:
+                self.filter_names.append(name)
+        self.x_filter_map = mapping
         return None
 
     def _check_forced_names(self, variables):
@@ -1123,45 +1121,13 @@ class Batch(qp.DataSet):
         self.forced_names = renames
         return xks
 
-    def _combine_filters(self, ext_filters):
-        """
-        Combines existing filter in ``self.filter`` with additional filters.
-
-        Parameters
-        ----------
-        ext_filters: dict
-            dict with variable name as key, str or tupel of str, and logic
-            as value. For example:
-            ext_filters = {'q1': {'gender': 1}}
-
-        Returns
-        -------
-        new_filter: dict {'new_filter_name': intersection([old_logic, new_logic])}
-        """
-        old_filter = self.filter
-        no_global_filter = old_filter == 'no_filter'
-        if no_global_filter:
-            combined_name = '(no_filter)+({})'.format(ext_filters.keys()[0])
-            new_filter = {combined_name: ext_filters.values()[0]}
-        else:
-            old_filter_name = old_filter.keys()[0]
-            old_filter_logic = old_filter.values()[0]
-            new_filter_name = ext_filters.keys()[0]
-            new_filter_logic = ext_filters.values()[0]
-            combined_name = '({})+({})'.format(old_filter_name, new_filter_name)
-            combined_logic = intersection([old_filter_logic, new_filter_logic])
-            new_filter = {combined_name: combined_logic}
-        return new_filter
-
     def _samplesize_from_batch_filter(self):
         """
         Calculates sample_size from existing filter.
         """
-        f = self.filter
-        if f == 'no_filter':
-            idx = self._data.index
+        if self.filter:
+            idx = self.manifest_filter(self.filter)
         else:
-            idx = self._dsfilter(self, 'sample', f.values()[0])._data.index
+            idx = self._data.index
         self.sample_size = len(idx)
-        self._filter_slice = idx.values.tolist()
         return None

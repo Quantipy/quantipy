@@ -488,7 +488,7 @@ class ChainManager(object):
         """
         if not isinstance(other_cm, ChainManager):
             raise ValueError("other_cm must be a quantipy.ChainManager instance.")
-        if index > -1:
+        if not index == -1:
             before_c = self.__chains[:index+1]
             after_c = self.__chains[index+1:]
             new_chains = before_c + other_cm.__chains + after_c
@@ -732,7 +732,7 @@ class ChainManager(object):
                 else:
                     c._frame = c._apply_letter_header(c._frame)
             c.edited = True
-        
+
         return None
 
     def join(self, title='Summary'):
@@ -743,7 +743,7 @@ class ChainManager(object):
         ----------
         title : {str, 'auto'}, default 'Summary'
             The new title for the joined axis' index representation.
-            
+
         Returns
         -------
         None
@@ -756,7 +756,7 @@ class ChainManager(object):
         new_labels = []
         for c in chains:
             new_label = []
-            if c.sig_test_letters: 
+            if c.sig_test_letters:
                 c._remove_letter_header()
                 c._frame = c._apply_letter_header(c._frame)
             df = c.dataframe
@@ -771,15 +771,15 @@ class ChainManager(object):
             df.index = join_idx
 
             df.rename(columns={c._x_keys[0]: 'Total'}, inplace=True)
-        
+
             if not c.array_style == 0:
                 custom_views.extend(c._views_per_rows())
             else:
                 df.columns.set_levels(levels=[title]*totalmul, level=0, inplace=True)
 
             concat_dfs.append(df)
-    
-        new_df = pd.concat(concat_dfs, axis=0, join='inner')    
+
+        new_df = pd.concat(concat_dfs, axis=0, join='inner')
         self.chains[0]._frame = new_df
         self.reorder([0])
         self.rename({self.single_names[0]: title})
@@ -2168,7 +2168,7 @@ class Chain(object):
                 else:
                     return False
 
-    #@property    
+    #@property
     def _views_per_rows(self):
         """
         """
@@ -2384,7 +2384,7 @@ class Chain(object):
             if row[0] in view_tags:
                 order.append(view_tags.index(row[0]))
                 idxs.append(i)
-                if nested: 
+                if nested:
                     names.append(self._views_per_rows()[rp_idx][i])
                 else:
                     names.append(self._views_per_rows()[i])
