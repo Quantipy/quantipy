@@ -2809,6 +2809,11 @@ class DataSet(object):
             the weight factors.
         """
         if subset:
+            if isinstance(subset, basestring):
+                if self.is_filter(subset):
+                    subset = {subset: 0}
+                else:
+                    raise ValueError('{} is not a valid filter_var'.format(subset))
             ds = self.filter('subset', subset, False)
             meta, data = ds.split()
         else:
