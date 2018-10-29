@@ -782,8 +782,12 @@ class PptxChain(object):
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.columns.get_level_values('Values'))
             if self._chain.sig_levels:
-                base_test   = list(self.chain_df.columns.get_level_values('Test-IDs'))
-                bases = zip(base_labels, base_values, base_test)
+                try:
+                    base_test = list(self.chain_df.columns.get_level_values('Test-IDs'))
+                except KeyError:
+                    bases = zip(base_labels, base_values)
+                else:
+                    bases = zip(base_labels, base_values, base_test)
             else:
                 bases = zip(base_labels, base_values)
 
