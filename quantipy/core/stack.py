@@ -801,6 +801,7 @@ class Stack(defaultdict):
                             self[dk][filter_def].data = f_dataset._data
                             self[dk][filter_def].meta = f_dataset._meta
                 fdata = self[dk][filter_def].data
+
                 if len(fdata) == 0:
                     raise UserWarning('A filter definition resulted in no cases and will be skipped: {filter_def}'.format(filter_def=filter_def))
                     continue
@@ -1854,7 +1855,10 @@ class Stack(defaultdict):
     def _x_y_f_w_map(self, dk, batches='all'):
         """
         """
-        def _append_loop(mapping, x, fn, f, w, ys):
+        def _append_loop(mapping, x, fi, w, ys):
+            if fi: fi = fi.encode('utf8')
+            fn = 'no_filter' if fi is None else fi
+            f = 'no_filter' if fi is None else {fi: {fi: 0}}
             if not x in mapping:
                 mapping[x] = {fn: {'f': f, tuple(w): ys}}
             elif not fn in mapping[x]:
@@ -1879,16 +1883,13 @@ class Stack(defaultdict):
             for x, y in xy:
                 if x == '@':
                     y = y[0]
-                    fn = f[y] if f[y] == 'no_filter' else f[y].keys()[0]
-                    _append_loop(mapping, x, fn, f[y], w, [y])
+                    _append_loop(mapping, x, f[y], w, [y])
                 else:
-                    fn = f[x] if f[x] == 'no_filter' else f[x].keys()[0]
-                    _append_loop(mapping, x, fn, f[x], w, y)
+                    _append_loop(mapping, x, f[x], w, y)
             for yy in b['y_on_y']:
-                fn = fy[yy] if fy[yy] == 'no_filter' else fy[yy].keys()[0]
                 for x in b['yks'][1:]:
-                    _append_loop(mapping, x, fn, fy[yy], w, b['yks'])
-                    _append_loop(y_on_y, x, fn, fy[yy], w, b['yks'])
+                    _append_loop(mapping, x, fy[yy], w, b['yks'])
+                    _append_loop(y_on_y, x, fy[yy], w, b['yks'])
         return mapping, y_on_y
 
     @modify(to_list=['views', 'categorize', 'xs', 'batches'])
@@ -2719,13 +2720,23 @@ class Stack(defaultdict):
                                                   'test_total': sigpro.get('test_total', None),
                                                   'groups': 'Tests'})
                     for yy in batch['y_on_y']:
-                        self.add_link(filters=y_f[yy], x=yks[1:], y=yks,
+                        if y_f[yy]:
+                            fy = y_f[yy].encode('utf8')
+                            f = {fy: {fy: 0}}
+                        else:
+                            f = ['no_filter']
+                        self.add_link(filters=f, x=yks[1:], y=yks,
                                       views=vm_tests, weights=weight)
                     total_len = len(x_y)
                     for idx, xy in enumerate(x_y, 1):
                         x, y = xy
                         if x == '@': continue
-                        self.add_link(filters=x_f[x], x=x, y=y,
+                        if x_f[x]:
+                            fx = x_f[x].encode('utf8')
+                            f = {fx: {fx: 0}}
+                        else:
+                            f = ['no_filter']
+                        self.add_link(filters=f, x=x, y=y,
                                        views=vm_tests, weights=weight)
                         if verbose:
                             done = float(idx) / float(total_len) *100
@@ -2733,7 +2744,7 @@ class Stack(defaultdict):
                             time.sleep(0.01)
                             print  'Batch [{}]: {} %'.format(batch_name, round(done, 1)),
                             sys.stdout.flush()
-                if verbose: print '\n'
+                if verbose and levels: print '\n'
         if verbose: print 'Sig-Tests:', time.time()-start
         return None
 

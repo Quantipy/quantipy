@@ -2569,3 +2569,13 @@ def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
 def cpickle_copy(obj):
     copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
     return copy
+
+def parrot():
+    from IPython.display import Image
+    from IPython.display import display
+    import os
+    filename = os.path.dirname(__file__) + '\\parrot.gif'
+    try:
+        return display(Image(filename=filename, format='png'))
+    except:
+        print ':sad_parrot: Looks like the parrot is not available!'

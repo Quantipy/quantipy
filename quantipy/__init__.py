@@ -12,6 +12,7 @@ from quantipy.core.weights.weight_engine import WeightEngine
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.view_generators.view_specs import (net, calc, ViewManager)
+from quantipy.core.helpers.functions import parrot
 import quantipy.core.helpers.functions as helpers
 import quantipy.core.tools.dp as dp
 import quantipy.core.tools.view as v
@@ -32,3 +33,4 @@ from quantipy.core.builds.excel.excel_painter import ExcelPainter
 from quantipy.core.builds.powerpoint.pptx_painter import PowerPointPainter
 
 from quantipy.version import version as __version__
+

@@ -38,7 +38,7 @@
     <link rel="top" title="Quantipy 0.1.3 documentation" href="../../index.html"/>
         <link rel="up" title="Release notes" href="00_overview.html"/>
         <link rel="next" title="How-to-snippets" href="03_how_to_snippets.html"/>
-        <link rel="prev" title="Upcoming (September)" href="01_latest.html"/> 
+        <link rel="prev" title="Latest (01/10/2018)" href="01_latest.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -92,9 +92,9 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Release notes</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="01_latest.html">Upcoming (September)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="01_latest.html#latest-04-06-2018">Latest (04/06/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="01_latest.html">Latest (01/10/2018)</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sd-04-06-2018">sd (04/06/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sd-27-02-2018">sd (27/02/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sd-12-01-2018">sd (12/01/2018)</a></li>
@@ -301,6 +301,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/Stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -355,6 +356,65 @@
 </div>
 <div class="section" id="archived-release-notes">
 <h1>Archived release notes<a class="headerlink" href="#archived-release-notes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="sd-04-06-2018">
+<h2>sd (04/06/2018)<a class="headerlink" href="#sd-04-06-2018" title="Permalink to this headline">¶</a></h2>
+<p><strong>New</strong>: Additional variable (names) “getter”-like and resolver methods</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">DataSet.created()</span></code></li>
+<li><code class="docutils literal"><span class="pre">DataSet.find(str_tags=None,</span> <span class="pre">suffixed=False)</span></code></li>
+<li><code class="docutils literal"><span class="pre">DataSet.names()</span></code></li>
+<li><code class="docutils literal"><span class="pre">DataSet.resolve_name()</span></code></li>
+</ul>
+<p>A bunch of new methods enhancing the options of finding and testing for variable
+names have been added. <code class="docutils literal"><span class="pre">created()</span></code> will list all variables that have been added
+to a dataset using core functions, i.e. <code class="docutils literal"><span class="pre">add_meta()</span></code> and <code class="docutils literal"><span class="pre">derive()</span></code>, resp.
+all helper methods that use them internally (as <code class="docutils literal"><span class="pre">band()</span></code> or <code class="docutils literal"><span class="pre">categorize()</span></code> do
+for instance).</p>
+<p>The <code class="docutils literal"><span class="pre">find()</span></code> method is returning all variable names that contain any of the
+provided substrings in <code class="docutils literal"><span class="pre">str_tags</span></code>. To only consider names that end with these
+strings, set <code class="docutils literal"><span class="pre">suffixed=True</span></code>. If no <code class="docutils literal"><span class="pre">str_tags</span></code> are passed, the method will
+use a default list of tags including <code class="docutils literal"><span class="pre">['_rc',</span> <span class="pre">'_net',</span> <span class="pre">'</span> <span class="pre">(categories',</span> <span class="pre">'</span> <span class="pre">(NET',</span> <span class="pre">'_rec']</span></code>.</p>
+<p>Sometimes a dataset might contain “semi-duplicated” names, variables that differ
+in respect to case sensitivity but have otherwise identical names. Calling
+<code class="docutils literal"><span class="pre">names()</span></code> will report such cases in a <code class="docutils literal"><span class="pre">pd.DataFrame</span></code> that lists all name
+variants under the respective <code class="docutils literal"><span class="pre">str.lower()</span></code> version. If no semi-duplicates
+are found, <code class="docutils literal"><span class="pre">names()</span></code> will simply return <code class="docutils literal"><span class="pre">DataSet.variables()</span></code>.</p>
+<p>Lastly, <code class="docutils literal"><span class="pre">resolve_name()</span></code> can be used to return the “proper”, existing representation(s) of a given variable name’s spelling.</p>
+<hr class="docutils" />
+<p><strong>New</strong>: <code class="docutils literal"><span class="pre">Batch.remove()</span></code></p>
+<p>Not needed batches can be removed from <code class="docutils literal"><span class="pre">meta</span></code>, so they are not aggregated
+anymore.</p>
+<hr class="docutils" />
+<p><strong>New</strong>: <code class="docutils literal"><span class="pre">Batch.rename(new_name)</span></code></p>
+<p>Sometimes standard batches have long/ complex names. They can now be changed
+into a custom name. Please take into account, that for most hubs the name of
+omnibus batches should look like ‘client ~ topic’.</p>
+<hr class="docutils" />
+<p><strong>Update</strong>: Handling verbatims in <code class="docutils literal"><span class="pre">qp.Batch</span></code></p>
+<p>Instead of holding the well prepared open-end dataframe in <code class="docutils literal"><span class="pre">batch.verbatims</span></code>,
+the attribute is now filled by <code class="docutils literal"><span class="pre">batch.add_open_ends()</span></code> with instructions to
+create the open-end dataframe. It is easier to to modify/ overwrite existing
+verbatims. Therefore also a new parameter is included <code class="docutils literal"><span class="pre">overwrite=True</span></code>.</p>
+<hr class="docutils" />
+<p><strong>Update</strong>: <code class="docutils literal"><span class="pre">Batch.copy(...,</span> <span class="pre">b_filter=None,</span> <span class="pre">as_addition=False)</span></code></p>
+<p>It is now possible to define an additional filter for a copied batch and also
+to set it as addition to the master batch.</p>
+<hr class="docutils" />
+<p><strong>Update</strong>: Regrouping the variable list using <code class="docutils literal"><span class="pre">DataSet.order(...,</span> <span class="pre">regroup=True)</span></code></p>
+<p>A new parameter called <code class="docutils literal"><span class="pre">regroup</span></code> will instruct reordering all newly created
+variables into their logical position of the dataset’s main variable order, i.e.
+attempting to place <em>derived</em> variables after the <em>originating</em> ones.</p>
+<hr class="docutils" />
+<p><strong>Bugfix</strong>: <code class="docutils literal"><span class="pre">add_meta()</span></code> and duplicated categorical <code class="docutils literal"><span class="pre">values</span></code> codes</p>
+<p>Providing duplicated numerical codes while attempting to create new metadata
+using <code class="docutils literal"><span class="pre">add_meta()</span></code> will now correctly raise a <code class="docutils literal"><span class="pre">ValueError</span></code> to prevent
+corrupting the <code class="docutils literal"><span class="pre">DataSet</span></code>.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cats</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;AA&#39;</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">add_meta</span><span class="p">(</span><span class="s1">&#39;test_var&#39;</span><span class="p">,</span> <span class="s1">&#39;single&#39;</span><span class="p">,</span> <span class="s1">&#39;test label&#39;</span><span class="p">,</span> <span class="n">cats</span><span class="p">)</span>
+<span class="go">ValueError: Cannot resolve category definition due to code duplicates: [2, 3]</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="sd-04-04-2018">
 <h2>sd (04/04/2018)<a class="headerlink" href="#sd-04-04-2018" title="Permalink to this headline">¶</a></h2>
 <p><strong>New</strong>: Emptiness handlers in <code class="docutils literal"><span class="pre">DataSet</span></code> and <code class="docutils literal"><span class="pre">Batch</span></code> classes</p>
@@ -1450,7 +1510,7 @@ optionally restricting to a pair of variables.</p>
         <a href="03_how_to_snippets.html" class="btn btn-neutral float-right" title="How-to-snippets" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="01_latest.html" class="btn btn-neutral" title="Upcoming (September)" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="01_latest.html" class="btn btn-neutral" title="Latest (01/10/2018)" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

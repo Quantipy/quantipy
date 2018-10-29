@@ -29,10 +29,12 @@ def _get_batch(name, dataset=None, full=False):
 	if not dataset: dataset = _get_dataset()
 	batch = qp.Batch(dataset, name)
 	if full:
-		batch.add_x(['q1', 'q2', 'q6', 'age'])
-		batch.add_y(['gender', 'q2'])
+		if not 'men only' in dataset:
+			dataset.add_filter_var('men only', {'gender': 1})
+		batch.add_downbreak(['q1', 'q2', 'q6', 'age'])
+		batch.add_crossbreak(['gender', 'q2'])
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo')
-		batch.add_filter('men only', {'gender': 1})
+		batch.add_filter('men only')
 		batch.set_weights('weight_a')
 	return batch, dataset
 
@@ -47,7 +49,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 31)
+		self.assertEqual(len(_get_meta(batch1).keys()), 30)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -64,7 +66,7 @@ class TestBatch(unittest.TestCase):
 				'extended_yks_global', 'extended_yks_per_x',
 				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 				'cell_items', 'weights', 'sigproperties', 'additional',
-				'sample_size', 'language', 'name', 'total', '_filter_slice']
+				'sample_size', 'language', 'name', 'total']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
@@ -76,8 +78,8 @@ class TestBatch(unittest.TestCase):
 		batch1.hiding('q1', frange('8,9,96-99'))
 		batch1.slicing('q1', frange('9-4'))
 		batch2, ds = _get_batch('test2', ds)
-		batch2.add_x('q1')
-		batch2.add_y('Wave')
+		batch2.add_downbreak('q1')
+		batch2.add_crossbreak('Wave')
 		batch2.as_addition('test1')
 		n_ds = ds.from_batch('test1', 'RecordNo', 'de-DE', True, 'variables')
 		self.assertEqual(n_ds.codes('q1'), [7, 6, 5, 4])
@@ -89,11 +91,11 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(n_ds.value_texts('gender', 'de-DE'), [u'Male', u'Female'])
 		self.assertRaises(ValueError, ds.from_batch, 'test1', 'RecordNo', 'fr-FR')
 
-	########################## methods used in _get_batch ####################
+	# ########################## methods used in _get_batch ####################
 
-	def test_add_x(self):
+	def test_add_downbreak(self):
 		batch, ds = _get_batch('test')
-		batch.add_x(['q1', 'q2', 'q2b', {'q3': 'q3_label'}, 'q4', {'q5': 'q5_label'}, 'q14_1'])
+		batch.add_downbreak(['q1', 'q2', 'q2b', {'q3': 'q3_label'}, 'q4', {'q5': 'q5_label'}, 'q14_1'])
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['xks'], ['q1', 'q2', 'q2b', 'q3', 'q4', 'q5',
 		                 				 u'q5_1', u'q5_2', u'q5_3', u'q5_4', u'q5_5',
@@ -115,13 +117,13 @@ class TestBatch(unittest.TestCase):
 							   (u'q14r10c01', ['@'])]
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
-	def test_add_y(self):
+	def test_add_crossbreak(self):
 		batch, ds = _get_batch('test')
-		batch.add_y(['gender', 'q2b'])
+		batch.add_crossbreak(['gender', 'q2b'])
 		b_meta = _get_meta(batch)
 		self.assertEqual(b_meta['yks'], ['@', 'gender', 'q2b'])
-		self.assertRaises(KeyError, batch.add_y, ['@', 'GENDER'])
-		batch.add_x('q1')
+		self.assertRaises(KeyError, batch.add_crossbreak, ['@', 'GENDER'])
+		batch.add_downbreak('q1')
 		x_y_map = [('q1', ['@', 'gender', 'q2b'])]
 		self.assertEqual(b_meta['x_y_map'], x_y_map)
 
@@ -132,7 +134,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_filter('men only', {'gender': 1})
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
 		verbatims = _get_meta(batch)['verbatims'][0]
-		self.assertEqual(len(verbatims['idx']), 118)
+		self.assertEqual(verbatims['filter'], 'men only_open ends')
 		self.assertEqual(verbatims['columns'], ['q8a', 'q9a'])
 		self.assertEqual(verbatims['break_by'], ['RecordNo'])
 		self.assertEqual(verbatims['title'], 'open ends')
@@ -142,14 +144,14 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(len(verbatims), 2)
 
 	def test_add_filter(self):
-		batch, ds = _get_batch('test', full=True)
-		batch.add_x(['q1', 'q2b'])
-		batch.add_y('gender')
+		batch, ds = _get_batch('test', full=False)
+		batch.add_downbreak(['q1', 'q2b'])
+		batch.add_crossbreak('gender')
 		batch.add_filter('men only', {'gender': 1})
 		b_meta = _get_meta(batch)
-		self.assertEqual(b_meta['filter'], {'men only': {'gender': 1}})
-		x_filter_map = OrderedDict([('q1', {'men only': {'gender': 1}}),
-									('q2b', {'men only': {'gender': 1}})])
+		self.assertEqual(b_meta['filter'], 'men only')
+		x_filter_map = OrderedDict([('q1', 'men only'),
+									('q2b', 'men only')])
 		self.assertEqual(b_meta['x_filter_map'], x_filter_map)
 		self.assertEqual(b_meta['filter_names'], ['men only'])
 
@@ -160,12 +162,12 @@ class TestBatch(unittest.TestCase):
 		self.assertEqual(_get_meta(batch)['weights'], ['weight_a'])
 		self.assertEqual(batch.weights, ['weight_a'])
 
-	##########################################################################
+	# ##########################################################################
 
 	def test_copy(self):
 		batch1, ds = _get_batch('test', full=True)
-		batch2 = batch1.copy('test_copy')
-		batch3 = batch1.copy('test_copy2', as_addition=True)
+		batch2 = batch1.clone('test_copy')
+		batch3 = batch1.clone('test_copy2', as_addition=True)
 		attributes = ['xks', 'yks', 'filter', 'filter_names', 'x_y_map',
 				      'x_filter_map', 'y_on_y', 'forced_names', 'summaries',
 					  'transposed_arrays', 'extended_yks_global', 'extended_yks_per_x',
@@ -213,7 +215,7 @@ class TestBatch(unittest.TestCase):
 	def test_make_summaries_transpose_arrays(self):
 		batch, ds = _get_batch('test')
 		b_meta = _get_meta(batch)
-		batch.add_x(['q5', 'q6', 'q14_2', 'q14_3', 'q14_1'])
+		batch.add_downbreak(['q5', 'q6', 'q14_2', 'q14_3', 'q14_1'])
 		batch.make_summaries(None)
 		self.assertEqual(b_meta['summaries'], [])
 		batch.transpose_arrays(['q5', 'q6'], False)
@@ -279,26 +281,24 @@ class TestBatch(unittest.TestCase):
 		b_meta = _get_meta(batch)
 		ext_filters = {'q1': {'age': frange('20-25')}, ('q2', 'q6'): {'age': frange('30-35')}}
 		batch.extend_filter(ext_filters)
-		filter_names = ['men only', '(men only)+(q1)', '(men only)+(q2)',
-						'(men only)+(q6)', '(men only)+(q6_1)',
-						'(men only)+(q6_2)', '(men only)+(q6_3)']
+		filter_names = ['men only', 'men only_q1', 'men only_q2', 'men only_q6']
 		self.assertEqual(b_meta['filter_names'], filter_names)
 		x_filter_map = OrderedDict(
-			[('q1', {'(men only)+(q1)': intersection([{'gender': 1}, {'age': [20, 21, 22, 23, 24, 25]}])}),
-			 ('q2', {'(men only)+(q2)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
-			 ('q6', {'(men only)+(q6)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
-			 (u'q6_1', {'(men only)+(q6_1)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
-			 (u'q6_2', {'(men only)+(q6_2)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
-			 (u'q6_3', {'(men only)+(q6_3)': intersection([{'gender': 1}, {'age': [30, 31, 32, 33, 34, 35]}])}),
-			 ('age', {'men only': {'gender': 1}})])
+			[('q1', 'men only_q1'),
+			 ('q2', 'men only_q2'),
+			 ('q6', 'men only_q6'),
+			 ('q6_1', 'men only_q6'),
+			 ('q6_2', 'men only_q6'),
+			 ('q6_3', 'men only_q6'),
+			 ('age', 'men only')])
 		self.assertEqual(b_meta['x_filter_map'], x_filter_map)
 
 	def test_add_y_on_y(self):
 		batch, ds = _get_batch('test', full=True)
 		b_meta = _get_meta(batch)
 		batch.add_y_on_y('cross', {'age': frange('20-30')}, 'extend')
-		batch.add_y_on_y('back', 'no_filter', 'replace')
-		self.assertEqual(b_meta['y_filter_map']['back'], 'no_filter')
+		batch.add_y_on_y('back', None, 'replace')
+		self.assertEqual(b_meta['y_filter_map']['back'], None)
 		self.assertEqual(b_meta['y_on_y'], ['cross', 'back'])
 
 
