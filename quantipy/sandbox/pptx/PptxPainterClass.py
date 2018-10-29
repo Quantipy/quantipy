@@ -2,6 +2,7 @@
 
 import re
 from lxml import etree
+import warnings
 
 # Imports from Python-PPTX
 from pptx import Presentation
@@ -30,11 +31,11 @@ from enumerations import (
 )
 
 from PptxDefaultsClass import PptxDefaults
+from PptxChainClass import float2String
 import pandas as pd
 import copy
 
 
-# chartdata_from_dataframe taken from topy.core.pandas_pptx.py
 def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
     """
     Return a CategoryChartData instance from the given Pandas DataFrame.
@@ -97,7 +98,6 @@ def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
     return cd
 
 
-# return_slide_layout_by_name is taken from quantipy.core.builds.powerpoint.visual_editor.py
 def return_slide_layout_by_name(pptx, slide_layout_name):
     """
     Loop over the slide layout object and find slide layout by name, return slide layout
@@ -114,6 +114,18 @@ def return_slide_layout_by_name(pptx, slide_layout_name):
         raise Exception(
             'Slide layout: {sld_layout} not found\n'.format(
                 sld_layout=slide_layout_name))
+
+
+def convertable(obj, func):
+    """
+    Returns True if obj can be converted by func without an error.
+    """
+
+    try:
+        func(obj)
+        return True
+    except ValueError:
+        return False
 
 
 class PptxPainter(object):
@@ -168,6 +180,121 @@ class PptxPainter(object):
                     'tables': {},
                     'side_tables': {},
                     }
+
+    @staticmethod
+    def get_plot_values(plot):
+        """
+        Return a list of dicts with serie name as dict-key and serie values as dict-value
+
+        Parameters
+        ----------
+        plot: pptx.chart.plot._BasePlot
+
+        Returns
+        -------
+        list
+
+        """
+        series = [
+            {series.name: [str(s) for s in series.values]}
+            for series in plot.series
+        ]
+
+        return series
+
+    def show_data_labels(self, plot, decimals=0):
+        """
+        Explicitly sets datalabels to allow for datalabel editing.
+
+        Parameters
+        ----------
+        plot: pptx.chart.plot._BasePlot
+            The plot object for which datalabels need should be shown.
+        decimals: the number of decimals to show
+
+        Returns
+        -------
+        None
+        """
+
+        # Get number format and font from data labels
+        data_labels = plot.data_labels
+        number_format = data_labels.number_format  # '0%'
+        font = data_labels.font
+
+        plot_values = self.get_plot_values(plot)
+        for s, series in enumerate(plot_values):
+            values = [
+                value
+                for value in series.values()[0]
+                if convertable(value, float)
+            ]
+            for v, value in enumerate(values):
+                if value is not None:
+                    if number_format == '0%':
+                        value = round(float(value) * 100, decimals)
+
+                        str_value = float2String(value) + '%'
+                    else:
+                        str_value = str(value)
+                else:
+                    str_value = ""
+                point = plot.series[s].points[v]
+                data_label = point.data_label
+                frame = data_label.text_frame
+                frame.text = str_value
+                pgraph = frame.paragraphs[0]
+                for run in pgraph.runs:
+                    run.font.bold = font.bold
+                    # run.font.color.rgb = font.color.rgb
+                    # run.font.fill.fore_color.rgb = font.fill.fore_color.rgb
+
+                    run.font.italic = font.italic
+                    run.font.name = font.name
+                    run.font.size = font.size
+                    run.font.underline = font.underline
+
+    def edit_datalabel(self, plot, series, point, text, prepend=False, append=False, rgb=None):
+        """
+        Add/append data label text.
+
+        Parameters
+        ----------
+        plot: pptx.chart.plot._BasePlot
+            An instance of a Chart object.
+        serie: int
+            The serie where the data label should be edited
+            chart.series[serie]
+        point: int
+            The point where the data label should be edited
+            chart.series[serie].points[point]
+        text: basestring
+            The text to add/append to data label
+        prepend: bool
+            Set to True to prepend text to existing data label
+        append: bool
+            Set to True to append text to existing data label
+        rgb: tuple
+            Tuple with three ints defining each RGB color
+
+        Returns
+        -------
+        None
+
+        """
+        data_label = plot.series[series].points[point].data_label
+        frame = data_label.text_frame
+
+        run = frame.paragraphs[0].runs[0]
+        original_text = frame.text
+        if prepend:
+            run.text = u'{}{}'.format(text, original_text)
+        elif append:
+            run.text = u'{}{}'.format(original_text, text)
+        else:
+            run.text = text
+        if rgb is not None:
+            run.font.color.rgb = RGBColor(*rgb)
 
     def queue_slide_items(self, pptx_chain, slide_items):
         """
@@ -241,10 +368,28 @@ class PptxPainter(object):
                         side_table_draft['values_suffix_columns'] = pct_index
                     self.queue_side_table(settings=side_table_draft)
             if slide_item.startswith('chart'):
+                sig_test = False
                 cell_items = slide_item.split(':')[1]
+
+                ''' 
+                Makes no sense to actually have 'test' as a cell_item.
+                Will remove it from cell_items and set flag sig_test as True
+                '''
+                cell_items = cell_items.split(',')
+                if 'test' in cell_items:
+                    sig_test = True
+                    pptx_chain.add_test_letter_to_column_labels()
+                    pptx_chain.chart_df = pptx_chain.prepare_dataframe()
+                    cell_items.remove('test')
+                cell_items = ','.join(cell_items)
+
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
+                    if sig_test:
+                        chart_draft['sig_test_visible'] = True
+                        chart_draft['sig_test_results'] = pptx_chain.sig_test
+
                     self.queue_chart(settings=chart_draft)
 
         self._check_shapes()
@@ -864,7 +1009,11 @@ class PptxPainter(object):
 
                   # Number format
                   number_format='0.00%',
-                  xl_number_format='0.00%'
+                  xl_number_format='0.00%',
+
+                  # Sig test
+                  sig_test_visible = False,
+                  sig_test_results = None,
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1028,6 +1177,27 @@ class PptxPainter(object):
             if data_labels_num_format is not None:
                 data_labels.number_format = data_labels_num_format
             data_labels.number_format_is_linked = data_labels_num_format_is_linked
+
+            if not sig_test_results: sig_test_visible = False
+            if len(dataframe.columns) == 1: sig_test_visible = False
+            if sig_test_visible:
+                self.show_data_labels(plot, decimals=0)
+                for serie, column in enumerate(sig_test_results[::-1]):
+                    for point, test_result in enumerate(column[::-1]):
+                        if not isinstance(test_result, basestring): continue
+                        for text in ['*.',
+                                     '*',
+                                     '**.',
+                                     '**',
+                                     '\'@L\'.',
+                                     '\'@L\'',
+                                     '\'@H\'.',
+                                     '\'@H\'',
+                                     ]:
+                            test_result = test_result.replace(text,'')
+                        if test_result == '': continue
+                        text =  u' ({})'.format(test_result)
+                        self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
         # # ================================ series
         # for i, ser in enumerate(dataframe.columns):
@@ -1401,85 +1571,3 @@ class PptxPainter(object):
                 #paragraph.line_spacing = Pt(6)
                 cell.text = str(subval)
 
-    @staticmethod
-    def edit_datalabel(chart, series, point, text, prepend=False, append=False,
-                       position=None, rgb=None):
-        """
-        Add/append data label text.
-        """
-        data_label = chart.series[series].points[point].data_label
-        frame = data_label.text_frame
-        if prepend:
-            original_text = frame.text
-            frame.text = text
-            pgraph = frame.add_paragraph()
-            pgraph.text = original_text
-            run = frame.paragraphs[0].runs[0]
-        elif append:
-            pgraph = frame.add_paragraph()
-            pgraph.text = text
-            run = frame.paragraphs[-1].runs[0]
-        else:
-            frame.text = text
-            run = frame.paragraphs[0].runs[0]
-        if rgb is not None:
-            run.font.color.rgb = RGBColor(*rgb)
-        if position is not None:
-            data_label.position = data_label_pos_dct(position)
-
-    def show_data_labels(self, chart, position=None):
-        """
-        Explicitly sets datalabels to allow for datalabel editing.
-
-        Parameters
-        ----------
-        chart : pptx.chart.chart.Chart
-            The chart object for which datalabels need should be shown.
-        position : str, default=None
-            The position, relative to the data point, that the datalabel
-            should be appear in. Must be one of the following, or None:
-                'above', 'below', 'best', 'center', 'inside_base',
-                'inside_end', 'left', 'mixed', 'outside_end', 'right'
-            If None then the position already set for the chart will
-            be used.
-
-        Returns
-        -------
-        None
-        """
-
-        chart_values = self.get_chart_values(chart)
-        for s, series in enumerate(chart_values):
-            values = [
-                value
-                for value in series.values()[0]
-                if self.convertable(value, float)
-            ]
-            for v, value in enumerate(values):
-                point = chart.series[s].points[v]
-                frame = point.data_label.text_frame
-                frame.text = "" if value is None else str(value)
-                if position is not None:
-                    point.data_label.position = data_label_pos_dct(position)
-
-    @staticmethod
-    def get_chart_values(chart):
-
-        series = [
-            {series.name: [str(s) for s in series.values]}
-            for series in chart.series
-        ]
-
-        return series
-
-    @staticmethod
-    def convertable(obj, func):
-        """
-        Returns True if obj can be convertedby func without an error.
-        """
-
-        try:
-            func(obj)
-            return True
-        except ValueError:
-            return False
