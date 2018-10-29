@@ -3186,7 +3186,7 @@ class DataSet(object):
         overwrite: bool, default False
             Overwrite an already existing filter-variable.
         """
-        name = name.encode('utf8')
+        name = name.encode('utf8').replace(' ', '_').replace('~', '_')
         if name in self:
             if overwrite and not self.is_filter(name):
                 msg = "Cannot add filter-variable '{}', a non-filter"
@@ -3231,13 +3231,15 @@ class DataSet(object):
         """
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
+        name = name.encode('utf8').replace(' ', '_').replace('~', '_')
         if extend_as:
+            extend_as = extend_as.encode('utf8').replace(' ', '_').replace('~', '_')
             f_name = '{}_{}'.format(name, extend_as)
             if f_name in self:
                 msg = "Please change 'extend_as': '{}' is already in dataset."
                 raise KeyError(msg.format(f_name))
             self.copy(name, extend_as)
-            self._set_property(f_name, 'recoded_filter', True)
+            self._meta['columns'][f_name]['properties']['recoded_filter'] = True
         else:
             f_name = name
         self.uncode(f_name, {0: {f_name: 0}})
@@ -3301,6 +3303,8 @@ class DataSet(object):
         """
         if not name:
             return self._data.index
+        else:
+            name = name.encode('utf8').replace(' ', '_').replace('~', '_')
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         return self.take({name: 0})
