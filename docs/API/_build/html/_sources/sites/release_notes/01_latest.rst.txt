@@ -14,7 +14,7 @@ Latest (26/10/2018)
 
 It is now possible to summarize ``View`` aggregation results from existing ``Chain``
 items  by restructuring and editing them via their ``ChainManager`` methods. The 
-general idea behind building a summary Chain is to unify a set of results into
+general idea behind building a summary ``Chain`` is to unify a set of results into
 one cohesive representation to offer an easy way to look at certain key figures
 of interest in comparison to each other. To achieve this, the ``ChainManager`` class
 has gained the new ``cut()`` and ``join()`` methods. Summaries are built post-
