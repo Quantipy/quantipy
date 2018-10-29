@@ -738,7 +738,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        name = filter_name.encode('utf-8', errors='ignore')
+        name = filter_name.encode('utf8').replace(' ', '_').replace('~', '_')
         if self.is_filter(name):
             if not (filter_logic is None or overwrite):
                 raise ValueError("'{}' is already a filter-variable. Cannot "
