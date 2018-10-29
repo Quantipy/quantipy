@@ -615,7 +615,7 @@ class PptxChain(object):
         self.select_base(base_type=base_type)
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
-        self._base_text = None
+        self._base_text = self.set_base_text()
         self.question_text = self.get_question_text(include_varname=False)
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
