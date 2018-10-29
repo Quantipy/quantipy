@@ -382,15 +382,24 @@ of interest in comparison to each other. To achieve this, the <code class="docut
 has gained the new <code class="docutils literal notranslate"><span class="pre">cut()</span></code> and <code class="docutils literal notranslate"><span class="pre">join()</span></code> methods. Summaries are built post-
 aggregation and therefore rely on what has been defined (via the <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code>
 class) and computed (via the <code class="docutils literal notranslate"><span class="pre">qp.Stack</span></code> methods) at previous stages.</p>
-<p>The intended way of working with this new feature can be outlined as follows:</p>
-<p><em>1. Grouping the results for the summary</em></p>
+<p>The intended way of working with this new feature can be outlined as</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><code class="docutils literal notranslate"><span class="pre">reorder()</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">cut()</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">join()</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">insert()</span></code></li>
+</ol>
+</div></blockquote>
+<p>In more detail:</p>
+<p><em>A) Grouping the results for the summary</em></p>
 <p>Both methods will operate on the <em>entire set</em> of <code class="docutils literal notranslate"><span class="pre">Chains</span></code> collected in a
 <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code>, so building a summary <code class="docutils literal notranslate"><span class="pre">Chain</span></code> will normally start with
 restricting a copy of an existing <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> to the question variables
 that you’re interested in. This can be done via <code class="docutils literal notranslate"><span class="pre">clone()</span></code> with
 <code class="docutils literal notranslate"><span class="pre">reorder(...,</span> <span class="pre">inplace=True)</span></code> or by assigning back the new instance from
 <code class="docutils literal notranslate"><span class="pre">reorder(...,</span> <span class="pre">inplace=False)</span></code>.</p>
-<p><em>2. Selecting View results via</em> <code class="docutils literal notranslate"><span class="pre">cut()</span></code></p>
+<p><em>B) Selecting View results via</em> <code class="docutils literal notranslate"><span class="pre">cut()</span></code></p>
 <p>This method lets you target the kind of results (nets, means, NPS scores,
 only the frequencies, etc.) from a given <code class="docutils literal notranslate"><span class="pre">qp.Chain.dataframe</span></code>. Elements must
 be targeted by their underlying regular index values, e.g. <code class="docutils literal notranslate"><span class="pre">'net_1'</span></code>, <code class="docutils literal notranslate"><span class="pre">'net_2'</span></code>,
@@ -398,11 +407,23 @@ be targeted by their underlying regular index values, e.g. <code class="docutils
 to also carry over the matching base rows and/or significance testing results.
 The <code class="docutils literal notranslate"><span class="pre">ci</span></code> parameter additionally allows targeting only the <code class="docutils literal notranslate"><span class="pre">'counts'</span></code> or
 <code class="docutils literal notranslate"><span class="pre">'c%'</span></code> results if cell items are grouped together.</p>
-<p><em>3. Unifying the individual results with</em> <code class="docutils literal notranslate"><span class="pre">join()</span></code></p>
+<p><em>C) Unifying the individual results with</em> <code class="docutils literal notranslate"><span class="pre">join()</span></code></p>
 <p>Merging all new results into one, the <code class="docutils literal notranslate"><span class="pre">join()</span></code> method concatenates vertically
 and relabels the x-axis to separate all variable results by their matching
-metadata <code class="docutils literal notranslate"><span class="pre">Text</span></code> that has has also been applied while creating the regular set of
-<code class="docutils literal notranslate"><span class="pre">Chain</span></code> items.</p>
+metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has has also been applied while creating the regular set of
+<code class="docutils literal notranslate"><span class="pre">Chain</span></code> items. The new summary can then also be inserted back into its
+originating <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> with <code class="docutils literal notranslate"><span class="pre">insert()</span></code> if desired.</p>
+<hr class="docutils" />
+<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.add_variables(varlist)</span></code></p>
+<p>A <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> can now carry a collection of variables that is <strong>explicitly not</strong>
+directed towards any table-like builds. Variables from <code class="docutils literal notranslate"><span class="pre">varlist</span></code> will solely
+be used in non-aggregation based, data transformation and export oriented
+applications. To make this distinction more visible in the API, <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">add_y()</span></code> have been renamed to <code class="docutils literal notranslate"><span class="pre">add_downbreak()</span></code> and <code class="docutils literal notranslate"><span class="pre">add_crossbreak()</span></code>.
+Users are warned and advised to switch to the new method versions via a
+<code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>. In a future version of the library <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">add_y()</span></code> will be removed.</p>
+<hr class="docutils" />
 </div>
 
 

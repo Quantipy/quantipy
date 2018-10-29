@@ -21,9 +21,16 @@ has gained the new ``cut()`` and ``join()`` methods. Summaries are built post-
 aggregation and therefore rely on what has been defined (via the ``qp.Batch``
 class) and computed (via the ``qp.Stack`` methods) at previous stages.
 
-The intended way of working with this new feature can be outlined as follows:
+The intended way of working with this new feature can be outlined as 
 
-*1. Grouping the results for the summary*
+	1. ``reorder()``
+	2. ``cut()``
+	3. ``join()``
+	4. ``insert()``
+
+In more detail:
+
+*A) Grouping the results for the summary*
 
 Both methods will operate on the *entire set* of ``Chains`` collected in a
 ``ChainManager``, so building a summary ``Chain`` will normally start with
@@ -32,7 +39,7 @@ that you’re interested in. This can be done via ``clone()`` with
 ``reorder(..., inplace=True)`` or by assigning back the new instance from
 ``reorder(..., inplace=False)``.
 
-*2. Selecting View results via* ``cut()``
+*B) Selecting View results via* ``cut()``
 
 This method lets you target the kind of results (nets, means, NPS scores,
 only the frequencies, etc.) from a given ``qp.Chain.dataframe``. Elements must
@@ -42,9 +49,26 @@ to also carry over the matching base rows and/or significance testing results.
 The ``ci`` parameter additionally allows targeting only the ``'counts'`` or 
 ``'c%'`` results if cell items are grouped together.
 
-*3. Unifying the individual results with* ``join()``
+*C) Unifying the individual results with* ``join()``
 
 Merging all new results into one, the ``join()`` method concatenates vertically
 and relabels the x-axis to separate all variable results by their matching 
-metadata ``Text`` that has has also been applied while creating the regular set of
-``Chain`` items.    
+metadata ``text`` that has has also been applied while creating the regular set of
+``Chain`` items. The new summary can then also be inserted back into its
+originating ``ChainManager`` with ``insert()`` if desired.
+
+""""
+
+**Update**: ``Batch.add_variables(varlist)``
+
+A ``qp.Batch`` can now carry a collection of variables that is **explicitly not**
+directed towards any table-like builds. Variables from ``varlist`` will solely 
+be used in non-aggregation based, data transformation and export oriented
+applications. To make this distinction more visible in the API, ``add_x()`` and
+``add_y()`` have been renamed to ``add_downbreak()`` and ``add_crossbreak()``.
+Users are warned and advised to switch to the new method versions via a
+``DeprecationWarning``. In a future version of the library ``add_x()`` and
+``add_y()`` will be removed.
+
+""""
+
