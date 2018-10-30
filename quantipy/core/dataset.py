@@ -1874,10 +1874,14 @@ class DataSet(object):
         return None
 
     def _add_all_renames_to_mapper(self, mapper, old, new):
-        mapper['masks@{}'.format(old)] = 'masks@{}'.format(new)
-        mapper['columns@{}'.format(old)] = 'columns@{}'.format(new)
-        mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
-        mapper[old] = new
+        mapper['masks@{}'.format(old).encode('utf8')] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old).encode('utf8')] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old).encode('utf8')] = 'lib@values@{}'.format(new)
+        mapper[old.encode('utf8')] = new
+        mapper['masks@{}'.format(old).decode('utf8')] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old).decode('utf8')] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old).decode('utf8')] = 'lib@values@{}'.format(new)
+        mapper[old.decode('utf8')] = new
         return mapper
 
     @classmethod
@@ -4969,7 +4973,6 @@ class DataSet(object):
         None
             DataSet is modified inplace.
         """
-
         def rename_properties(mapper):
             """
             Rename variable properties that reference other variables, i.e.
@@ -5071,6 +5074,15 @@ class DataSet(object):
                         for i, item in enumerate(items):
                             if item in mapper:
                                 items[i] = mapper[item]
+            data_file = []
+            for i in sets['data file']['items']:
+                if i in mapper:
+                    if keep_original:
+                        data_file.append(i)
+                    data_file.append(mapper[i])
+                else:
+                    data_file.append(i)
+            sets['data file']['items'] = data_file
 
         def rename_batch_properties(batches, mapper):
 
