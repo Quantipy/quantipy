@@ -5074,15 +5074,6 @@ class DataSet(object):
                         for i, item in enumerate(items):
                             if item in mapper:
                                 items[i] = mapper[item]
-            data_file = []
-            for i in sets['data file']['items']:
-                if i in mapper:
-                    if keep_original:
-                        data_file.append(i)
-                    data_file.append(mapper[i])
-                else:
-                    data_file.append(i)
-            sets['data file']['items'] = data_file
 
         def rename_batch_properties(batches, mapper):
 
