@@ -6,6 +6,88 @@
 Latest (26/10/2018)
 ===================
 
+**New**: Filter variables in DataSet and Batch
+
+To avoid complex logics stored in the background and resulting problem with
+json serializing, the filter concept in DataSet and Batch has changed.
+
+Now actual variables are added to the data and meta, which have the property
+``recoded_filter``. The values of depend on the included logic, and all logics
+summarized in the value ``0: keep``. Because of the an easy logic can be used
+at several places in qp: ``{'filter_var': 0}``
+
+*DataSet methods*
+
+All included filters of a Dataset can be shown running ``dataset.filters()``.
+
+A filter variable can be easily created::
+
+    dataset.add_filter_var(name, logic, overwrite=False)
+
+*   ``name`` is the name of the new filter-variable.
+*   ``logic`` should be (a list of) dictionaries in form of:
+
+    >>> {
+    ...     'label': 'reason',
+    ...     'logic': {var: keys} / intersection/ ....
+    ... }
+
+    or stings (var_name), which are automatically transformed into the following dict
+
+    >>> {
+    ...     'label': 'var_name not empty',
+    ...     'logic': {var_name: not_count(0)}
+    ... }
+
+    If a list is provided, each item results in an own value of the filter
+    variable.
+
+An existing filter variable can also be extended::
+
+    dataset.extend_filter_var(name, logic, extend_as=None)
+
+*   ``name`` is the name of the existing filter-variable.
+*   ``logic`` should be the same as above, then additional categories are added
+    to the filter and the 0 value is recalculated.
+*   ``extend_as`` determines if a new filter var is created or the initial
+    variable is modified.
+    If ``extend_as=None`` the variable is modified inplace. Otherwise
+    ``extend_as`` is used as suffix for the new filter variable.
+
+Known methods like::
+
+    .copy()
+    .drop()
+    .rename()
+
+can be applied on filter-variables, all others are not valid!
+
+*Batch methods*
+
+``Batch.add_filter(filter_name, filter_logic=None, overwrite=False)``
+
+A filter can still be added to a batch, by adding a ``filter_logic``, but also
+it's possible to add only the ``filter_name`` of an existing filter variable.
+If ``filter_name`` is an existing filter-variable, a ``filter_logic`` is provided
+and ``overwrite`` is turned off, the scripts will return an error.
+
+``Batch.remove_filter()``
+
+This method only removes filters from the Batch definitions, the created
+filter-variables still exist in the belonging DataSet object.
+
+Batch methods that use filters::
+
+    .extend_filter()
+    .add_y_on_y()
+    .add_open_ends()
+
+create new extended filter variables if the used filter differs from the
+batch global filter. So it's recommended to add the global filter first, it's
+taken over automatically for the mentioned methods.
+
+""""
+
 **New**: Summarizing and rearranging  ``qp.Chain`` elements via ``ChainManager``
 
 * ``cut(values, ci=None, base=False, tests=False)``
@@ -13,7 +95,7 @@ Latest (26/10/2018)
 * ``join(title='Summary')``
 
 It is now possible to summarize ``View`` aggregation results from existing ``Chain``
-items  by restructuring and editing them via their ``ChainManager`` methods. The 
+items  by restructuring and editing them via their ``ChainManager`` methods. The
 general idea behind building a summary ``Chain`` is to unify a set of results into
 items  by restructuring and editing them via their ``ChainManager`` methods. The
 general idea behind building a summary Chain is to unify a set of results into
@@ -54,7 +136,7 @@ The ``ci`` parameter additionally allows targeting only the ``'counts'`` or
 *C) Unifying the individual results with* ``join()``
 
 Merging all new results into one, the ``join()`` method concatenates vertically
-and relabels the x-axis to separate all variable results by their matching 
+and relabels the x-axis to separate all variable results by their matching
 metadata ``text`` that has also been applied while creating the regular set of
 and relabels the x-axis to separate all variable results by their matching
 metadata ``text`` that has has also been applied while creating the regular set of
