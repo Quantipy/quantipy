@@ -2217,6 +2217,14 @@ class DataSet(object):
     def _pad_meta_list(meta_list, pad_to_len):
         return meta_list + ([''] * pad_to_len)
 
+    def enumerator(self, name):
+        x = 1
+        n = name
+        while n in self:
+            x += 1
+            n = '{}_{}'.format(name, x)
+        return n
+
     # ------------------------------------------------------------------------
     # fix/ repair meta data
     # ------------------------------------------------------------------------
@@ -3275,6 +3283,12 @@ class DataSet(object):
                     raise TypeError(msg)
             values.append(val)
         return values
+
+    def _verify_filter_name(self, name):
+        f = '{}_f'.format(name)
+        f = f.encode('utf8').replace(' ', '_').replace('~', '_')
+        f = self.enumerator(f)
+        return f
 
     @modify(to_list=['values'])
     def reduce_filter_var(self, name, values):
