@@ -6006,7 +6006,7 @@ class DataSet(object):
             if ignore:
                 msg = 'Warning: Cannot set new value texts... '
                 msg = msg + "Codes {} not found in values object of '{}'!"
-                warnings.warn(msg)
+                warnings.warn(msg.format(ignore, name))
         else:
             msg = '{} has empty values object, allowing arbitrary values meta!'
             msg = msg + ' ...falling back to extend_values() now!'
