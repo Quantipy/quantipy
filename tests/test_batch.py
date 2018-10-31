@@ -29,12 +29,12 @@ def _get_batch(name, dataset=None, full=False):
 	if not dataset: dataset = _get_dataset()
 	batch = qp.Batch(dataset, name)
 	if full:
-		if not 'men only' in dataset:
-			dataset.add_filter_var('men only', {'gender': 1})
+		if not 'men_only' in dataset:
+			dataset.add_filter_var('men_only', {'gender': 1})
 		batch.add_downbreak(['q1', 'q2', 'q6', 'age'])
 		batch.add_crossbreak(['gender', 'q2'])
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo')
-		batch.add_filter('men only')
+		batch.add_filter('men_only')
 		batch.set_weights('weight_a')
 	return batch, dataset
 
@@ -131,10 +131,10 @@ class TestBatch(unittest.TestCase):
 		batch, ds = _get_batch('test')
 		self.assertRaises(ValueError, batch.add_open_ends, ['q8a', 'q9a'], None,
 						  True, False, True, 'open ends', None)
-		batch.add_filter('men only', {'gender': 1})
+		batch.add_filter('men_only', {'gender': 1})
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
 		verbatims = _get_meta(batch)['verbatims'][0]
-		self.assertEqual(verbatims['filter'], 'men only_open ends')
+		self.assertEqual(verbatims['filter'], 'men_only_open ends')
 		self.assertEqual(verbatims['columns'], ['q8a', 'q9a'])
 		self.assertEqual(verbatims['break_by'], ['RecordNo'])
 		self.assertEqual(verbatims['title'], 'open ends')
@@ -147,13 +147,13 @@ class TestBatch(unittest.TestCase):
 		batch, ds = _get_batch('test', full=False)
 		batch.add_downbreak(['q1', 'q2b'])
 		batch.add_crossbreak('gender')
-		batch.add_filter('men only', {'gender': 1})
+		batch.add_filter('men_only', {'gender': 1})
 		b_meta = _get_meta(batch)
-		self.assertEqual(b_meta['filter'], 'men only')
-		x_filter_map = OrderedDict([('q1', 'men only'),
-									('q2b', 'men only')])
+		self.assertEqual(b_meta['filter'], 'men_only')
+		x_filter_map = OrderedDict([('q1', 'men_only'),
+									('q2b', 'men_only')])
 		self.assertEqual(b_meta['x_filter_map'], x_filter_map)
-		self.assertEqual(b_meta['filter_names'], ['men only'])
+		self.assertEqual(b_meta['filter_names'], ['men_only'])
 
 	def test_set_weight(self):
 		batch, ds = _get_batch('test')
@@ -281,16 +281,16 @@ class TestBatch(unittest.TestCase):
 		b_meta = _get_meta(batch)
 		ext_filters = {'q1': {'age': frange('20-25')}, ('q2', 'q6'): {'age': frange('30-35')}}
 		batch.extend_filter(ext_filters)
-		filter_names = ['men only', 'men only_q1', 'men only_q2', 'men only_q6']
+		filter_names = ['men_only', 'men_only_q1', 'men_only_q2', 'men_only_q6']
 		self.assertEqual(b_meta['filter_names'], filter_names)
 		x_filter_map = OrderedDict(
-			[('q1', 'men only_q1'),
-			 ('q2', 'men only_q2'),
-			 ('q6', 'men only_q6'),
-			 ('q6_1', 'men only_q6'),
-			 ('q6_2', 'men only_q6'),
-			 ('q6_3', 'men only_q6'),
-			 ('age', 'men only')])
+			[('q1', 'men_only_q1'),
+			 ('q2', 'men_only_q2'),
+			 ('q6', 'men_only_q6'),
+			 ('q6_1', 'men_only_q6'),
+			 ('q6_2', 'men_only_q6'),
+			 ('q6_3', 'men_only_q6'),
+			 ('age', 'men_only')])
 		self.assertEqual(b_meta['x_filter_map'], x_filter_map)
 
 	def test_add_y_on_y(self):
