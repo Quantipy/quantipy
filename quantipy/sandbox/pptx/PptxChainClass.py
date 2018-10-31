@@ -588,7 +588,7 @@ class PptxChain(object):
     def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', decimals=2, verbose=True):
 
         self._chart_type = None
-        self._sig_test = None # type: list # is updated by ._select_crossbreak()
+        self._sig_test = None
         self.crossbreak_qtext = None # type: str # is updated by ._select_crossbreak()
         self.verbose = verbose
         self._decimals = decimals
@@ -648,17 +648,19 @@ class PptxChain(object):
     @property
     def sig_test(self):
 
-        # Get the sig testing
-        sig_df = self.prepare_dataframe()
-        sig_df = sig_df.get_propstest()
-        _sig_test = sig_df.df.values.tolist()
+        if self._sig_test is None:
+            # Get the sig testing
+            sig_df = self.prepare_dataframe()
+            sig_df = sig_df.get_propstest()
+            _sig_test = sig_df.df.values.tolist()
 
-        # Assume that all items in the list of sig tests has same length
-        check_list = map(lambda x: len(x), _sig_test)
-        assert check_list.count(check_list[0]) == len(check_list), \
-            'List of sig test results is not uniform {}'.format(check_list)
+            # Assume that all items in the list of sig tests has same length
+            check_list = map(lambda x: len(x), _sig_test)
+            assert check_list.count(check_list[0]) == len(check_list), \
+                'List of sig test results is not uniform {}'.format(check_list)
 
-        self._sig_test = [zip(*_sig_test)[i] for i in range(len(_sig_test[0]))]
+            self._sig_test = [zip(*_sig_test)[i] for i in range(len(_sig_test[0]))]
+
         return self._sig_test
 
     @property

@@ -379,7 +379,6 @@ class PptxPainter(object):
                 if 'test' in cell_items:
                     sig_test = True
                     pptx_chain.add_test_letter_to_column_labels()
-                    pptx_chain.chart_df = pptx_chain.prepare_dataframe()
                     cell_items.remove('test')
                 cell_items = ','.join(cell_items)
 
@@ -387,6 +386,11 @@ class PptxPainter(object):
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
                     if sig_test:
+                        len_sig_test = len(pptx_chain.sig_test[0])
+                        len_df_index = len(pptx_frame().index)
+                        assert len_sig_test == len_df_index, \
+                            "Number of sig test results ({}) doesn't match number of rows in dataframe ({})"\
+                                .format(len_sig_test,len_df_index)
                         chart_draft['sig_test_visible'] = True
                         chart_draft['sig_test_results'] = pptx_chain.sig_test
 
