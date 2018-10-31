@@ -615,11 +615,11 @@ class PptxChain(object):
         self.select_base(base_type=base_type)
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
-        self._base_text = self.set_base_text()
         self.question_text = self.get_question_text(include_varname=False)
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
+        self._base_text = self.set_base_text()
 
     def __str__(self):
         str_format = ('Table name: {}'
@@ -655,7 +655,8 @@ class PptxChain(object):
 
         # Assume that all items in the list of sig tests has same length
         check_list = map(lambda x: len(x), _sig_test)
-        assert check_list.count(check_list[0]) == len(check_list), 'List of sig test results is not uniform'
+        assert check_list.count(check_list[0]) == len(check_list), \
+            'List of sig test results is not uniform {}'.format(check_list)
 
         self._sig_test = [zip(*_sig_test)[i] for i in range(len(_sig_test[0]))]
         return self._sig_test
@@ -957,7 +958,7 @@ class PptxChain(object):
         Returns
         -------
         None
-            changes self.chain_df
+            changes self.chart_df
 
         """
         # Checking input
@@ -985,7 +986,7 @@ class PptxChain(object):
             for x, y in zip(column_labels, self.ybase_test_labels):
                 new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + y + circumfix[1]})
 
-            self.chain_df = self.chain_df.rename(columns=new_labels_list)
+            self.chart_df.df = self.chart_df.df.rename(columns=new_labels_list)
 
     def place_vals_in_labels(self, base_position=0, orientation='side', values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
@@ -1085,6 +1086,19 @@ class PptxChain(object):
         """
         Returns the full base text made up of base_label, base_description and ybases, with some delimiters.
         Setup is "base_label + base_description + base_value"
+
+        Uses:
+            self.xbase_label
+            self.base_description
+            self.xbase_indexes
+            self.ybase_values
+            self.ybases
+            self.vals_in_labels
+            self.array_style
+            self.ybase_value_labels
+            self.xbase_count
+            self.is_grid_summary
+
 
         Parameters
         ----------
@@ -1188,6 +1202,7 @@ class PptxChain(object):
                     base_text = ""
 
         self._base_text = base_text
+        return self._base_text
 
     def _check_crossbreaks(self, crossbreaks):
         """
