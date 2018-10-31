@@ -3343,8 +3343,9 @@ class DataSet(object):
         if not all(self.is_filter(f) for f in [name1] + name2):
             raise ValueError('Can only compare filter variables')
         equal = True
+        f0 = self.manifest_filter(name1).tolist()
         for f in name2:
-            if not all(self.manifest_filter(name1) == self.manifest_filter(f)):
+            if not f0 == self.manifest_filter(f).tolist():
                 equal = False
         return equal
 
