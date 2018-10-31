@@ -2750,25 +2750,22 @@ class Chain(object):
             drop_rows = has_wgt_b
             names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
 
-        drop_labs = [df.index[r] if not is_array else df.columns[r]
-                     for r in drop_rows]
-        if is_array:
-            drop_labs = [df.columns[r] for r in drop_rows]
-            keep_rows = [x for x, y in enumerate(self._frame.columns.get_level_values(1).tolist())
-                         if not x in drop_rows]
-        else:
-            drop_labs = [df.index[r] for r in drop_rows]
-            keep_rows = [x for x, y in enumerate(self._frame.index.get_level_values(1).tolist())
-                         if not x in drop_rows]
-
         for v in self.views.copy():
             if v in names:
                 del self._views[v]
 
+        df = self._frame
+
         if is_array:
-            self.columns = self._slice_edited_index(self.columns, keep_rows)
+            cols = [col for x, col in enumerate(df.columns.tolist())
+                    if not x in drop_rows]
+            df = df.loc[:, cols]
         else:
-            self.index = self._slice_edited_index(self.index, keep_rows)
+            rows = [row for x, row in enumerate(df.index.tolist())
+                    if not x in drop_rows]
+            df = df.loc[rows, :]
+
+        self._frame = df
         return None
 
     def _slice_edited_index(self, axis, positions):
