@@ -656,6 +656,9 @@ class PptxChain(object):
 
     @property
     def chart_type(self):
+        if self._chart_type is None:
+            self._chart_type = auto_charttype(self.chart_df.get('pct,net').df, self.array_style)
+
         return self._chart_type
 
     @chart_type.setter
