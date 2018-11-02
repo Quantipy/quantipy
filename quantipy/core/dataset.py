@@ -3198,7 +3198,7 @@ class DataSet(object):
         overwrite: bool, default False
             Overwrite an already existing filter-variable.
         """
-        name = name.encode('utf8').replace(' ', '_').replace('~', '_')
+        name = self._verify_filter_name(name, None)
         if name in self:
             if overwrite and not self.is_filter(name):
                 msg = "Cannot add filter-variable '{}', a non-filter"
@@ -3243,9 +3243,9 @@ class DataSet(object):
         """
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
-        name = name.encode('utf8').replace(' ', '_').replace('~', '_')
+        name = self._verify_filter_name(name, None)
         if extend_as:
-            extend_as = extend_as.encode('utf8').replace(' ', '_').replace('~', '_')
+            extend_as = self._verify_filter_name(extend_as, None)
             f_name = '{}_{}'.format(name, extend_as)
             if f_name in self:
                 msg = "Please change 'extend_as': '{}' is already in dataset."
@@ -3288,10 +3288,14 @@ class DataSet(object):
             values.append(val)
         return values
 
-    def _verify_filter_name(self, name):
-        f = '{}_f'.format(name)
-        f = f.encode('utf8').replace(' ', '_').replace('~', '_')
-        f = self.enumerator(f)
+    def _verify_filter_name(self, name, suf='f', number=False):
+        f = '{}_{}'.format(name, suf) if suf else name
+        f = f.encode('utf8')
+        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', '')]
+        for r in repl:
+            f = f.replace(r[0], r[1])
+        if number:
+            f = self.enumerator(f)
         return f
 
     @modify(to_list=['values'])
@@ -3299,6 +3303,7 @@ class DataSet(object):
         """
         Remove values from filter-variables and recalculate the filter.
         """
+        name = self._verify_filter_name(name, None)
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         if 0 in values:
@@ -3322,7 +3327,7 @@ class DataSet(object):
         if not name:
             return self._data.index
         else:
-            name = name.encode('utf8').replace(' ', '_').replace('~', '_')
+            name = self._verify_filter_name(name, None)
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         return self.take({name: 0})

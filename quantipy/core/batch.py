@@ -817,7 +817,7 @@ class Batch(qp.DataSet):
         def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
             if filter_by:
                 f_name = title if not self.filter else '%s_%s' % (self.filter, title)
-                f_name = self._verify_filter_name(f_name)
+                f_name = self._verify_filter_name(f_name, number=True)
                 logic = {'label': title, 'logic': filter_by}
                 if self.filter:
                     suffix = f_name[len(self.filter)+1:]
@@ -1092,17 +1092,17 @@ class Batch(qp.DataSet):
                 elif isinstance(y_f, basestring):
                     f = y_f
                 else:
-                    f = self._verify_filter_name(y_on_y)
+                    f = self._verify_filter_name(y_on_y, number=True)
                     self.add_filter_var(f, logic)
             elif ext_rep == 'extend':
                 if not y_f:
                     f = self.filter
                 elif not self.filter:
-                    f = self._verify_filter_name(y_on_y)
+                    f = self._verify_filter_name(y_on_y, number=True)
                     self.add_filter_var(f, logic)
                 else:
                     f = '{}_{}'.format(self.filter, y_on_y)
-                    f = self._verify_filter_name(f)
+                    f = self._verify_filter_name(f, number=True)
                     suf = f[len(self.filter)+1:]
                     self.extend_filter_var(self.filter, logic, suf)
             self.y_filter_map[y_on_y] = f
