@@ -3562,7 +3562,10 @@ class Chain(object):
             if item_text and col.get('parent'):
                 parent = col['parent'].keys()[0].split('@')[-1]
                 items = self._meta['masks'][parent]['items']
-                obj = [i['text'] for i in items if value in i['source']][0]
+                for i in items:
+                    if i['source'].split('@')[-1] == value:
+                        obj = i['text']
+                        break
             else:
                 obj = col['text']
         elif value in self._meta['masks'].keys():
