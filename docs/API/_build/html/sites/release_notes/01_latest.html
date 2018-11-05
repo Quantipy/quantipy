@@ -377,6 +377,8 @@
 <p>It is now possible to summarize <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregation results from existing <code class="docutils literal notranslate"><span class="pre">Chain</span></code>
 items  by restructuring and editing them via their <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> methods. The
 general idea behind building a summary <code class="docutils literal notranslate"><span class="pre">Chain</span></code> is to unify a set of results into
+items  by restructuring and editing them via their <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> methods. The
+general idea behind building a summary Chain is to unify a set of results into
 one cohesive representation to offer an easy way to look at certain key figures
 of interest in comparison to each other. To achieve this, the <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> class
 has gained the new <code class="docutils literal notranslate"><span class="pre">cut()</span></code> and <code class="docutils literal notranslate"><span class="pre">join()</span></code> methods. Summaries are built post-
@@ -410,6 +412,8 @@ The <code class="docutils literal notranslate"><span class="pre">ci</span></code
 <p><em>C) Unifying the individual results with</em> <code class="docutils literal notranslate"><span class="pre">join()</span></code></p>
 <p>Merging all new results into one, the <code class="docutils literal notranslate"><span class="pre">join()</span></code> method concatenates vertically
 and relabels the x-axis to separate all variable results by their matching
+metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has also been applied while creating the regular set of
+and relabels the x-axis to separate all variable results by their matching
 metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has has also been applied while creating the regular set of
 <code class="docutils literal notranslate"><span class="pre">Chain</span></code> items. The new summary can then also be inserted back into its
 originating <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> with <code class="docutils literal notranslate"><span class="pre">insert()</span></code> if desired.</p>
@@ -424,6 +428,9 @@ Users are warned and advised to switch to the new method versions via a
 <code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>. In a future version of the library <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
 <code class="docutils literal notranslate"><span class="pre">add_y()</span></code> will be removed.</p>
 <hr class="docutils" />
+<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.copy()</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">Batch.clone()</span></code></p>
+<p>Since <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> is a subclass of <code class="docutils literal notranslate"><span class="pre">qp.DataSet</span></code>, the <code class="docutils literal notranslate"><span class="pre">copy()</span></code> method is renamed into
+<code class="docutils literal notranslate"><span class="pre">Batch.clone()</span></code>.</p>
 </div>
 
 
