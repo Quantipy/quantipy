@@ -49,7 +49,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 30)
+		self.assertEqual(len(_get_meta(batch1).keys()), 31)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -134,7 +134,7 @@ class TestBatch(unittest.TestCase):
 		batch.add_filter('men_only', {'gender': 1})
 		batch.add_open_ends(['q8a', 'q9a'], 'RecordNo', filter_by={'age': is_ge(49)})
 		verbatims = _get_meta(batch)['verbatims'][0]
-		self.assertEqual(verbatims['filter'], 'men_only_open ends')
+		self.assertEqual(verbatims['filter'], 'men_only_open_ends_f')
 		self.assertEqual(verbatims['columns'], ['q8a', 'q9a'])
 		self.assertEqual(verbatims['break_by'], ['RecordNo'])
 		self.assertEqual(verbatims['title'], 'open ends')

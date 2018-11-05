@@ -2597,6 +2597,7 @@ class Stack(defaultdict):
                    'drop': drop, 'exclude': exclude,
                    'axis': 'x',
                    'text': '' if not custom_text else custom_text}
+        warn = "\nCannot add stats on '{}'.\n"
         for dk in self.keys():
             _batches = self._check_batches(dk, _batches)
             if not _batches: return None
@@ -2605,10 +2606,20 @@ class Stack(defaultdict):
             check_on = []
             for v in on_vars:
                 if v in meta['sets']:
+                    if meta['masks'][v]['subtype'] == 'delimited set':
+                        w = warn + 'Stats are not valid on delimited sets!\n'
+                        print w.format(v)
+                        continue
                     items = [i.split('@')[-1] for i in meta['sets'][v]['items']]
                     on_vars = list(set(on_vars + items))
                     check_on = list(set(check_on + [items[0]]))
                 elif not meta['columns'][v].get('values'):
+                    w = warn + 'No values found!\n'
+                    print w.format(v)
+                    continue
+                elif meta['columns'][v]['type'] == 'delimited set':
+                    w = warn + 'Stats are not valid on delimited sets!\n'
+                    print w.format(v)
                     continue
                 elif not isinstance(meta['columns'][v]['values'], list):
                     parent = meta['columns'][v]['parent'].keys()[0].split('@')[-1]

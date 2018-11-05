@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -24,22 +22,31 @@
 
   
 
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-    <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Archived release notes" href="02_archive.html" />
-    <link rel="prev" title="Release notes" href="00_overview.html" /> 
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Quantipy 0.1.3 documentation" href="../../index.html"/>
+        <link rel="up" title="Release notes" href="00_overview.html"/>
+        <link rel="next" title="Archived release notes" href="02_archive.html"/>
+        <link rel="prev" title="Release notes" href="00_overview.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -65,13 +72,18 @@
           
 
           
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
 </div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
           
         </div>
@@ -80,10 +92,7 @@
           
             
             
-              
-            
-            
-              <ul class="current">
+                <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Release notes</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Latest (26/10/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="02_archive.html">Archived release notes</a><ul>
@@ -295,6 +304,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/Stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../api_ref/ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -310,56 +320,36 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Quantipy</a>
-        
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Quantipy</a>
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
           <li><a href="00_overview.html">Release notes</a> &raquo;</li>
-        
-      <li>Latest (26/10/2018)</li>
-    
-    
+      
+    <li>Latest (26/10/2018)</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="../../_sources/sites/release_notes/01_latest.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -369,6 +359,79 @@
 </div>
 <div class="section" id="latest-26-10-2018">
 <h1>Latest (26/10/2018)<a class="headerlink" href="#latest-26-10-2018" title="Permalink to this headline">¶</a></h1>
+<p><strong>New</strong>: Filter variables in DataSet and Batch</p>
+<p>To avoid complex logics stored in the background and resulting problem with
+json serializing, the filter concept in DataSet and Batch has changed.</p>
+<p>Now actual variables are added to the data and meta, which have the property
+<code class="docutils literal notranslate"><span class="pre">recoded_filter</span></code>. The values of depend on the included logic, and all logics
+summarized in the value <code class="docutils literal notranslate"><span class="pre">0:</span> <span class="pre">keep</span></code>. Because of the an easy logic can be used
+at several places in qp: <code class="docutils literal notranslate"><span class="pre">{'filter_var':</span> <span class="pre">0}</span></code></p>
+<p><em>DataSet methods</em></p>
+<p>All included filters of a Dataset can be shown running <code class="docutils literal notranslate"><span class="pre">dataset.filters()</span></code>.</p>
+<p>A filter variable can be easily created:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">add_filter_var</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the new filter-variable.</p>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">logic</span></code> should be (a list of) dictionaries in form of:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;reason&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span> <span class="o">/</span> <span class="n">intersection</span><span class="o">/</span> <span class="o">....</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>or stings (var_name), which are automatically transformed into the following dict</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;var_name not empty&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">var_name</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">0</span><span class="p">)}</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>If a list is provided, each item results in an own value of the filter
+variable.</p>
+</li>
+</ul>
+<p>An existing filter variable can also be extended:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">extend_filter_var</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">extend_as</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the existing filter-variable.</li>
+<li><code class="docutils literal notranslate"><span class="pre">logic</span></code> should be the same as above, then additional categories are added
+to the filter and the 0 value is recalculated.</li>
+<li><code class="docutils literal notranslate"><span class="pre">extend_as</span></code> determines if a new filter var is created or the initial
+variable is modified.
+If <code class="docutils literal notranslate"><span class="pre">extend_as=None</span></code> the variable is modified inplace. Otherwise
+<code class="docutils literal notranslate"><span class="pre">extend_as</span></code> is used as suffix for the new filter variable.</li>
+</ul>
+<p>Known methods like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="o">.</span><span class="n">drop</span><span class="p">()</span>
+<span class="o">.</span><span class="n">rename</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>can be applied on filter-variables, all others are not valid!</p>
+<p><em>Batch methods</em></p>
+<p><code class="docutils literal notranslate"><span class="pre">Batch.add_filter(filter_name,</span> <span class="pre">filter_logic=None,</span> <span class="pre">overwrite=False)</span></code></p>
+<p>A filter can still be added to a batch, by adding a <code class="docutils literal notranslate"><span class="pre">filter_logic</span></code>, but also
+it’s possible to add only the <code class="docutils literal notranslate"><span class="pre">filter_name</span></code> of an existing filter variable.
+If <code class="docutils literal notranslate"><span class="pre">filter_name</span></code> is an existing filter-variable, a <code class="docutils literal notranslate"><span class="pre">filter_logic</span></code> is provided
+and <code class="docutils literal notranslate"><span class="pre">overwrite</span></code> is turned off, the scripts will return an error.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Batch.remove_filter()</span></code></p>
+<p>This method only removes filters from the Batch definitions, the created
+filter-variables still exist in the belonging DataSet object.</p>
+<p>Batch methods that use filters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">extend_filter</span><span class="p">()</span>
+<span class="o">.</span><span class="n">add_y_on_y</span><span class="p">()</span>
+<span class="o">.</span><span class="n">add_open_ends</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>create new extended filter variables if the used filter differs from the
+batch global filter. So it’s recommended to add the global filter first, it’s
+taken over automatically for the mentioned methods.</p>
+<hr class="docutils" />
 <p><strong>New</strong>: Summarizing and rearranging  <code class="docutils literal notranslate"><span class="pre">qp.Chain</span></code> elements via <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code></p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">cut(values,</span> <span class="pre">ci=None,</span> <span class="pre">base=False,</span> <span class="pre">tests=False)</span></code></li>
@@ -435,16 +498,15 @@ Users are warned and advised to switch to the new method versions via a
 
 
            </div>
-           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="02_archive.html" class="btn btn-neutral float-right" title="Archived release notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="02_archive.html" class="btn btn-neutral float-right" title="Archived release notes" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="00_overview.html" class="btn btn-neutral" title="Release notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="00_overview.html" class="btn btn-neutral" title="Release notes" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -453,11 +515,11 @@ Users are warned and advised to switch to the new method versions via a
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Quantipy dev team
+        &copy; Copyright 2017, Quantipy dev team.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -472,25 +534,36 @@ Users are warned and advised to switch to the new method versions via a
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/custom.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/custom.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>
