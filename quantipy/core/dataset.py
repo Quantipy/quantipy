@@ -1025,7 +1025,7 @@ class DataSet(object):
         adds = batch['additions'] if additions in ['full', 'variables'] else []
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
-            variables += ba['xks'] + ba['yks'] + ba['variables']
+            variables += ba['xks'] + ba['yks'] + ba['_variables']
             for oe in ba['verbatims']:
                 variables += oe['columns']
             variables += ba['weights']
