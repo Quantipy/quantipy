@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import sys
+from decorator import decorator
 
 default_stdout = sys.stdout
 default_stderr = sys.stderr
@@ -645,7 +646,16 @@ class PptxChain(object):
     def __repr__(self):
         return self.__str__()
 
+    def verify_sig_test(func, *args, **kwargs):
+        def wrapper(self):
+            if self._chain.sig_levels and len(self.ybase_value_labels) > 1:
+                return func(self, *args, **kwargs)
+            else:
+                return None
+        return wrapper
+
     @property
+    @verify_sig_test
     def sig_test_results(self):
 
         if self._sig_test_results is None:
@@ -784,7 +794,7 @@ class PptxChain(object):
             base_values = np.around(base_values, decimals=self._decimals).tolist()
             base_values = float2String(base_values)
             base_labels = list(self.chain_df.columns.get_level_values('Values'))
-            if self._chain.sig_levels:
+            if self._chain.sig_levels and len(base_labels) > 1:
                 try:
                     base_test = list(self.chain_df.columns.get_level_values('Test-IDs'))
                 except KeyError:
@@ -926,6 +936,7 @@ class PptxChain(object):
         return self._ybase_value_labels
 
     @property
+    @verify_sig_test
     def ybase_test_labels(self):
         """
         Returns a list with y base test labels picked from self.ybases.
@@ -943,6 +954,7 @@ class PptxChain(object):
             self._ybase_test_labels=[x[2] for x in self.ybases]
         return self._ybase_test_labels
 
+    @verify_sig_test
     def add_test_letter_to_column_labels(self, sep=" ", prefix=None, circumfix='()'):
         """
         Adds test letter to dataframe (self.chart_df) column labels.
