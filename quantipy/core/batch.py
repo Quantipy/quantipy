@@ -181,7 +181,7 @@ class Batch(qp.DataSet):
         self._map_y_on_y_filter()
         self._samplesize_from_batch_filter()
         attrs = self.__dict__
-        for attr in ['xks', 'yks', 'variables', 'filter', 'filter_names',
+        for attr in ['xks', 'yks', '_variables', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y', 'y_on_y_filter',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
                      'extended_yks_global', 'extended_yks_per_x',
@@ -198,7 +198,7 @@ class Batch(qp.DataSet):
         Fill batch attributes with information from meta.
         """
         bdefs = self._meta['sets']['batches'][self.name]
-        for attr in ['xks', 'yks', 'variables', 'filter', 'filter_names',
+        for attr in ['xks', 'yks', '_variables', 'filter', 'filter_names',
                      'x_y_map', 'x_filter_map', 'y_on_y', 'y_on_y_filter',
                      'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
                      'extended_yks_global', 'extended_yks_per_x',
