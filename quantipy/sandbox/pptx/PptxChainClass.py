@@ -887,8 +887,7 @@ class PptxChain(object):
             # Slice the dataframes columns based on requested crossbreaks
             df = self._chain.dataframe.iloc[:, column_selection]
 
-            if len(cell_items) > 1:
-                df = fill_index_labels(df)
+            df = fill_index_labels(df)
 
         else:
             if len(cell_items) > 1:
