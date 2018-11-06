@@ -392,7 +392,7 @@ class PptxPainter(object):
                             "Number of sig test results ({}) doesn't match number of rows in dataframe ({})"\
                                 .format(len_sig_test,len_df_index)
                         chart_draft['sig_test_visible'] = True
-                        chart_draft['sig_test_results'] = pptx_chain.sig_test
+                        chart_draft['sig_test_results'] = pptx_chain.sig_test_results
 
                     self.queue_chart(settings=chart_draft)
 
