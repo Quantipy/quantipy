@@ -383,10 +383,17 @@ class PptxPainter(object):
                 cell_items = ','.join(cell_items)
 
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
+                sig_indexes = pptx_frame._df_unpainted.index.values.tolist()
+                if pptx_chain.sig_test_results is not None:
+                    sig_test_results = pptx_chain.sig_test_results.loc[sig_indexes]
+                else:
+                    sig_test = False
+                    sig_test_results = None
+
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
                     chart_draft['sig_test_visible'] = sig_test
-                    chart_draft['sig_test_results'] = pptx_chain.sig_test_results
+                    chart_draft['sig_test_results'] = sig_test_results
 
                     self.queue_chart(settings=chart_draft)
 
@@ -1194,9 +1201,7 @@ class PptxPainter(object):
             if sig_test_results is None: sig_test_visible = False
             if len(dataframe.columns) == 1: sig_test_visible = False
             if sig_test_visible:
-                sig_test_index = dataframe.index.values.tolist()
-                sig_test_results = sig_test_results.loc[sig_test_index]
-                #sig_test_results = sig_test_results[::-1]
+                sig_test_results = sig_test_results[::-1]
                 sig_test_results = sig_test_results[sig_test_results.columns[::-1]]
 
                 _sig_test = sig_test_results.values.tolist()
