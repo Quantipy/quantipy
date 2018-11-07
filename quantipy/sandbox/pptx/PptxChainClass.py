@@ -360,12 +360,16 @@ class PptxDataFrame(object):
 
         """
 
+        df_copy_unpainted = None
+
         if self.array_style == -1:
             df_copy = self.df.iloc[categories]
-            df_copy_unpainted = self._df_unpainted.iloc[categories]
+            if self._df_unpainted is not None:
+                df_copy_unpainted = self._df_unpainted.iloc[categories]
         else:
             df_copy = self.df.iloc[:,categories]
-            df_copy_unpainted = self._df_unpainted.iloc[:, categories]
+            if self._df_unpainted is not None:
+                df_copy_unpainted = self._df_unpainted.iloc[:, categories]
 
         pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in categories]
@@ -394,7 +398,6 @@ class PptxDataFrame(object):
 
         """
         return self.get('net')
-
 
     def get_cpct(self):
         """
