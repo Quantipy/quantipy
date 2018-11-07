@@ -287,6 +287,7 @@ class PptxDataFrame(object):
         self.array_style = array_style
         self.cell_items = cell_types
         self.df = dataframe # type: pd.DataFrame
+        self._unpainted_df = None
         self.__frames = []
 
     def __call__(self):
@@ -606,6 +607,7 @@ class PptxChain(object):
         self.is_grid_summary = True if chain.array_style in [0,1] else False
         self.crossbreak = self._check_crossbreaks(crossbreak) if crossbreak else [BASE_COL]
         self.x_key_short_name = self._get_short_question_name()
+        self._chain_df_unpainted = None
         self.chain_df = self._select_crossbreak() # type: pd.DataFrame
         self.xbase_indexes = self._base_indexes()
         self.xbase_labels = ["Base"] if self.xbase_indexes is None else [x[0] for x in self.xbase_indexes]
@@ -617,6 +619,7 @@ class PptxChain(object):
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
+        self._chart_df = None
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
@@ -857,11 +860,13 @@ class PptxChain(object):
         """
         cell_items = self._chain.cell_items.split('_')
 
+        if self._chain.painted:  # UnPaint if painted
+            self._chain.toggle_labels()
+
+        _df_unpainted = self._chain.dataframe.copy()
+
         if not self.is_grid_summary:
             # Keep only requested columns
-            if self._chain.painted: # UnPaint if painted
-                self._chain.toggle_labels()
-
             all_columns = self._chain.dataframe.columns.get_level_values(0).tolist() # retrieve a list of the not painted column values for outer level
             if self._chain.axes[1].index(BASE_COL) == 0:
                 all_columns[0] = BASE_COL # Need '@' as the outer column label
@@ -880,22 +885,32 @@ class PptxChain(object):
 
             # Slice the dataframes columns based on requested crossbreaks
             df = self._chain.dataframe.iloc[:, column_selection]
+            self._chain_df_unpainted = _df_unpainted.iloc[:, column_selection]
 
+            self._chain_df_unpainted = fill_index_labels(self._chain_df_unpainted)
             df = fill_index_labels(df)
 
         else:
+            if not self._chain.painted: # Paint if not painted
+                self._chain.toggle_labels()
+
             if len(cell_items) > 1:
                 cell_contents = self._chain.describe()
                 rows = [k for k, va in cell_contents.items()
                         if any(pct in v for v in va for pct in PCT_TYPES)]
                 df_filled = fill_index_labels(fill_column_values(self._chain.dataframe))
                 df = df_filled.iloc[rows, :]
+
+                _df_unpainted = fill_index_labels(fill_column_values(_df_unpainted))
+                self._chain_df_unpainted = _df_unpainted.iloc[rows, :]
+
                 #for index in base_indexes:
                 #    base_values = self.chain.dataframe.iloc[rows_bad, index].values
                 #    base_column = self.chain.dataframe.columns[index]
                 #    df.loc[:,[base_column]] = base_values
             else:
                 df = self._chain.dataframe
+                self._chain_df_unpainted = _df_unpainted
 
         df_rounded = np.around(df, decimals=self._decimals, out=None)
         return df_rounded
