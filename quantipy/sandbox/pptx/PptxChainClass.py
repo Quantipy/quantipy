@@ -361,12 +361,15 @@ class PptxDataFrame(object):
         """
 
         if self.array_style == -1:
-            df_copy=self.df.iloc[categories]
+            df_copy = self.df.iloc[categories]
+            df_copy_unpainted = self._df_unpainted.iloc[categories]
         else:
             df_copy = self.df.iloc[:,categories]
+            df_copy_unpainted = self._df_unpainted.iloc[:, categories]
 
         pptx_df_copy = PptxDataFrame(df_copy,self.cell_items,self.array_style)
         pptx_df_copy.cell_items = [self.cell_items[i] for i in categories]
+        pptx_df_copy._df_unpainted = df_copy_unpainted
 
         return pptx_df_copy
 
