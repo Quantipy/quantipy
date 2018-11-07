@@ -487,7 +487,14 @@ class PptxPainter(object):
         Returns: self.chart
         -------
         """
-        valid_chart_types = ['pie', 'bar_clustered', 'bar_stacked_100', 'bar']
+        valid_chart_types = ['pie',
+                             'bar_clustered',
+                             'bar_stacked_100',
+                             'bar',
+                             'column',
+                             'column_clustered',
+                             'line',
+                             ]
         # Validate the user-provided chart types.
         if not isinstance(chart_type, basestring):
             raise ValueError('The chart_type argument must be a string')
@@ -500,6 +507,14 @@ class PptxPainter(object):
             draft = copy.deepcopy(self.chart_pie)
         elif chart_type == 'bar_clustered' or chart_type == 'bar':
             draft = copy.deepcopy(self.chart_bar)
+            if len(dataframe.columns) > 1:
+                draft['has_legend'] = True
+        elif chart_type == 'column_clustered' or chart_type == 'column':
+            draft = copy.deepcopy(self.chart_column)
+            if len(dataframe.columns) > 1:
+                draft['has_legend'] = True
+        elif chart_type == 'line':
+            draft = copy.deepcopy(self.chart_line)
             if len(dataframe.columns) > 1:
                 draft['has_legend'] = True
         elif chart_type == 'bar_stacked_100':
