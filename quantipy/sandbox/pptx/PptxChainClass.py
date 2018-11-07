@@ -193,9 +193,11 @@ def auto_charttype(df, array_style, max_pie_elms=MAX_PIE_ELMS):
         if len(df.index.get_level_values(-1)) <= max_pie_elms:
             if len(df.columns.get_level_values(-1)) == 1:
                 chart_type = 'pie'
-    else: # Array Sum
+    elif array_style == 0:
         chart_type = 'bar_stacked_100'
         # TODO _auto_charttype - return 'bar_stacked' if rows not sum to 100
+    else:
+        chart_type = 'bar_clustered'
 
     return chart_type
 
@@ -656,6 +658,9 @@ class PptxChain(object):
 
     @property
     def chart_type(self):
+        if self._chart_type is None:
+            self._chart_type = auto_charttype(self.chart_df.get('pct,net').df, self.array_style)
+
         return self._chart_type
 
     @chart_type.setter
