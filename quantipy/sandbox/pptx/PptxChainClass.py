@@ -607,6 +607,7 @@ class PptxChain(object):
         self.is_grid_summary = True if chain.array_style in [0,1] else False
         self.crossbreak = self._check_crossbreaks(crossbreak) if crossbreak else [BASE_COL]
         self.x_key_short_name = self._get_short_question_name()
+        self._cell_contents = None
         self._chain_df_unpainted = None
         self.chain_df = self._select_crossbreak() # type: pd.DataFrame
         self.xbase_indexes = self._base_indexes()
@@ -619,7 +620,6 @@ class PptxChain(object):
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
-        self._chart_df = None
         self.chart_df = self.prepare_dataframe()
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
@@ -693,15 +693,9 @@ class PptxChain(object):
         list
 
         """
-        cell_contents = self._chain.describe()
-        if self.array_style == 0:
-            row = min([k for k, va in cell_contents.items()
-                              if any(pct in v for v in va for pct in PCT_TYPES)])
-            cell_contents = cell_contents[row]
-
         # Find base rows
-        bases = get_indexes_from_list(cell_contents, BASE_ROW, exact=False)
-        skip = get_indexes_from_list(cell_contents, ['is_c_base_gross'], exact=False)
+        bases = get_indexes_from_list(self._cell_contents, BASE_ROW, exact=False)
+        skip = get_indexes_from_list(self._cell_contents, ['is_c_base_gross'], exact=False)
         base_indexes = [idx for idx in bases if not idx in skip] or bases
 
         # Show error if no base elements found
@@ -710,7 +704,7 @@ class PptxChain(object):
             #warnings.warn(msg)
             return None
 
-        cell_contents = [cell_contents[x] for x in base_indexes]
+        base_cell_contents = [self._cell_contents[x] for x in base_indexes]
 
         if self.array_style == -1 or self.array_style == 1:
 
@@ -722,7 +716,7 @@ class PptxChain(object):
             xlabels = self._chain.dataframe.columns.get_level_values(-1)[base_indexes].tolist()
             base_counts = self._chain.dataframe.iloc[0, base_indexes]
 
-        return zip(xlabels, base_indexes, cell_contents, base_counts)
+        return zip(xlabels, base_indexes, base_cell_contents, base_counts)
 
     def select_base(self,base_type='weighted'):
         """
@@ -752,11 +746,11 @@ class PptxChain(object):
         if not base_type in ['unweighted','weighted']:
             raise TypeError('base_type misspelled, choose weighted or unweighted')
 
-        cell_contents = [x[2] for x in self.xbase_indexes]
+        base_cell_contents = [x[2] for x in self.xbase_indexes]
         if base_type == 'weighted':
-            index = [x for x, items in enumerate(cell_contents) if 'is_weighted' in items]
+            index = [x for x, items in enumerate(base_cell_contents) if 'is_weighted' in items]
         else:
-            index = [x for x, items in enumerate(cell_contents) if not 'is_weighted' in items]
+            index = [x for x, items in enumerate(base_cell_contents) if not 'is_weighted' in items]
 
         if not index: index=[0]
 
@@ -859,6 +853,7 @@ class PptxChain(object):
 
         """
         cell_items = self._chain.cell_items.split('_')
+        self._cell_contents = self._chain.describe()
 
         if self._chain.painted:  # UnPaint if painted
             self._chain.toggle_labels()
@@ -895,11 +890,11 @@ class PptxChain(object):
                 self._chain.toggle_labels()
 
             if len(cell_items) > 1:
-                cell_contents = self._chain.describe()
-                rows = [k for k, va in cell_contents.items()
+                rows = [k for k, va in self._cell_contents.items()
                         if any(pct in v for v in va for pct in PCT_TYPES)]
                 df_filled = fill_index_labels(fill_column_values(self._chain.dataframe))
                 df = df_filled.iloc[rows, :]
+                self._cell_contents = self._cell_contents[min(rows)]
 
                 _df_unpainted = fill_index_labels(fill_column_values(_df_unpainted))
                 self._chain_df_unpainted = _df_unpainted.iloc[rows, :]
@@ -911,6 +906,7 @@ class PptxChain(object):
             else:
                 df = self._chain.dataframe
                 self._chain_df_unpainted = _df_unpainted
+                self._cell_contents = self._cell_contents[0]
 
         df_rounded = np.around(df, decimals=self._decimals, out=None)
         return df_rounded
@@ -1382,13 +1378,8 @@ class PptxChain(object):
 
         # For rows that are type '%' divide by 100
         indexes = []
-        cell_contents = self._chain.describe()
-        if self.is_grid_summary:
-            colpct_row = min([k for k, va in cell_contents.items()
-                              if any(pct in v for v in va for pct in PCT_TYPES)])
-            cell_contents = cell_contents[colpct_row]
 
-        for i, row in enumerate(cell_contents):
+        for i, row in enumerate(self._cell_contents):
             for type in row:
                 for pct_type in PCT_TYPES:
                     if type == pct_type:
@@ -1399,7 +1390,7 @@ class PptxChain(object):
             df.iloc[:, indexes] /= 100
 
         # Make a PptxDataFrame instance
-        chart_df = PptxDataFrame(df, cell_contents, self.array_style)
+        chart_df = PptxDataFrame(df, self._cell_contents, self.array_style)
         # Choose a basic Chart type that will fit dataframe TODO Move this to init of Class PptxDataFrame
         chart_df.chart_type = auto_charttype(df, self.array_style)
 
