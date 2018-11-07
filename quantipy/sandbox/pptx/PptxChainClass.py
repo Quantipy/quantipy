@@ -287,7 +287,7 @@ class PptxDataFrame(object):
         self.array_style = array_style
         self.cell_items = cell_types
         self.df = dataframe # type: pd.DataFrame
-        self._unpainted_df = None
+        self._df_unpainted = None
         self.__frames = []
 
     def __call__(self):
@@ -620,7 +620,9 @@ class PptxChain(object):
         self.base_description = "" if chain.base_descriptions is None else chain.base_descriptions
         if self.base_description[0:6].lower() == "base: ": self.base_description = self.base_description[6:]
         self.question_text = self.get_question_text(include_varname=False)
+        self._chart_df_unpainted = self.prepare_dataframe(input_df='_chain_df_unpainted')
         self.chart_df = self.prepare_dataframe()
+        self.chart_df._df_unpainted = self._chart_df_unpainted.df
         self.continuation_str = CONTINUATION_STR
         self.vals_in_labels = False
         self._base_text = self.set_base_text()
@@ -663,10 +665,9 @@ class PptxChain(object):
 
         if self._sig_test_results is None:
             # Get the sig testing
-            sig_df = self.prepare_dataframe()
-            sig_df = sig_df.get_propstest()
+            sig_df = self._chart_df_unpainted.get_propstest().df
 
-            self._sig_test_results = sig_df.df
+            self._sig_test_results = sig_df
 
         return self._sig_test_results
 
@@ -1354,7 +1355,7 @@ class PptxChain(object):
 
         return question_text
 
-    def prepare_dataframe(self):
+    def prepare_dataframe(self, input_df='chain_df'):
         """
         Prepares self.chain_df for charting, that is removes all outer levels
         and prepares the dataframe for PptxPainter.
@@ -1365,8 +1366,11 @@ class PptxChain(object):
             An edited copy of self.chain_df
 
         """
+
+        input_df = getattr(self, input_df)
+
         # Strip outer level
-        df = strip_levels(self.chain_df, rows=0, columns=0)
+        df = strip_levels(input_df, rows=0, columns=0)
         df = strip_levels(df, columns=1)
 
         # Strip HTML TODO Is 'Strip HTML' at all nessecary?
