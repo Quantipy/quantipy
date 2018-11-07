@@ -385,14 +385,8 @@ class PptxPainter(object):
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
-                    if sig_test:
-                        len_sig_test = len(pptx_chain.sig_test[0])
-                        len_df_index = len(pptx_frame().index)
-                        assert len_sig_test == len_df_index, \
-                            "Number of sig test results ({}) doesn't match number of rows in dataframe ({})"\
-                                .format(len_sig_test,len_df_index)
-                        chart_draft['sig_test_visible'] = True
-                        chart_draft['sig_test_results'] = pptx_chain.sig_test_results
+                    chart_draft['sig_test_visible'] = sig_test
+                    chart_draft['sig_test_results'] = pptx_chain.sig_test_results
 
                     self.queue_chart(settings=chart_draft)
 
@@ -1197,12 +1191,20 @@ class PptxPainter(object):
                 data_labels.number_format = data_labels_num_format
             data_labels.number_format_is_linked = data_labels_num_format_is_linked
 
-            if not sig_test_results: sig_test_visible = False
+            if sig_test_results is None: sig_test_visible = False
             if len(dataframe.columns) == 1: sig_test_visible = False
             if sig_test_visible:
+                sig_test_index = dataframe.index.values.tolist()
+                sig_test_results = sig_test_results.loc[sig_test_index]
+                #sig_test_results = sig_test_results[::-1]
+                sig_test_results = sig_test_results[sig_test_results.columns[::-1]]
+
+                _sig_test = sig_test_results.values.tolist()
+                _sig_test = [zip(*_sig_test)[i] for i in range(len(_sig_test[0]))]
+
                 self.show_data_labels(plot, decimals=0)
-                for serie, column in enumerate(sig_test_results[::-1]):
-                    for point, test_result in enumerate(column[::-1]):
+                for serie, column in enumerate(_sig_test):
+                    for point, test_result in enumerate(column):
                         if not isinstance(test_result, basestring): continue
                         for text in ['*.',
                                      '*',
