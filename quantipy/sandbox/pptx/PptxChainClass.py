@@ -1408,6 +1408,8 @@ class PptxChain(object):
         chart_df = PptxDataFrame(df, self._cell_contents, self.array_style)
         # Choose a basic Chart type that will fit dataframe TODO Move this to init of Class PptxDataFrame
         chart_df.chart_type = auto_charttype(df, self.array_style)
+        if hasattr(self, "_chart_df_unpainted"):
+            chart_df._df_unpainted = self._chart_df_unpainted.df
 
         return chart_df
 
