@@ -282,19 +282,72 @@ class PptxPainter(object):
         None
 
         """
+
+        def copy_font(from_font, to_font):
+
+            to_font.name = from_font.name
+            to_font.size = from_font.size
+            to_font.bold = from_font.bold
+            to_font.italic = from_font.italic
+            if hasattr(from_font.color, 'rgb'):
+                to_font.color.rgb = from_font.color.rgb
+            return to_font
+
         data_label = plot.series[series].points[point].data_label
         frame = data_label.text_frame
+        pgraph = frame.paragraphs[0]
+        original_run = frame.paragraphs[0].runs[-1]
+        original_text = original_run.text
+        original_font = original_run.font
 
-        run = frame.paragraphs[0].runs[0]
-        original_text = frame.text
         if prepend:
-            run.text = u'{}{}'.format(text, original_text)
+            run = original_run
+            run.text = text
+            run2 = pgraph.add_run()
+            font = copy_font(original_font, run2.font)
+            run2.text = original_text
         elif append:
-            run.text = u'{}{}'.format(original_text, text)
+            run2 = original_run
+            run2.text = original_text
+            run = pgraph.add_run()
+            font = copy_font(original_font, run.font)
+            run.text = text
         else:
+            run = original_run
             run.text = text
         if rgb is not None:
             run.font.color.rgb = RGBColor(*rgb)
+
+    def sig_red(self, plot, series, point):
+        """
+        Prepend an upside-down red triangle to the indicated datalabel.
+        """
+        self.edit_datalabel(
+            plot, series, point,
+            text=u'\u25BC',
+            prepend=True,
+            rgb=(220, 20, 60))
+
+    def sig_green(self, plot, series, point):
+        """
+        Prepend a green triangle to the indicated datalabel.
+        """
+        self.edit_datalabel(
+            plot, series, point,
+            text=u'\u25B2',
+            prepend=True,
+            rgb=(118, 238, 0))
+
+    def low_base_flag(self, plot, series, point):
+        """
+        Prepend a red exclamation triangle to the indicated datalabel.
+        """
+        self.edit_datalabel(
+            plot, series, point,
+            text=u'\u26A0',
+            rgb=(220, 20, 60),
+            prepend=True
+        )
 
     def queue_slide_items(self, pptx_chain, slide_items):
         """
@@ -383,8 +436,9 @@ class PptxPainter(object):
                 cell_items = ','.join(cell_items)
 
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
-                sig_indexes = pptx_frame._df_unpainted.index.values.tolist()
-                if pptx_chain.sig_test_results is not None:
+
+                if sig_test and pptx_chain.sig_test_results is not None:
+                    sig_indexes = pptx_frame._df_unpainted.index.values.tolist()
                     sig_test_results = pptx_chain.sig_test_results.loc[sig_indexes]
                 else:
                     sig_test = False
@@ -968,6 +1022,20 @@ class PptxPainter(object):
 
         return table
 
+    def _sig_replace(self, test_result):
+        for text in ['*.',
+                     '*',
+                     '**.',
+                     '**',
+                     '\'@L\'.',
+                     '\'@L\'',
+                     '\'@H\'.',
+                     '\'@H\'',
+                    ]:
+            test_result = test_result.replace(text, '')
+
+        return test_result
+
     def add_chart(self, slide,
                   dataframe=None,
                   chart_type='bar_stacked_100',
@@ -1211,17 +1279,13 @@ class PptxPainter(object):
                 for serie, column in enumerate(_sig_test):
                     for point, test_result in enumerate(column):
                         if not isinstance(test_result, basestring): continue
-                        for text in ['*.',
-                                     '*',
-                                     '**.',
-                                     '**',
-                                     '\'@L\'.',
-                                     '\'@L\'',
-                                     '\'@H\'.',
-                                     '\'@H\'',
-                                     ]:
-                            test_result = test_result.replace(text,'')
+                        if test_result.find('\'@L\'') > -1:
+                            self.sig_green(plot, serie, point)
+                        if test_result.find('\'@H\'') > -1:
+                            self.sig_red(plot, serie, point)
+                        test_result = self._sig_replace(test_result)
                         if test_result == '': continue
+
                         text =  u' ({})'.format(test_result)
                         self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
