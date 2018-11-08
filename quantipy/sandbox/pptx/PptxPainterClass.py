@@ -422,17 +422,26 @@ class PptxPainter(object):
                     self.queue_side_table(settings=side_table_draft)
             if slide_item.startswith('chart'):
                 sig_test = False
+                sig_test_type = 'all'
                 cell_items = slide_item.split(':')[1]
 
-                ''' 
+                '''
                 Makes no sense to actually have 'test' as a cell_item.
                 Will remove it from cell_items and set flag sig_test as True
                 '''
                 cell_items = cell_items.split(',')
+
+                if 'test@' in cell_items:
+                    sig_test = True
+                    sig_test_type = '@'
+                    cell_items.remove('test@')
+
                 if 'test' in cell_items:
                     sig_test = True
+                    sig_test_type = 'all'
                     pptx_chain.add_test_letter_to_column_labels()
                     cell_items.remove('test')
+
                 cell_items = ','.join(cell_items)
 
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
@@ -447,6 +456,7 @@ class PptxPainter(object):
                 if not pptx_frame().empty:
                     chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
                     chart_draft['sig_test_visible'] = sig_test
+                    chart_draft['sig_test_type'] = sig_test_type
                     chart_draft['sig_test_results'] = sig_test_results
 
                     self.queue_chart(settings=chart_draft)
@@ -473,9 +483,9 @@ class PptxPainter(object):
         """
 
         # Find the side_table with the lowest 'left' number
-        table_max_left=12240000
-        table_width=0
-        for table, table_settings in self.slide_kwargs['side_tables'].iteritems():
+        table_max_left = 12240000
+        table_width = 0
+        for _table, table_settings in self.slide_kwargs['side_tables'].iteritems():
             if table_settings['left'] < table_max_left:
                 table_max_left = table_settings['left']
                 table_width = table_settings['width']
@@ -1100,8 +1110,9 @@ class PptxPainter(object):
                   xl_number_format='0.00%',
 
                   # Sig test
-                  sig_test_visible = False,
-                  sig_test_results = None,
+                  sig_test_visible=False,
+                  sig_test_results=None,
+                  sig_test_type='all',
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1283,11 +1294,12 @@ class PptxPainter(object):
                             self.sig_green(plot, serie, point)
                         if test_result.find('\'@H\'') > -1:
                             self.sig_red(plot, serie, point)
-                        test_result = self._sig_replace(test_result)
-                        if test_result == '': continue
 
-                        text =  u' ({})'.format(test_result)
-                        self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
+                        if sig_test_type == 'all':
+                            test_result = self._sig_replace(test_result)
+                            if test_result == '': continue
+                            text =  u' ({})'.format(test_result)
+                            self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
         # # ================================ series
         # for i, ser in enumerate(dataframe.columns):
