@@ -192,6 +192,7 @@ default_chart = OrderedDict([
     # Sig_testing
     ('sig_test_visible', False),
     ('sig_test_results', None),
+    ('sig_test_type', 'all'),
 ])
 
 # --------------------------
