@@ -661,10 +661,14 @@ class PptxChain(object):
 
     def verify_sig_test(func, *args, **kwargs):
         def wrapper(self):
-            if self._chain.sig_levels and len(self.ybase_value_labels) > 1:
-                return func(self, *args, **kwargs)
-            else:
+            if len(self.ybase_value_labels) == 1: # Only one column
                 return None
+            if not self._chain.sig_levels:
+                return None
+            if self.is_grid_summary:
+                return None
+            else:
+                return func(self, *args, **kwargs)
         return wrapper
 
     @property
@@ -1004,19 +1008,14 @@ class PptxChain(object):
             if not isinstance(eval(i), (str, type(None))):
                 raise TypeError("Parameter {} must be a string".format(i))
 
-        if self.is_grid_summary:
-            pass
+        column_labels = self.chain_df.columns.get_level_values('Values')
 
-        else:
+        # Edit labels
+        new_labels_list = {}
+        for x, y in zip(column_labels, self.ybase_test_labels):
+            new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + y + circumfix[1]})
 
-            column_labels = self.chain_df.columns.get_level_values('Values')
-
-            # Edit labels
-            new_labels_list = {}
-            for x, y in zip(column_labels, self.ybase_test_labels):
-                new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + y + circumfix[1]})
-
-            self.chart_df.df = self.chart_df.df.rename(columns=new_labels_list)
+        self.chart_df.df = self.chart_df.df.rename(columns=new_labels_list)
 
     def place_vals_in_labels(self, base_position=0, orientation='side', values=None, sep=" ", prefix="n=", circumfix="()", setup='if_differs'):
         """
