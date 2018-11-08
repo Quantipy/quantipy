@@ -3115,8 +3115,18 @@ class Chain(object):
         levels = [v.split('|')[1].split('.')[-1] for v in self._views.keys()]
         return len(set(levels))
 
+    def _siglevel_on_row(self):
+        """
+        """
+        vpr = self._views_per_rows()
+        tests = [(no, v) for no, v in enumerate(vpr)
+                 if v.split('|')[1].startswith('t.')]
+        s = [(t[0], 
+              float(int(t[1].split('|')[1].split('.')[3].split('+')[0]))/100.0)
+             for t in tests]
+        return s
 
-    def transform_tests(self, char_repr='upper'):
+    def transform_tests(self, char_repr='upper', display_level=True):
         """
         Transform column-wise digit-based test representation to letters.
 
@@ -3162,7 +3172,18 @@ class Chain(object):
             test_dict[question][number] = letter        
         letter_df = self._replace_test_results(df, test_dict, char_repr)
         # Re-apply indexing & finalize the new crossbreak column header
-        letter_df.index = df.index
+        if display_level:
+            levels = self._siglevel_on_row()
+            index = df.index.get_level_values(1).tolist()
+            for i, l in levels:
+                index[i] = '#Level: {}'.format(l)
+            l0 = df.index.get_level_values(0).tolist()[0]
+            tuples = [(l0, i) for i in index]
+            index = pd.MultiIndex.from_tuples(
+                tuples, names=['Question', 'Values'])
+            letter_df.index = index
+        else:
+            letter_df.index = df.index
         letter_df.columns = number_header_row
         letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
@@ -3478,6 +3499,8 @@ class Chain(object):
                 level_1_text.append(value)
             elif str(value) == '':
                 level_1_text.append(value)
+            elif str(value).startswith('#Level: '):
+                level_1_text.append(value.replace('#Level: ', ''))
             else:
                 translate = self._transl[self._transl.keys()[0]].keys()
                 if value in self._text_map.keys() and value not in translate:
