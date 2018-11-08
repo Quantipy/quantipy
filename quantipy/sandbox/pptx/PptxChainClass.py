@@ -1013,6 +1013,7 @@ class PptxChain(object):
         # Edit labels
         new_labels_list = {}
         for x, y in zip(column_labels, self.ybase_test_labels):
+            if y=="@": continue
             new_labels_list.update({x: x + (sep or '') + circumfix[0] + (prefix or '') + y + circumfix[1]})
 
         self.chart_df.df = self.chart_df.df.rename(columns=new_labels_list)
