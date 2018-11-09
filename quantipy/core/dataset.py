@@ -1025,7 +1025,7 @@ class DataSet(object):
         adds = batch['additions'] if additions in ['full', 'variables'] else []
         for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
-            variables += ba['xks'] + ba['yks'] + ba['variables']
+            variables += ba['xks'] + ba['yks'] + ba['_variables']
             for oe in ba['verbatims']:
                 variables += oe['columns']
             variables += ba['weights']
@@ -1874,10 +1874,14 @@ class DataSet(object):
         return None
 
     def _add_all_renames_to_mapper(self, mapper, old, new):
-        mapper['masks@{}'.format(old)] = 'masks@{}'.format(new)
-        mapper['columns@{}'.format(old)] = 'columns@{}'.format(new)
-        mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
-        mapper[old] = new
+        mapper['masks@{}'.format(old).encode('utf8')] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old).encode('utf8')] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old).encode('utf8')] = 'lib@values@{}'.format(new)
+        mapper[old.encode('utf8')] = new
+        mapper['masks@{}'.format(old).decode('utf8')] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old).decode('utf8')] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old).decode('utf8')] = 'lib@values@{}'.format(new)
+        mapper[old.decode('utf8')] = new
         return mapper
 
     @classmethod
@@ -2216,6 +2220,14 @@ class DataSet(object):
     @staticmethod
     def _pad_meta_list(meta_list, pad_to_len):
         return meta_list + ([''] * pad_to_len)
+
+    def enumerator(self, name):
+        x = 1
+        n = name
+        while n in self:
+            x += 1
+            n = '{}_{}'.format(name, x)
+        return n
 
     # ------------------------------------------------------------------------
     # fix/ repair meta data
@@ -3186,7 +3198,7 @@ class DataSet(object):
         overwrite: bool, default False
             Overwrite an already existing filter-variable.
         """
-        name = name.encode('utf8').replace(' ', '_').replace('~', '_')
+        name = self._verify_filter_name(name, None)
         if name in self:
             if overwrite and not self.is_filter(name):
                 msg = "Cannot add filter-variable '{}', a non-filter"
@@ -3231,9 +3243,9 @@ class DataSet(object):
         """
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
-        name = name.encode('utf8').replace(' ', '_').replace('~', '_')
+        name = self._verify_filter_name(name, None)
         if extend_as:
-            extend_as = extend_as.encode('utf8').replace(' ', '_').replace('~', '_')
+            extend_as = self._verify_filter_name(extend_as, None)
             f_name = '{}_{}'.format(name, extend_as)
             if f_name in self:
                 msg = "Please change 'extend_as': '{}' is already in dataset."
@@ -3276,11 +3288,22 @@ class DataSet(object):
             values.append(val)
         return values
 
+    def _verify_filter_name(self, name, suf='f', number=False):
+        f = '{}_{}'.format(name, suf) if suf else name
+        f = f.encode('utf8')
+        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', '')]
+        for r in repl:
+            f = f.replace(r[0], r[1])
+        if number:
+            f = self.enumerator(f)
+        return f
+
     @modify(to_list=['values'])
     def reduce_filter_var(self, name, values):
         """
         Remove values from filter-variables and recalculate the filter.
         """
+        name = self._verify_filter_name(name, None)
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         if 0 in values:
@@ -3304,7 +3327,7 @@ class DataSet(object):
         if not name:
             return self._data.index
         else:
-            name = name.encode('utf8').replace(' ', '_').replace('~', '_')
+            name = self._verify_filter_name(name, None)
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         return self.take({name: 0})
@@ -3325,8 +3348,9 @@ class DataSet(object):
         if not all(self.is_filter(f) for f in [name1] + name2):
             raise ValueError('Can only compare filter variables')
         equal = True
+        f0 = self.manifest_filter(name1).tolist()
         for f in name2:
-            if not all(self.manifest_filter(name1) == self.manifest_filter(f)):
+            if not f0 == self.manifest_filter(f).tolist():
                 equal = False
         return equal
 
@@ -4955,7 +4979,6 @@ class DataSet(object):
         None
             DataSet is modified inplace.
         """
-
         def rename_properties(mapper):
             """
             Rename variable properties that reference other variables, i.e.
@@ -5992,7 +6015,7 @@ class DataSet(object):
             if ignore:
                 msg = 'Warning: Cannot set new value texts... '
                 msg = msg + "Codes {} not found in values object of '{}'!"
-                warnings.warn(msg)
+                warnings.warn(msg.format(ignore, name))
         else:
             msg = '{} has empty values object, allowing arbitrary values meta!'
             msg = msg + ' ...falling back to extend_values() now!'
