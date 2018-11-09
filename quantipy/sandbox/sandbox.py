@@ -1999,15 +1999,15 @@ class Chain(object):
             non_freqs = ('d.', 't.')
             c = any(v.split('|')[3] == '' and
                     not v.split('|')[1].startswith(non_freqs) and
-                    not v.split('|')[-1] == 'cbase'
+                    not v.split('|')[-1].startswith('cbase')
                     for v in check_views)
             col_pct = any(v.split('|')[3] == 'y' and
                           not v.split('|')[1].startswith(non_freqs) and
-                          not v.split('|')[-1] == 'cbase'
+                          not v.split('|')[-1].startswith('cbase')
                           for v in check_views)
             row_pct = any(v.split('|')[3] == 'x' and
                           not v.split('|')[1].startswith(non_freqs) and
-                          not v.split('|')[-1] == 'cbase'
+                          not v.split('|')[-1].startswith('cbase')
                           for v in check_views)
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
@@ -2765,6 +2765,8 @@ class Chain(object):
             df = df.loc[rows, :]
 
         self._frame = df
+        self._index = df.index
+        self._columns = df.columns
         return None
 
     def _slice_edited_index(self, axis, positions):
@@ -3628,7 +3630,6 @@ class Chain(object):
         attrs = ['index', 'columns']
         if self.structure is not None:
             attrs.append('_frame_values')
-
         for attr in attrs:
             vals = attr[6:] if attr.startswith('_frame') else attr
             frame_val = getattr(self._frame, vals)
@@ -3638,7 +3639,7 @@ class Chain(object):
         if self.structure is not None:
             values = self._frame.values
             self._frame.loc[:, :] = self.frame_values
-            self.fram_values = values
+            self.frame_values = values
 
         return self
 
