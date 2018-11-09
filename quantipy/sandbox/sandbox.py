@@ -1999,15 +1999,15 @@ class Chain(object):
             non_freqs = ('d.', 't.')
             c = any(v.split('|')[3] == '' and
                     not v.split('|')[1].startswith(non_freqs) and
-                    not v.split('|')[-1] == 'cbase'
+                    not v.split('|')[-1].startswith('cbase')
                     for v in check_views)
             col_pct = any(v.split('|')[3] == 'y' and
                           not v.split('|')[1].startswith(non_freqs) and
-                          not v.split('|')[-1] == 'cbase'
+                          not v.split('|')[-1].startswith('cbase')
                           for v in check_views)
             row_pct = any(v.split('|')[3] == 'x' and
                           not v.split('|')[1].startswith(non_freqs) and
-                          not v.split('|')[-1] == 'cbase'
+                          not v.split('|')[-1].startswith('cbase')
                           for v in check_views)
             c_colpct = c and col_pct
             c_rowpct = c and row_pct

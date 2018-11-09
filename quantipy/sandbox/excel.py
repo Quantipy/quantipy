@@ -645,6 +645,7 @@ class _Sheet(Worksheet):
             if arrow_descriptions:
                 arrow_format = _Format(**{'font_color': self.arrow_color_high})
                 arrow_format = self.excel._add_format(**arrow_format)
+                print cds
                 write_rich_string(self._row + 2, self._column + 1,
                                   arrow_format, self.arrow_rep_high,
                                   format_, cds[1], format_)
