@@ -2766,6 +2766,8 @@ class Chain(object):
             df = df.loc[rows, :]
 
         self._frame = df
+        self._index = df.index
+        self._columns = df.columns
         return None
 
     def _slice_edited_index(self, axis, positions):
@@ -3629,7 +3631,6 @@ class Chain(object):
         attrs = ['index', 'columns']
         if self.structure is not None:
             attrs.append('_frame_values')
-
         for attr in attrs:
             vals = attr[6:] if attr.startswith('_frame') else attr
             frame_val = getattr(self._frame, vals)
@@ -3639,7 +3640,7 @@ class Chain(object):
         if self.structure is not None:
             values = self._frame.values
             self._frame.loc[:, :] = self.frame_values
-            self.fram_values = values
+            self.frame_values = values
 
         return self
 
