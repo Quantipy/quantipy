@@ -3270,7 +3270,7 @@ class Chain(object):
         return text_keys
 
     def paint(self, text_key=None, text_loc_x=None, text_loc_y=None, display=None,
-              axes=None, view_level=False, transform_tests='upper',
+              axes=None, view_level=False, transform_tests='upper', display_level=True,
               add_test_ids=True, add_base_texts='simple', totalize=False,
               sep=None, na_rep=None, transform_column_names=None,
               exclude_mask_text=False):
