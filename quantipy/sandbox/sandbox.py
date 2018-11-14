@@ -3324,7 +3324,7 @@ class Chain(object):
             self._paint_structure(text_key, sep=sep, na_rep=na_rep)
         else:
             self.totalize = totalize
-            if transform_tests: self.transform_tests(transform_tests)
+            if transform_tests: self.transform_tests(transform_tests, display_level)
             # Remove any letter header row from transformed tests...
             if self.sig_test_letters:
                 self._remove_letter_header()
