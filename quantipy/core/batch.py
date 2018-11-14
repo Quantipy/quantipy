@@ -552,7 +552,7 @@ class Batch(qp.DataSet):
         if self.filter == 'no_filter':
             cond = None
         else:
-            cond = self.filter.values()[0]
+            cond = {self.filter: 0}
         removed_sum = []
         for x in self.xks[:]:
             if self.is_array(x):
