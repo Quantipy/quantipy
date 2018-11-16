@@ -3291,7 +3291,7 @@ class DataSet(object):
     def _verify_filter_name(self, name, suf='f', number=False):
         f = '{}_{}'.format(name, suf) if suf else name
         f = f.encode('utf8')
-        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', '')]
+        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', ''), ('&', '_')]
         for r in repl:
             f = f.replace(r[0], r[1])
         if number:
