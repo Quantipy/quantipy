@@ -1168,6 +1168,10 @@ class PptxPainter(object):
         :return:
         """
 
+        # Check if chart_type fits dataframe
+        if chart_type == 'pie' and len(dataframe.columns) > 1:
+            chart_type = 'bar_clustered'
+
         # Switch rows and columns if bar chart
         if chart_type == "bar_clustered":
             dataframe = dataframe[::-1]
