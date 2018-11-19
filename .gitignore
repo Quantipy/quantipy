@@ -41,3 +41,5 @@ docs/API/_templates/
 .pytest_cache/v/cache/nodeids
 
 build
+
+.idea/
