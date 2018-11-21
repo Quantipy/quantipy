@@ -2709,11 +2709,23 @@ class Chain(object):
                 self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
             if self._group_style == 'reduced' and self.array_style >- 1:
-                if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
-                for view in v) for v in self._given_views):
+                # OLD CHECK:
+                # ------------------------------------------------------------
+                # if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
+                # for view in v) for v in self._given_views):
+                
+                test_given_views = [v if isinstance(v, (tuple, list)) else [v] for v in self._given_views]
+                cond1 = any(len(v) >= 2 for v in test_given_views)
+                cond2 = False
+                for tgv in test_given_views:
+                    for view in tgv:
+                        if view.split('|')[1].startswith('t.'): cond2 = True
+                if not(cond1 and cond2):
                     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
-                elif any(len(v) == 3 for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
+                # CONTINUED:
+                # ------------------------------------------------------------
+                # elif any(len(v) == 3 for v in self._given_views):
+                #     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
 
             if self.axis == 1:
                 self.views = found[-1]
