@@ -2670,7 +2670,16 @@ class Chain(object):
                 self._has_rules = ['x', 'y']
             else:
                 self._has_rules = rules
+        
+        use_views = views[:]
+        for first in self.axes[0]:
+            for second in self.axes[1]:
+                link = self._get_link(data_key, filter_key, first, second)
 
+                for v in use_views:
+                    if v not in link:
+                        use_views.remove(v)
+        
         for first in self.axes[0]:
             found = []
             x_frames = []
@@ -2683,10 +2692,9 @@ class Chain(object):
 
                 if link is None:
                     continue
-
                 if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(
-                    link, views, rules_weight)
+                    link, use_views, rules_weight)
                 found.append(found_views)
 
                 try:
@@ -2708,6 +2716,7 @@ class Chain(object):
                 self.shapes.append(x_frames[-1].shape)
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
+
 
             if self._group_style == 'reduced' and self.array_style >- 1:
                 # OLD CHECK:
