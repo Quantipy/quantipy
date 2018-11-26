@@ -1145,12 +1145,15 @@ class _Box(object):
             else:
                 x_contents = contents[rel_x]
 
+
             if rel_y == 0 and self.chain.array_style == 0:
                 name = 'counts'
             else:
                 name = self._row_format_name(**x_contents)
+            
             if rel_y == 0:
-                if data == '':
+                sig_level_row = data != '' and name in ['propstest', 'meanstest']
+                if data == '' or sig_level_row:
                     view_border = False
                 else:
                     view_border = True
