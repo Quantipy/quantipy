@@ -3047,6 +3047,7 @@ class Chain(object):
         and columns.
         """
         all_dfs  = []
+        ignore = False
         for col in replacement_map.keys():
             target_col = df.columns[0] if col == '@' else col
             value_df = df[[target_col]].copy()
@@ -3075,10 +3076,7 @@ class Chain(object):
                     new_values.append(v)
                 else:
                     new_values.append(v)
-
-                
             part_df = pd.DataFrame(new_values)
-
             all_dfs.append(part_df)
         letter_df = pd.concat(all_dfs, axis=1)
         # Clean it up
@@ -3112,7 +3110,9 @@ class Chain(object):
         return any('t.' in v for v in vms)
 
     def _no_of_tests(self):
-        levels = [v.split('|')[1].split('.')[-1] for v in self._views.keys()]
+        tests = [v for v in self._views.keys()
+                 if v.split('|')[1].startswith('t.')]
+        levels = [v.split('|')[1].split('.')[-1] for v in tests]
         return len(set(levels))
 
     def _siglevel_on_row(self):
@@ -3140,10 +3140,8 @@ class Chain(object):
         df = self.dataframe.copy()
         number_codes = df.columns.get_level_values(-1).tolist()
         number_header_row = copy.copy(df.columns)
-
         if self._no_of_tests() != 2 and char_repr == 'alternate':
-            char_repr == 'upper'
-        
+            char_repr = 'upper'
         has_total = '@' in self._y_keys
         if self._nested_y:
             df, questions = self._temp_nest_index(df)
@@ -3169,7 +3167,7 @@ class Chain(object):
             if not question in test_dict: test_dict[question] = {}
             number = all_num[num_idx]
             letter = col[1]
-            test_dict[question][number] = letter        
+            test_dict[question][number] = letter
         letter_df = self._replace_test_results(df, test_dict, char_repr)
         # Re-apply indexing & finalize the new crossbreak column header
         if display_level:
