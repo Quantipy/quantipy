@@ -4988,6 +4988,7 @@ class DataSet(object):
             stat_recs = self._stat_view_recodes()
             all_recs = set([r for r in net_recs + stat_recs if r in mapper])
             for rec in all_recs:
+                if self._is_array_item(rec): continue
                 rn = self.get_property(rec, 'recoded_net')
                 if rn: self._set_property(rec, 'recoded_net', mapper[rn])
                 rs = self.get_property(rec, 'recoded_stat')
