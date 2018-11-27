@@ -2671,14 +2671,14 @@ class Chain(object):
             else:
                 self._has_rules = rules
         
-        use_views = views[:]
-        for first in self.axes[0]:
-            for second in self.axes[1]:
-                link = self._get_link(data_key, filter_key, first, second)
+        # use_views = views[:]
+        # for first in self.axes[0]:
+        #     for second in self.axes[1]:
+        #         link = self._get_link(data_key, filter_key, first, second)
 
-                for v in use_views:
-                    if v not in link:
-                        use_views.remove(v)
+        #         for v in use_views:
+        #             if v not in link:
+        #                 use_views.remove(v)
         
         for first in self.axes[0]:
             found = []
@@ -2694,7 +2694,7 @@ class Chain(object):
                     continue
                 if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(
-                    link, use_views, rules_weight)
+                    link, views, rules_weight)
                 found.append(found_views)
 
                 try:
