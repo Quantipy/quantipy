@@ -1121,7 +1121,6 @@ class _Box(object):
             level_1, values, contents = (levels(1).values,
                                          self.values,
                                          self.contents)
-
         row_max = max(contents.keys())
         flat = np.c_[level_1.T, values].flat
         rel_x, rel_y = flat.coords
@@ -1146,13 +1145,15 @@ class _Box(object):
             else:
                 x_contents = contents[rel_x]
 
+
             if rel_y == 0 and self.chain.array_style == 0:
                 name = 'counts'
             else:
                 name = self._row_format_name(**x_contents)
-
+            
             if rel_y == 0:
-                if data == '':
+                sig_level_row = data != '' and name in ['propstest', 'meanstest']
+                if data == '' or sig_level_row:
                     view_border = False
                 else:
                     view_border = True
@@ -1264,6 +1265,7 @@ class _Box(object):
         if ((is_freq_test and not_net_sum) or freq_view_group) or \
                 (not is_mean and self.chain.array_style == 0):
             return not bg, bg
+
         return self.sheet.alternate_bg, True
 
     def _row_format_name(self, **contents):
@@ -1390,7 +1392,8 @@ class _Box(object):
         while True:
             try:
                 ndx, next_ = next(it)
-                if next_ == '':
+                sig_level_row = self.contents[ndx]['siglevel'] and next_ != ''
+                if next_ == '' or sig_level_row:
                     if not group:
                         group = data
                     if self._is('test', **self.contents[ndx]):
