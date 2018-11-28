@@ -1262,6 +1262,9 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
     for col_name in cols:
         if verbose:
             print '...', col_name
+        # store properties
+        props = copy.deepcopy(
+            meta_right['columns'][col_name].get('properties', {}))
         # emulate the right meta
         right_column = emulate_meta(
             meta_right,
@@ -1283,7 +1286,10 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                 right_column['properties']['merged'] = True
             else:
                 right_column['properties'] = {'merged': True}
+
             meta_left['columns'][col_name] = right_column
+        if 'properties' in meta_left['columns'][col_name]:
+            meta_left['columns'][col_name]['properties'].update(props)
         if col_name in mask_items:
             meta_left['columns'][col_name]['values'] = mask_items[col_name]
 
