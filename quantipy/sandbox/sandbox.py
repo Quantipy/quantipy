@@ -2033,6 +2033,8 @@ class Chain(object):
         ci = []
         if self.views:
             for v in self.views:
+                if 'significance' in v:
+                    continue
                 if ']*:' in v:
                     if v.split('|')[3] == '':
                         if 'N' not in ci:
@@ -2670,7 +2672,7 @@ class Chain(object):
                 self._has_rules = ['x', 'y']
             else:
                 self._has_rules = rules
-        
+
         # use_views = views[:]
         # for first in self.axes[0]:
         #     for second in self.axes[1]:
@@ -2679,7 +2681,7 @@ class Chain(object):
         #         for v in use_views:
         #             if v not in link:
         #                 use_views.remove(v)
-        
+
         for first in self.axes[0]:
             found = []
             x_frames = []
@@ -2723,7 +2725,7 @@ class Chain(object):
                 # ------------------------------------------------------------
                 # if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 # for view in v) for v in self._given_views):
-                
+
                 test_given_views = [v if isinstance(v, (tuple, list)) else [v] for v in self._given_views]
                 cond1 = any(len(v) >= 2 for v in test_given_views)
                 cond2 = False
@@ -3084,7 +3086,7 @@ class Chain(object):
                     elif char_repr == 'lower':
                         case = 'low'
                     elif char_repr == 'alternate':
-                        if case == 'up': 
+                        if case == 'up':
                             case = 'low'
                         else:
                             case = 'up'
@@ -3092,7 +3094,7 @@ class Chain(object):
                         v = [char.replace(str(no), l if case == 'up' else l.lower())
                              if isinstance(char, (str, unicode))
                              else char for char in v]
-                    
+
                     new_values.append(v)
                 else:
                     new_values.append(v)
@@ -3141,7 +3143,7 @@ class Chain(object):
         vpr = self._views_per_rows()
         tests = [(no, v) for no, v in enumerate(vpr)
                  if v.split('|')[1].startswith('t.')]
-        s = [(t[0], 
+        s = [(t[0],
               float(int(t[1].split('|')[1].split('.')[3].split('+')[0]))/100.0)
              for t in tests]
         return s
