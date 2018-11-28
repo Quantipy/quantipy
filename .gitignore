@@ -4,6 +4,7 @@
 /tests/StackName.stack
 /tests/ChainName.chain
 /tests/ClusterName.cluster
+dist/
 
 .coverage
 htmlcov/

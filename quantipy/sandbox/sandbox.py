@@ -3059,7 +3059,7 @@ class Chain(object):
         return df, flat_cols
 
     @staticmethod
-    def _replace_test_results(df, replacement_map):
+    def _replace_test_results(df, replacement_map, char_repr):
         """
         Swap all digit-based results with letters referencing the column header.
 
@@ -3067,6 +3067,7 @@ class Chain(object):
         and columns.
         """
         all_dfs  = []
+        ignore = False
         for col in replacement_map.keys():
             target_col = df.columns[0] if col == '@' else col
             value_df = df[[target_col]].copy()
@@ -3075,12 +3076,23 @@ class Chain(object):
             values = value_df.replace(np.NaN, '-').values.tolist()
             r = replacement_map[col]
             new_values = []
+            case = None
             for v in values:
                 if isinstance(v[0], (str, unicode)):
-                    for number, letter in sorted(r.items(), reverse=True):
-                        v = [char.replace(str(number), letter)
+                    if char_repr == 'upper':
+                        case = 'up'
+                    elif char_repr == 'lower':
+                        case = 'low'
+                    elif char_repr == 'alternate':
+                        if case == 'up': 
+                            case = 'low'
+                        else:
+                            case = 'up'
+                    for no, l in sorted(r.items(), reverse=True):
+                        v = [char.replace(str(no), l if case == 'up' else l.lower())
                              if isinstance(char, (str, unicode))
                              else char for char in v]
+                    
                     new_values.append(v)
                 else:
                     new_values.append(v)
@@ -3117,7 +3129,24 @@ class Chain(object):
         vms = [v.split('|')[1] for v in self._views.keys()]
         return any('t.' in v for v in vms)
 
-    def transform_tests(self):
+    def _no_of_tests(self):
+        tests = [v for v in self._views.keys()
+                 if v.split('|')[1].startswith('t.')]
+        levels = [v.split('|')[1].split('.')[-1] for v in tests]
+        return len(set(levels))
+
+    def _siglevel_on_row(self):
+        """
+        """
+        vpr = self._views_per_rows()
+        tests = [(no, v) for no, v in enumerate(vpr)
+                 if v.split('|')[1].startswith('t.')]
+        s = [(t[0], 
+              float(int(t[1].split('|')[1].split('.')[3].split('+')[0]))/100.0)
+             for t in tests]
+        return s
+
+    def transform_tests(self, char_repr='upper', display_level=True):
         """
         Transform column-wise digit-based test representation to letters.
 
@@ -3131,7 +3160,8 @@ class Chain(object):
         df = self.dataframe.copy()
         number_codes = df.columns.get_level_values(-1).tolist()
         number_header_row = copy.copy(df.columns)
-
+        if self._no_of_tests() != 2 and char_repr == 'alternate':
+            char_repr = 'upper'
         has_total = '@' in self._y_keys
         if self._nested_y:
             df, questions = self._temp_nest_index(df)
@@ -3146,11 +3176,6 @@ class Chain(object):
             (vals,
              column_letters))
         df.columns = mi
-        # Old version: fails because undwerlying frozenllist dtype is int8
-        # --------------------------------------------------------------------
-        # df.columns.set_levels(levels=column_letters, level=1, inplace=True)
-        # df.columns.set_labels(labels=xrange(0, len(column_letters)), level=1,
-        #                       inplace=True)
         self.sig_test_letters = df.columns.get_level_values(1).tolist()
         # Build the replacements dict and build list of unique column indices
         test_dict = OrderedDict()
@@ -3163,10 +3188,20 @@ class Chain(object):
             number = all_num[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
-        # Do the replacements...
-        letter_df = self._replace_test_results(df, test_dict)
+        letter_df = self._replace_test_results(df, test_dict, char_repr)
         # Re-apply indexing & finalize the new crossbreak column header
-        letter_df.index = df.index
+        if display_level:
+            levels = self._siglevel_on_row()
+            index = df.index.get_level_values(1).tolist()
+            for i, l in levels:
+                index[i] = '#Level: {}'.format(l)
+            l0 = df.index.get_level_values(0).tolist()[0]
+            tuples = [(l0, i) for i in index]
+            index = pd.MultiIndex.from_tuples(
+                tuples, names=['Question', 'Values'])
+            letter_df.index = index
+        else:
+            letter_df.index = df.index
         letter_df.columns = number_header_row
         letter_df = self._apply_letter_header(letter_df)
         self._frame = letter_df
@@ -3253,9 +3288,10 @@ class Chain(object):
         return text_keys
 
     def paint(self, text_key=None, text_loc_x=None, text_loc_y=None, display=None,
-              axes=None, view_level=False, transform_tests='cells',
-              add_base_texts='simple', totalize=False, sep=None, na_rep=None,
-              transform_column_names=None, exclude_mask_text=False):
+              axes=None, view_level=False, transform_tests='upper', display_level=True,
+              add_test_ids=True, add_base_texts='simple', totalize=False,
+              sep=None, na_rep=None, transform_column_names=None,
+              exclude_mask_text=False):
         """
         Apply labels, sig. testing conversion and other post-processing to the
         ``Chain.dataframe`` property.
@@ -3277,7 +3313,9 @@ class Chain(object):
             Text
         view_level : bool, default False
             Text
-        transform_tests : {False, 'full', 'cells'}, default 'cells'
+        transform_tests : {False, 'upper', 'lower', 'alternate'}, default 'upper'
+            Text
+        add_test_ids : bool, default True
             Text
         add_base_texts : {False, 'all', 'simple', 'simple-no-items'}, default 'simple'
             Whether or not to include existing ``.base_descriptions`` str
@@ -3304,7 +3342,7 @@ class Chain(object):
             self._paint_structure(text_key, sep=sep, na_rep=na_rep)
         else:
             self.totalize = totalize
-            if transform_tests: self.transform_tests()
+            if transform_tests: self.transform_tests(transform_tests, display_level)
             # Remove any letter header row from transformed tests...
             if self.sig_test_letters:
                 self._remove_letter_header()
@@ -3315,7 +3353,7 @@ class Chain(object):
             self._paint(text_keys, display, axes, add_base_texts,
                         transform_column_names, exclude_mask_text)
             # Re-build the full column index (labels + letter row)
-            if self.sig_test_letters and transform_tests == 'full':
+            if self.sig_test_letters and add_test_ids:
                 self._frame = self._apply_letter_header(self._frame)
             if view_level:
                 self._add_view_level()
@@ -3479,6 +3517,8 @@ class Chain(object):
                 level_1_text.append(value)
             elif str(value) == '':
                 level_1_text.append(value)
+            elif str(value).startswith('#Level: '):
+                level_1_text.append(value.replace('#Level: ', ''))
             else:
                 translate = self._transl[self._transl.keys()[0]].keys()
                 if value in self._text_map.keys() and value not in translate:

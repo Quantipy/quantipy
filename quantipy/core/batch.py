@@ -38,7 +38,7 @@ def meta_editor(self, dataset_func):
                 kwargs['weight'] = self.weights[0]
 
             if len(args) < 4 and not 'condition' in kwargs:
-                if not self.filter == 'no_filter':
+                if self.filter:
                     kwargs['condition'] = self.filter.values()[0]
         # args/ kwargs for sorting
         elif dataset_func.func_name == 'sorting':
@@ -549,10 +549,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        if self.filter == 'no_filter':
-            cond = None
-        else:
-            cond = {self.filter: 0}
+        cond = {0: self.filter} if self.filter else None
         removed_sum = []
         for x in self.xks[:]:
             if self.is_array(x):
@@ -740,7 +737,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        name = filter_name.encode('utf8').replace(' ', '_').replace('~', '_')
+        name = self._verify_filter_name(filter_name, None)
         if self.is_filter(name):
             if not (filter_logic is None or overwrite):
                 raise ValueError("'{}' is already a filter-variable. Cannot "
