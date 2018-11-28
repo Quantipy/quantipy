@@ -1999,15 +1999,15 @@ class Chain(object):
             non_freqs = ('d.', 't.')
             c = any(v.split('|')[3] == '' and
                     not v.split('|')[1].startswith(non_freqs) and
-                    not v.split('|')[-1] == 'cbase'
+                    not v.split('|')[-1].startswith('cbase')
                     for v in check_views)
             col_pct = any(v.split('|')[3] == 'y' and
                           not v.split('|')[1].startswith(non_freqs) and
-                          not v.split('|')[-1] == 'cbase'
+                          not v.split('|')[-1].startswith('cbase')
                           for v in check_views)
             row_pct = any(v.split('|')[3] == 'x' and
                           not v.split('|')[1].startswith(non_freqs) and
-                          not v.split('|')[-1] == 'cbase'
+                          not v.split('|')[-1].startswith('cbase')
                           for v in check_views)
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
@@ -2670,7 +2670,16 @@ class Chain(object):
                 self._has_rules = ['x', 'y']
             else:
                 self._has_rules = rules
+        
+        # use_views = views[:]
+        # for first in self.axes[0]:
+        #     for second in self.axes[1]:
+        #         link = self._get_link(data_key, filter_key, first, second)
 
+        #         for v in use_views:
+        #             if v not in link:
+        #                 use_views.remove(v)
+        
         for first in self.axes[0]:
             found = []
             x_frames = []
@@ -2683,7 +2692,6 @@ class Chain(object):
 
                 if link is None:
                     continue
-
                 if prioritize: link = self._drop_substituted_views(link)
                 found_views, y_frames = self._concat_views(
                     link, views, rules_weight)
@@ -2709,12 +2717,25 @@ class Chain(object):
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
+
             if self._group_style == 'reduced' and self.array_style >- 1:
-                if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
-                for view in v) for v in self._given_views):
+                # OLD CHECK:
+                # ------------------------------------------------------------
+                # if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
+                # for view in v) for v in self._given_views):
+                
+                test_given_views = [v if isinstance(v, (tuple, list)) else [v] for v in self._given_views]
+                cond1 = any(len(v) >= 2 for v in test_given_views)
+                cond2 = False
+                for tgv in test_given_views:
+                    for view in tgv:
+                        if view.split('|')[1].startswith('t.'): cond2 = True
+                if not(cond1 and cond2):
                     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
-                elif any(len(v) == 3 for v in self._given_views):
-                    self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
+                # CONTINUED:
+                # ------------------------------------------------------------
+                # elif any(len(v) == 3 for v in self._given_views):
+                #     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
 
             if self.axis == 1:
                 self.views = found[-1]
@@ -2766,6 +2787,8 @@ class Chain(object):
             df = df.loc[rows, :]
 
         self._frame = df
+        self._index = df.index
+        self._columns = df.columns
         return None
 
     def _slice_edited_index(self, axis, positions):
@@ -3669,7 +3692,6 @@ class Chain(object):
         attrs = ['index', 'columns']
         if self.structure is not None:
             attrs.append('_frame_values')
-
         for attr in attrs:
             vals = attr[6:] if attr.startswith('_frame') else attr
             frame_val = getattr(self._frame, vals)
@@ -3679,7 +3701,7 @@ class Chain(object):
         if self.structure is not None:
             values = self._frame.values
             self._frame.loc[:, :] = self.frame_values
-            self.fram_values = values
+            self.frame_values = values
 
         return self
 

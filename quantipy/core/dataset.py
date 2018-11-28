@@ -3291,7 +3291,7 @@ class DataSet(object):
     def _verify_filter_name(self, name, suf='f', number=False):
         f = '{}_{}'.format(name, suf) if suf else name
         f = f.encode('utf8')
-        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', '')]
+        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', ''), ('&', '_')]
         for r in repl:
             f = f.replace(r[0], r[1])
         if number:
@@ -4988,6 +4988,7 @@ class DataSet(object):
             stat_recs = self._stat_view_recodes()
             all_recs = set([r for r in net_recs + stat_recs if r in mapper])
             for rec in all_recs:
+                if self._is_array_item(rec): continue
                 rn = self.get_property(rec, 'recoded_net')
                 if rn: self._set_property(rec, 'recoded_net', mapper[rn])
                 rs = self.get_property(rec, 'recoded_stat')
