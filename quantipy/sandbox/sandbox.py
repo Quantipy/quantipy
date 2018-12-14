@@ -1786,6 +1786,7 @@ class Chain(object):
         """
         def __init__(self, chain):
             c = chain.clone()
+            self.org_views = c.views
             self.df = c._frame
             self._org_idx = self.df.index
             self._edit_idx = range(0, len(self._org_idx))
@@ -1800,6 +1801,7 @@ class Chain(object):
                                 zip(self._edit_col,
                                     self._org_col.get_level_values(1))}
             self.df.columns = self._edit_col
+            self.array_mi = c._array_style == 0
             return None
 
         def _updated_index_tuples(self, axis):
@@ -1813,8 +1815,20 @@ class Chain(object):
                 current = self.df.index.values.tolist()
                 mapped = self._idx_valmap
                 org_tuples = self._org_idx.tolist()
+            
             merged = [mapped[val] if val in mapped else val for val in current]
             new_tuples = []
+   
+
+
+            # inserts_by_position = [merged.index(val) for val in merged 
+            #                        if not val in mapped.values()]
+            # new_views = []
+            # for name, no in self.org_views.items():
+            #     e = [name] * no
+            #     new_views.extend(e)
+            
+
             i = d = 0
             for merged_val in merged:
                 idx = i-d if i-d != len(org_tuples) else i-d-1
@@ -1829,11 +1843,15 @@ class Chain(object):
         def _reindex(self):
             """
             """
-            names = ['Question', 'Values']
+            y_names = ['Question', 'Values']
+            if not self.array_mi:
+                x_names = y_names
+            else:
+                x_names = ['Array', 'Questions']        
             tuples = self._updated_index_tuples(axis=0)
-            self.df.index = pd.MultiIndex.from_tuples(tuples, names=names)
+            self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
             tuples = self._updated_index_tuples(axis=1)
-            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=names)
+            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=y_names)
             return None
 
     def export(self):
