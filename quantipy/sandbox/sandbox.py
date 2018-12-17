@@ -2286,13 +2286,6 @@ class Chain(object):
                             counts = counts + ['__viewlike__']
                             colpcts = colpcts + ['__viewlike__']
                             rowpcts = rowpcts + ['__viewlike__']
-                        # else:
-                        #     if ci == 'counts_colpct' and self.grouping:
-                        #         if not self._is_counts(parts):
-                        #         # ...or self._is_c_base(parts):
-                        #             colpcts.append(None)
-                        #     else:
-                        #         colpcts.extend([v] * self.views[v])
                     dims = self._frame.shape
                     for row in range(0, dims[0]):
                         if ci == 'counts_colpct' and self.grouping:
