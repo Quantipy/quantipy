@@ -2094,7 +2094,7 @@ class Stack(defaultdict):
         c_views = view_keys + [v for v in c_views
                    if v.endswith('{}_check'.format(key))]
         if isinstance(cluster, ChainManager):
-            cluster.get('checks', 'no_filter', x, y, c_views, folder=name)
+            cluster.get('checks', 'no_filter', x, y, c_views, folder=name, rules=False)
         else:
             if name == 'stat_check':
                 chain = c_stack.get_chain(x=x, y=y, views=c_views, orient_on='x')
