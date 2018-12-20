@@ -2273,7 +2273,7 @@ class Stack(defaultdict):
 
 
     @modify(to_list=['on_vars', '_batches'])
-    def add_nets(self, on_vars, net_map, expand=None, calc=None, text_prefix='Net:',
+    def add_nets(self, on_vars, net_map, expand=None, calc=None, rebase=None, text_prefix='Net:',
                  checking_cluster=None, _batches='all', recode='auto', verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
@@ -2306,6 +2306,9 @@ class Stack(defaultdict):
             >>> {'calc': ('net_1', add, 'net_2'), 'text': {'en-GB': 'UK CALC LAB',
             ...                                            'da-DK': 'DA CALC LAB',
             ...                                            'de-DE': 'DE CALC LAB'}}
+        rebase : str, default None
+            Use another variables margin's value vector for column percentage
+            computation. 
         text_prefix : str, default 'Net:'
             By default each code grouping/net will have its ``text`` label prefixed
             with 'Net: '. Toggle by passing None (or an empty str, '').
@@ -2404,7 +2407,8 @@ class Stack(defaultdict):
                            'expand': expand if expand in ['after', 'before'] else None,
                            'complete': True if expand else False,
                            'calc': calc,
-                           'calc_only': calc_only}
+                           'calc_only': calc_only,
+                           'rebase': rebase}
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 

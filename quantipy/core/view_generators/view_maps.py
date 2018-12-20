@@ -328,7 +328,7 @@ class QuantipyViews(ViewMapper):
             if rel_to is not None:
                 if q.type == 'array':
                     rel_to = 'y'
-                q.normalize(rel_to)
+                q.normalize(rel_to, kwargs.get('rebase', None))
             q.to_df()
             view.cbases = q.cbase
             view.rbases = q.rbase

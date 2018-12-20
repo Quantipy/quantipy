@@ -75,6 +75,7 @@ class Quantity(object):
         self.result = None
         self.logical_conditions = []
         self.cbase = self.rbase = None
+        self.rebased = {}
         self.comb_x = self.comb_y = None
         self.calc_x = self.calc_y = None
         self._has_x_margin = self._has_y_margin = False
@@ -221,7 +222,7 @@ class Quantity(object):
                 org_sources = self.ds.sources(org_parent)
             else:
                 org_sources = self.ds.sources(self.x)
-            if not len(org_sources) == len(new_sources):
+            if not len(org_sources) == len(new_sources) and array_swap:
                 err = "Cannot swap array-type Quantity with array of different "
                 err += "source items length ({} vs. {})!"
                 err = err.format(len(org_sources), len(new_sources))
@@ -1536,9 +1537,33 @@ class Quantity(object):
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
 
-    def normalize(self, on='y'):
+    def rebase(self, on=None):
+        """
+        Normalize to another's variable column margin (base).
+        
+        Parameters
+        ----------
+        on : str, default None
+            The variable from which the new margin should be generated from.
+            ``None`` will reset any rebased result`.
+        
+        Returns
+        -------
+        None
+        """
+        if not on:
+            self.rebased = {}
+            return self
+        swapped = self.swap(on, inplace=False)
+        self.rebased = {on: swapped.count().cbase}
+        return self
+
+    def normalize(self, on='y', rebase_on=None):
         """
         Convert a raw cell count result to its percentage representation.
+
+        
+        .. note:: Will prioritize the self.rebased margin row if one is found.    
 
         Parameters
         ----------
@@ -1546,7 +1571,9 @@ class Quantity(object):
             Defines the base to normalize the result on. ``'y'`` will
             produce column percentages, ``'x'`` will produce row
             percentages.
-
+        rebase_on : str, default None
+            Use another variable's column margin for the computation. Only
+            allowed if ``on`` ```'y'``.
         Returns
         -------
         self
@@ -1571,12 +1598,22 @@ class Quantity(object):
             if self.x == '@': on = 'y' if on == 'x' else 'x'
             if on == 'y':
                 if self._has_y_margin or self.y == '@' or self.x == '@':
-                    base = self.cbase
+                    if not rebase_on:
+                        base = self.cbase 
+                    else:
+                        self.rebase(rebase_on)
+                        base = self.rebased.values()[0]
                 else:
-                    if self._get_type() == 'array':
+                    if not rebase_on:
                         base = self.cbase
                     else:
-                        base = self.cbase[:, 1:]
+                        self.rebase(rebase_on)
+                        base = self.rebased.values()[0]
+                    
+                    if self._get_type() != 'array':
+                        base = base[:, 1:]
+            
+
             elif on == 'x':
                 if self._has_x_margin:
                     base = self.rbase
@@ -1592,40 +1629,6 @@ class Quantity(object):
             self.result = self.result / base * 100
             if self.x == '@':
                 self.result = self.result.T
-        return self
-
-    def rebase(self, reference, on='counts', overwrite_margins=True):
-        """
-        """
-        val_err = 'No frequency aggregation to rebase.'
-        if self.result is None:
-            raise ValueError(val_err)
-        elif self.current_agg != 'freq':
-            raise ValueError(val_err)
-        is_df = self._force_to_nparray()
-        has_margin = self._attach_margins()
-        ref = self.swap(var=reference, inplace=False)
-        if self._sects_identical(self.xdef, ref.xdef):
-            pass
-        elif self._sects_different_order(self.xdef, ref.xdef):
-            ref.xdef = self.xdef
-            ref._x_indexers = ref._get_x_indexers()
-            ref.matrix = ref.matrix[:, ref._x_indexers + [0]]
-        elif self._sect_is_subset(self.xdef, ref.xdef):
-            ref.xdef = [code for code in ref.xdef if code in self.xdef]
-            ref._x_indexers = ref._sort_indexer_as_codes(ref._x_indexers,
-                                                         self.xdef)
-            ref.matrix = ref.matrix[:, [0] + ref._x_indexers]
-        else:
-            idx_err = 'Axis defintion is not a subset of rebase reference.'
-            raise IndexError(idx_err)
-        ref_freq = ref.count(as_df=False)
-        self.result = (self.result/ref_freq.result) * 100
-        if overwrite_margins:
-            self.rbase = ref_freq.rbase
-            self.cbase = ref_freq.cbase
-        self._organize_margins(has_margin)
-        if is_df: self.to_df()
         return self
 
     @staticmethod
