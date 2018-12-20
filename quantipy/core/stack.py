@@ -2408,7 +2408,7 @@ class Stack(defaultdict):
                            'complete': True if expand else False,
                            'calc': calc,
                            'calc_only': calc_only,
-                           'rebase': rebase}
+                           'other_base': rebase}
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 

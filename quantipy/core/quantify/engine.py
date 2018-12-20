@@ -1539,7 +1539,7 @@ class Quantity(object):
 
     def rebase(self, on=None):
         """
-        Normalize to another's variable column margin (base).
+        Instruct normalizing to another's variable column margin (base).
         
         Parameters
         ----------
@@ -1558,7 +1558,7 @@ class Quantity(object):
         self.rebased = {on: swapped.count().cbase}
         return self
 
-    def normalize(self, on='y', rebase_on=None):
+    def normalize(self, on='y', other_base=None, on_elements=None):
         """
         Convert a raw cell count result to its percentage representation.
 
@@ -1571,7 +1571,7 @@ class Quantity(object):
             Defines the base to normalize the result on. ``'y'`` will
             produce column percentages, ``'x'`` will produce row
             percentages.
-        rebase_on : str, default None
+        other_base : str, default None
             Use another variable's column margin for the computation. Only
             allowed if ``on`` ```'y'``.
         Returns
@@ -1598,16 +1598,16 @@ class Quantity(object):
             if self.x == '@': on = 'y' if on == 'x' else 'x'
             if on == 'y':
                 if self._has_y_margin or self.y == '@' or self.x == '@':
-                    if not rebase_on:
+                    if not other_base:
                         base = self.cbase 
                     else:
-                        self.rebase(rebase_on)
+                        self.rebase(other_base)
                         base = self.rebased.values()[0]
                 else:
-                    if not rebase_on:
+                    if not other_base:
                         base = self.cbase
                     else:
-                        self.rebase(rebase_on)
+                        self.rebase(other_base)
                         base = self.rebased.values()[0]
                     
                     if self._get_type() != 'array':
