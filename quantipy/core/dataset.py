@@ -6677,9 +6677,9 @@ class DataSet(object):
         """
         meta = self._meta
         new_meta = self.start_meta(self.text_key)
-        new_meta['info']['dataset'] = {'name': ''}
-        dname = '{}_derotate'.format(meta['info']['dataset']['name'])
-        new_meta['info']['dataset']['name'] = dname
+        n = meta['info'].get('dataset', meta['info']).get('name')
+        dname = '{}_derotate'.format(n)
+        new_meta['info']['dataset'] = {'name': dname}
         for var in other:
             new_meta = self._assume_meta(new_meta, var, var)
 
