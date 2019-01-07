@@ -290,7 +290,7 @@ class QuantipyViews(ViewMapper):
         axis, condition, rel_to, weights, text = view.get_std_params()
         logic, expand, complete, calc, exclude, rescale = view.get_edit_params() 
         # ====================================================================
-        # this block of kwargs should be removed
+        # This block of kwargs should be removed
         # parameter overwriting should be done using the template
         # NOT QP core code!
         if kwargs.get('combine', False):
@@ -302,6 +302,22 @@ class QuantipyViews(ViewMapper):
                         logic_def['expand'] = None
                         logic[no] = logic_def
                 view._kwargs['logic'] = logic
+        # --------------------------------------------------------------------
+        # This block of code resolves the rel_to arg. in order to be able to use
+        # rebased % computations. We are also adjusting for the regular notation
+        # string here...
+        # We need to avoid the forced overwriting of the kwarg and use the actual
+        # rel_to != 'x', 'y', 'counts_sum' string...
+        per_cell = False
+        if not rel_to in ['', None, 'x', 'y', 'counts_sum']:
+            view._kwargs['rel_to'] = 'y'
+            rel_to_kind = rel_to.split('.')
+            if len(rel_to_kind) == 2:
+                rel_to = rel_to_kind[0]
+                if rel_to_kind[1] == 'counts':
+                    per_cell = True
+                elif rel_to_kind[1] == 'base':
+                    per_cell = False
         # ====================================================================
         w = weights if weights is not None else None
         ignore = True if name == 'cbase_gross' else False
@@ -328,21 +344,7 @@ class QuantipyViews(ViewMapper):
             if rel_to is not None:
                 if q.type == 'array':
                     rel_to = 'y'
-                if not rel_to in ['x', 'y']:
-                    
-                    rel_to_kind = rel_to.split('.')
-                    if len(rel_to_kind) == 2:
-                        if rel_to_kind[1] == 'counts':
-                            per_cells = True
-                        elif rel_to_kind == 'base':
-                            per_cells = False
-                    else:
-                        per_cells = False
-                    per_cells = = rel_to.split('.')[1]
-                    rel_to = 'y'
-                
-                q.normalize(rel_to,
-                            per_cells=rel_to.)
+                q.normalize(rel_to, per_cell=per_cell)
             q.to_df()
             view.cbases = q.cbase
             view.rbases = q.rbase

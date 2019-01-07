@@ -2400,15 +2400,17 @@ class Stack(defaultdict):
                 else:
                     calc_only = False
                 view = qp.ViewMapper()
-                view.make_template('frequency', {'rel_to': [None, 'y']})
-
+                if not rebase:
+                    view.make_template('frequency', {'rel_to': [None, 'y']})
+                else:
+                    rebase = '{}.base'.format(rebase)
+                    view.make_template('frequency', {'rel_to': [None, rebase]})
                 options = {'logic': netdef,
                            'axis': 'x',
                            'expand': expand if expand in ['after', 'before'] else None,
                            'complete': True if expand else False,
                            'calc': calc,
-                           'calc_only': calc_only,
-                           'other_base': rebase}
+                           'calc_only': calc_only}
                 view.add_method('net', kwargs=options)
                 self.aggregate(view, False, [], _batches, on_vars, verbose=verbose)
 

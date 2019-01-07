@@ -1590,22 +1590,20 @@ class Quantity(object):
             compute rebased percentages providing its name instead.
         per_cell : bool, default False
             Compute percentages on a cell-per-cell basis, effectively treating
-            each category as a base figure on its own. Only possible if the
+            each categorical row as a base figure on its own. Only possible if the
             ``on`` argument does not indidcate an axis result (``'x'``, ``'y'``, 
-            ``'counts_sum'``) but another variable name. The related ``xdef``
-            codes length must be identical for this, otherwise a ``ValueError``
-            is raised. 
+            ``'counts_sum'``), but instead another variable's name. The related
+            ``xdef`` codes collection length must be identical for this for work,
+            otherwise a ``ValueError`` is raised. 
 
         Returns
         -------
         self
             Updates a count-based aggregation in the ``result`` property.
         """
-        # if on not in ['x', 'y', 'counts_sum']:
-        #     raise ValueError("'on' must be one of 'x', 'y' or 'counts_sum'.")
         rebase = on not in ['x', 'y', 'counts_sum']
         other_counts = rebase and per_cell
-        other_base = not other_counts
+        other_base = rebase and not per_cell
         if on == 'counts_sum' and (self.comb_x or self.comb_y):
             raise ValueError("Groups cannot be normalized on 'counts_sum'")
         if on == 'counts_sum':
@@ -1620,21 +1618,21 @@ class Quantity(object):
             self._organize_margins(has_margin)
             if is_df: self.to_df()
         elif other_counts:
-            self._normalize_on_cells(other_counts)
+            self._normalize_on_cells(on)
         else:
             if self.x == '@': on = 'y' if on == 'x' else 'x'
-            if on == 'y':
+            if on == 'y' or other_base:
                 if self._has_y_margin or self.y == '@' or self.x == '@':
                     if not other_base:
                         base = self.cbase 
                     else:
-                        self.rebase(other_base)
+                        self.rebase(on)
                         base = self.rebased.values()[0]
                 else:
                     if not other_base:
                         base = self.cbase
                     else:
-                        self.rebase(other_base)
+                        self.rebase(on)
                         base = self.rebased.values()[0]
                     if self._get_type() != 'array':
                         base = base[:, 1:]
