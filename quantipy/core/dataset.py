@@ -224,6 +224,26 @@ class DataSet(object):
         self._verbose_infos = verbose
         return typed_batches
 
+    def _adds_per_mains(self, reverse=False):
+        """
+        """
+        bmeta = self._meta['sets']['batches']
+        adds_per_mains = {bname: bdef['additions'] for bname, bdef
+                          in bmeta.items() if bdef['additions']}
+        if not reverse:
+            return adds_per_mains
+        else:
+            rev = {}
+            adds = self._typed_batches('add')
+            for add in adds:
+                for m, a in adds_per_mains.items():
+                    if add in a:
+                        if add in rev:
+                            rev[add].append(m)
+                        else:
+                            rev[add] = [m]
+            return rev
+
     def set_verbose_errmsg(self, verbose=True):
         """
         """
