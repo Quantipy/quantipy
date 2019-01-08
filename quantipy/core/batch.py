@@ -422,6 +422,31 @@ class Batch(qp.DataSet):
         return None
 
 
+    def as_main(self, keep=False):
+        """
+        Transform additional ``Batch`` definitions into regular (parent/main) ones.
+
+        Parameters
+        ----------
+        keep : bool, default False
+            ``True`` will keep the original related parent Batch, while the
+            default is to drop it.
+
+        Returns
+        -------
+        None
+        """
+        if not self.additional: return None
+        self.additional = False
+        bmeta = self._meta['sets']['batches']
+        parent = self._adds_per_mains(True)[self.name]
+        for p in parent:
+            if not keep:
+                del bmeta[p]
+            else:
+                bmeta[p]['additions'].remove(self.name)
+        self._update()
+
     @modify(to_list='varlist')
     def add_variables(self, varlist):
         """

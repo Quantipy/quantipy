@@ -205,22 +205,26 @@ class DataSet(object):
     def _by_property(self, prop):
         return [v for v in self.variables() if self.get_property(v, prop)]
 
-    def batches(self):
-        if 'batches' in self._meta['sets']:
-            return self._meta['sets']['batches'].keys()
-        else:
+    def batches(self, main=True, add=True):
+        if not 'batches' in self._meta['sets'] or (not main and not add):
             return []
+        batches =  self._meta['sets']['batches'].keys()
+        if main and add:
+            return batches
+        if main:
+            return self._typed_batches(batches, 'main')
+        if add:
+            return self._typed_batches(batches, 'add')
 
-    def _typed_batches(self, kind):
+    def _typed_batches(self, all_batches, kind):
         """
         """
         verbose = self._verbose_infos
         self._verbose_infos = False
-        batches = self.batches()
         if kind == 'main':
-            typed_batches = [b for b in batches if not self.get_batch(b).additional]
+            typed_batches = [b for b in all_batches if not self.get_batch(b).additional]
         elif kind == 'add':
-            typed_batches = [b for b in batches if self.get_batch(b).additional]
+            typed_batches = [b for b in all_batches if self.get_batch(b).additional]
         self._verbose_infos = verbose
         return typed_batches
 
@@ -234,7 +238,7 @@ class DataSet(object):
             return adds_per_mains
         else:
             rev = {}
-            adds = self._typed_batches('add')
+            adds = self._typed_batches(bmeta.keys(), 'add')
             for add in adds:
                 for m, a in adds_per_mains.items():
                     if add in a:
