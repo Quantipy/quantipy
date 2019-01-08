@@ -2732,7 +2732,7 @@ class Chain(object):
                 for tgv in test_given_views:
                     for view in tgv:
                         if view.split('|')[1].startswith('t.'): cond2 = True
-                if not(cond1 and cond2) or (cond1 and self.array_style == 1):
+                if not(cond1 and cond2) or cond1:
                     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
                 # CONTINUED:
                 # ------------------------------------------------------------
