@@ -1537,26 +1537,11 @@ class Quantity(object):
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
 
-    def rebase(self, on=None):
+    def _get_other_base(self, other):
         """
-        Instruct normalizing to another's variable column margin (base).
-        
-        Parameters
-        ----------
-        on : str, default None
-            The variable from which the new margin should be generated from.
-            ``None`` will reset any rebased result`.
-        
-        Returns
-        -------
-        None
         """
-        if not on:
-            self.rebased = {}
-            return self
-        swapped = self.swap(on, inplace=False)
-        self.rebased = {on: swapped.count().cbase}
-        return self
+        swapped = self.swap(other, inplace=False)
+        return swapped.count().cbase
 
     def _normalize_on_cells(self, other):
         """
@@ -1579,7 +1564,7 @@ class Quantity(object):
         """
         Convert a raw cell count result to its percentage representation.
 
-        .. note:: Will prioritize the self.rebased margin row if one is found.    
+        .. note:: Will prioritize the self.rebased margin row if one is found.
 
         Parameters
         ----------
@@ -1591,10 +1576,10 @@ class Quantity(object):
         per_cell : bool, default False
             Compute percentages on a cell-per-cell basis, effectively treating
             each categorical row as a base figure on its own. Only possible if the
-            ``on`` argument does not indidcate an axis result (``'x'``, ``'y'``, 
+            ``on`` argument does not indidcate an axis result (``'x'``, ``'y'``,
             ``'counts_sum'``), but instead another variable's name. The related
             ``xdef`` codes collection length must be identical for this for work,
-            otherwise a ``ValueError`` is raised. 
+            otherwise a ``ValueError`` is raised.
 
         Returns
         -------
@@ -1624,16 +1609,14 @@ class Quantity(object):
             if on == 'y' or other_base:
                 if self._has_y_margin or self.y == '@' or self.x == '@':
                     if not other_base:
-                        base = self.cbase 
+                        base = self.cbase
                     else:
-                        self.rebase(on)
-                        base = self.rebased.values()[0]
+                        base = self._get_other_base(on)
                 else:
                     if not other_base:
                         base = self.cbase
                     else:
-                        self.rebase(on)
-                        base = self.rebased.values()[0]
+                        base = self._get_other_base(on)
                     if self._get_type() != 'array':
                         base = base[:, 1:]
             elif on == 'x':
