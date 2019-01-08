@@ -211,6 +211,19 @@ class DataSet(object):
         else:
             return []
 
+    def _typed_batches(self, kind):
+        """
+        """
+        verbose = self._verbose_infos
+        self._verbose_infos = False
+        batches = self.batches()
+        if kind == 'main':
+            typed_batches = [b for b in batches if not self.get_batch(b).additional]
+        elif kind == 'add':
+            typed_batches = [b for b in batches if self.get_batch(b).additional]
+        self._verbose_infos = verbose
+        return typed_batches
+
     def set_verbose_errmsg(self, verbose=True):
         """
         """
