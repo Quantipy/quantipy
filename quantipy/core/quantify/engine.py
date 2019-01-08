@@ -75,6 +75,7 @@ class Quantity(object):
         self.result = None
         self.logical_conditions = []
         self.cbase = self.rbase = None
+        self.rebased = {}
         self.comb_x = self.comb_y = None
         self.calc_x = self.calc_y = None
         self._has_x_margin = self._has_y_margin = False
@@ -221,7 +222,7 @@ class Quantity(object):
                 org_sources = self.ds.sources(org_parent)
             else:
                 org_sources = self.ds.sources(self.x)
-            if not len(org_sources) == len(new_sources):
+            if not len(org_sources) == len(new_sources) and array_swap:
                 err = "Cannot swap array-type Quantity with array of different "
                 err += "source items length ({} vs. {})!"
                 err = err.format(len(org_sources), len(new_sources))
@@ -1536,25 +1537,59 @@ class Quantity(object):
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
 
-    def normalize(self, on='y'):
+    def _get_other_base(self, other):
+        """
+        """
+        swapped = self.swap(other, inplace=False)
+        return swapped.count().cbase
+
+    def _normalize_on_cells(self, other):
+        """
+        """
+        is_df = self._force_to_nparray()
+        other_q = self.swap(other, update_axis_def=False, inplace=False)
+        other_len = len(other_q.xdef)
+        q_len = len(self.xdef)
+        if not other_len == q_len:
+            err = "Cannot normalize on '{}', shapes do not match! ({} vs. {})"
+            raise ValueError(err.format(other, q_len, other_len))
+        has_margin = self._attach_margins()
+        counts = other_q.count(as_df=False, margin=has_margin).result
+        self._organize_margins(has_margin)
+        self.result = (self.result / counts) * 100
+        if is_df: self.to_df()
+        return None
+
+    def normalize(self, on='y', per_cell=False):
         """
         Convert a raw cell count result to its percentage representation.
 
+        .. note:: Will prioritize the self.rebased margin row if one is found.
+
         Parameters
         ----------
-        on : {'y', 'x'}, default 'y'
+        on : {'y', 'x', 'counts_sum', str}, default 'y'
             Defines the base to normalize the result on. ``'y'`` will
-            produce column percentages, ``'x'`` will produce row
-            percentages.
+            produce column percentages, ``'x'`` will produce row percentages.
+            It is also possible to use another question's frequencies to
+            compute rebased percentages providing its name instead.
+        per_cell : bool, default False
+            Compute percentages on a cell-per-cell basis, effectively treating
+            each categorical row as a base figure on its own. Only possible if the
+            ``on`` argument does not indidcate an axis result (``'x'``, ``'y'``,
+            ``'counts_sum'``), but instead another variable's name. The related
+            ``xdef`` codes collection length must be identical for this for work,
+            otherwise a ``ValueError`` is raised.
 
         Returns
         -------
         self
-            Updates an count-based aggregation in the ``result`` property.
+            Updates a count-based aggregation in the ``result`` property.
         """
-        if on not in ['x', 'y', 'counts_sum']:
-            raise ValueError("'on' must be one of 'x', 'y' or 'counts_sum'.")
-        elif on == 'counts_sum' and (self.comb_x or self.comb_y):
+        rebase = on not in ['x', 'y', 'counts_sum']
+        other_counts = rebase and per_cell
+        other_base = rebase and not per_cell
+        if on == 'counts_sum' and (self.comb_x or self.comb_y):
             raise ValueError("Groups cannot be normalized on 'counts_sum'")
         if on == 'counts_sum':
             is_df = self._force_to_nparray()
@@ -1567,16 +1602,23 @@ class Quantity(object):
             self.result = self.result / base * 100
             self._organize_margins(has_margin)
             if is_df: self.to_df()
+        elif other_counts:
+            self._normalize_on_cells(on)
         else:
             if self.x == '@': on = 'y' if on == 'x' else 'x'
-            if on == 'y':
+            if on == 'y' or other_base:
                 if self._has_y_margin or self.y == '@' or self.x == '@':
-                    base = self.cbase
-                else:
-                    if self._get_type() == 'array':
+                    if not other_base:
                         base = self.cbase
                     else:
-                        base = self.cbase[:, 1:]
+                        base = self._get_other_base(on)
+                else:
+                    if not other_base:
+                        base = self.cbase
+                    else:
+                        base = self._get_other_base(on)
+                    if self._get_type() != 'array':
+                        base = base[:, 1:]
             elif on == 'x':
                 if self._has_x_margin:
                     base = self.rbase
@@ -1592,40 +1634,6 @@ class Quantity(object):
             self.result = self.result / base * 100
             if self.x == '@':
                 self.result = self.result.T
-        return self
-
-    def rebase(self, reference, on='counts', overwrite_margins=True):
-        """
-        """
-        val_err = 'No frequency aggregation to rebase.'
-        if self.result is None:
-            raise ValueError(val_err)
-        elif self.current_agg != 'freq':
-            raise ValueError(val_err)
-        is_df = self._force_to_nparray()
-        has_margin = self._attach_margins()
-        ref = self.swap(var=reference, inplace=False)
-        if self._sects_identical(self.xdef, ref.xdef):
-            pass
-        elif self._sects_different_order(self.xdef, ref.xdef):
-            ref.xdef = self.xdef
-            ref._x_indexers = ref._get_x_indexers()
-            ref.matrix = ref.matrix[:, ref._x_indexers + [0]]
-        elif self._sect_is_subset(self.xdef, ref.xdef):
-            ref.xdef = [code for code in ref.xdef if code in self.xdef]
-            ref._x_indexers = ref._sort_indexer_as_codes(ref._x_indexers,
-                                                         self.xdef)
-            ref.matrix = ref.matrix[:, [0] + ref._x_indexers]
-        else:
-            idx_err = 'Axis defintion is not a subset of rebase reference.'
-            raise IndexError(idx_err)
-        ref_freq = ref.count(as_df=False)
-        self.result = (self.result/ref_freq.result) * 100
-        if overwrite_margins:
-            self.rbase = ref_freq.rbase
-            self.cbase = ref_freq.cbase
-        self._organize_margins(has_margin)
-        if is_df: self.to_df()
         return self
 
     @staticmethod
