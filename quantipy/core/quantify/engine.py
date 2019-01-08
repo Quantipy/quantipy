@@ -1627,7 +1627,7 @@ class Quantity(object):
             if isinstance(self.result, pd.DataFrame):
                 if self.x == '@':
                     self.result = self.result.T
-                if on == 'y':
+                if on == 'y' or other_base:
                     base = np.repeat(base, self.result.shape[0], axis=0)
                 else:
                     base = np.repeat(base, self.result.shape[1], axis=1)
