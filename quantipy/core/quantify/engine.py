@@ -1537,51 +1537,59 @@ class Quantity(object):
         mi = pd.MultiIndex.from_product(values, names=names)
         return mi
 
-    def rebase(self, on=None):
+    def _get_other_base(self, other):
         """
-        Normalize to another's variable column margin (base).
-        
-        Parameters
-        ----------
-        on : str, default None
-            The variable from which the new margin should be generated from.
-            ``None`` will reset any rebased result`.
-        
-        Returns
-        -------
-        None
         """
-        if not on:
-            self.rebased = {}
-            return self
-        swapped = self.swap(on, inplace=False)
-        self.rebased = {on: swapped.count().cbase}
-        return self
+        swapped = self.swap(other, inplace=False)
+        return swapped.count().cbase
 
-    def normalize(self, on='y', rebase_on=None):
+    def _normalize_on_cells(self, other):
+        """
+        """
+        is_df = self._force_to_nparray()
+        other_q = self.swap(other, update_axis_def=False, inplace=False)
+        other_len = len(other_q.xdef)
+        q_len = len(self.xdef)
+        if not other_len == q_len:
+            err = "Cannot normalize on '{}', shapes do not match! ({} vs. {})"
+            raise ValueError(err.format(other, q_len, other_len))
+        has_margin = self._attach_margins()
+        counts = other_q.count(as_df=False, margin=has_margin).result
+        self._organize_margins(has_margin)
+        self.result = (self.result / counts) * 100
+        if is_df: self.to_df()
+        return None
+
+    def normalize(self, on='y', per_cell=False):
         """
         Convert a raw cell count result to its percentage representation.
 
-        
-        .. note:: Will prioritize the self.rebased margin row if one is found.    
+        .. note:: Will prioritize the self.rebased margin row if one is found.
 
         Parameters
         ----------
-        on : {'y', 'x'}, default 'y'
+        on : {'y', 'x', 'counts_sum', str}, default 'y'
             Defines the base to normalize the result on. ``'y'`` will
-            produce column percentages, ``'x'`` will produce row
-            percentages.
-        rebase_on : str, default None
-            Use another variable's column margin for the computation. Only
-            allowed if ``on`` ```'y'``.
+            produce column percentages, ``'x'`` will produce row percentages.
+            It is also possible to use another question's frequencies to
+            compute rebased percentages providing its name instead.
+        per_cell : bool, default False
+            Compute percentages on a cell-per-cell basis, effectively treating
+            each categorical row as a base figure on its own. Only possible if the
+            ``on`` argument does not indidcate an axis result (``'x'``, ``'y'``,
+            ``'counts_sum'``), but instead another variable's name. The related
+            ``xdef`` codes collection length must be identical for this for work,
+            otherwise a ``ValueError`` is raised.
+
         Returns
         -------
         self
-            Updates an count-based aggregation in the ``result`` property.
+            Updates a count-based aggregation in the ``result`` property.
         """
-        if on not in ['x', 'y', 'counts_sum']:
-            raise ValueError("'on' must be one of 'x', 'y' or 'counts_sum'.")
-        elif on == 'counts_sum' and (self.comb_x or self.comb_y):
+        rebase = on not in ['x', 'y', 'counts_sum']
+        other_counts = rebase and per_cell
+        other_base = rebase and not per_cell
+        if on == 'counts_sum' and (self.comb_x or self.comb_y):
             raise ValueError("Groups cannot be normalized on 'counts_sum'")
         if on == 'counts_sum':
             is_df = self._force_to_nparray()
@@ -1594,26 +1602,23 @@ class Quantity(object):
             self.result = self.result / base * 100
             self._organize_margins(has_margin)
             if is_df: self.to_df()
+        elif other_counts:
+            self._normalize_on_cells(on)
         else:
             if self.x == '@': on = 'y' if on == 'x' else 'x'
-            if on == 'y':
+            if on == 'y' or other_base:
                 if self._has_y_margin or self.y == '@' or self.x == '@':
-                    if not rebase_on:
-                        base = self.cbase 
-                    else:
-                        self.rebase(rebase_on)
-                        base = self.rebased.values()[0]
-                else:
-                    if not rebase_on:
+                    if not other_base:
                         base = self.cbase
                     else:
-                        self.rebase(rebase_on)
-                        base = self.rebased.values()[0]
-                    
+                        base = self._get_other_base(on)
+                else:
+                    if not other_base:
+                        base = self.cbase
+                    else:
+                        base = self._get_other_base(on)
                     if self._get_type() != 'array':
                         base = base[:, 1:]
-            
-
             elif on == 'x':
                 if self._has_x_margin:
                     base = self.rbase
