@@ -71,9 +71,38 @@ Wave. Wave All         100.0
 
 Let's assume we want to use the original targets for the first three waves but
 the remaining two waves need to reflect some changes in both gender and the age
-distributions. We first define a new set of targets:
+distributions. We first define a new set of targets that should apply only to
+the waves 4 and 5::
+
+    gender_targets_2 = {'gender': {1: 30.0, 2: 70.0}}
+    age_targets_2 = {'age_banded': {1: 35.4, 2: 60.91, 3: 3.69}}
+    all_targets_2 = [gender_targets_2, age_targets_2]
+
+We then set the filter expressions for the respective subsets of the data, as per:
+
+>>> filter_wave1 = 'Wave == 1'
+>>> filter_wave2 = 'Wave == 2'
+>>> filter_wave3 = 'Wave == 3'
+>>> filter_wave4 = 'Wave == 4'
+>>> filter_wave5 = 'Wave == 5'
+
+And add our weight specifications accordingly:
+
+>>> scheme.add_groups(name='Wave 1', filter_def=filter_wave1, targets=all_targets)
+>>> scheme.add_groups(name='Wave 2', filter_def=filter_wave2, targets=all_targets)
+>>> scheme.add_groups(name='Wave 3', filter_def=filter_wave3, targets=all_targets)
+>>> scheme.add_groups(name='Wave 4', filter_def=filter_wave4, targets=all_targets_2)
+>>> scheme.add_groups(name='Wave 5', filter_def=filter_wave5, targets=all_targets_2)
 
 
+GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
+
+.. note::
+
+    For historical reasons, the :doc:`logic operators <../dataprocessing/06_logics>` currently **do not** work within the ``Rim`` module. This means that all filter definitions need to be valid
+    string expressions suitable for the ``pandas.DataFrame.query()`` `method <https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.query.html>`_.
+    We are planning to abandon this limitation as soon as possible to enable
+    easier and more complex filters that are consistent with the rest of the library.
 
 
 Advanced options
