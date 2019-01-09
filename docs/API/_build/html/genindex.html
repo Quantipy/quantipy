@@ -14,6 +14,8 @@
 
   
   
+  
+  
 
   
 
@@ -23,28 +25,20 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="#"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="Quantipy 0.1.3 documentation" href="index.html"/> 
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -70,18 +64,13 @@
           
 
           
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
 
           
         </div>
@@ -90,7 +79,10 @@
           
             
             
-                <ul>
+              
+            
+            
+              <ul>
 <li class="toctree-l1"><a class="reference internal" href="sites/release_notes/00_overview.html">Release notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sites/release_notes/01_latest.html">Latest (26/10/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/release_notes/02_archive.html">Archived release notes</a><ul>
@@ -243,6 +235,21 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="sites/lib_doc/weights/00_overview.html">Weights</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sites/lib_doc/weights/01_background.html">Background and methodology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sites/lib_doc/weights/02_rim.html">Weight scheme setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sites/lib_doc/weights/02_rim.html#using-the-rim-class">Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/weights/02_rim.html#target-distributions">Target distributions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/weights/02_rim.html#weight-groups-and-filters">Weight groups and filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sites/lib_doc/weights/02_rim.html#advanced-options">Advanced options</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="sites/lib_doc/weights/02_rim.html#integration-within-dataset">Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sites/lib_doc/weights/03_diags.html">Diagnostics</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="sites/lib_doc/batch/00_overview.html"><code class="docutils literal notranslate"><span class="pre">Batch</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sites/lib_doc/batch/01_create_load.html">Creating/ Loading a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/lib_doc/batch/02_variables.html">Adding variables to a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a><ul>
@@ -302,7 +309,6 @@
 <li class="toctree-l2"><a class="reference internal" href="sites/api_ref/quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/api_ref/QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/api_ref/Rim_scheme.html">Rim</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sites/api_ref/Stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/api_ref/View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sites/api_ref/ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -318,32 +324,52 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">Quantipy</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Quantipy</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Index</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Index</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -381,13 +407,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sites/api_ref/Cluster.html#quantipy.Cluster.add_chain">add_chain() (quantipy.Cluster method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.add_data">add_data() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.add_data">add_data() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.add_filter_var">add_filter_var() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/Rim_scheme.html#quantipy.Rim.add_group">add_group() (quantipy.Rim method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.add_link">add_link() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.add_link">add_link() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.add_meta">add_meta() (quantipy.DataSet method)</a>
 </li>
@@ -395,19 +421,19 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.add_nets">add_nets() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.add_nets">add_nets() (quantipy.Stack method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.add_stats">add_stats() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.add_stats">add_stats() (quantipy.Stack method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.add_tests">add_tests() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.add_tests">add_tests() (quantipy.Stack method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.aggregate">aggregate() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.aggregate">aggregate() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.all">all() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.any">any() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.apply_meta_edits">apply_meta_edits() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.apply_meta_edits">apply_meta_edits() (quantipy.Stack method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -475,7 +501,7 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.crosstab">crosstab() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.cumulative_sum">cumulative_sum() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.cumulative_sum">cumulative_sum() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.cut_item_texts">cut_item_texts() (quantipy.DataSet method)</a>
 </li>
@@ -500,7 +526,7 @@
       <ul>
         <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.describe">(quantipy.DataSet method)</a>
 </li>
-        <li><a href="sites/api_ref/Stack.html#quantipy.Stack.describe">(quantipy.Stack method)</a>
+        <li><a href="sites/api_ref/stack.html#quantipy.Stack.describe">(quantipy.Stack method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -565,7 +591,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.freeze_master_meta">freeze_master_meta() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.freeze_master_meta">freeze_master_meta() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/QuantipyViews.html#quantipy.QuantipyViews.frequency">frequency() (quantipy.QuantipyViews method)</a>
 </li>
@@ -575,7 +601,7 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.from_excel">from_excel() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.from_sav">from_sav() (quantipy.Stack static method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.from_sav">from_sav() (quantipy.Stack static method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.from_stack">from_stack() (quantipy.DataSet method)</a>
 </li>
@@ -680,7 +706,7 @@
       <ul>
         <li><a href="sites/api_ref/Cluster.html#quantipy.Cluster.load">(quantipy.Cluster static method)</a>
 </li>
-        <li><a href="sites/api_ref/Stack.html#quantipy.Stack.load">(quantipy.Stack static method)</a>
+        <li><a href="sites/api_ref/stack.html#quantipy.Stack.load">(quantipy.Stack static method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -773,19 +799,17 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.read_spss">read_spss() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/quantify_engine.html#quantipy.Quantity.rebase">rebase() (quantipy.Quantity method)</a>
-</li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.recode">recode() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.recode_from_net_def">recode_from_net_def() (quantipy.Stack static method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.recode_from_net_def">recode_from_net_def() (quantipy.Stack static method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.reduce">reduce() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.reduce">reduce() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.reduce_filter_var">reduce_filter_var() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.refresh">refresh() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.refresh">refresh() (quantipy.Stack method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.remove_data">remove_data() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.remove_data">remove_data() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.remove_html">remove_html() (quantipy.DataSet method)</a>
 </li>
@@ -795,10 +819,10 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.rename">rename() (quantipy.DataSet method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.rename_from_mapper">rename_from_mapper() (quantipy.DataSet method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.reorder_items">reorder_items() (quantipy.DataSet method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.reorder_values">reorder_values() (quantipy.DataSet method)</a>
@@ -819,7 +843,7 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.restore_item_texts">restore_item_texts() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.restore_meta">restore_meta() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.restore_meta">restore_meta() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.revert">revert() (quantipy.DataSet method)</a>
 </li>
@@ -842,7 +866,7 @@
 </li>
         <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.save">(quantipy.DataSet method)</a>
 </li>
-        <li><a href="sites/api_ref/Stack.html#quantipy.Stack.save">(quantipy.Stack method)</a>
+        <li><a href="sites/api_ref/stack.html#quantipy.Stack.save">(quantipy.Stack method)</a>
 </li>
       </ul></li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.select_text_keys">select_text_keys() (quantipy.DataSet method)</a>
@@ -883,7 +907,7 @@
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.split">split() (quantipy.DataSet method)</a>
 </li>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack">Stack (class in quantipy)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack">Stack (class in quantipy)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.start_meta">start_meta() (quantipy.DataSet static method)</a>
 </li>
@@ -959,7 +983,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sites/api_ref/Stack.html#quantipy.Stack.variable_types">variable_types() (quantipy.Stack method)</a>
+      <li><a href="sites/api_ref/stack.html#quantipy.Stack.variable_types">variable_types() (quantipy.Stack method)</a>
 </li>
       <li><a href="sites/api_ref/DataSet.html#quantipy.DataSet.variables">variables() (quantipy.DataSet method)</a>
 </li>
@@ -997,6 +1021,7 @@
 
 
            </div>
+           
           </div>
           <footer>
   
@@ -1005,11 +1030,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Quantipy dev team.
+        &copy; Copyright 2017, Quantipy dev team
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -1024,36 +1049,25 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.1.3',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/custom.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

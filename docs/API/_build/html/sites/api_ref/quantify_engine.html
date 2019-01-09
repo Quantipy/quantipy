@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -22,31 +24,22 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="Quantipy 0.1.3 documentation" href="../../index.html"/>
-        <link rel="up" title="API references" href="00overview.html"/>
-        <link rel="next" title="QuantipyViews" href="QuantipyViews.html"/>
-        <link rel="prev" title="DataSet" href="DataSet.html"/> 
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QuantipyViews" href="QuantipyViews.html" />
+    <link rel="prev" title="DataSet" href="DataSet.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -72,18 +65,13 @@
           
 
           
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
 
           
         </div>
@@ -92,7 +80,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (26/10/2018)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
@@ -304,7 +295,6 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -320,36 +310,56 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="../../index.html">Quantipy</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Quantipy</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="../../index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
           <li><a href="00overview.html">API references</a> &raquo;</li>
-      
-    <li>quantify.engine</li>
+        
+      <li>quantify.engine</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="../../_sources/sites/api_ref/quantify_engine.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -473,28 +483,39 @@ Restrict the data matrix entires to contain the specified codes only.</p>
 
 <dl class="method">
 <dt id="quantipy.Quantity.normalize">
-<code class="descname">normalize</code><span class="sig-paren">(</span><em>on='y'</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
+<code class="descname">normalize</code><span class="sig-paren">(</span><em>on='y'</em>, <em>per_cell=False</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a raw cell count result to its percentage representation.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Will prioritize the self.rebased margin row if one is found.</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>on</strong> (<em>{'y'</em><em>, </em><em>'x'}</em><em>, </em><em>default 'y'</em>) – Defines the base to normalize the result on. <code class="docutils literal notranslate"><span class="pre">'y'</span></code> will
-produce column percentages, <code class="docutils literal notranslate"><span class="pre">'x'</span></code> will produce row
-percentages.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>on</strong> (<em>{'y'</em><em>, </em><em>'x'</em><em>, </em><em>'counts_sum'</em><em>, </em><em>str}</em><em>, </em><em>default 'y'</em>) – Defines the base to normalize the result on. <code class="docutils literal notranslate"><span class="pre">'y'</span></code> will
+produce column percentages, <code class="docutils literal notranslate"><span class="pre">'x'</span></code> will produce row percentages.
+It is also possible to use another question’s frequencies to
+compute rebased percentages providing its name instead.</li>
+<li><strong>per_cell</strong> (<em>bool</em><em>, </em><em>default False</em>) – Compute percentages on a cell-per-cell basis, effectively treating
+each categorical row as a base figure on its own. Only possible if the
+<code class="docutils literal notranslate"><span class="pre">on</span></code> argument does not indidcate an axis result (<code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'counts_sum'</span></code>), but instead another variable’s name. The related
+<code class="docutils literal notranslate"><span class="pre">xdef</span></code> codes collection length must be identical for this for work,
+otherwise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Updates an count-based aggregation in the <code class="docutils literal notranslate"><span class="pre">result</span></code> property.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Updates a count-based aggregation in the <code class="docutils literal notranslate"><span class="pre">result</span></code> property.</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">self</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">self</p>
+</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
-
-<dl class="method">
-<dt id="quantipy.Quantity.rebase">
-<code class="descname">rebase</code><span class="sig-paren">(</span><em>reference</em>, <em>on='counts'</em>, <em>overwrite_margins=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.rebase" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="method">
 <dt id="quantipy.Quantity.rescale">
@@ -692,15 +713,16 @@ and mark results in columns with bases below the second int with
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="QuantipyViews.html" class="btn btn-neutral float-right" title="QuantipyViews" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="QuantipyViews.html" class="btn btn-neutral float-right" title="QuantipyViews" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="DataSet.html" class="btn btn-neutral" title="DataSet" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="DataSet.html" class="btn btn-neutral" title="DataSet" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -709,11 +731,11 @@ and mark results in columns with bases below the second int with
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Quantipy dev team.
+        &copy; Copyright 2017, Quantipy dev team
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -728,36 +750,25 @@ and mark results in columns with bases below the second int with
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.1.3',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="../../_static/custom.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/custom.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

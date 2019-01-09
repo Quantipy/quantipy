@@ -136,11 +136,7 @@ The ``ci`` parameter additionally allows targeting only the ``'counts'`` or
 *C) Unifying the individual results with* ``join()``
 
 Merging all new results into one, the ``join()`` method concatenates vertically
-<<<<<<< HEAD
-and relabels the x-axis to separate all variable results by their matching 
-=======
 and relabels the x-axis to separate all variable results by their matching
->>>>>>> 615a298a7a42d120dea732a1f78084688a0d063d
 metadata ``text`` that has also been applied while creating the regular set of
 and relabels the x-axis to separate all variable results by their matching
 metadata ``text`` that has has also been applied while creating the regular set of
