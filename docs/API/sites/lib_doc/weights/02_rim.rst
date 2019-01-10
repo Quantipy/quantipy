@@ -183,8 +183,9 @@ age_banded. Age All        100.00  100.00  100.00  100.00  100.00  100.00
                 26-35       42.23   29.78   29.78   29.78   60.91   60.91
                 36-49       16.61   25.22   25.22   25.22    3.69    3.69
 
-Both results accurately reflect the desired proportions from our scheme. And the
-same can be shown when looking at the weighted distribution of ``'Wave'``:
+Both results accurately reflect the desired proportions from our scheme. And we
+can also verify the weighted distribution of ``'Wave'``, now completely
+balanced:
 
 >>> dataset.crosstab(x='Wave', w='weights_new', pct=True)
 Question          Wave. Wave

@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="03_diags.html" />
+    <link rel="next" title="Diagnostics &amp; Advanced options" href="03_diags.html" />
     <link rel="prev" title="Background and methodology" href="01_background.html" /> 
 
   
@@ -248,6 +248,13 @@
 <li class="toctree-l2"><a class="reference internal" href="#integration-within-dataset">Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#weighting-and-weighted-aggregations">Weighting and weighted aggregations</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="03_diags.html">Diagnostics &amp; Advanced options</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="03_diags.html#the-weighting-efficiency">The weighting efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_diags.html#iterations-algorithm-details">Iterations &amp; algorithm details</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_diags.html#total-base-adjustment">Total base adjustment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_diags.html#gotchas">Gotchas</a></li>
 </ul>
 </li>
 </ul>
@@ -549,8 +556,9 @@ the desired proportions for <code class="docutils literal notranslate"><span cla
 <span class="go">                36-49       16.61   25.22   25.22   25.22    3.69    3.69</span>
 </pre></div>
 </div>
-<p>Both results accurately reflect the desired proportions from our scheme. And the
-same can be shown when looking at the weighted distribution of <code class="docutils literal notranslate"><span class="pre">'Wave'</span></code>:</p>
+<p>Both results accurately reflect the desired proportions from our scheme. And we
+can also verify the weighted distribution of <code class="docutils literal notranslate"><span class="pre">'Wave'</span></code>, now completely
+balanced:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="go">Question          Wave. Wave</span>
 <span class="go">Values                     @</span>
@@ -607,7 +615,7 @@ analysis:</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="03_diags.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="03_diags.html" class="btn btn-neutral float-right" title="Diagnostics &amp; Advanced options" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="01_background.html" class="btn btn-neutral" title="Background and methodology" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

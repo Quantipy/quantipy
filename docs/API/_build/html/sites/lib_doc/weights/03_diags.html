@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Diagnostics &amp; Advanced options &mdash; Quantipy 0.1.3 documentation</title>
+  <title>Diagnostics &amp; advanced options &mdash; Quantipy 0.1.3 documentation</title>
   
 
   
@@ -250,8 +250,11 @@
 <li class="toctree-l3"><a class="reference internal" href="02_rim.html#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Diagnostics &amp; Advanced options</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#the-weight-report">The weight report</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Diagnostics &amp; advanced options</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-weighting-efficiency">The weighting efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#iterations-algorithm-details">Iterations &amp; algorithm details</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#total-base-adjustment">Total base adjustment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gotchas">Gotchas</a></li>
 </ul>
 </li>
 </ul>
@@ -366,7 +369,7 @@
         
           <li><a href="00_overview.html">Weights</a> &raquo;</li>
         
-      <li>Diagnostics &amp; Advanced options</li>
+      <li>Diagnostics &amp; advanced options</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -388,16 +391,11 @@
   <div class="toctree-wrapper compound">
 </div>
 <div class="section" id="diagnostics-advanced-options">
-<h1>Diagnostics &amp; Advanced options<a class="headerlink" href="#diagnostics-advanced-options" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="the-weight-report">
-<h2>The weight report<a class="headerlink" href="#the-weight-report" title="Permalink to this headline">¶</a></h2>
+<h1>Diagnostics &amp; advanced options<a class="headerlink" href="#diagnostics-advanced-options" title="Permalink to this headline">¶</a></h1>
 <p>We did not yet take a look at the default weight report that offers some
 additional information on the weighting outcome results and the even the
-algorithm process itself. After all, getting the sample to match to the desired
-population proportions <strong>always</strong> comes at a cost. This cost is captured in a
-statistical figure called the <strong>weight efficiency</strong> and is featured in the report
-as well (the report lists the internal weight variable name that is always just
-a suffix of the scheme name):</p>
+algorithm process itself (the report lists the internal weight variable name
+that is always just a suffix of the scheme name):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Weight</span> <span class="n">variable</span>       <span class="n">weights_my_complex_scheme</span>
 <span class="n">Weight</span> <span class="n">group</span>                             <span class="n">wave</span> <span class="mi">1</span>       <span class="n">wave</span> <span class="mi">2</span>       <span class="n">wave</span> <span class="mi">3</span>       <span class="n">wave</span> <span class="mi">4</span>       <span class="n">wave</span> <span class="mi">5</span>
 <span class="n">Weight</span> <span class="nb">filter</span>                         <span class="n">Wave</span> <span class="o">==</span> <span class="mi">1</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">2</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">3</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">4</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">5</span>
@@ -411,6 +409,52 @@ a suffix of the scheme name):</p>
 <span class="n">Weight</span> <span class="n">factor</span> <span class="n">ratio</span>                    <span class="mf">4.365539</span>     <span class="mf">3.505106</span>     <span class="mf">3.810189</span>    <span class="mf">46.926649</span>    <span class="mf">52.846124</span>
 </pre></div>
 </div>
+<div class="section" id="the-weighting-efficiency">
+<h2>The weighting efficiency<a class="headerlink" href="#the-weighting-efficiency" title="Permalink to this headline">¶</a></h2>
+<p>After all, getting the sample to match to the desired
+population proportions <strong>always</strong> comes at a cost. This cost is captured in a
+statistical measure called the <strong>weighting efficiency</strong> and is featured in the report
+as well.</p>
+<p>Let <span class="math notranslate nohighlight">\(w\)</span> denote our weight vector containing the factor for each <span class="math notranslate nohighlight">\(i\)</span>
+respondent, then the mathematical definititon of the (total) weighting
+efficiency <span class="math notranslate nohighlight">\(we\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[we = \frac{\frac{[\sum{w_i}]^2}{\sum i}}{\sum{w_i^2}} * 100\]</div>
+<p>Which is the quotient of the squared sum of weights and the number of cases
+divided by the sum of squared weights (expressed as a percentage).</p>
+<p>We can manually check the figure for group <code class="docutils literal notranslate"><span class="pre">'wave</span> <span class="pre">1'</span></code>. We first recreate the
+filter that has been used, which we can also derive the number of cases <code class="docutils literal notranslate"><span class="pre">n</span></code> from:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">take</span><span class="p">({</span><span class="s1">&#39;Wave&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n</span>
+</pre></div>
+</div>
+<p>The sum of weights squared <code class="docutils literal notranslate"><span class="pre">sws</span></code> is then:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span> <span class="o">=</span> <span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;weights_new&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span>
+</pre></div>
+</div>
+<p>And the sum of squared weights <code class="docutils literal notranslate"><span class="pre">ssw</span></code> likeweise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ssw</span> <span class="o">=</span> <span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;weights_new&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span>
+</pre></div>
+</div>
+<p>Which enables us to calculate the weighting efficiency <code class="docutils literal notranslate"><span class="pre">we</span></code> as per:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">we</span> <span class="o">=</span> <span class="p">(</span><span class="n">sws</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="n">ssw</span> <span class="o">*</span> <span class="mi">100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">we</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="iterations-algorithm-details">
+<h2>Iterations &amp; algorithm details<a class="headerlink" href="#iterations-algorithm-details" title="Permalink to this headline">¶</a></h2>
+<p>Text</p>
+</div>
+<div class="section" id="total-base-adjustment">
+<h2>Total base adjustment<a class="headerlink" href="#total-base-adjustment" title="Permalink to this headline">¶</a></h2>
+<p>Text</p>
+</div>
+<div class="section" id="gotchas">
+<h2>Gotchas<a class="headerlink" href="#gotchas" title="Permalink to this headline">¶</a></h2>
 <p>GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 –&gt; subsets of data!</p>
 </div>
 </div>

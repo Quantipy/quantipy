@@ -3,19 +3,13 @@
 	:includehidden:
 
 ==============================
-Diagnostics & Advanced options
+Diagnostics & advanced options
 ==============================
-
-The weight report
------------------
 
 We did not yet take a look at the default weight report that offers some
 additional information on the weighting outcome results and the even the
-algorithm process itself. After all, getting the sample to match to the desired
-population proportions **always** comes at a cost. This cost is captured in a
-statistical figure called the **weight efficiency** and is featured in the report
-as well (the report lists the internal weight variable name that is always just
-a suffix of the scheme name)::
+algorithm process itself (the report lists the internal weight variable name
+that is always just a suffix of the scheme name)::
 
     Weight variable       weights_my_complex_scheme
     Weight group                             wave 1       wave 2       wave 3       wave 4       wave 5
@@ -29,7 +23,60 @@ a suffix of the scheme name)::
     Maximum weight factor                  2.243572     1.970389     1.975681     2.517704     2.642782
     Weight factor ratio                    4.365539     3.505106     3.810189    46.926649    52.846124
 
+The weighting efficiency
+------------------------
+
+After all, getting the sample to match to the desired
+population proportions **always** comes at a cost. This cost is captured in a
+statistical measure called the **weighting efficiency** and is featured in the report
+as well.
+
+Let :math:`w` denote our weight vector containing the factor for each :math:`i`
+respondent, then the mathematical definititon of the (total) weighting
+efficiency :math:`we` is:
+
+.. math:: we = \frac{\frac{[\sum{w_i}]^2}{\sum i}}{\sum{w_i^2}} * 100
 
 
+Which is the quotient of the squared sum of weights and the number of cases
+divided by the sum of squared weights (expressed as a percentage).
+
+We can manually check the figure for group ``'wave 1'``. We first recreate the
+filter that has been used, which we can also derive the number of cases ``n`` from:
+
+>>> f = dataset.take({'Wave': [1]})
+>>> n = len(f)
+>>> n
+
+The sum of weights squared ``sws`` is then:
+
+>>> sws = (dataset[f, 'weights_new'].sum()) ** 2
+>>> sws
+
+And the sum of squared weights ``ssw`` likeweise:
+
+>>> ssw = (dataset[f, 'weights_new']**2).sum()
+>>> sws
+
+Which enables us to calculate the weighting efficiency ``we`` as per:
+
+>>> we = (sws / n) / ssw * 100
+>>> we
+
+
+
+
+Iterations & algorithm details
+------------------------------
+
+Text
+
+Total base adjustment
+---------------------
+
+Text
+
+Gotchas
+-------
 
 GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
