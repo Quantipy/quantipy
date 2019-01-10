@@ -88,14 +88,13 @@ We then set the filter expressions for the respective subsets of the data, as pe
 
 And add our weight specifications accordingly:
 
->>> scheme.add_groups(name='Wave 1', filter_def=filter_wave1, targets=all_targets)
->>> scheme.add_groups(name='Wave 2', filter_def=filter_wave2, targets=all_targets)
->>> scheme.add_groups(name='Wave 3', filter_def=filter_wave3, targets=all_targets)
->>> scheme.add_groups(name='Wave 4', filter_def=filter_wave4, targets=all_targets_2)
->>> scheme.add_groups(name='Wave 5', filter_def=filter_wave5, targets=all_targets_2)
+>>> scheme = qp.Rim('my_complex_scheme')
+>>> scheme.add_groups(name='wave 1', filter_def=filter_wave1, targets=all_targets)
+>>> scheme.add_groups(name='wave 2', filter_def=filter_wave2, targets=all_targets)
+>>> scheme.add_groups(name='wave 3', filter_def=filter_wave3, targets=all_targets)
+>>> scheme.add_groups(name='wave 4', filter_def=filter_wave4, targets=all_targets_2)
+>>> scheme.add_groups(name='wave 5', filter_def=filter_wave5, targets=all_targets_2)
 
-
-GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
 
 .. note::
 
@@ -104,13 +103,73 @@ GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
     We are planning to abandon this limitation as soon as possible to enable
     easier and more complex filters that are consistent with the rest of the library.
 
+Setting group targets
+---------------------
 
-Advanced options
-----------------
+At this stage it might also be needed to balance out the survey waves themselves
+in a certain way, e.g. make each wave count exactly the same (as you can see above
+each wave accounts for roughly 20% of the full sample but not quite exactly).
 
-text
+With ``Rim.group_targets()`` we can apply an **outer** weighting to the **between**
+group distribution while keeping the already set **inner** target proportions **within** each of them. Again we are using a ``dict``, this time mapping the
+group names from above to the desired outcome percentages:
+
+>>> group_targets = {'wave 1': 20.0,
+...                  'wave 2': 20.0,
+...                  'wave 3': 20.0,
+...                  'wave 4': 20.0,
+...                  'wave 5': 20.0}
+
+>>> scheme.group_targets(group_targets)
+
+To sum it up: Our weight scheme consists of five groups based on ``'Wave'`` that
+resp. need to match two different sets of target distributions on the ``'gender'``
+and ``'age_banded'`` variables with each group coming out as 20% of the full sample.
 
 ==============================
 Integration within ``DataSet``
 ==============================
 
+The computational core of the weighting algorithm is the
+``quantipy.core.weights.rim.Rake`` class which can be accessed by working
+with ``qp.WeightEngine()``, but it is much easier to directly use the ``DataSet.weight()``
+method. Its full signature looks as follows::
+
+    DataSet.weight(weight_scheme,
+                   weight_name='weight',
+                   unique_key='identity',
+                   subset=None,
+                   report=True,
+                   path_report=None,
+                   inplace=True,
+                   verbose=True)
+
+As can been seen, we can simply provide our weight scheme ``Rim`` instance to
+the method. Since the dataset already contains a variable called ``'weight'``
+(and we do not want to overwrite that one) we set ``weight_name`` to be
+``'weight_new'``. We also need to set ``unqiue_key='unique_id'`` as that is our
+identifying key variable (that is needed to map the weight factors back into our
+dataset):
+
+>>> dataset.weight(scheme, weight_name='weight_new', unqiue_key='unique_id')
+
+Before we take a look at the report that is printed (because of ``report=True``),
+we want to manually check our results. For that, we can simply analyze some cross-
+tabulations, weighted by our new weights! For a start, we check if we arrived at
+the desired proportions for ``'gender'`` and ``'age_banded'`` per ``'Wave'``:
+
+>>> dataset.crosstab(x='gender', y='Wave', w='weights_new', pct=True)
+Question                            Wave. Wave
+Values                                     All Wave 1 Wave 2 Wave 3 Wave 4 Wave 5
+Question                     Values
+gender. What is your gender? All         100.0  100.0  100.0  100.0  100.0  100.0
+                             Male         42.0   50.0   50.0   50.0   30.0   30.0
+                             Female       58.0   50.0   50.0   50.0   70.0   70.0
+
+
+
+==============================
+Diagnostics & Advanced options
+==============================
+
+GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
