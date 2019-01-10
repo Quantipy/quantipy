@@ -47,21 +47,46 @@ filter that has been used, which we can also derive the number of cases ``n`` fr
 >>> f = dataset.take({'Wave': [1]})
 >>> n = len(f)
 >>> n
+1621
 
 The sum of weights squared ``sws`` is then:
 
 >>> sws = (dataset[f, 'weights_new'].sum()) ** 2
 >>> sws
+2725801.0
 
 And the sum of squared weights ``ssw`` likeweise:
 
 >>> ssw = (dataset[f, 'weights_new']**2).sum()
 >>> sws
+2255.61852968
 
 Which enables us to calculate the weighting efficiency ``we`` as per:
 
 >>> we = (sws / n) / ssw * 100
 >>> we
+74.5496275503
+
+
+
+
+•   Rim weighting efficiency
+o   metric for evaluation of the sample vs. targets match, i.e. the sample bal-ance compared to the weight scheme
+o   you can also view it as the amount of distortion that was needed to get the weighted figures, that is, how much the data is manipulated by the weight
+o   be aware that weighting influences all measures and inference in the analy-sis
+o   a low efficiency will tell you that your analysis will be biased by the weight to a large amount
+o   Dimensions suggests that figures below 80% are too low and indicate a very unbalanced sample when compared to the weight scheme applied
+o   you really don’t want to drop below 70%
+o   the efficiency is related to the effective base of the weighted data:
+   example: 95%
+   base size unweighted: 2297
+   effective base = 0.95 * 2297 = 2182
+   the weighted sample is reliable as a sample of 2182 cases as far as interference is concerned
+   small sample sizes with low efficiencies therefore can drastically re-duce the weighted sample’s fitness for statistical analysis (especially in non-Dimensions applications)
+
+•   additionally, the maximum and minimum weight factors are shown in which heavy up- and down-weighting becomes visible
+
+•   large weight factors are more problematic than very small ones since they have the potential to emphasize information coming from data outliers to a large extend and introduce bias easily that way
 
 
 

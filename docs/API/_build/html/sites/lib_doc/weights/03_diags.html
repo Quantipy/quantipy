@@ -237,7 +237,11 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Weights</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="01_background.html">Background and methodology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="01_background.html">Background and methodology</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="01_background.html#the-statistical-problem">The statistical problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_background.html#rim-weighting-concept">Rim weighting concept</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="02_rim.html">Weight scheme setup</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="02_rim.html#using-the-rim-class">Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="02_rim.html#target-distributions">Target distributions</a></li>
@@ -427,23 +431,46 @@ filter that has been used, which we can also derive the number of cases <code cl
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">take</span><span class="p">({</span><span class="s1">&#39;Wave&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">n</span>
+<span class="go">1621</span>
 </pre></div>
 </div>
 <p>The sum of weights squared <code class="docutils literal notranslate"><span class="pre">sws</span></code> is then:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span> <span class="o">=</span> <span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;weights_new&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span>
+<span class="go">2725801.0</span>
 </pre></div>
 </div>
 <p>And the sum of squared weights <code class="docutils literal notranslate"><span class="pre">ssw</span></code> likeweise:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ssw</span> <span class="o">=</span> <span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;weights_new&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span>
+<span class="go">2255.61852968</span>
 </pre></div>
 </div>
 <p>Which enables us to calculate the weighting efficiency <code class="docutils literal notranslate"><span class="pre">we</span></code> as per:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">we</span> <span class="o">=</span> <span class="p">(</span><span class="n">sws</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="n">ssw</span> <span class="o">*</span> <span class="mi">100</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">we</span>
+<span class="go">74.5496275503</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li>Rim weighting efficiency</li>
+</ul>
+<p>o   metric for evaluation of the sample vs. targets match, i.e. the sample bal-ance compared to the weight scheme
+o   you can also view it as the amount of distortion that was needed to get the weighted figures, that is, how much the data is manipulated by the weight
+o   be aware that weighting influences all measures and inference in the analy-sis
+o   a low efficiency will tell you that your analysis will be biased by the weight to a large amount
+o   Dimensions suggests that figures below 80% are too low and indicate a very unbalanced sample when compared to the weight scheme applied
+o   you really don’t want to drop below 70%
+o   the efficiency is related to the effective base of the weighted data:
+   example: 95%
+   base size unweighted: 2297
+   effective base = 0.95 * 2297 = 2182
+   the weighted sample is reliable as a sample of 2182 cases as far as interference is concerned
+   small sample sizes with low efficiencies therefore can drastically re-duce the weighted sample’s fitness for statistical analysis (especially in non-Dimensions applications)</p>
+<ul class="simple">
+<li>additionally, the maximum and minimum weight factors are shown in which heavy up- and down-weighting becomes visible</li>
+<li>large weight factors are more problematic than very small ones since they have the potential to emphasize information coming from data outliers to a large extend and introduce bias easily that way</li>
+</ul>
 </div>
 <div class="section" id="iterations-algorithm-details">
 <h2>Iterations &amp; algorithm details<a class="headerlink" href="#iterations-algorithm-details" title="Permalink to this headline">¶</a></h2>
