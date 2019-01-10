@@ -220,20 +220,12 @@ It is also possible to return a new ``pd.DataFrame`` that contains all relevant 
 scheme variables incl. the factor vector for external use cases or further
 analysis:
 
->>> wdf = dataset.weight(scheme, weight_name='weight_new', unqiue_key='unique_id',
+>>> wdf = dataset.weight(scheme, weight_name='weights_new', unqiue_key='unique_id',
                          inplace=False)
 >>> wdf.head()
-   unique_id  gender  age_banded  weights_my_complex_scheme  Wave
-0     402891       1         1.0                   0.885593     4
-1   27541022       2         1.0                   1.941677     1
-2     335506       1         2.0                   0.984491     3
-3   22885610       1         2.0                   1.282057     5
-4     229122       1         3.0                   0.593834     1
-
-Text
-
-==============================
-Diagnostics & Advanced options
-==============================
-
-GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
+   unique_id  gender  age_banded  weights_new  Wave
+0     402891       1         1.0     0.885593     4
+1   27541022       2         1.0     1.941677     1
+2     335506       1         2.0     0.984491     3
+3   22885610       1         2.0     1.282057     5
+4     229122       1         3.0     0.593834     1

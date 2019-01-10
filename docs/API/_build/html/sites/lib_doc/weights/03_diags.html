@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Diagnostics &mdash; Quantipy 0.1.3 documentation</title>
+  <title>Diagnostics &amp; Advanced options &mdash; Quantipy 0.1.3 documentation</title>
   
 
   
@@ -250,8 +250,10 @@
 <li class="toctree-l3"><a class="reference internal" href="02_rim.html#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="02_rim.html#diagnostics-advanced-options">Diagnostics &amp; Advanced options</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Diagnostics</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Diagnostics &amp; Advanced options</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-weight-report">The weight report</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal notranslate"><span class="pre">Batch</span></code></a><ul>
@@ -364,7 +366,7 @@
         
           <li><a href="00_overview.html">Weights</a> &raquo;</li>
         
-      <li>Diagnostics</li>
+      <li>Diagnostics &amp; Advanced options</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -385,9 +387,32 @@
             
   <div class="toctree-wrapper compound">
 </div>
-<div class="section" id="diagnostics">
-<h1>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this headline">¶</a></h1>
-<p>text</p>
+<div class="section" id="diagnostics-advanced-options">
+<h1>Diagnostics &amp; Advanced options<a class="headerlink" href="#diagnostics-advanced-options" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="the-weight-report">
+<h2>The weight report<a class="headerlink" href="#the-weight-report" title="Permalink to this headline">¶</a></h2>
+<p>We did not yet take a look at the default weight report that offers some
+additional information on the weighting outcome results and the even the
+algorithm process itself. After all, getting the sample to match to the desired
+population proportions <strong>always</strong> comes at a cost. This cost is captured in a
+statistical figure called the <strong>weight efficiency</strong> and is featured in the report
+as well (the report lists the internal weight variable name that is always just
+a suffix of the scheme name):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Weight</span> <span class="n">variable</span>       <span class="n">weights_my_complex_scheme</span>
+<span class="n">Weight</span> <span class="n">group</span>                             <span class="n">wave</span> <span class="mi">1</span>       <span class="n">wave</span> <span class="mi">2</span>       <span class="n">wave</span> <span class="mi">3</span>       <span class="n">wave</span> <span class="mi">4</span>       <span class="n">wave</span> <span class="mi">5</span>
+<span class="n">Weight</span> <span class="nb">filter</span>                         <span class="n">Wave</span> <span class="o">==</span> <span class="mi">1</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">2</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">3</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">4</span>    <span class="n">Wave</span> <span class="o">==</span> <span class="mi">5</span>
+<span class="n">Total</span><span class="p">:</span> <span class="n">unweighted</span>                   <span class="mf">1621.000000</span>  <span class="mf">1669.000000</span>  <span class="mf">1689.000000</span>  <span class="mf">1637.000000</span>  <span class="mf">1639.000000</span>
+<span class="n">Total</span><span class="p">:</span> <span class="n">weighted</span>                     <span class="mf">1651.000000</span>  <span class="mf">1651.000000</span>  <span class="mf">1651.000000</span>  <span class="mf">1651.000000</span>  <span class="mf">1651.000000</span>
+<span class="n">Weighting</span> <span class="n">efficiency</span>                  <span class="mf">74.549628</span>    <span class="mf">78.874120</span>    <span class="mf">77.595143</span>    <span class="mf">53.744060</span>    <span class="mf">50.019937</span>
+<span class="n">Iterations</span> <span class="n">required</span>                   <span class="mf">13.000000</span>     <span class="mf">8.000000</span>    <span class="mf">11.000000</span>    <span class="mf">12.000000</span>    <span class="mf">10.000000</span>
+<span class="n">Mean</span> <span class="n">weight</span> <span class="n">factor</span>                     <span class="mf">1.018507</span>     <span class="mf">0.989215</span>     <span class="mf">0.977501</span>     <span class="mf">1.008552</span>     <span class="mf">1.007322</span>
+<span class="n">Minimum</span> <span class="n">weight</span> <span class="n">factor</span>                  <span class="mf">0.513928</span>     <span class="mf">0.562148</span>     <span class="mf">0.518526</span>     <span class="mf">0.053652</span>     <span class="mf">0.050009</span>
+<span class="n">Maximum</span> <span class="n">weight</span> <span class="n">factor</span>                  <span class="mf">2.243572</span>     <span class="mf">1.970389</span>     <span class="mf">1.975681</span>     <span class="mf">2.517704</span>     <span class="mf">2.642782</span>
+<span class="n">Weight</span> <span class="n">factor</span> <span class="n">ratio</span>                    <span class="mf">4.365539</span>     <span class="mf">3.505106</span>     <span class="mf">3.810189</span>    <span class="mf">46.926649</span>    <span class="mf">52.846124</span>
+</pre></div>
+</div>
+<p>GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 –&gt; subsets of data!</p>
+</div>
 </div>
 
 

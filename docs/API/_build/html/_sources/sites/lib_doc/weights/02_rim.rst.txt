@@ -202,25 +202,30 @@ The isolated weight dataframe
 -----------------------------
 
 By default, the weighting operates ``inplace``, i.e. the weight vector will
-be placed into the ``DataSet`` instance as a regular ``columns`` element. It is
-also possible to return a new ``pd.DataFrame`` that contains all relevant ``Rim``
+be placed into the ``DataSet`` instance as a regular ``columns`` element:
+
+>>> dataset.meta('weights_new')
+                                     float
+weights_new: my_first_scheme weights   N/A
+
+>>> dataset['weights_new'].head()
+   unique_id  weights_new
+0     402891     0.885593
+1   27541022     1.941677
+2     335506     0.984491
+3   22885610     1.282057
+4     229122     0.593834
+
+It is also possible to return a new ``pd.DataFrame`` that contains all relevant ``Rim``
 scheme variables incl. the factor vector for external use cases or further
 analysis:
 
->>> wdf = dataset.weight(scheme, weight_name='weight_new', unqiue_key='unique_id',
+>>> wdf = dataset.weight(scheme, weight_name='weights_new', unqiue_key='unique_id',
                          inplace=False)
 >>> wdf.head()
-   unique_id  gender  age_banded  weights_my_complex_scheme  Wave
-0     402891       1         1.0                   0.885593     4
-1   27541022       2         1.0                   1.941677     1
-2     335506       1         2.0                   0.984491     3
-3   22885610       1         2.0                   1.282057     5
-4     229122       1         3.0                   0.593834     1
-
-Text
-
-==============================
-Diagnostics & Advanced options
-==============================
-
-GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
+   unique_id  gender  age_banded  weights_new  Wave
+0     402891       1         1.0     0.885593     4
+1   27541022       2         1.0     1.941677     1
+2     335506       1         2.0     0.984491     3
+3   22885610       1         2.0     1.282057     5
+4     229122       1         3.0     0.593834     1
