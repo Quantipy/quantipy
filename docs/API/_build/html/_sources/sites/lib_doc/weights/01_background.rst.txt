@@ -105,7 +105,7 @@ The way this works can be summarized as follows: For each interlocking cell
 coming from all categories of all the variables that are given to weight to, an
 algorithm will compute the proportion necessary in a single specific cell that,
 when summed over per column or respectively by row, will result in a column (row)
-total per category that match-es the target distribution. However, it will occur
+total per category that matches the target distribution. However, it will occur
 that having balanced a column total to match, the row totals will be off.
 This is where one iteration ends and another one begins starting now with the
 weighted values from the previous run. This iterative process will continue
@@ -119,4 +119,4 @@ sample and weight scheme.
 
 .. rubric:: References
 
-.. [DeSt40] Deming, W. Edwards; Stephan, Frederick F. (1940): On a Least Squares Adjustment of a Sampled Frequency Table When the Expected Marginal Totals are Known. Ann. Math. Statist. 11 , no. 4, pp. 427 - 444.
+.. [DeSt40] Deming, W. Edwards; Stephan, Frederick F. (1940): On a Least Squares Adjustment of a Sampled Frequency Table When the Expected Marginal Totals are Known. In: Ann. Math. Statist. 11 , no. 4, pp. 427 - 444.

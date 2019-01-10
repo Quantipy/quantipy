@@ -55,7 +55,7 @@ The sum of weights squared ``sws`` is then:
 >>> sws
 2725801.0
 
-And the sum of squared weights ``ssw`` likeweise:
+And the sum of squared weights ``ssw``:
 
 >>> ssw = (dataset[f, 'weights_new']**2).sum()
 >>> sws
