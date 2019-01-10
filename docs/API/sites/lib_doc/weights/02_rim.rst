@@ -17,6 +17,7 @@ To start working with a ``Rim`` object, we only need to think of a name for our 
 >>> scheme = qp.Rim('my_first_scheme')
 
 
+--------------------
 Target distributions
 --------------------
 
@@ -48,6 +49,7 @@ The ``Rim`` instance also allows inspecting these targets from itself now (you c
 [{'gender': {1: 50.0, 2: 50.0}}, {'age_banded': {1: 45.0, 2: 29.78, 3: 25.22}}]
 
 
+-------------------------
 Weight groups and filters
 -------------------------
 
@@ -103,6 +105,7 @@ And add our weight specifications accordingly:
     We are planning to abandon this limitation as soon as possible to enable
     easier and more complex filters that are consistent with the rest of the library.
 
+---------------------
 Setting group targets
 ---------------------
 
@@ -144,6 +147,10 @@ method. Its full signature looks as follows::
                    inplace=True,
                    verbose=True)
 
+-----------------------------------
+Weighting and weighted aggregations
+-----------------------------------
+
 As can been seen, we can simply provide our weight scheme ``Rim`` instance to
 the method. Since the dataset already contains a variable called ``'weight'``
 (and we do not want to overwrite that one) we set ``weight_name`` to be
@@ -166,7 +173,44 @@ gender. What is your gender? All         100.0  100.0  100.0  100.0  100.0  100.
                              Male         42.0   50.0   50.0   50.0   30.0   30.0
                              Female       58.0   50.0   50.0   50.0   70.0   70.0
 
+>>> dataset.crosstab(x='age_banded', y='Wave', w='weights_new', pct=True,
+...                  decimals=2)
+Question               Wave. Wave
+Values                        All  Wave 1  Wave 2  Wave 3  Wave 4  Wave 5
+Question        Values
+age_banded. Age All        100.00  100.00  100.00  100.00  100.00  100.00
+                19-25       41.16   45.00   45.00   45.00   35.40   35.40
+                26-35       42.23   29.78   29.78   29.78   60.91   60.91
+                36-49       16.61   25.22   25.22   25.22    3.69    3.69
 
+Both results accurately reflect the desired proportions from our scheme. And the
+same can be shown when looking at the weighted distribution of ``'Wave'``:
+
+>>> dataset.crosstab(x='Wave', w='weights_new', pct=True)
+Question          Wave. Wave
+Values                     @
+Question   Values
+Wave. Wave All         100.0
+           Wave 1       20.0
+           Wave 2       20.0
+           Wave 3       20.0
+           Wave 4       20.0
+           Wave 5       20.0
+
+-----------------------------
+The isolated weight dataframe
+-----------------------------
+
+By default, the weighting operates ``inplace``, i.e. the weight vector will
+be placed into the ``DataSet`` instance as a regular ``columns`` element. It is
+also possible to return a new ``pd.DataFrame`` that contains all relevant ``Rim``
+scheme variables incl. the factor vector for external use cases or further
+analysis:
+
+>>> wdf = dataset.weight(scheme, weight_name='weight_new', unqiue_key='unique_id',
+                         inplace=False)
+
+Text
 
 ==============================
 Diagnostics & Advanced options
