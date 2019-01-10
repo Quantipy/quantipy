@@ -2852,7 +2852,7 @@ class DataSet(object):
                 self.add_meta(org_wname, 'float', weight_description)
             self.update(data_wgt, on=unique_key)
         else:
-            return data_wgt
+            return engine.dataframe(weight_scheme.name)
 
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
