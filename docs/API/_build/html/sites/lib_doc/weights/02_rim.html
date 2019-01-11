@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Diagnostics &amp; advanced options" href="03_diags.html" />
+    <link rel="next" title="Diagnostics" href="03_diags.html" />
     <link rel="prev" title="Background and methodology" href="01_background.html" /> 
 
   
@@ -254,10 +254,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="03_diags.html">Diagnostics &amp; advanced options</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="03_diags.html">Diagnostics</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="03_diags.html#the-weighting-efficiency">The weighting efficiency</a></li>
-<li class="toctree-l3"><a class="reference internal" href="03_diags.html#iterations-algorithm-details">Iterations &amp; algorithm details</a></li>
-<li class="toctree-l3"><a class="reference internal" href="03_diags.html#total-base-adjustment">Total base adjustment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="03_diags.html#gotchas">Gotchas</a></li>
 </ul>
 </li>
@@ -427,7 +425,9 @@ them in a <code class="docutils literal notranslate"><span class="pre">list</spa
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">set_targets</span><span class="p">(</span><span class="n">targets</span><span class="o">=</span><span class="n">all_targets</span><span class="p">,</span> <span class="n">group_name</span><span class="o">=</span><span class="s1">&#39;basic weights&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">Rim</span></code> instance also allows inspecting these targets from itself now (you can see <code class="docutils literal notranslate"><span class="pre">group_name</span></code> parameter reflected here, it would fall back to <code class="docutils literal notranslate"><span class="pre">'_default_name_'</span></code> if none was provided):</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Rim</span></code> instance also allows inspecting these targets from itself now (you can
+see the <code class="docutils literal notranslate"><span class="pre">group_name</span></code> parameter reflected here, it would fall back to
+<code class="docutils literal notranslate"><span class="pre">'_default_name_'</span></code> if none was provided):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="s1">&#39;basic weights&#39;</span><span class="p">][</span><span class="s1">&#39;targets&#39;</span><span class="p">]</span>
 <span class="go">[{&#39;gender&#39;: {1: 50.0, 2: 50.0}}, {&#39;age_banded&#39;: {1: 45.0, 2: 29.78, 3: 25.22}}]</span>
 </pre></div>
@@ -619,7 +619,7 @@ analysis:</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="03_diags.html" class="btn btn-neutral float-right" title="Diagnostics &amp; advanced options" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="03_diags.html" class="btn btn-neutral float-right" title="Diagnostics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="01_background.html" class="btn btn-neutral" title="Background and methodology" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

@@ -43,7 +43,9 @@ The ``set_targets()`` method can now use the ``all_targets`` list to apply the t
 
 >>> scheme.set_targets(targets=all_targets, group_name='basic weights')
 
-The ``Rim`` instance also allows inspecting these targets from itself now (you can see ``group_name`` parameter reflected here, it would fall back to ``'_default_name_'`` if none was provided):
+The ``Rim`` instance also allows inspecting these targets from itself now (you can
+see the ``group_name`` parameter reflected here, it would fall back to
+``'_default_name_'`` if none was provided):
 
 >>> scheme.groups['basic weights']['targets']
 [{'gender': {1: 50.0, 2: 50.0}}, {'age_banded': {1: 45.0, 2: 29.78, 3: 25.22}}]
