@@ -86,7 +86,7 @@ roughly 400 (about 25%) respondents less.
 Gotchas
 -------
 
-**[A] Group subsets and target application**
+**[A] Subsets and targets**
 
 In the example we have defined five weight groups, one for each of the waves,  although we only had two differing sets of targets we wanted to match. One could be
 tempted to only set two weight groups because of this, using the filters:
@@ -95,7 +95,7 @@ tempted to only set two weight groups because of this, using the filters:
 
 and
 
->>> f1 = 'Wave in [4, 5]'
+>>> f2 = 'Wave in [4, 5]'
 
 It is crucial to remember that the algorithm is applied on the weight group's
 overall data base, i.e. the above definition would achieve the targets waves

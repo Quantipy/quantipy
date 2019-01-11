@@ -467,14 +467,14 @@ roughly 400 (about 25%) respondents less.</p>
 </div>
 <div class="section" id="gotchas">
 <h2>Gotchas<a class="headerlink" href="#gotchas" title="Permalink to this headline">¶</a></h2>
-<p><strong>[A] Group subsets and target application</strong></p>
+<p><strong>[A] Subsets and targets</strong></p>
 <p>In the example we have defined five weight groups, one for each of the waves,  although we only had two differing sets of targets we wanted to match. One could be
 tempted to only set two weight groups because of this, using the filters:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span> <span class="o">=</span> <span class="s1">&#39;Wave in [1, 2, 3]&#39;</span>
 </pre></div>
 </div>
 <p>and</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span> <span class="o">=</span> <span class="s1">&#39;Wave in [4, 5]&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span> <span class="o">=</span> <span class="s1">&#39;Wave in [4, 5]&#39;</span>
 </pre></div>
 </div>
 <p>It is crucial to remember that the algorithm is applied on the weight group’s
