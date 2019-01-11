@@ -205,6 +205,16 @@ class DataSet(object):
     def _by_property(self, prop):
         return [v for v in self.variables() if self.get_property(v, prop)]
 
+    @verify(variables={'name': 'both'})
+    def missings(self, name=None):
+        if name:
+            return self._get_missing_map(name)
+        all_missings = {}
+        for v in self.variables():
+            miss = self._get_missing_map(v)
+            if miss: all_missings[v] = miss
+        return all_missings
+
     def batches(self):
         if 'batches' in self._meta['sets']:
             return self._meta['sets']['batches'].keys()
