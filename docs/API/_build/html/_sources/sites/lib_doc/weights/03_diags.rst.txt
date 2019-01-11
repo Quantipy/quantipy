@@ -97,7 +97,7 @@ and
 
 >>> f1 = 'Wave in [4, 5]'
 
-It is crucial to remember that the algorithm applied on the weight group's
+It is crucial to remember that the algorithm is applied on the weight group's
 overall data base, i.e. the above definition would achieve the targets waves
 inside the two groups (Waves 1/2/3 and Waves 4/5) and **not within** each of the
 waves.
