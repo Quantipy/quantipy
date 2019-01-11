@@ -2,9 +2,9 @@
  	:maxdepth: 5
 	:includehidden:
 
-==============================
-Diagnostics & advanced options
-==============================
+===========
+Diagnostics
+===========
 
 We did not yet take a look at the default weight report that offers some
 additional information on the weighting outcome results and the even the
@@ -82,12 +82,6 @@ be around 0.75 * 1621 = 1215.75. This means that we are dealing with an effectiv
 sample of only 1216 cases for weighted statistical analysis and inference. In other
 words, the weighting reduces the reliability of the sample as if we had sampled
 roughly 400 (about 25%) respondents less.
-
-
-Total base adjustment
----------------------
-
-TODO.
 
 Gotchas
 -------
