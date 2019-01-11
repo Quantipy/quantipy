@@ -77,7 +77,7 @@ suit::
   ╚═════════╩═════════╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═════╝
 
 
-Note that, you would also need to take into account the other joint distributions
+Note that you would also need to take into account the other joint distributions
 of age by gender per federal state, iPad owners by age, and so on to get the
 correct weight factors step by step: all cross-tabulation information for the
 population that will not be available to you. Additionally, even if you would

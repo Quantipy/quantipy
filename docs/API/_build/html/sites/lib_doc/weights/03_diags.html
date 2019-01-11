@@ -256,7 +256,6 @@
 </li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Diagnostics &amp; advanced options</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#the-weighting-efficiency">The weighting efficiency</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#iterations-algorithm-details">Iterations &amp; algorithm details</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#total-base-adjustment">Total base adjustment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#gotchas">Gotchas</a></li>
 </ul>
@@ -418,7 +417,11 @@ that is always just a suffix of the scheme name):</p>
 <p>After all, getting the sample to match to the desired
 population proportions <strong>always</strong> comes at a cost. This cost is captured in a
 statistical measure called the <strong>weighting efficiency</strong> and is featured in the report
-as well.</p>
+as well. It is a metric for evaluation of the sample vs. targets match, i.e.
+the sample balance compared to the weight scheme, i.e. you can also inversely
+view it as the amount of distortion that was needed to arrive at the weighted
+figures, that is, how much the data is manipulated by the weighting. A <strong>low</strong>
+efficiency indicates a <strong>larger</strong> bias introduced by the weights.</p>
 <p>Let <span class="math notranslate nohighlight">\(w\)</span> denote our weight vector containing the factor for each <span class="math notranslate nohighlight">\(i\)</span>
 respondent, then the mathematical definititon of the (total) weighting
 efficiency <span class="math notranslate nohighlight">\(we\)</span> is:</p>
@@ -442,7 +445,7 @@ filter that has been used, which we can also derive the number of cases <code cl
 </div>
 <p>And the sum of squared weights <code class="docutils literal notranslate"><span class="pre">ssw</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ssw</span> <span class="o">=</span> <span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;weights_new&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sws</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ssw</span>
 <span class="go">2255.61852968</span>
 </pre></div>
 </div>
@@ -452,37 +455,37 @@ filter that has been used, which we can also derive the number of cases <code cl
 <span class="go">74.5496275503</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li>Rim weighting efficiency</li>
-</ul>
-<p>o   metric for evaluation of the sample vs. targets match, i.e. the sample bal-ance compared to the weight scheme
-o   you can also view it as the amount of distortion that was needed to get the weighted figures, that is, how much the data is manipulated by the weight
-o   be aware that weighting influences all measures and inference in the analy-sis
-o   a low efficiency will tell you that your analysis will be biased by the weight to a large amount
-o   Dimensions suggests that figures below 80% are too low and indicate a very unbalanced sample when compared to the weight scheme applied
-o   you really don’t want to drop below 70%
-o   the efficiency is related to the effective base of the weighted data:
-   example: 95%
-   base size unweighted: 2297
-   effective base = 0.95 * 2297 = 2182
-   the weighted sample is reliable as a sample of 2182 cases as far as interference is concerned
-   small sample sizes with low efficiencies therefore can drastically re-duce the weighted sample’s fitness for statistical analysis (especially in non-Dimensions applications)</p>
-<ul class="simple">
-<li>additionally, the maximum and minimum weight factors are shown in which heavy up- and down-weighting becomes visible</li>
-<li>large weight factors are more problematic than very small ones since they have the potential to emphasize information coming from data outliers to a large extend and introduce bias easily that way</li>
-</ul>
-</div>
-<div class="section" id="iterations-algorithm-details">
-<h2>Iterations &amp; algorithm details<a class="headerlink" href="#iterations-algorithm-details" title="Permalink to this headline">¶</a></h2>
-<p>Text</p>
+<p>Generally, weighting efficiency results below the 80% mark indicate a high sample
+vs. population mismatch. Dropping below 70% should be a reason to reexamine the
+weight scheme specifications or analysis design.</p>
+<p>To better understand why the weighting efficiency is good for judging the quality
+of the weighting, we can look at its relation to the <strong>effective sample size</strong>
+(the effective base). In our example, the effective base of the weight group would
+be around 0.75 * 1621 = 1215.75. This means that we are dealing with an effective
+sample of only 1216 cases for weighted statistical analysis and inference. In other
+words, the weighting reduces the reliability of the sample as if we had sampled
+roughly 400 (about 25%) respondents less.</p>
 </div>
 <div class="section" id="total-base-adjustment">
 <h2>Total base adjustment<a class="headerlink" href="#total-base-adjustment" title="Permalink to this headline">¶</a></h2>
-<p>Text</p>
+<p>TODO.</p>
 </div>
 <div class="section" id="gotchas">
 <h2>Gotchas<a class="headerlink" href="#gotchas" title="Permalink to this headline">¶</a></h2>
-<p>GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 –&gt; subsets of data!</p>
+<p><strong>[A] Group subsets and target application</strong></p>
+<p>In the example we have defined five weight groups, one for each of the waves,  although we only had two differing sets of targets we wanted to match. One could be
+tempted to only set two weight groups because of this, using the filters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span> <span class="o">=</span> <span class="s1">&#39;Wave in [1, 2, 3]&#39;</span>
+</pre></div>
+</div>
+<p>and</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span> <span class="o">=</span> <span class="s1">&#39;Wave in [4, 5]&#39;</span>
+</pre></div>
+</div>
+<p>It is crucial to remember that the algorithm applied on the weight group’s
+overall data base, i.e. the above definition would achieve the targets waves
+inside the two groups (Waves 1/2/3 and Waves 4/5) and <strong>not within</strong> each of the
+waves.</p>
 </div>
 </div>
 

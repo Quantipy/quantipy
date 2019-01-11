@@ -29,7 +29,11 @@ The weighting efficiency
 After all, getting the sample to match to the desired
 population proportions **always** comes at a cost. This cost is captured in a
 statistical measure called the **weighting efficiency** and is featured in the report
-as well.
+as well. It is a metric for evaluation of the sample vs. targets match, i.e.
+the sample balance compared to the weight scheme, i.e. you can also inversely
+view it as the amount of distortion that was needed to arrive at the weighted
+figures, that is, how much the data is manipulated by the weighting. A **low**
+efficiency indicates a **larger** bias introduced by the weights.
 
 Let :math:`w` denote our weight vector containing the factor for each :math:`i`
 respondent, then the mathematical definititon of the (total) weighting
@@ -58,7 +62,7 @@ The sum of weights squared ``sws`` is then:
 And the sum of squared weights ``ssw``:
 
 >>> ssw = (dataset[f, 'weights_new']**2).sum()
->>> sws
+>>> ssw
 2255.61852968
 
 Which enables us to calculate the weighting efficiency ``we`` as per:
@@ -67,41 +71,39 @@ Which enables us to calculate the weighting efficiency ``we`` as per:
 >>> we
 74.5496275503
 
+Generally, weighting efficiency results below the 80% mark indicate a high sample
+vs. population mismatch. Dropping below 70% should be a reason to reexamine the
+weight scheme specifications or analysis design.
 
+To better understand why the weighting efficiency is good for judging the quality
+of the weighting, we can look at its relation to the **effective sample size**
+(the effective base). In our example, the effective base of the weight group would
+be around 0.75 * 1621 = 1215.75. This means that we are dealing with an effective
+sample of only 1216 cases for weighted statistical analysis and inference. In other
+words, the weighting reduces the reliability of the sample as if we had sampled
+roughly 400 (about 25%) respondents less.
 
-
-•   Rim weighting efficiency
-o   metric for evaluation of the sample vs. targets match, i.e. the sample bal-ance compared to the weight scheme
-o   you can also view it as the amount of distortion that was needed to get the weighted figures, that is, how much the data is manipulated by the weight
-o   be aware that weighting influences all measures and inference in the analy-sis
-o   a low efficiency will tell you that your analysis will be biased by the weight to a large amount
-o   Dimensions suggests that figures below 80% are too low and indicate a very unbalanced sample when compared to the weight scheme applied
-o   you really don’t want to drop below 70%
-o   the efficiency is related to the effective base of the weighted data:
-   example: 95%
-   base size unweighted: 2297
-   effective base = 0.95 * 2297 = 2182
-   the weighted sample is reliable as a sample of 2182 cases as far as interference is concerned
-   small sample sizes with low efficiencies therefore can drastically re-duce the weighted sample’s fitness for statistical analysis (especially in non-Dimensions applications)
-
-•   additionally, the maximum and minimum weight factors are shown in which heavy up- and down-weighting becomes visible
-
-•   large weight factors are more problematic than very small ones since they have the potential to emphasize information coming from data outliers to a large extend and introduce bias easily that way
-
-
-
-
-Iterations & algorithm details
-------------------------------
-
-Text
 
 Total base adjustment
 ---------------------
 
-Text
+TODO.
 
 Gotchas
 -------
 
-GOTCHA: wave in [1, 2, 3] etc. vs. Wave == 1, Wave == 2 --> subsets of data!
+**[A] Group subsets and target application**
+
+In the example we have defined five weight groups, one for each of the waves,  although we only had two differing sets of targets we wanted to match. One could be
+tempted to only set two weight groups because of this, using the filters:
+
+>>> f1 = 'Wave in [1, 2, 3]'
+
+and
+
+>>> f1 = 'Wave in [4, 5]'
+
+It is crucial to remember that the algorithm applied on the weight group's
+overall data base, i.e. the above definition would achieve the targets waves
+inside the two groups (Waves 1/2/3 and Waves 4/5) and **not within** each of the
+waves.
