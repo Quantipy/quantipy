@@ -30,7 +30,7 @@ After all, getting the sample to match to the desired
 population proportions **always** comes at a cost. This cost is captured in a
 statistical measure called the **weighting efficiency** and is featured in the report
 as well. It is a metric for evaluation of the sample vs. targets match, i.e.
-the sample balance compared to the weight scheme, i.e. you can also inversely
+the sample balance compared to the weight scheme. You can also inversely
 view it as the amount of distortion that was needed to arrive at the weighted
 figures, that is, how much the data is manipulated by the weighting. A **low**
 efficiency indicates a **larger** bias introduced by the weights.
