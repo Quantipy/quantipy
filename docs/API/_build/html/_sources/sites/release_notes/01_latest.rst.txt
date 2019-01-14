@@ -108,8 +108,8 @@ A2       All      92.210767   94.784876   91.357027   89.087488   89.593301   94
 
 **New**: ``DataSet.missings(name=None)``
 
-This new method returns the missing data defintiton for the provided variable or
-all missing defintitons found in the dataset (if ``name`` is omitted).
+This new method returns the missing data definition for the provided variable or
+all missing definitions found in the dataset (if ``name`` is omitted).
 
 >>> dataset.missings()
 {u'q10': {u'exclude': [6]},
