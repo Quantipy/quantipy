@@ -12,7 +12,7 @@ Expanding on the current ``Chain`` editing features provided via ``cut()``
 and ``join()``, it is now possible to calculate additional row and column results using plain ``pandas.dataframe`` methods. Use ``Chain.export()`` to work on a simplified ``Chain.dataframe`` and ``assign()`` to rebuild it properly when
 finished.
 
-An intro to this feature can be viewed here: "LINK TO THE DOC"
+An intro to this feature can be viewed here: :doc:`Custom calculations <../lib_doc/builds/02_cm_edits>`
 
 
 **New**: ``Batch.as_main(keep=True)`` to change ``qp.Batch`` relations

@@ -302,7 +302,17 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../lib_doc/builds/00_overview.html">Builds</a><ul class="simple">
+<li class="toctree-l1"><a class="reference internal" href="../lib_doc/builds/00_overview.html">Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/builds/01_chains.html">Combining results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal notranslate"><span class="pre">Chain</span></code> aggregations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/builds/02_cm_edits.html">Deriving post aggregation results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/02_cm_edits.html#summarizing-and-reducing-results">Summarizing and reducing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/02_cm_edits.html#custom-calculations">Custom calculations</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../api_ref/00overview.html">API references</a><ul>
@@ -390,7 +400,7 @@
 <p>Expanding on the current <code class="docutils literal notranslate"><span class="pre">Chain</span></code> editing features provided via <code class="docutils literal notranslate"><span class="pre">cut()</span></code>
 and <code class="docutils literal notranslate"><span class="pre">join()</span></code>, it is now possible to calculate additional row and column results using plain <code class="docutils literal notranslate"><span class="pre">pandas.dataframe</span></code> methods. Use <code class="docutils literal notranslate"><span class="pre">Chain.export()</span></code> to work on a simplified <code class="docutils literal notranslate"><span class="pre">Chain.dataframe</span></code> and <code class="docutils literal notranslate"><span class="pre">assign()</span></code> to rebuild it properly when
 finished.</p>
-<p>An intro to this feature can be viewed here: “LINK TO THE DOC”</p>
+<p>An intro to this feature can be viewed here: <a class="reference internal" href="../lib_doc/builds/02_cm_edits.html"><span class="doc">Custom calculations</span></a></p>
 <p><strong>New</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.as_main(keep=True)</span></code> to change <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> relations</p>
 <p>It is now possible to promote an <code class="docutils literal notranslate"><span class="pre">.additional</span></code> Batch to a main/regular one. Optionally, the original parent Batch can be erased by setting <code class="docutils literal notranslate"><span class="pre">keep=False</span></code>. Example:</p>
 <p><em>Starting from:</em></p>
