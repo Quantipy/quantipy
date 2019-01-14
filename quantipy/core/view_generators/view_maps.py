@@ -288,7 +288,7 @@ class QuantipyViews(ViewMapper):
         """
         view = View(link, name, kwargs=kwargs)
         axis, condition, rel_to, weights, text = view.get_std_params()
-        logic, expand, complete, calc, exclude, rescale = view.get_edit_params() 
+        logic, expand, complete, calc, exclude, rescale = view.get_edit_params()
         # ====================================================================
         # This block of kwargs should be removed
         # parameter overwriting should be done using the template
@@ -314,9 +314,9 @@ class QuantipyViews(ViewMapper):
             rel_to_kind = rel_to.split('.')
             if len(rel_to_kind) == 2:
                 rel_to = rel_to_kind[0]
-                if rel_to_kind[1] == 'counts':
+                if rel_to_kind[1] == 'cells':
                     per_cell = True
-                elif rel_to_kind[1] == 'base':
+                elif rel_to_kind[1] == 'y':
                     per_cell = False
         # ====================================================================
         w = weights if weights is not None else None

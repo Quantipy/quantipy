@@ -422,15 +422,15 @@ class Batch(qp.DataSet):
         return None
 
 
-    def as_main(self, keep=False):
+    def as_main(self, keep=True):
         """
         Transform additional ``Batch`` definitions into regular (parent/main) ones.
 
         Parameters
         ----------
-        keep : bool, default False
-            ``True`` will keep the original related parent Batch, while the
-            default is to drop it.
+        keep : bool, default True
+            ``False`` will drop the original related parent Batch, while the
+            default is to keep it.
 
         Returns
         -------
