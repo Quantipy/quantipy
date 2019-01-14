@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Combining results" href="01_chains.html" />
+    <link rel="next" title="Post-aggregation editing" href="02_cm_edits.html" />
     <link rel="prev" title="View aggregation" href="../engine/04_agg_methods.html" /> 
 
   
@@ -85,9 +85,10 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest (26/10/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest (12/01/2019)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../release_notes/02_archive.html">Archived release notes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#latest-01-10-2018">Latest (01/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-26-10-2018">sd (26/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-01-10-2018">sd (01/10/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
@@ -236,6 +237,31 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../weights/00_overview.html">Weights</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../weights/01_background.html">Background and methodology</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/01_background.html#the-statistical-problem">The statistical problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/01_background.html#rim-weighting-concept">Rim weighting concept</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../weights/02_rim.html">Weight scheme setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#using-the-rim-class">Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#target-distributions">Target distributions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#weight-groups-and-filters">Weight groups and filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#setting-group-targets">Setting group targets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../weights/02_rim.html#integration-within-dataset">Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#weighting-and-weighted-aggregations">Weighting and weighted aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../weights/03_diags.html">Diagnostics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/03_diags.html#the-weighting-efficiency">The weighting efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/03_diags.html#gotchas">Gotchas</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal notranslate"><span class="pre">Batch</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../batch/01_create_load.html">Creating/ Loading a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../batch/02_variables.html">Adding variables to a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a><ul>
@@ -277,13 +303,9 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Builds</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="01_chains.html">Combining results</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal notranslate"><span class="pre">Chain</span></code> aggregations</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="01_chains.html#what-is-a-chain">What is a <code class="docutils literal notranslate"><span class="pre">Chain</span></code>?</a></li>
-<li class="toctree-l4"><a class="reference internal" href="01_chains.html#customizing-results">Customizing results</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="02_cm_edits.html">Post-aggregation editing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="02_cm_edits.html#summarizing-and-reducing-results">Summarizing and reducing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02_cm_edits.html#custom-calculations">Custom calculations</a></li>
 </ul>
 </li>
 </ul>
@@ -367,13 +389,9 @@
 <h1>Builds<a class="headerlink" href="#builds" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="01_chains.html">Combining results</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal notranslate"><span class="pre">Chain</span></code> aggregations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="01_chains.html#what-is-a-chain">What is a <code class="docutils literal notranslate"><span class="pre">Chain</span></code>?</a></li>
-<li class="toctree-l3"><a class="reference internal" href="01_chains.html#customizing-results">Customizing results</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="02_cm_edits.html">Post-aggregation editing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="02_cm_edits.html#summarizing-and-reducing-results">Summarizing and reducing results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="02_cm_edits.html#custom-calculations">Custom calculations</a></li>
 </ul>
 </li>
 </ul>
@@ -388,7 +406,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="01_chains.html" class="btn btn-neutral float-right" title="Combining results" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="02_cm_edits.html" class="btn btn-neutral float-right" title="Post-aggregation editing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../engine/04_agg_methods.html" class="btn btn-neutral" title="View aggregation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
