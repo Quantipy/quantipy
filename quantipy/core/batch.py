@@ -1,6 +1,6 @@
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -422,6 +422,30 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    def as_main(self, keep=False):
+        """
+        Transform additional ``Batch`` definitions into regular (parent/main) ones.
+
+        Parameters
+        ----------
+        keep : bool, default False
+            ``True`` will keep the original related parent Batch, while the
+            default is to drop it.
+
+        Returns
+        -------
+        None
+        """
+        if not self.additional: return None
+        self.additional = False
+        bmeta = self._meta['sets']['batches']
+        parent = self._adds_per_mains(True)[self.name]
+        for p in parent:
+            if not keep:
+                del bmeta[p]
+            else:
+                bmeta[p]['additions'].remove(self.name)
+        self._update()
 
     @modify(to_list='varlist')
     def add_variables(self, varlist):
@@ -550,7 +574,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        cond = {self.filter: 0} if self.filter else None
+        cond = {0: self.filter} if self.filter else None
         removed_sum = []
         for x in self.xks[:]:
             if self.is_array(x):
@@ -568,11 +592,7 @@ class Batch(qp.DataSet):
                         if sources[i-1] in self.xks:
                             self.xks.remove(sources[i-1])
             elif not self._is_array_item(x):
-                if cond:
-                    s = self[self.take(cond), x]
-                else:
-                    s = self[x]
-                if s.count() == 0:
+                if self[self.take(cond), x].count() == 0:
                     self.xks.remove(x)
         if removed_sum:
             msg = "Dropping summaries for {} - all items hidden!"

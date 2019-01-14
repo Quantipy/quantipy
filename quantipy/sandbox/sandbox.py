@@ -1786,6 +1786,7 @@ class Chain(object):
         """
         def __init__(self, chain):
             c = chain.clone()
+            self.org_views = c.views
             self.df = c._frame
             self._org_idx = self.df.index
             self._edit_idx = range(0, len(self._org_idx))
@@ -1800,7 +1801,23 @@ class Chain(object):
                                 zip(self._edit_col,
                                     self._org_col.get_level_values(1))}
             self.df.columns = self._edit_col
+            self.array_mi = c._array_style == 0
             return None
+
+        def _insert_viewlikes(self, new_index_flat, org_index_mapped):
+            inserts = [new_index_flat.index(val) for val in new_index_flat 
+                       if not val in org_index_mapped.values()]
+            flatviews = []
+            for name, no in self.org_views.items():
+                e = [name] * no
+                flatviews.extend(e)
+            for vno, i in enumerate(inserts):
+                flatviews.insert(i, '__viewlike__{}'.format(vno))
+            new_views = OrderedDict()
+            no_of_views = Counter(flatviews)
+            for fv in flatviews:
+                if not fv in new_views: new_views[fv] = no_of_views[fv]
+            return new_views
 
         def _updated_index_tuples(self, axis):
             """
@@ -1812,10 +1829,16 @@ class Chain(object):
             else:
                 current = self.df.index.values.tolist()
                 mapped = self._idx_valmap
-                org_tuples = self._org_idx.tolist()
+                org_tuples = self._org_idx.tolist()         
             merged = [mapped[val] if val in mapped else val for val in current]
-            new_tuples = []
+            # ================================================================
+            if (self.array_mi and axis == 1) or axis == 0: 
+                self._transf_views = self._insert_viewlikes(merged, mapped)
+            else:
+                self._transf_views = self._org_views
+            # ================================================================
             i = d = 0
+            new_tuples = []
             for merged_val in merged:
                 idx = i-d if i-d != len(org_tuples) else i-d-1
                 if org_tuples[idx][1] == merged_val:
@@ -1829,11 +1852,15 @@ class Chain(object):
         def _reindex(self):
             """
             """
-            names = ['Question', 'Values']
+            y_names = ['Question', 'Values']
+            if not self.array_mi:
+                x_names = y_names
+            else:
+                x_names = ['Array', 'Questions']        
             tuples = self._updated_index_tuples(axis=0)
-            self.df.index = pd.MultiIndex.from_tuples(tuples, names=names)
+            self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
             tuples = self._updated_index_tuples(axis=1)
-            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=names)
+            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=y_names)
             return None
 
     def export(self):
@@ -1848,6 +1875,7 @@ class Chain(object):
             raise ValueError("Must pass an exported ``Chain`` instance!")
         transformed_chain_df._reindex()
         self._frame = transformed_chain_df.df
+        self.views = transformed_chain_df._transf_views
         return None
 
     def __str__(self):
@@ -1995,7 +2023,14 @@ class Chain(object):
     def cell_items(self):
         if self.views:
             compl_views = [v for v in self.views if ']*:' in v]
-            check_views = compl_views or self.views
+            check_views = compl_views[:] or self.views.copy()
+            for v in check_views:
+                if v.startswith('__viewlike__'):
+                    if compl_views:
+                        check_views.remove(v)
+                    else:
+                        del check_views[v]
+
             non_freqs = ('d.', 't.')
             c = any(v.split('|')[3] == '' and
                     not v.split('|')[1].startswith(non_freqs) and
@@ -2076,10 +2111,9 @@ class Chain(object):
         for row, idx in enumerate(self._views_per_rows()):
             if nested:
                 for i, v in idx.items():
-                    if v:
-                        contents[row][i] = self._add_contents(v.split('|'))
+                    contents[row][i] = self._add_contents(v)
             else:
-                contents[row] = self._add_contents(idx.split('|'))
+                contents[row] = self._add_contents(idx)
         return contents
 
     @property
@@ -2240,22 +2274,20 @@ class Chain(object):
                     metrics = []
                     ci = self.cell_items
                     for v in self.views.keys():
-                        parts = v.split('|')
-                        is_completed = ']*:' in v
-                        if not self._is_c_pct(parts):
-                            counts.extend([v]*self.views[v])
-                        if self._is_r_pct(parts):
-                            rowpcts.extend([v]*self.views[v])
-                        if (self._is_c_pct(parts) or self._is_base(parts) or
-                            self._is_stat(parts)):
-                            colpcts.extend([v]*self.views[v])
-                        # else:
-                        #     if ci == 'counts_colpct' and self.grouping:
-                        #         if not self._is_counts(parts):
-                        #         # ...or self._is_c_base(parts):
-                        #             colpcts.append(None)
-                        #     else:
-                        #         colpcts.extend([v] * self.views[v])
+                        if not v.startswith('__viewlike__'):
+                            parts = v.split('|')
+                            is_completed = ']*:' in v
+                            if not self._is_c_pct(parts):
+                                counts.extend([v]*self.views[v])
+                            if self._is_r_pct(parts):
+                                rowpcts.extend([v]*self.views[v])
+                            if (self._is_c_pct(parts) or self._is_base(parts) or
+                                self._is_stat(parts)):
+                                colpcts.extend([v]*self.views[v])
+                        else:
+                            counts = counts + ['__viewlike__']
+                            colpcts = colpcts + ['__viewlike__']
+                            rowpcts = rowpcts + ['__viewlike__']
                     dims = self._frame.shape
                     for row in range(0, dims[0]):
                         if ci == 'counts_colpct' and self.grouping:
@@ -2300,7 +2332,15 @@ class Chain(object):
         return clean_view_list
 
 
-    def _add_contents(self, parts):
+    def _add_contents(self, viewelement):
+        """
+        """
+        if viewelement.startswith('__viewlike__'):
+            parts = '|||||'
+            viewlike = True
+        else:
+            parts = viewelement.split('|')
+            viewlike = False
         return dict(is_default=self._is_default(parts),
                     is_c_base=self._is_c_base(parts),
                     is_r_base=self._is_r_base(parts),
@@ -2332,7 +2372,8 @@ class Chain(object):
                     weight=self._weight(parts),
                     is_stat=self._is_stat(parts),
                     stat=self._stat(parts),
-                    siglevel=self._siglevel(parts))
+                    siglevel=self._siglevel(parts),
+                    is_viewlike=viewlike)
 
     def _row_pattern(self, target_ci):
         """
