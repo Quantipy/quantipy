@@ -1805,7 +1805,7 @@ class Chain(object):
             return None
 
         def _insert_viewlikes(self, new_index_flat, org_index_mapped):
-            inserts = [new_index_flat.index(val) for val in new_index_flat 
+            inserts = [new_index_flat.index(val) for val in new_index_flat
                        if not val in org_index_mapped.values()]
             flatviews = []
             for name, no in self.org_views.items():
@@ -1829,10 +1829,10 @@ class Chain(object):
             else:
                 current = self.df.index.values.tolist()
                 mapped = self._idx_valmap
-                org_tuples = self._org_idx.tolist()         
+                org_tuples = self._org_idx.tolist()
             merged = [mapped[val] if val in mapped else val for val in current]
             # ================================================================
-            if (self.array_mi and axis == 1) or axis == 0: 
+            if (self.array_mi and axis == 1) or axis == 0:
                 self._transf_views = self._insert_viewlikes(merged, mapped)
             else:
                 self._transf_views = self._org_views
@@ -1856,7 +1856,7 @@ class Chain(object):
             if not self.array_mi:
                 x_names = y_names
             else:
-                x_names = ['Array', 'Questions']        
+                x_names = ['Array', 'Questions']
             tuples = self._updated_index_tuples(axis=0)
             self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
             tuples = self._updated_index_tuples(axis=1)
@@ -2711,7 +2711,7 @@ class Chain(object):
                 self._has_rules = ['x', 'y']
             else:
                 self._has_rules = rules
-        
+
         # use_views = views[:]
         # for first in self.axes[0]:
         #     for second in self.axes[1]:
@@ -2720,7 +2720,7 @@ class Chain(object):
         #         for v in use_views:
         #             if v not in link:
         #                 use_views.remove(v)
-        
+
         for first in self.axes[0]:
             found = []
             x_frames = []
@@ -2764,14 +2764,18 @@ class Chain(object):
                 # ------------------------------------------------------------
                 # if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
                 # for view in v) for v in self._given_views):
-                
-                test_given_views = [v if isinstance(v, (tuple, list)) else [v] for v in self._given_views]
-                cond1 = any(len(v) >= 2 for v in test_given_views)
-                cond2 = False
-                for tgv in test_given_views:
-                    for view in tgv:
-                        if view.split('|')[1].startswith('t.'): cond2 = True
-                if not(cond1 and cond2):
+                scan_views = [v if isinstance(v, (tuple, list)) else [v]
+                              for v in self._given_views]
+                scan_views = [v for v in scan_views if len(v) > 1]
+                no_tests = []
+                for scan_view in scan_views:
+                    new_views = []
+                    for view in scan_view:
+                        if not view.split('|')[1].startswith('t.'):
+                            new_views.append(view)
+                    no_tests.append(new_views)
+                cond = any(len(v) >= 2 for v in no_tests)
+                if cond:
                     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
                 # CONTINUED:
                 # ------------------------------------------------------------
@@ -3125,7 +3129,7 @@ class Chain(object):
                     elif char_repr == 'lower':
                         case = 'low'
                     elif char_repr == 'alternate':
-                        if case == 'up': 
+                        if case == 'up':
                             case = 'low'
                         else:
                             case = 'up'
@@ -3133,7 +3137,7 @@ class Chain(object):
                         v = [char.replace(str(no), l if case == 'up' else l.lower())
                              if isinstance(char, (str, unicode))
                              else char for char in v]
-                    
+
                     new_values.append(v)
                 else:
                     new_values.append(v)
@@ -3182,7 +3186,7 @@ class Chain(object):
         vpr = self._views_per_rows()
         tests = [(no, v) for no, v in enumerate(vpr)
                  if v.split('|')[1].startswith('t.')]
-        s = [(t[0], 
+        s = [(t[0],
               float(int(t[1].split('|')[1].split('.')[3].split('+')[0]))/100.0)
              for t in tests]
         return s
