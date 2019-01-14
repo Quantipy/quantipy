@@ -3,7 +3,7 @@
 	:includehidden:
 
 ===================
-Latest (12/01/2019)
+Latest (14/01/2019)
 ===================
 
 **New**: ``Chain.export()`` / ``assign()`` and custom calculations
