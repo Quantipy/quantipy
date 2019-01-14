@@ -2760,10 +2760,6 @@ class Chain(object):
 
 
             if self._group_style == 'reduced' and self.array_style >- 1:
-                # OLD CHECK:
-                # ------------------------------------------------------------
-                # if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
-                # for view in v) for v in self._given_views):
                 scan_views = [v if isinstance(v, (tuple, list)) else [v]
                               for v in self._given_views]
                 scan_views = [v for v in scan_views if len(v) > 1]
@@ -2777,11 +2773,6 @@ class Chain(object):
                 cond = any(len(v) >= 2 for v in no_tests)
                 if cond:
                     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
-                # CONTINUED:
-                # ------------------------------------------------------------
-                # elif any(len(v) == 3 for v in self._given_views):
-                #     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
-
             if self.axis == 1:
                 self.views = found[-1]
             else:
