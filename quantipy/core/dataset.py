@@ -205,6 +205,16 @@ class DataSet(object):
     def _by_property(self, prop):
         return [v for v in self.variables() if self.get_property(v, prop)]
 
+    @verify(variables={'name': 'both'})
+    def missings(self, name=None):
+        if name:
+            return self._get_missing_map(name)
+        all_missings = {}
+        for v in self.variables():
+            miss = self._get_missing_map(v)
+            if miss: all_missings[v] = miss
+        return all_missings
+
     def batches(self, main=True, add=True):
         if not 'batches' in self._meta['sets'] or (not main and not add):
             return []
@@ -2879,17 +2889,18 @@ class DataSet(object):
             full_file_path = '{} ({}).xlsx'.format(path_report, weight_name)
             df.to_excel(full_file_path)
             print 'Weight report saved to:\n{}'.format(full_file_path)
+        s_name = weight_scheme.name
+        s_w_name = 'weights_{}'.format(s_name)
         if inplace:
-            scheme_name = weight_scheme.name
-            weight_name = 'weights_{}'.format(scheme_name)
-            weight_description = '{} weights'.format(scheme_name)
-            data_wgt = engine.dataframe(scheme_name)[[unique_key, weight_name]]
-            data_wgt.rename(columns={weight_name: org_wname}, inplace=True)
+            weight_description = '{} weights'.format(s_name)
+            data_wgt = engine.dataframe(s_name)[[unique_key, s_w_name]]
+            data_wgt.rename(columns={s_w_name: org_wname}, inplace=True)
             if org_wname not in self._meta['columns']:
                 self.add_meta(org_wname, 'float', weight_description)
             self.update(data_wgt, on=unique_key)
         else:
-            return data_wgt
+            wdf = engine.dataframe(weight_scheme.name)
+            return wdf.rename(columns={s_w_name: org_wname})
 
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
