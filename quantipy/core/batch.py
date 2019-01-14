@@ -1176,4 +1176,3 @@ class Batch(qp.DataSet):
             idx = self._data.index
         self.sample_size = len(idx)
         return None
->>>>>>> i1208-pre_release_bugfixes
