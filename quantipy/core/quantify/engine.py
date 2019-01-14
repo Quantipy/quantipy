@@ -75,7 +75,6 @@ class Quantity(object):
         self.result = None
         self.logical_conditions = []
         self.cbase = self.rbase = None
-        self.rebased = {}
         self.comb_x = self.comb_y = None
         self.calc_x = self.calc_y = None
         self._has_x_margin = self._has_y_margin = False
@@ -1564,8 +1563,6 @@ class Quantity(object):
         """
         Convert a raw cell count result to its percentage representation.
 
-        .. note:: Will prioritize the self.rebased margin row if one is found.
-
         Parameters
         ----------
         on : {'y', 'x', 'counts_sum', str}, default 'y'
@@ -1686,6 +1683,7 @@ class Test(object):
             self.Quantity.swap(var=view.has_other_source())
             cond = {orgx: not_count(0)}
             self.Quantity.filter(cond, keep_base=False, inplace=True)
+        self.rebased = view._kwargs.get('rebased', False)
         self._set_baseline_aggregates(view)
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms
@@ -1838,6 +1836,9 @@ class Test(object):
                     self.no_diffs = True
                 if self.y == '@':
                     self.no_pairs = True
+        if self.rebased:
+            self.invalid = True
+            self.no_pairs = True
         if self.invalid:
             self.mimic = mimic
             self.comparevalue, self.level = self._convert_level(level)
