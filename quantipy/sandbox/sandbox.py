@@ -1805,7 +1805,7 @@ class Chain(object):
             return None
 
         def _insert_viewlikes(self, new_index_flat, org_index_mapped):
-            inserts = [new_index_flat.index(val) for val in new_index_flat 
+            inserts = [new_index_flat.index(val) for val in new_index_flat
                        if not val in org_index_mapped.values()]
             flatviews = []
             for name, no in self.org_views.items():
@@ -1829,10 +1829,10 @@ class Chain(object):
             else:
                 current = self.df.index.values.tolist()
                 mapped = self._idx_valmap
-                org_tuples = self._org_idx.tolist()         
+                org_tuples = self._org_idx.tolist()
             merged = [mapped[val] if val in mapped else val for val in current]
             # ================================================================
-            if (self.array_mi and axis == 1) or axis == 0: 
+            if (self.array_mi and axis == 1) or axis == 0:
                 self._transf_views = self._insert_viewlikes(merged, mapped)
             else:
                 self._transf_views = self._org_views
@@ -1856,7 +1856,7 @@ class Chain(object):
             if not self.array_mi:
                 x_names = y_names
             else:
-                x_names = ['Array', 'Questions']        
+                x_names = ['Array', 'Questions']
             tuples = self._updated_index_tuples(axis=0)
             self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
             tuples = self._updated_index_tuples(axis=1)
@@ -2761,24 +2761,19 @@ class Chain(object):
 
 
             if self._group_style == 'reduced' and self.array_style >- 1:
-                # OLD CHECK:
-                # ------------------------------------------------------------
-                # if not any(len(v) == 2 and any(view.split('|')[1].startswith('t.')
-                # for view in v) for v in self._given_views):
-
-                test_given_views = [v if isinstance(v, (tuple, list)) else [v] for v in self._given_views]
-                cond1 = any(len(v) >= 2 for v in test_given_views)
-                cond2 = False
-                for tgv in test_given_views:
-                    for view in tgv:
-                        if view.split('|')[1].startswith('t.'): cond2 = True
-                if not(cond1 and cond2) or cond1:
+                scan_views = [v if isinstance(v, (tuple, list)) else [v]
+                              for v in self._given_views]
+                scan_views = [v for v in scan_views if len(v) > 1]
+                no_tests = []
+                for scan_view in scan_views:
+                    new_views = []
+                    for view in scan_view:
+                        if not view.split('|')[1].startswith('t.'):
+                            new_views.append(view)
+                    no_tests.append(new_views)
+                cond = any(len(v) >= 2 for v in no_tests)
+                if cond:
                     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
-                # CONTINUED:
-                # ------------------------------------------------------------
-                # elif any(len(v) == 3 for v in self._given_views):
-                #     self._frame = self._reduce_grouped_index(self._frame, 2, self._array_style)
-
             if self.axis == 1:
                 self.views = found[-1]
             else:
