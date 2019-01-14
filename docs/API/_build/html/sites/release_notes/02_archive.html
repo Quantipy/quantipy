@@ -30,7 +30,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="How-to-snippets" href="03_how_to_snippets.html" />
-    <link rel="prev" title="Latest (26/10/2018)" href="01_latest.html" /> 
+    <link rel="prev" title="Latest (12/01/2019)" href="01_latest.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -85,9 +85,10 @@
             
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Release notes</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="01_latest.html">Latest (26/10/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="01_latest.html">Latest (12/01/2019)</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Archived release notes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#latest-01-10-2018">Latest (01/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sd-26-10-2018">sd (26/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sd-01-10-2018">sd (01/10/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sd-04-06-2018">sd (04/06/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sd-27-02-2018">sd (27/02/2018)</a></li>
@@ -396,8 +397,146 @@
 <h1>Archived release notes<a class="headerlink" href="#archived-release-notes" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<div class="section" id="latest-01-10-2018">
-<h2>Latest (01/10/2018)<a class="headerlink" href="#latest-01-10-2018" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sd-26-10-2018">
+<h2>sd (26/10/2018)<a class="headerlink" href="#sd-26-10-2018" title="Permalink to this headline">¶</a></h2>
+<p><strong>New</strong>: Filter variables in DataSet and Batch</p>
+<p>To avoid complex logics stored in the background and resulting problem with
+json serializing, the filter concept in DataSet and Batch has changed.</p>
+<p>Now actual variables are added to the data and meta, which have the property
+<code class="docutils literal notranslate"><span class="pre">recoded_filter</span></code>. The values of depend on the included logic, and all logics
+summarized in the value <code class="docutils literal notranslate"><span class="pre">0:</span> <span class="pre">keep</span></code>. Because of the an easy logic can be used
+at several places in qp: <code class="docutils literal notranslate"><span class="pre">{'filter_var':</span> <span class="pre">0}</span></code></p>
+<p><em>DataSet methods</em></p>
+<p>All included filters of a Dataset can be shown running <code class="docutils literal notranslate"><span class="pre">dataset.filters()</span></code>.</p>
+<p>A filter variable can be easily created:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">add_filter_var</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the new filter-variable.</p>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">logic</span></code> should be (a list of) dictionaries in form of:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;reason&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span> <span class="o">/</span> <span class="n">intersection</span><span class="o">/</span> <span class="o">....</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>or stings (var_name), which are automatically transformed into the following dict</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;var_name not empty&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">var_name</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">0</span><span class="p">)}</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>If a list is provided, each item results in an own value of the filter
+variable.</p>
+</li>
+</ul>
+<p>An existing filter variable can also be extended:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">extend_filter_var</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">extend_as</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the existing filter-variable.</li>
+<li><code class="docutils literal notranslate"><span class="pre">logic</span></code> should be the same as above, then additional categories are added
+to the filter and the 0 value is recalculated.</li>
+<li><code class="docutils literal notranslate"><span class="pre">extend_as</span></code> determines if a new filter var is created or the initial
+variable is modified.
+If <code class="docutils literal notranslate"><span class="pre">extend_as=None</span></code> the variable is modified inplace. Otherwise
+<code class="docutils literal notranslate"><span class="pre">extend_as</span></code> is used as suffix for the new filter variable.</li>
+</ul>
+<p>Known methods like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="o">.</span><span class="n">drop</span><span class="p">()</span>
+<span class="o">.</span><span class="n">rename</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>can be applied on filter-variables, all others are not valid!</p>
+<p><em>Batch methods</em></p>
+<p><code class="docutils literal notranslate"><span class="pre">Batch.add_filter(filter_name,</span> <span class="pre">filter_logic=None,</span> <span class="pre">overwrite=False)</span></code></p>
+<p>A filter can still be added to a batch, by adding a <code class="docutils literal notranslate"><span class="pre">filter_logic</span></code>, but also
+it’s possible to add only the <code class="docutils literal notranslate"><span class="pre">filter_name</span></code> of an existing filter variable.
+If <code class="docutils literal notranslate"><span class="pre">filter_name</span></code> is an existing filter-variable, a <code class="docutils literal notranslate"><span class="pre">filter_logic</span></code> is provided
+and <code class="docutils literal notranslate"><span class="pre">overwrite</span></code> is turned off, the scripts will return an error.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Batch.remove_filter()</span></code></p>
+<p>This method only removes filters from the Batch definitions, the created
+filter-variables still exist in the belonging DataSet object.</p>
+<p>Batch methods that use filters:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">extend_filter</span><span class="p">()</span>
+<span class="o">.</span><span class="n">add_y_on_y</span><span class="p">()</span>
+<span class="o">.</span><span class="n">add_open_ends</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>create new extended filter variables if the used filter differs from the
+batch global filter. So it’s recommended to add the global filter first, it’s
+taken over automatically for the mentioned methods.</p>
+<hr class="docutils" />
+<p><strong>New</strong>: Summarizing and rearranging  <code class="docutils literal notranslate"><span class="pre">qp.Chain</span></code> elements via <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code></p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">cut(values,</span> <span class="pre">ci=None,</span> <span class="pre">base=False,</span> <span class="pre">tests=False)</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">join(title='Summary')</span></code></li>
+</ul>
+<p>It is now possible to summarize <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregation results from existing <code class="docutils literal notranslate"><span class="pre">Chain</span></code>
+items  by restructuring and editing them via their <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> methods. The
+general idea behind building a summary <code class="docutils literal notranslate"><span class="pre">Chain</span></code> is to unify a set of results into
+items  by restructuring and editing them via their <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> methods. The
+general idea behind building a summary Chain is to unify a set of results into
+one cohesive representation to offer an easy way to look at certain key figures
+of interest in comparison to each other. To achieve this, the <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> class
+has gained the new <code class="docutils literal notranslate"><span class="pre">cut()</span></code> and <code class="docutils literal notranslate"><span class="pre">join()</span></code> methods. Summaries are built post-
+aggregation and therefore rely on what has been defined (via the <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code>
+class) and computed (via the <code class="docutils literal notranslate"><span class="pre">qp.Stack</span></code> methods) at previous stages.</p>
+<p>The intended way of working with this new feature can be outlined as</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><code class="docutils literal notranslate"><span class="pre">reorder()</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">cut()</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">join()</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">insert()</span></code></li>
+</ol>
+</div></blockquote>
+<p>In more detail:</p>
+<p><em>A) Grouping the results for the summary</em></p>
+<p>Both methods will operate on the <em>entire set</em> of <code class="docutils literal notranslate"><span class="pre">Chains</span></code> collected in a
+<code class="docutils literal notranslate"><span class="pre">ChainManager</span></code>, so building a summary <code class="docutils literal notranslate"><span class="pre">Chain</span></code> will normally start with
+restricting a copy of an existing <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> to the question variables
+that you’re interested in. This can be done via <code class="docutils literal notranslate"><span class="pre">clone()</span></code> with
+<code class="docutils literal notranslate"><span class="pre">reorder(...,</span> <span class="pre">inplace=True)</span></code> or by assigning back the new instance from
+<code class="docutils literal notranslate"><span class="pre">reorder(...,</span> <span class="pre">inplace=False)</span></code>.</p>
+<p><em>B) Selecting View results via</em> <code class="docutils literal notranslate"><span class="pre">cut()</span></code></p>
+<p>This method lets you target the kind of results (nets, means, NPS scores,
+only the frequencies, etc.) from a given <code class="docutils literal notranslate"><span class="pre">qp.Chain.dataframe</span></code>. Elements must
+be targeted by their underlying regular index values, e.g. <code class="docutils literal notranslate"><span class="pre">'net_1'</span></code>, <code class="docutils literal notranslate"><span class="pre">'net_2'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'mean'</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">'calc'</span></code>, … . Use the <code class="docutils literal notranslate"><span class="pre">base</span></code> and <code class="docutils literal notranslate"><span class="pre">tests</span></code> parameters
+to also carry over the matching base rows and/or significance testing results.
+The <code class="docutils literal notranslate"><span class="pre">ci</span></code> parameter additionally allows targeting only the <code class="docutils literal notranslate"><span class="pre">'counts'</span></code> or
+<code class="docutils literal notranslate"><span class="pre">'c%'</span></code> results if cell items are grouped together.</p>
+<p><em>C) Unifying the individual results with</em> <code class="docutils literal notranslate"><span class="pre">join()</span></code></p>
+<p>Merging all new results into one, the <code class="docutils literal notranslate"><span class="pre">join()</span></code> method concatenates vertically
+and relabels the x-axis to separate all variable results by their matching
+metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has also been applied while creating the regular set of
+and relabels the x-axis to separate all variable results by their matching
+metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has has also been applied while creating the regular set of
+<code class="docutils literal notranslate"><span class="pre">Chain</span></code> items. The new summary can then also be inserted back into its
+originating <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> with <code class="docutils literal notranslate"><span class="pre">insert()</span></code> if desired.</p>
+<hr class="docutils" />
+<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.add_variables(varlist)</span></code></p>
+<p>A <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> can now carry a collection of variables that is <strong>explicitly not</strong>
+directed towards any table-like builds. Variables from <code class="docutils literal notranslate"><span class="pre">varlist</span></code> will solely
+be used in non-aggregation based, data transformation and export oriented
+applications. To make this distinction more visible in the API, <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">add_y()</span></code> have been renamed to <code class="docutils literal notranslate"><span class="pre">add_downbreak()</span></code> and <code class="docutils literal notranslate"><span class="pre">add_crossbreak()</span></code>.
+Users are warned and advised to switch to the new method versions via a
+<code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>. In a future version of the library <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">add_y()</span></code> will be removed.</p>
+<hr class="docutils" />
+<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.copy()</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">Batch.clone()</span></code></p>
+<p>Since <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> is a subclass of <code class="docutils literal notranslate"><span class="pre">qp.DataSet</span></code>, the <code class="docutils literal notranslate"><span class="pre">copy()</span></code> method is renamed into
+<code class="docutils literal notranslate"><span class="pre">Batch.clone()</span></code>.</p>
+</div>
+<div class="section" id="sd-01-10-2018">
+<h2>sd (01/10/2018)<a class="headerlink" href="#sd-01-10-2018" title="Permalink to this headline">¶</a></h2>
 <p><strong>New</strong>: “rewrite” of Rules module (affecting sorting):</p>
 <p><strong>sorting “normal” columns</strong>:</p>
 <ul class="simple">
@@ -1645,7 +1784,7 @@ optionally restricting to a pair of variables.</p>
         <a href="03_how_to_snippets.html" class="btn btn-neutral float-right" title="How-to-snippets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="01_latest.html" class="btn btn-neutral" title="Latest (26/10/2018)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="01_latest.html" class="btn btn-neutral" title="Latest (12/01/2019)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Latest (26/10/2018) &mdash; Quantipy 0.1.3 documentation</title>
+  <title>Latest (12/01/2019) &mdash; Quantipy 0.1.3 documentation</title>
   
 
   
@@ -85,9 +85,10 @@
             
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Release notes</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Latest (26/10/2018)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Latest (12/01/2019)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="02_archive.html">Archived release notes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="02_archive.html#latest-01-10-2018">Latest (01/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02_archive.html#sd-26-10-2018">sd (26/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02_archive.html#sd-01-10-2018">sd (01/10/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
@@ -371,7 +372,7 @@
         
           <li><a href="00_overview.html">Release notes</a> &raquo;</li>
         
-      <li>Latest (26/10/2018)</li>
+      <li>Latest (12/01/2019)</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -392,143 +393,129 @@
             
   <div class="toctree-wrapper compound">
 </div>
-<div class="section" id="latest-26-10-2018">
-<h1>Latest (26/10/2018)<a class="headerlink" href="#latest-26-10-2018" title="Permalink to this headline">¶</a></h1>
-<p><strong>New</strong>: Filter variables in DataSet and Batch</p>
-<p>To avoid complex logics stored in the background and resulting problem with
-json serializing, the filter concept in DataSet and Batch has changed.</p>
-<p>Now actual variables are added to the data and meta, which have the property
-<code class="docutils literal notranslate"><span class="pre">recoded_filter</span></code>. The values of depend on the included logic, and all logics
-summarized in the value <code class="docutils literal notranslate"><span class="pre">0:</span> <span class="pre">keep</span></code>. Because of the an easy logic can be used
-at several places in qp: <code class="docutils literal notranslate"><span class="pre">{'filter_var':</span> <span class="pre">0}</span></code></p>
-<p><em>DataSet methods</em></p>
-<p>All included filters of a Dataset can be shown running <code class="docutils literal notranslate"><span class="pre">dataset.filters()</span></code>.</p>
-<p>A filter variable can be easily created:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">add_filter_var</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="section" id="latest-12-01-2019">
+<h1>Latest (12/01/2019)<a class="headerlink" href="#latest-12-01-2019" title="Permalink to this headline">¶</a></h1>
+<p><strong>New</strong>: <code class="docutils literal notranslate"><span class="pre">Chain.export()</span></code> / <code class="docutils literal notranslate"><span class="pre">assign()</span></code> and custom calculations</p>
+<p>Expanding on the current <code class="docutils literal notranslate"><span class="pre">Chain</span></code> editing features provided via <code class="docutils literal notranslate"><span class="pre">cut()</span></code>
+and <code class="docutils literal notranslate"><span class="pre">join()</span></code>, it is now possible to calculate additional row and column results using plain <code class="docutils literal notranslate"><span class="pre">pandas.dataframe</span></code> methods. Use <code class="docutils literal notranslate"><span class="pre">Chain.export()</span></code> to work on a simplified <code class="docutils literal notranslate"><span class="pre">Chain.dataframe</span></code> and <code class="docutils literal notranslate"><span class="pre">assign()</span></code> to rebuild it properly when
+finished.</p>
+<p>An intro to this feature can be viewed here: “LINK TO THE DOC”</p>
+<p><strong>New</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.as_main(keep=True)</span></code> to change <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> relations</p>
+<p>It is now possible to promote an <code class="docutils literal notranslate"><span class="pre">.additional</span></code> Batch to a main/regular one. Optionally, the original parent Batch can be erased by setting <code class="docutils literal notranslate"><span class="pre">keep=False</span></code>. Example:</p>
+<p><em>Starting from:</em></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">batches</span><span class="p">(</span><span class="n">main</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">[&#39;batch 2&#39;, &#39;batch 5&#39;]</span>
 </pre></div>
 </div>
-<ul>
-<li><p class="first"><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the new filter-variable.</p>
-</li>
-<li><p class="first"><code class="docutils literal notranslate"><span class="pre">logic</span></code> should be (a list of) dictionaries in form of:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span>
-<span class="gp">... </span>    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;reason&#39;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span> <span class="o">/</span> <span class="n">intersection</span><span class="o">/</span> <span class="o">....</span>
-<span class="gp">... </span><span class="p">}</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">batches</span><span class="p">(</span><span class="n">main</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">[&#39;batch 4&#39;, &#39;batch 3&#39;, &#39;batch 1&#39;]</span>
 </pre></div>
 </div>
-<p>or stings (var_name), which are automatically transformed into the following dict</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">{</span>
-<span class="gp">... </span>    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;var_name not empty&#39;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s1">&#39;logic&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">var_name</span><span class="p">:</span> <span class="n">not_count</span><span class="p">(</span><span class="mi">0</span><span class="p">)}</span>
-<span class="gp">... </span><span class="p">}</span>
+<p><em>We turn</em> <code class="docutils literal notranslate"><span class="pre">batch</span> <span class="pre">3</span></code> <em>into a normal one:</em></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="s1">&#39;batch 3&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">as_main</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>If a list is provided, each item results in an own value of the filter
-variable.</p>
-</li>
-</ul>
-<p>An existing filter variable can also be extended:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">extend_filter_var</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">logic</span><span class="p">,</span> <span class="n">extend_as</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">batches</span><span class="p">(</span><span class="n">main</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">[&#39;batch 2&#39;, &#39;batch 5&#39;, &#39;batch 3&#39;]</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the existing filter-variable.</li>
-<li><code class="docutils literal notranslate"><span class="pre">logic</span></code> should be the same as above, then additional categories are added
-to the filter and the 0 value is recalculated.</li>
-<li><code class="docutils literal notranslate"><span class="pre">extend_as</span></code> determines if a new filter var is created or the initial
-variable is modified.
-If <code class="docutils literal notranslate"><span class="pre">extend_as=None</span></code> the variable is modified inplace. Otherwise
-<code class="docutils literal notranslate"><span class="pre">extend_as</span></code> is used as suffix for the new filter variable.</li>
-</ul>
-<p>Known methods like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="o">.</span><span class="n">drop</span><span class="p">()</span>
-<span class="o">.</span><span class="n">rename</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">batches</span><span class="p">(</span><span class="n">main</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">[&#39;batch 4&#39;, &#39;batch 1&#39;]</span>
 </pre></div>
 </div>
-<p>can be applied on filter-variables, all others are not valid!</p>
-<p><em>Batch methods</em></p>
-<p><code class="docutils literal notranslate"><span class="pre">Batch.add_filter(filter_name,</span> <span class="pre">filter_logic=None,</span> <span class="pre">overwrite=False)</span></code></p>
-<p>A filter can still be added to a batch, by adding a <code class="docutils literal notranslate"><span class="pre">filter_logic</span></code>, but also
-it’s possible to add only the <code class="docutils literal notranslate"><span class="pre">filter_name</span></code> of an existing filter variable.
-If <code class="docutils literal notranslate"><span class="pre">filter_name</span></code> is an existing filter-variable, a <code class="docutils literal notranslate"><span class="pre">filter_logic</span></code> is provided
-and <code class="docutils literal notranslate"><span class="pre">overwrite</span></code> is turned off, the scripts will return an error.</p>
-<p><code class="docutils literal notranslate"><span class="pre">Batch.remove_filter()</span></code></p>
-<p>This method only removes filters from the Batch definitions, the created
-filter-variables still exist in the belonging DataSet object.</p>
-<p>Batch methods that use filters:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">extend_filter</span><span class="p">()</span>
-<span class="o">.</span><span class="n">add_y_on_y</span><span class="p">()</span>
-<span class="o">.</span><span class="n">add_open_ends</span><span class="p">()</span>
+<p><strong>New</strong>: On-the-fly rebasing via <code class="docutils literal notranslate"><span class="pre">Quantity.normalize(on='y',</span> <span class="pre">per_cell=False)</span></code></p>
+<p>Quantipy’s engine will now accept another variable’s base for (column) percentage
+computations. Furthermore, it is possible to rebase the cell counts to the <em>cell
+frequencies of the other variable’s cross-tabulation</em> by setting <code class="docutils literal notranslate"><span class="pre">per_cell=True</span></code>,
+i.e. rebase variables with identical categories to their respective per-category results. The following example shows how <code class="docutils literal notranslate"><span class="pre">'A1'</span></code> results are serving as cell bases
+for the percentages of <code class="docutils literal notranslate"><span class="pre">'A2'</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">stack</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;A1&#39;</span><span class="p">][</span><span class="s1">&#39;datasource&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">Question        datasource</span>
+<span class="go">Values                 All      1       2       3      4       5       6</span>
+<span class="go">Question Values</span>
+<span class="go">A1       All        6984.0  767.0  1238.0  2126.0  836.0  1012.0  1005.0</span>
+<span class="go">         1          1141.0  503.0    78.0   109.0  102.0   155.0   194.0</span>
+<span class="go">         2          2716.0  615.0   406.0   499.0  499.0   394.0   303.0</span>
+<span class="go">         3          1732.0  603.0    89.0   128.0  101.0   404.0   407.0</span>
+<span class="go">         4          5391.0  644.0   798.0  1681.0  655.0   796.0   817.0</span>
+<span class="go">         5          4408.0  593.0   177.0  1649.0  321.0   818.0   850.0</span>
+<span class="go">         6          3584.0  615.0   834.0   834.0  327.0   507.0   467.0</span>
+<span class="go">         7          4250.0  588.0   724.0  1717.0  540.0    55.0   626.0</span>
+<span class="go">         8          3729.0  413.0  1014.0   788.0  311.0   539.0   664.0</span>
+<span class="go">         9          3575.0  496.0   975.0   270.0  699.0   230.0   905.0</span>
+<span class="go">         10         4074.0  582.0   910.0  1148.0  298.0   861.0   275.0</span>
+<span class="go">         11         2200.0  446.0   749.0   431.0  177.0   146.0   251.0</span>
+<span class="go">         12         5554.0  612.0   987.0  1653.0  551.0   860.0   891.0</span>
+<span class="go">         13          544.0   40.0   107.0   232.0   87.0    52.0    26.0</span>
 </pre></div>
 </div>
-<p>create new extended filter variables if the used filter differs from the
-batch global filter. So it’s recommended to add the global filter first, it’s
-taken over automatically for the mentioned methods.</p>
-<hr class="docutils" />
-<p><strong>New</strong>: Summarizing and rearranging  <code class="docutils literal notranslate"><span class="pre">qp.Chain</span></code> elements via <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code></p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">cut(values,</span> <span class="pre">ci=None,</span> <span class="pre">base=False,</span> <span class="pre">tests=False)</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">join(title='Summary')</span></code></li>
-</ul>
-<p>It is now possible to summarize <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregation results from existing <code class="docutils literal notranslate"><span class="pre">Chain</span></code>
-items  by restructuring and editing them via their <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> methods. The
-general idea behind building a summary <code class="docutils literal notranslate"><span class="pre">Chain</span></code> is to unify a set of results into
-items  by restructuring and editing them via their <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> methods. The
-general idea behind building a summary Chain is to unify a set of results into
-one cohesive representation to offer an easy way to look at certain key figures
-of interest in comparison to each other. To achieve this, the <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> class
-has gained the new <code class="docutils literal notranslate"><span class="pre">cut()</span></code> and <code class="docutils literal notranslate"><span class="pre">join()</span></code> methods. Summaries are built post-
-aggregation and therefore rely on what has been defined (via the <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code>
-class) and computed (via the <code class="docutils literal notranslate"><span class="pre">qp.Stack</span></code> methods) at previous stages.</p>
-<p>The intended way of working with this new feature can be outlined as</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li><code class="docutils literal notranslate"><span class="pre">reorder()</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">cut()</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">join()</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">insert()</span></code></li>
-</ol>
-</div></blockquote>
-<p>In more detail:</p>
-<p><em>A) Grouping the results for the summary</em></p>
-<p>Both methods will operate on the <em>entire set</em> of <code class="docutils literal notranslate"><span class="pre">Chains</span></code> collected in a
-<code class="docutils literal notranslate"><span class="pre">ChainManager</span></code>, so building a summary <code class="docutils literal notranslate"><span class="pre">Chain</span></code> will normally start with
-restricting a copy of an existing <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> to the question variables
-that you’re interested in. This can be done via <code class="docutils literal notranslate"><span class="pre">clone()</span></code> with
-<code class="docutils literal notranslate"><span class="pre">reorder(...,</span> <span class="pre">inplace=True)</span></code> or by assigning back the new instance from
-<code class="docutils literal notranslate"><span class="pre">reorder(...,</span> <span class="pre">inplace=False)</span></code>.</p>
-<p><em>B) Selecting View results via</em> <code class="docutils literal notranslate"><span class="pre">cut()</span></code></p>
-<p>This method lets you target the kind of results (nets, means, NPS scores,
-only the frequencies, etc.) from a given <code class="docutils literal notranslate"><span class="pre">qp.Chain.dataframe</span></code>. Elements must
-be targeted by their underlying regular index values, e.g. <code class="docutils literal notranslate"><span class="pre">'net_1'</span></code>, <code class="docutils literal notranslate"><span class="pre">'net_2'</span></code>,
-<code class="docutils literal notranslate"><span class="pre">'mean'</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">'calc'</span></code>, … . Use the <code class="docutils literal notranslate"><span class="pre">base</span></code> and <code class="docutils literal notranslate"><span class="pre">tests</span></code> parameters
-to also carry over the matching base rows and/or significance testing results.
-The <code class="docutils literal notranslate"><span class="pre">ci</span></code> parameter additionally allows targeting only the <code class="docutils literal notranslate"><span class="pre">'counts'</span></code> or
-<code class="docutils literal notranslate"><span class="pre">'c%'</span></code> results if cell items are grouped together.</p>
-<p><em>C) Unifying the individual results with</em> <code class="docutils literal notranslate"><span class="pre">join()</span></code></p>
-<p>Merging all new results into one, the <code class="docutils literal notranslate"><span class="pre">join()</span></code> method concatenates vertically
-and relabels the x-axis to separate all variable results by their matching
-metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has also been applied while creating the regular set of
-and relabels the x-axis to separate all variable results by their matching
-metadata <code class="docutils literal notranslate"><span class="pre">text</span></code> that has has also been applied while creating the regular set of
-<code class="docutils literal notranslate"><span class="pre">Chain</span></code> items. The new summary can then also be inserted back into its
-originating <code class="docutils literal notranslate"><span class="pre">ChainManager</span></code> with <code class="docutils literal notranslate"><span class="pre">insert()</span></code> if desired.</p>
-<hr class="docutils" />
-<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.add_variables(varlist)</span></code></p>
-<p>A <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> can now carry a collection of variables that is <strong>explicitly not</strong>
-directed towards any table-like builds. Variables from <code class="docutils literal notranslate"><span class="pre">varlist</span></code> will solely
-be used in non-aggregation based, data transformation and export oriented
-applications. To make this distinction more visible in the API, <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
-<code class="docutils literal notranslate"><span class="pre">add_y()</span></code> have been renamed to <code class="docutils literal notranslate"><span class="pre">add_downbreak()</span></code> and <code class="docutils literal notranslate"><span class="pre">add_crossbreak()</span></code>.
-Users are warned and advised to switch to the new method versions via a
-<code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>. In a future version of the library <code class="docutils literal notranslate"><span class="pre">add_x()</span></code> and
-<code class="docutils literal notranslate"><span class="pre">add_y()</span></code> will be removed.</p>
-<hr class="docutils" />
-<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.copy()</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">Batch.clone()</span></code></p>
-<p>Since <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> is a subclass of <code class="docutils literal notranslate"><span class="pre">qp.DataSet</span></code>, the <code class="docutils literal notranslate"><span class="pre">copy()</span></code> method is renamed into
-<code class="docutils literal notranslate"><span class="pre">Batch.clone()</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="n">stack</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">&#39;no_filter&#39;</span><span class="p">][</span><span class="s1">&#39;A2&#39;</span><span class="p">][</span><span class="s1">&#39;datasource&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="go">Question        datasource</span>
+<span class="go">Values                 All      1       2       3      4      5      6</span>
+<span class="go">Question Values</span>
+<span class="go">A2       All        6440.0  727.0  1131.0  1894.0  749.0  960.0  979.0</span>
+<span class="go">         1           568.0  306.0    34.0    32.0   48.0   63.0   85.0</span>
+<span class="go">         2          1135.0  417.0   107.0    88.0  213.0  175.0  135.0</span>
+<span class="go">         3           975.0  426.0    43.0    49.0   49.0  220.0  188.0</span>
+<span class="go">         4          2473.0  350.0   267.0   599.0  431.0  404.0  422.0</span>
+<span class="go">         5          2013.0  299.0    88.0   573.0  162.0  417.0  474.0</span>
+<span class="go">         6          1174.0  342.0   219.0   183.0  127.0  135.0  168.0</span>
+<span class="go">         7          1841.0  355.0   161.0   754.0  285.0   21.0  265.0</span>
+<span class="go">         8          1740.0  265.0   376.0   327.0  160.0  212.0  400.0</span>
+<span class="go">         9          1584.0  181.0   390.0    89.0  398.0   94.0  432.0</span>
+<span class="go">         10         1655.0  257.0   356.0   340.0  137.0  443.0  122.0</span>
+<span class="go">         11          766.0  201.0   241.0   101.0   76.0   53.0   94.0</span>
+<span class="go">         12         2438.0  217.0   528.0   497.0  247.0  459.0  490.0</span>
+<span class="go">         13         1532.0   72.0   286.0   685.0  118.0  183.0  188.0</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="s1">&#39;A1&#39;</span><span class="p">,</span> <span class="n">per_cell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">Question         datasource</span>
+<span class="go">Values                  All           1           2           3           4           5           6</span>
+<span class="go">Question Values</span>
+<span class="go">A2       All      92.210767   94.784876   91.357027   89.087488   89.593301   94.861660   97.412935</span>
+<span class="go">         1        49.780894   60.834990   43.589744   29.357798   47.058824   40.645161   43.814433</span>
+<span class="go">         2        41.789396   67.804878   26.354680   17.635271   42.685371   44.416244   44.554455</span>
+<span class="go">         3        56.293303   70.646766   48.314607   38.281250   48.514851   54.455446   46.191646</span>
+<span class="go">         4        45.872751   54.347826   33.458647   35.633551   65.801527   50.753769   51.652387</span>
+<span class="go">         5        45.666969   50.421585   49.717514   34.748332   50.467290   50.977995   55.764706</span>
+<span class="go">         6        32.756696   55.609756   26.258993   21.942446   38.837920   26.627219   35.974304</span>
+<span class="go">         7        43.317647   60.374150   22.237569   43.913803   52.777778   38.181818   42.332268</span>
+<span class="go">         8        46.661303   64.164649   37.080868   41.497462   51.446945   39.332096   60.240964</span>
+<span class="go">         9        44.307692   36.491935   40.000000   32.962963   56.938484   40.869565   47.734807</span>
+<span class="go">         10       40.623466   44.158076   39.120879   29.616725   45.973154   51.451800   44.363636</span>
+<span class="go">         11       34.818182   45.067265   32.176235   23.433875   42.937853   36.301370   37.450199</span>
+<span class="go">         12       43.896291   35.457516   53.495441   30.066546   44.827586   53.372093   54.994388</span>
+<span class="go">         13      281.617647  180.000000  267.289720  295.258621  135.632184  351.923077  723.076923</span>
+</pre></div>
+</div>
+<p><strong>New</strong>: <code class="docutils literal notranslate"><span class="pre">DataSet.missings(name=None)</span></code></p>
+<p>This new method returns the missing data defintiton for the provided variable or
+all missing defintitons found in the dataset (if <code class="docutils literal notranslate"><span class="pre">name</span></code> is omitted).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">missings</span><span class="p">()</span>
+<span class="go">{u&#39;q10&#39;: {u&#39;exclude&#39;: [6]},</span>
+<span class="go"> u&#39;q11&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q17&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q23_1_new&#39;: {u&#39;exclude&#39;: [8]},</span>
+<span class="go"> u&#39;q25&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q32&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q38&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q39&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q48&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q5&#39;: {u&#39;exclude&#39;: [977]},</span>
+<span class="go"> u&#39;q9&#39;: {u&#39;exclude&#39;: [977]}}</span>
+</pre></div>
+</div>
+<p><strong>Update</strong>: <code class="docutils literal notranslate"><span class="pre">DataSet.batches(main=True,</span> <span class="pre">add=False)</span></code></p>
+<p>The collection of <code class="docutils literal notranslate"><span class="pre">Batch</span></code> sets can be separated by <code class="docutils literal notranslate"><span class="pre">main</span></code> and <code class="docutils literal notranslate"><span class="pre">add</span></code>itional
+ones (see above) to make analyzing Batch setups and relations easier. The default is still to return all Batch names.</p>
+<p><strong>Bugfix</strong>: Stack, <code class="docutils literal notranslate"><span class="pre">other_source</span></code> statistics failing for delimited sets</p>
+<p>A bug that prevented <code class="docutils literal notranslate"><span class="pre">other_source</span></code> statistics being computed on delimited set type variables has been resolved by adjusting the underlying data type checking mechanic.</p>
 </div>
 
 
