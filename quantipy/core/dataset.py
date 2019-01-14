@@ -215,11 +215,48 @@ class DataSet(object):
             if miss: all_missings[v] = miss
         return all_missings
 
-    def batches(self):
-        if 'batches' in self._meta['sets']:
-            return self._meta['sets']['batches'].keys()
-        else:
+    def batches(self, main=True, add=True):
+        if not 'batches' in self._meta['sets'] or (not main and not add):
             return []
+        batches =  self._meta['sets']['batches'].keys()
+        if main and add:
+            return batches
+        if main:
+            return self._typed_batches(batches, 'main')
+        if add:
+            return self._typed_batches(batches, 'add')
+
+    def _typed_batches(self, all_batches, kind):
+        """
+        """
+        verbose = self._verbose_infos
+        self._verbose_infos = False
+        if kind == 'main':
+            typed_batches = [b for b in all_batches if not self.get_batch(b).additional]
+        elif kind == 'add':
+            typed_batches = [b for b in all_batches if self.get_batch(b).additional]
+        self._verbose_infos = verbose
+        return typed_batches
+
+    def _adds_per_mains(self, reverse=False):
+        """
+        """
+        bmeta = self._meta['sets']['batches']
+        adds_per_mains = {bname: bdef['additions'] for bname, bdef
+                          in bmeta.items() if bdef['additions']}
+        if not reverse:
+            return adds_per_mains
+        else:
+            rev = {}
+            adds = self._typed_batches(bmeta.keys(), 'add')
+            for add in adds:
+                for m, a in adds_per_mains.items():
+                    if add in a:
+                        if add in rev:
+                            rev[add].append(m)
+                        else:
+                            rev[add] = [m]
+            return rev
 
     def set_verbose_errmsg(self, verbose=True):
         """

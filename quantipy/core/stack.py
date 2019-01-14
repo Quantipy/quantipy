@@ -2610,9 +2610,10 @@ class Stack(defaultdict):
             meta = self[dk].meta
             data = self[dk].data
             check_on = []
+            no_os = not other_source
             for v in on_vars:
                 if v in meta['sets']:
-                    if meta['masks'][v]['subtype'] == 'delimited set':
+                    if meta['masks'][v]['subtype'] == 'delimited set' and no_os:
                         w = warn + 'Stats are not valid on delimited sets!\n'
                         print w.format(v)
                         continue
@@ -2623,7 +2624,7 @@ class Stack(defaultdict):
                     w = warn + 'No values found!\n'
                     print w.format(v)
                     continue
-                elif meta['columns'][v]['type'] == 'delimited set':
+                elif meta['columns'][v]['type'] == 'delimited set' and no_os:
                     w = warn + 'Stats are not valid on delimited sets!\n'
                     print w.format(v)
                     continue
