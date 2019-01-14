@@ -422,15 +422,16 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
-    def as_main(self, keep=False):
+
+    def as_main(self, keep=True):
         """
         Transform additional ``Batch`` definitions into regular (parent/main) ones.
 
         Parameters
         ----------
-        keep : bool, default False
-            ``True`` will keep the original related parent Batch, while the
-            default is to drop it.
+        keep : bool, default True
+            ``False`` will drop the original related parent Batch, while the
+            default is to keep it.
 
         Returns
         -------
@@ -574,7 +575,7 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        cond = {0: self.filter} if self.filter else None
+        cond = {self.filter: 0} if self.filter else None
         removed_sum = []
         for x in self.xks[:]:
             if self.is_array(x):
@@ -592,7 +593,11 @@ class Batch(qp.DataSet):
                         if sources[i-1] in self.xks:
                             self.xks.remove(sources[i-1])
             elif not self._is_array_item(x):
-                if self[self.take(cond), x].count() == 0:
+                if cond:
+                    s = self[self.take(cond), x]
+                else:
+                    s = self[x]
+                if s.count() == 0:
                     self.xks.remove(x)
         if removed_sum:
             msg = "Dropping summaries for {} - all items hidden!"
@@ -1171,3 +1176,4 @@ class Batch(qp.DataSet):
             idx = self._data.index
         self.sample_size = len(idx)
         return None
+>>>>>>> i1208-pre_release_bugfixes
