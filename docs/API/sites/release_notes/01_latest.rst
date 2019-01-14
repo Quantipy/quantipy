@@ -9,11 +9,7 @@ Latest (14/01/2019)
 **New**: ``Chain.export()`` / ``assign()`` and custom calculations
 
 Expanding on the current ``Chain`` editing features provided via ``cut()``
-and ``join()``, it is now possible to calculate additional row and column results using plain ``pandas.dataframe`` methods. Use ``Chain.export()`` to work on a simplified ``Chain.dataframe`` and ``assign()`` to rebuild it properly when
-finished.
-
-An intro to this feature can be viewed here: :doc:`Custom calculations <../lib_doc/builds/02_cm_edits>`
-
+and ``join()``, it is now possible to calculate additional row and column results using plain ``pandas.dataframe`` methods. Use ``Chain.export()`` to work on a simplified ``Chain.dataframe`` and ``assign()`` to rebuild it properly when finished.
 
 **New**: ``Batch.as_main(keep=True)`` to change ``qp.Batch`` relations
 
@@ -38,11 +34,10 @@ It is now possible to promote an ``.additional`` Batch to a main/regular one. Op
 >>> dataset.batches(main=False, add=True)
 ['batch 4', 'batch 1']
 
-
 **New**: On-the-fly rebasing via ``Quantity.normalize(on='y', per_cell=False)``
 
 Quantipy's engine will now accept another variable's base for (column) percentage
-computations. Furthermore, it is possible to rebase the cell counts to the *cell
+computations. Furthermore, it is possible to rebase the percentages to the *cell
 frequencies of the other variable's cross-tabulation* by setting ``per_cell=True``,
 i.e. rebase variables with identical categories to their respective per-category results. The following example shows how ``'A1'`` results are serving as cell bases
 for the percentages of ``'A2'``:

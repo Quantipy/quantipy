@@ -398,9 +398,7 @@
 <h1>Latest (14/01/2019)<a class="headerlink" href="#latest-14-01-2019" title="Permalink to this headline">¶</a></h1>
 <p><strong>New</strong>: <code class="docutils literal notranslate"><span class="pre">Chain.export()</span></code> / <code class="docutils literal notranslate"><span class="pre">assign()</span></code> and custom calculations</p>
 <p>Expanding on the current <code class="docutils literal notranslate"><span class="pre">Chain</span></code> editing features provided via <code class="docutils literal notranslate"><span class="pre">cut()</span></code>
-and <code class="docutils literal notranslate"><span class="pre">join()</span></code>, it is now possible to calculate additional row and column results using plain <code class="docutils literal notranslate"><span class="pre">pandas.dataframe</span></code> methods. Use <code class="docutils literal notranslate"><span class="pre">Chain.export()</span></code> to work on a simplified <code class="docutils literal notranslate"><span class="pre">Chain.dataframe</span></code> and <code class="docutils literal notranslate"><span class="pre">assign()</span></code> to rebuild it properly when
-finished.</p>
-<p>An intro to this feature can be viewed here: <a class="reference internal" href="../lib_doc/builds/02_cm_edits.html"><span class="doc">Custom calculations</span></a></p>
+and <code class="docutils literal notranslate"><span class="pre">join()</span></code>, it is now possible to calculate additional row and column results using plain <code class="docutils literal notranslate"><span class="pre">pandas.dataframe</span></code> methods. Use <code class="docutils literal notranslate"><span class="pre">Chain.export()</span></code> to work on a simplified <code class="docutils literal notranslate"><span class="pre">Chain.dataframe</span></code> and <code class="docutils literal notranslate"><span class="pre">assign()</span></code> to rebuild it properly when finished.</p>
 <p><strong>New</strong>: <code class="docutils literal notranslate"><span class="pre">Batch.as_main(keep=True)</span></code> to change <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> relations</p>
 <p>It is now possible to promote an <code class="docutils literal notranslate"><span class="pre">.additional</span></code> Batch to a main/regular one. Optionally, the original parent Batch can be erased by setting <code class="docutils literal notranslate"><span class="pre">keep=False</span></code>. Example:</p>
 <p><em>Starting from:</em></p>
@@ -427,7 +425,7 @@ finished.</p>
 </div>
 <p><strong>New</strong>: On-the-fly rebasing via <code class="docutils literal notranslate"><span class="pre">Quantity.normalize(on='y',</span> <span class="pre">per_cell=False)</span></code></p>
 <p>Quantipy’s engine will now accept another variable’s base for (column) percentage
-computations. Furthermore, it is possible to rebase the cell counts to the <em>cell
+computations. Furthermore, it is possible to rebase the percentages to the <em>cell
 frequencies of the other variable’s cross-tabulation</em> by setting <code class="docutils literal notranslate"><span class="pre">per_cell=True</span></code>,
 i.e. rebase variables with identical categories to their respective per-category results. The following example shows how <code class="docutils literal notranslate"><span class="pre">'A1'</span></code> results are serving as cell bases
 for the percentages of <code class="docutils literal notranslate"><span class="pre">'A2'</span></code>:</p>
