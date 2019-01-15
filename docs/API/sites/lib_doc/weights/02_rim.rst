@@ -93,11 +93,11 @@ We then set the filter expressions for the respective subsets of the data, as pe
 And add our weight specifications accordingly:
 
 >>> scheme = qp.Rim('my_complex_scheme')
->>> scheme.add_groups(name='wave 1', filter_def=filter_wave1, targets=all_targets)
->>> scheme.add_groups(name='wave 2', filter_def=filter_wave2, targets=all_targets)
->>> scheme.add_groups(name='wave 3', filter_def=filter_wave3, targets=all_targets)
->>> scheme.add_groups(name='wave 4', filter_def=filter_wave4, targets=all_targets_2)
->>> scheme.add_groups(name='wave 5', filter_def=filter_wave5, targets=all_targets_2)
+>>> scheme.add_group(name='wave 1', filter_def=filter_wave1, targets=all_targets)
+>>> scheme.add_group(name='wave 2', filter_def=filter_wave2, targets=all_targets)
+>>> scheme.add_group(name='wave 3', filter_def=filter_wave3, targets=all_targets)
+>>> scheme.add_group(name='wave 4', filter_def=filter_wave4, targets=all_targets_2)
+>>> scheme.add_group(name='wave 5', filter_def=filter_wave5, targets=all_targets_2)
 
 
 .. note::
