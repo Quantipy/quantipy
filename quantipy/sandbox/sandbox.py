@@ -2307,8 +2307,12 @@ class Chain(object):
     def _valid_views(self, flat=False):
         clean_view_list = []
         valid = self.views.keys()
-        viewlikes = [v for v in valid if v.startswith('__viewlike__')]
-        for v in self._given_views +  viewlikes:
+        org_vc = self._given_views
+        v_likes = [v for v in valid if v.startswith('__viewlike__')]
+        if isinstance(org_vc, tuple):
+            v_likes = tuple(v_likes)
+        view_coll = org_vc + v_likes
+        for v in view_coll:
             if isinstance(v, (str, unicode)):
                 if v in valid:
                     clean_view_list.append(v)
