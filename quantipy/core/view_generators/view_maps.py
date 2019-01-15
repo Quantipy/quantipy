@@ -318,6 +318,10 @@ class QuantipyViews(ViewMapper):
                     per_cell = True
                 elif rel_to_kind[1] == 'y':
                     per_cell = False
+            try:
+                link['x|f|:||{}|counts'.format(weights)]._kwargs['rebased'] = True
+            except:
+                pass
         # ====================================================================
         w = weights if weights is not None else None
         ignore = True if name == 'cbase_gross' else False
