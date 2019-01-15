@@ -1835,7 +1835,7 @@ class Chain(object):
             if (self.array_mi and axis == 1) or axis == 0:
                 self._transf_views = self._insert_viewlikes(merged, mapped)
             else:
-                self._transf_views = self._org_views
+                self._transf_views = self.org_views
             # ================================================================
             i = d = 0
             new_tuples = []
@@ -1857,10 +1857,10 @@ class Chain(object):
                 x_names = y_names
             else:
                 x_names = ['Array', 'Questions']
-            tuples = self._updated_index_tuples(axis=0)
-            self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
             tuples = self._updated_index_tuples(axis=1)
             self.df.columns = pd.MultiIndex.from_tuples(tuples, names=y_names)
+            tuples = self._updated_index_tuples(axis=0)
+            self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
             return None
 
     def export(self):
@@ -2307,7 +2307,8 @@ class Chain(object):
     def _valid_views(self, flat=False):
         clean_view_list = []
         valid = self.views.keys()
-        for v in self._given_views:
+        viewlikes = [v for v in valid if v.startswith('__viewlike__')]
+        for v in self._given_views +  viewlikes:
             if isinstance(v, (str, unicode)):
                 if v in valid:
                     clean_view_list.append(v)
