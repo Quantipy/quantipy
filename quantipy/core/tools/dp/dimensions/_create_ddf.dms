@@ -59,10 +59,16 @@ Event(OnJobStart)
 	Set oExcel = createobject("Excel.Application")
 	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","
 
+	dmgrGlobal.Add("vars_failed")
+	dmgrGlobal.Add("var_failed")    
+    
 End Event
 
 
 Event(OnNextCase)
+
+	const MaxValue = 2147483647
+	const MinValue = -2147483648 
 
 	Dim i, oA, oA_value
 	Dim columns, col, data
@@ -86,7 +92,25 @@ Event(OnNextCase)
 			Set oA = dmgrJob.Questions[col]
 		End If
 		Select Case oA.QuestionDataType
-			Case 1, 6, 7
+			Case 1
+				If data[i] = "NULL" Then
+					oA = NULL
+				Else
+					oA_value=data[i]
+					if dmgrJob.GlobalVariables.DecimalSeparator = "," Then
+						oA_value = Replace(CText(oA_value),".",",")
+					End If
+					If CDouble(oA_value) > MaxValue or CDouble(oA_value) < MinValue then
+						Debug.Log("Value: " + CText(oA_value) + " for variable: '" + oA.label + "' exceeds limit for variable of type Long. Dropping set variable")
+						If dmgrGlobal.var_failed <> oA.label Then
+							dmgrGlobal.vars_failed = dmgrGlobal.vars_failed + oA.label + ", "
+							dmgrGlobal.var_failed = oA.label
+						End If
+					Else
+						oA = oA_value
+					End If
+				End If
+			Case 6, 7
 				If data[i] = "NULL" Then
 					oA = NULL
 				Else
@@ -123,3 +147,16 @@ Event(OnNextCase)
 	Next
 
 End Event
+
+Event (OnJobEnd)
+	
+	Debug.Log("**************************************************************************************************")
+	Debug.Log("Please note: ")
+	Debug.Log("For one or more cases a value exceeded the limit for Dimensions variable type 'Long'.")
+	Debug.Log("For those cases setting the variable were skipped.")
+	Debug.Log("The variables affected are: " + dmgrGlobal.vars_failed)
+	Debug.Log("If you need those variables then change DataType from 'mr.Long' to 'mr.Double' by editing 'create_mdd [].mrs' for affected variables")
+	Debug.Log("")
+
+End Event
+
