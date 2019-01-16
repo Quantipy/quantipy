@@ -60,7 +60,8 @@ Event(OnJobStart)
 	if oExcel.DecimalSeparator="," Then dmgrJob.GlobalVariables.DecimalSeparator = ","
 
 	dmgrGlobal.Add("vars_failed")
-	dmgrGlobal.Add("var_failed")    
+	dmgrGlobal.Add("var_failed")
+    dmgrGlobal.vars_failed = ""
     
 End Event
 
@@ -149,14 +150,16 @@ Event(OnNextCase)
 End Event
 
 Event (OnJobEnd)
-	
-	Debug.Log("**************************************************************************************************")
-	Debug.Log("Please note: ")
-	Debug.Log("For one or more cases a value exceeded the limit for Dimensions variable type 'Long'.")
-	Debug.Log("For those cases setting the variable were skipped.")
-	Debug.Log("The variables affected are: " + dmgrGlobal.vars_failed)
-	Debug.Log("If you need those variables then change DataType from 'mr.Long' to 'mr.Double' by editing 'create_mdd [].mrs' for affected variables")
-	Debug.Log("")
+
+	If dmgrGlobal.vars_failed <> "" Then	
+        Debug.Log("**************************************************************************************************")
+        Debug.Log("Please note: ")
+        Debug.Log("For one or more cases a value exceeded the limit for Dimensions variable type 'Long'.")
+        Debug.Log("For those cases setting the variable were skipped.")
+        Debug.Log("The variables affected are: " + dmgrGlobal.vars_failed)
+        Debug.Log("If you need those variables then change DataType from 'mr.Long' to 'mr.Double' by editing 'create_mdd [].mrs' for affected variables")
+        Debug.Log("")
+	End If        
 
 End Event
 
