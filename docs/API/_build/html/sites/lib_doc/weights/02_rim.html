@@ -532,10 +532,10 @@ method. Its full signature looks as follows:</p>
 <p>As can been seen, we can simply provide our weight scheme <code class="docutils literal notranslate"><span class="pre">Rim</span></code> instance to
 the method. Since the dataset already contains a variable called <code class="docutils literal notranslate"><span class="pre">'weight'</span></code>
 (and we do not want to overwrite that one) we set <code class="docutils literal notranslate"><span class="pre">weight_name</span></code> to be
-<code class="docutils literal notranslate"><span class="pre">'weight_new'</span></code>. We also need to set <code class="docutils literal notranslate"><span class="pre">unqiue_key='unique_id'</span></code> as that is our
+<code class="docutils literal notranslate"><span class="pre">'weights_new'</span></code>. We also need to set <code class="docutils literal notranslate"><span class="pre">unique_key='unique_id'</span></code> as that is our
 identifying key variable (that is needed to map the weight factors back into our
 dataset):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weight_new&#39;</span><span class="p">,</span> <span class="n">unqiue_key</span><span class="o">=</span><span class="s1">&#39;unique_id&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">unique_key</span><span class="o">=</span><span class="s1">&#39;unique_id&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Before we take a look at the report that is printed (because of <code class="docutils literal notranslate"><span class="pre">report=True</span></code>),
@@ -599,7 +599,7 @@ be placed into the <code class="docutils literal notranslate"><span class="pre">
 <p>It is also possible to return a new <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code> that contains all relevant <code class="docutils literal notranslate"><span class="pre">Rim</span></code>
 scheme variables incl. the factor vector for external use cases or further
 analysis:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wdf</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">unqiue_key</span><span class="o">=</span><span class="s1">&#39;unique_id&#39;</span><span class="p">,</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wdf</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">unique_key</span><span class="o">=</span><span class="s1">&#39;unique_id&#39;</span><span class="p">,</span>
 <span class="go">                         inplace=False)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wdf</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="go">   unique_id  gender  age_banded  weights_new  Wave</span>

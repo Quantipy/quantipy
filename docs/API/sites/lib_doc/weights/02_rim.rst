@@ -156,11 +156,11 @@ Weighting and weighted aggregations
 As can been seen, we can simply provide our weight scheme ``Rim`` instance to
 the method. Since the dataset already contains a variable called ``'weight'``
 (and we do not want to overwrite that one) we set ``weight_name`` to be
-``'weight_new'``. We also need to set ``unqiue_key='unique_id'`` as that is our
+``'weights_new'``. We also need to set ``unique_key='unique_id'`` as that is our
 identifying key variable (that is needed to map the weight factors back into our
 dataset):
 
->>> dataset.weight(scheme, weight_name='weight_new', unqiue_key='unique_id')
+>>> dataset.weight(scheme, weight_name='weights_new', unique_key='unique_id')
 
 Before we take a look at the report that is printed (because of ``report=True``),
 we want to manually check our results. For that, we can simply analyze some cross-
@@ -223,7 +223,7 @@ It is also possible to return a new ``pd.DataFrame`` that contains all relevant 
 scheme variables incl. the factor vector for external use cases or further
 analysis:
 
->>> wdf = dataset.weight(scheme, weight_name='weights_new', unqiue_key='unique_id',
+>>> wdf = dataset.weight(scheme, weight_name='weights_new', unique_key='unique_id',
                          inplace=False)
 >>> wdf.head()
    unique_id  gender  age_banded  weights_new  Wave
