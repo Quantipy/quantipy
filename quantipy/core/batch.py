@@ -572,6 +572,7 @@ class Batch(qp.DataSet):
     def sections(self):
         """
         """
+        if not self._section_starts: return None
         sects = self._section_starts
         full_sections = OrderedDict()
         rev_full_sections = OrderedDict()
