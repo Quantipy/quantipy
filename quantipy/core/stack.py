@@ -2107,7 +2107,7 @@ class Stack(defaultdict):
 
     @staticmethod
     def recode_from_net_def(dataset, on_vars, net_map, expand, recode='auto',
-                            text_prefix='Net:', respect_missings_in_recodes=True,
+                            text_prefix='Net:', mis_in_rec=False,
                             verbose=True):
         """
         Create variables from net definitions.
@@ -2216,7 +2216,7 @@ class Stack(defaultdict):
 
             # order, remove codes
             if 'collect_codes' in recode:
-                if respect_missings_in_recodes and dataset._get_missing_list(var):
+                if not mis_in_rec and dataset._get_missing_list(var):
                     other_logic = intersection([
                         {var: not_count(0)},
                         {name: has_count(0)},
@@ -2280,9 +2280,9 @@ class Stack(defaultdict):
 
 
     @modify(to_list=['on_vars', '_batches'])
-    def add_nets(self, on_vars, net_map, expand=None, calc=None, rebase=None, text_prefix='Net:',
-                 checking_cluster=None, _batches='all', recode='auto',
-                 respect_missings_in_recodes=True, verbose=True):
+    def add_nets(self, on_vars, net_map, expand=None, calc=None, rebase=None,
+                 text_prefix='Net:', checking_cluster=None, _batches='all',
+                 recode='auto', mis_in_rec=False, verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -2334,7 +2334,7 @@ class Stack(defaultdict):
             the variable contains nets and another category that summarises all
             codes which are not included in any net. If no cat_name is provided,
             'Other' is taken as default
-        respect_missings_in_recodes: bool, default True
+        mis_in_rec: bool, default False
             Skip or include codes that are defined as missing when recoding
             from net definition.
         Returns
@@ -2430,7 +2430,7 @@ class Stack(defaultdict):
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 self.recode_from_net_def(ds, on_vars, net_map, expand, recode,
-                                         text_prefix, respect_missings_in_recodes,
+                                         text_prefix, mis_in_rec,
                                          verbose)
 
             if checking_cluster in [None, False] or only_recode: continue
