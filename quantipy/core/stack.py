@@ -2107,7 +2107,8 @@ class Stack(defaultdict):
 
     @staticmethod
     def recode_from_net_def(dataset, on_vars, net_map, expand, recode='auto',
-                            text_prefix='Net:', verbose=True):
+                            text_prefix='Net:', mis_in_rec=False,
+                            verbose=True):
         """
         Create variables from net definitions.
         """
@@ -2215,8 +2216,14 @@ class Stack(defaultdict):
 
             # order, remove codes
             if 'collect_codes' in recode:
-                other_logic = intersection(
-                    [{var: not_count(0)}, {name: has_count(0)}])
+                if not mis_in_rec and dataset._get_missing_list(var):
+                    other_logic = intersection([
+                        {var: not_count(0)},
+                        {name: has_count(0)},
+                        {var: not_any(dataset._get_missing_list(var))}])
+                else:
+                    other_logic = intersection(
+                        [{var: not_count(0)}, {name: has_count(0)}])
                 if dataset._is_array_item(var) or dataset.take(other_logic).tolist():
                     cat_name = recode.split('@')[-1] if '@' in recode else 'Other'
                     code = len(mapper)+1
@@ -2273,8 +2280,9 @@ class Stack(defaultdict):
 
 
     @modify(to_list=['on_vars', '_batches'])
-    def add_nets(self, on_vars, net_map, expand=None, calc=None, rebase=None, text_prefix='Net:',
-                 checking_cluster=None, _batches='all', recode='auto', verbose=True):
+    def add_nets(self, on_vars, net_map, expand=None, calc=None, rebase=None,
+                 text_prefix='Net:', checking_cluster=None, _batches='all',
+                 recode='auto', mis_in_rec=False, verbose=True):
         """
         Add a net-like view to a specified collection of x keys of the stack.
 
@@ -2308,7 +2316,7 @@ class Stack(defaultdict):
             ...                                            'de-DE': 'DE CALC LAB'}}
         rebase : str, default None
             Use another variables margin's value vector for column percentage
-            computation. 
+            computation.
         text_prefix : str, default 'Net:'
             By default each code grouping/net will have its ``text`` label prefixed
             with 'Net: '. Toggle by passing None (or an empty str, '').
@@ -2326,6 +2334,9 @@ class Stack(defaultdict):
             the variable contains nets and another category that summarises all
             codes which are not included in any net. If no cat_name is provided,
             'Other' is taken as default
+        mis_in_rec: bool, default False
+            Skip or include codes that are defined as missing when recoding
+            from net definition.
         Returns
         -------
         None
@@ -2419,7 +2430,8 @@ class Stack(defaultdict):
                 ds.from_stack(self, dk)
                 on_vars = [x for x in on_vars if x in self.describe('x').index.tolist()]
                 self.recode_from_net_def(ds, on_vars, net_map, expand, recode,
-                                         text_prefix, verbose)
+                                         text_prefix, mis_in_rec,
+                                         verbose)
 
             if checking_cluster in [None, False] or only_recode: continue
             if isinstance(checking_cluster, ChainManager):
