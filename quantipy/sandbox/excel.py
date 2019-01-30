@@ -1346,6 +1346,8 @@ class _Box(object):
             return 'sem'
         elif contents['is_percentile']:
             return contents['stat']
+        elif contents['is_viewlike']:
+            return 'counts'
 
     def _format_x(self, name, rel_x, rel_y, row_max, dummy, bg, view_border,
                   border_from, **kwargs):
