@@ -8,10 +8,306 @@
 Archived release notes
 ======================
 
+
+.. toctree::
+  :maxdepth: 5
+  :includehidden:
+
+
+---------------
+sd (26/10/2018)
+---------------
+
+**New**: Filter variables in DataSet and Batch
+
+To avoid complex logics stored in the background and resulting problem with
+json serializing, the filter concept in DataSet and Batch has changed.
+
+Now actual variables are added to the data and meta, which have the property
+``recoded_filter``. The values of depend on the included logic, and all logics
+summarized in the value ``0: keep``. Because of the an easy logic can be used
+at several places in qp: ``{'filter_var': 0}``
+
+*DataSet methods*
+
+All included filters of a Dataset can be shown running ``dataset.filters()``.
+
+A filter variable can be easily created::
+
+    dataset.add_filter_var(name, logic, overwrite=False)
+
+*   ``name`` is the name of the new filter-variable.
+*   ``logic`` should be (a list of) dictionaries in form of:
+
+    >>> {
+    ...     'label': 'reason',
+    ...     'logic': {var: keys} / intersection/ ....
+    ... }
+
+    or stings (var_name), which are automatically transformed into the following dict
+
+    >>> {
+    ...     'label': 'var_name not empty',
+    ...     'logic': {var_name: not_count(0)}
+    ... }
+
+    If a list is provided, each item results in an own value of the filter
+    variable.
+
+An existing filter variable can also be extended::
+
+    dataset.extend_filter_var(name, logic, extend_as=None)
+
+*   ``name`` is the name of the existing filter-variable.
+*   ``logic`` should be the same as above, then additional categories are added
+    to the filter and the 0 value is recalculated.
+*   ``extend_as`` determines if a new filter var is created or the initial
+    variable is modified.
+    If ``extend_as=None`` the variable is modified inplace. Otherwise
+    ``extend_as`` is used as suffix for the new filter variable.
+
+Known methods like::
+
+    .copy()
+    .drop()
+    .rename()
+
+can be applied on filter-variables, all others are not valid!
+
+*Batch methods*
+
+``Batch.add_filter(filter_name, filter_logic=None, overwrite=False)``
+
+A filter can still be added to a batch, by adding a ``filter_logic``, but also
+it's possible to add only the ``filter_name`` of an existing filter variable.
+If ``filter_name`` is an existing filter-variable, a ``filter_logic`` is provided
+and ``overwrite`` is turned off, the scripts will return an error.
+
+``Batch.remove_filter()``
+
+This method only removes filters from the Batch definitions, the created
+filter-variables still exist in the belonging DataSet object.
+
+Batch methods that use filters::
+
+    .extend_filter()
+    .add_y_on_y()
+    .add_open_ends()
+
+create new extended filter variables if the used filter differs from the
+batch global filter. So it's recommended to add the global filter first, it's
+taken over automatically for the mentioned methods.
+
+""""
+
+**New**: Summarizing and rearranging  ``qp.Chain`` elements via ``ChainManager``
+
+* ``cut(values, ci=None, base=False, tests=False)``
+
+* ``join(title='Summary')``
+
+It is now possible to summarize ``View`` aggregation results from existing ``Chain``
+items  by restructuring and editing them via their ``ChainManager`` methods. The
+general idea behind building a summary ``Chain`` is to unify a set of results into
+items  by restructuring and editing them via their ``ChainManager`` methods. The
+general idea behind building a summary Chain is to unify a set of results into
+one cohesive representation to offer an easy way to look at certain key figures
+of interest in comparison to each other. To achieve this, the ``ChainManager`` class
+has gained the new ``cut()`` and ``join()`` methods. Summaries are built post-
+aggregation and therefore rely on what has been defined (via the ``qp.Batch``
+class) and computed (via the ``qp.Stack`` methods) at previous stages.
+
+The intended way of working with this new feature can be outlined as
+
+  1. ``reorder()``
+  2. ``cut()``
+  3. ``join()``
+  4. ``insert()``
+
+In more detail:
+
+*A) Grouping the results for the summary*
+
+Both methods will operate on the *entire set* of ``Chains`` collected in a
+``ChainManager``, so building a summary ``Chain`` will normally start with
+restricting a copy of an existing ``ChainManager`` to the question variables
+that you’re interested in. This can be done via ``clone()`` with
+``reorder(..., inplace=True)`` or by assigning back the new instance from
+``reorder(..., inplace=False)``.
+
+*B) Selecting View results via* ``cut()``
+
+This method lets you target the kind of results (nets, means, NPS scores,
+only the frequencies, etc.) from a given ``qp.Chain.dataframe``. Elements must
+be targeted by their underlying regular index values, e.g. ``'net_1'``, ``'net_2'``,
+``'mean'``, ``1``, ``'calc'``, ... . Use the ``base`` and ``tests`` parameters
+to also carry over the matching base rows and/or significance testing results.
+The ``ci`` parameter additionally allows targeting only the ``'counts'`` or
+``'c%'`` results if cell items are grouped together.
+
+*C) Unifying the individual results with* ``join()``
+
+Merging all new results into one, the ``join()`` method concatenates vertically
+and relabels the x-axis to separate all variable results by their matching
+metadata ``text`` that has also been applied while creating the regular set of
+and relabels the x-axis to separate all variable results by their matching
+metadata ``text`` that has has also been applied while creating the regular set of
+``Chain`` items. The new summary can then also be inserted back into its
+originating ``ChainManager`` with ``insert()`` if desired.
+
+""""
+
+**Update**: ``Batch.add_variables(varlist)``
+
+A ``qp.Batch`` can now carry a collection of variables that is **explicitly not**
+directed towards any table-like builds. Variables from ``varlist`` will solely
+be used in non-aggregation based, data transformation and export oriented
+applications. To make this distinction more visible in the API, ``add_x()`` and
+``add_y()`` have been renamed to ``add_downbreak()`` and ``add_crossbreak()``.
+Users are warned and advised to switch to the new method versions via a
+``DeprecationWarning``. In a future version of the library ``add_x()`` and
+``add_y()`` will be removed.
+
+""""
+
+**Update**: ``Batch.copy()`` -> ``Batch.clone()``
+
+Since ``qp.Batch`` is a subclass of ``qp.DataSet``, the ``copy()`` method is renamed into
+``Batch.clone()``.
+
+---------------
+sd (01/10/2018)
+---------------
+
+**New**: "rewrite" of Rules module (affecting sorting):
+
+**sorting "normal" columns**:
+
+* ``sort_on`` always '@'
+* ``fix`` any categories
+* ``sort_by_weight`` default is unweighted (None), but each weight (included
+in data) can be used
+
+If sort_by_weight and the view-weight differ, a warning is shown.
+
+**sorting "expanded net" columns**:
+
+* ``sort_on`` always '@'
+* ``fix`` any categories
+* sorting ``within`` or ``between`` net groups is available
+* ``sort_by_weight``: as default the weight of the first found
+expanded-net-view is taken. Only weights of aggregated net-views are possible
+
+**sorting "array summaries"**:
+
+* ``sort_on`` can be any desc ('median', 'stddev', 'sem', 'max', 'min',
+'mean', 'upper_q', 'lower_q') or nets ('net_1', 'net_2', .... enumerated
+by the net_def)
+* ``sort_by_weight``: as default the weight of the first found desc/net-view
+is taken. Only weights of aggregated desc/net-views are possible
+* ``sort_on`` can also be any category, here each weight can be used to sort_on
+
+""""
+
+**New**: ``DataSet.min_value_count()``
+
+A new wrapper for ``DataSet.hiding()`` is included. All values are hidden,
+that have less counts than the included number ``min``.
+The used data can be weighted or filtered using the parameters ``weight`` and
+``condition``.
+
+Usage as Batch method:
+``Batch.min_value_count()`` without the parameters ``weight`` and
+``condition`` automatically grabs ``Batch.weights[0]`` and ``Batch.filter``
+to calculate low value counts.
+
+""""
+
+**New**: Prevent weak duplicated in data
+
+As Python is case sensitive it is possible to have two or more variables with
+the same name, but in lower- and uppercases. Most other software do not support
+that, so a warning is shown if a weak dupe is created. Additionally
+``Dataset.write_dimensions()`` performs auto-renaming is weak dupes are detected.
+
+""""
+
+**New**: Prevent single-cat delimited sets
+
+``DataSet.add_meta(..., qtype='delimited set', categories=[...], ...)``
+automatically switches ``qtype`` to single if only one category is defined.
+``DataSet.convert(name, 'single')`` allows conversion from ``delimited set`` to
+``single`` if the variable has only one category.
+``DataSet.repair()`` and ``DataSt.remove_values()`` convert delimited sets
+automatically to singles if only one category is included.
+
+""""
+
+**Update**: merge warnings + merging delimites sets
+
+Warnings in ``hmerge()`` and ``vmerge()`` are updated. If a column exists in
+the left and the right dataset, the type is compared. Some type inconsistencies
+are allowed, but return a warning, while others end up in a raise.
+
+delimited sets in ``vmerge()``:
+
+If a column is a delimited set in the left dataset, but a single, int or float
+in the right dataset, the data of the right column is converted into a delimited
+set.
+
+delimited sets in ``hmerge(...merge_existing=None)``:
+
+For the hmerge a new parameter ``merge_existing`` is included, which can be
+``None``, a list of variable-names or ``'all'``.
+
+If delimited sets are included in left and right dataset:
+
+* ``merge_existing=None``: Only meta is adjusted. Data is untouched (left data
+is taken).
+* ``merge_existing='all'``: Meta and data are merged for all delimited sets,
+that are included in both datasets.
+* ``merge_existing=[variable-names]``: Meta and data are merged for all
+delimited sets, that are listed and included in both datasets.
+
+""""
+
+**Update**: encoding in ``DataSet.get_batch(name)``
+
+The method is not that encoding sensitive anymore. It returns the depending
+``Batch``, no matter if ``'...'``, ``u'...'`` or ``'...'.decode('utf8')`` is
+included as name.
+
+""""
+
+**Update**: warning in weight engine
+
+Missing codes in the sample are only alerted, if the belonging target is not 0.
+
+""""
+
+**Update**: ``DataSet.to_array(..., variables, ...)``
+
+Duplicated vars in ``variables`` are not allowed anymore, these were causing
+problems in the ChainManager class.
+
+""""
+
+**Update**: ``Batch.add_open_ends()``
+
+Method raises an error if no vars are included in ``oe`` and ``break_by``. The
+empty dataframe was causing issues in the ChainManager class.
+
+""""
+
+**Update**: ``Batch.extend_x()``
+
+The method automatically checks if the included variables are arrays and adds
+them to ``Batch.summaries`` if they are included yet.
+
+
 ---------------
 sd (04/06/2018)
 ---------------
-
 
 
 **New**: Additional variable (names) "getter"-like and resolver methods

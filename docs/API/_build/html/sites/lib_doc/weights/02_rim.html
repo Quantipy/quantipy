@@ -1,0 +1,676 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Weight scheme setup &mdash; Quantipy 0.1.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Diagnostics" href="03_diags.html" />
+    <link rel="prev" title="Background and methodology" href="01_background.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Quantipy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes/00_overview.html">Release notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest (14/01/2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-26-10-2018">sd (26/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-01-10-2018">sd (01/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-12-01-2018">sd (12/01/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-18-12-2017">sd (18/12/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-28-11-2017">sd (28/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-13-11-2017">sd (13/11/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-17-10-2017">sd (17/10/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-15-09-2017">sd (15/09/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-31-08-2017">sd (31/08/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-07-2017">sd (24/07/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-08-06-2017">sd (08/06/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-17-05-2017">sd (17/05/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-05-2017">sd (04/05/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-04-2017">sd (24/04/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-06-04-2017">sd (06/04/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-29-03-2017">sd (29/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-20-03-2017">sd (20/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-07-03-2017">sd (07/03/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-24-02-2017">sd (24/02/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-16-02-2017">sd (16/02/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-01-2017">sd (04/01/2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-8-12-2016">sd (8/12/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-23-11-2016">sd (23/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-16-11-2016">sd (16/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-11-11-2016">sd (11/11/2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-09-11-2016">sd (09/11/2016)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/03_how_to_snippets.html">How-to-snippets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#the-compatibility-mode">The compatibility mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal notranslate"><span class="pre">array</span></code> data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/create_categorical_meta.html">Different ways of creating categorical values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html">Derotation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-is-derotation">What is derotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal notranslate"><span class="pre">DataSet.derotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal notranslate"><span class="pre">arrays</span></code>?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dataprocessing/00_overview.html">Data processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/01_components.html">DataSet components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#case-and-meta-data">Case and meta data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#columns-and-masks-objects"><code class="docutils literal notranslate"><span class="pre">columns</span></code> and <code class="docutils literal notranslate"><span class="pre">masks</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal notranslate"><span class="pre">text</span></code> and <code class="docutils literal notranslate"><span class="pre">text_key</span></code> mappings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#categorical-values-object">Categorical <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/01_components.html#the-array-type">The <code class="docutils literal notranslate"><span class="pre">array</span></code> type</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/02_io.html">I/O</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#starting-from-native-components">Starting from native components</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#csv-json-pairs"><code class="docutils literal notranslate"><span class="pre">.csv</span></code> / <code class="docutils literal notranslate"><span class="pre">.json</span></code> pairs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02_io.html#third-party-conversions">Third party conversions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#supported-conversions">Supported conversions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#spss-statistics">SPSS Statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#dimensions">Dimensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#decipher">Decipher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02_io.html#ascribe">Ascribe</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/02a_management.html">DataSet management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02a_management.html#setting-the-variable-order">Setting the variable order</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02a_management.html#cloning-filtering-and-subsetting">Cloning, filtering and subsetting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02a_management.html#merging">Merging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02a_management.html#vertical-cases-rows-merging">Vertical (cases/rows) merging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/02a_management.html#horizontal-variables-columns-merging">Horizontal (variables/columns) merging</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/02a_management.html#savepoints-and-state-rollback">Savepoints and state rollback</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/03_inspection.html">Inspecting variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#querying-and-slicing-case-data">Querying and slicing case data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#variable-and-value-existence">Variable and value existence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#variable-types">Variable types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/03_inspection.html#slicing-dicing-metadata-objects">Slicing &amp; dicing  metadata objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/04_editing.html">Editing metadata</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#creating-meta-from-scratch">Creating meta from scratch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#renaming">Renaming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal notranslate"><span class="pre">text</span></code> info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#extending-the-values-object">Extending the <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/04_editing.html#removing-dataset-objects">Removing <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/05_transforming.html">Transforming variables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#copying">Copying</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#inplace-type-conversion">Inplace type conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#banding-and-categorization">Banding and categorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/05_transforming.html#array-transformations">Array transformations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/06_logics.html">Logic and set operaters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/06_logics.html#ranges">Ranges</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#union"><code class="docutils literal notranslate"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#intersection"><code class="docutils literal notranslate"><span class="pre">intersection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#has-any"><code class="docutils literal notranslate"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#not-any"><code class="docutils literal notranslate"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#has-all"><code class="docutils literal notranslate"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#not-all"><code class="docutils literal notranslate"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#has-count"><code class="docutils literal notranslate"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/06_logics.html#not-count"><code class="docutils literal notranslate"><span class="pre">not_count</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/06_logics.html#boolean-slicers-and-code-existence">Boolean slicers and code existence</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html">Custom data recoding</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal notranslate"><span class="pre">recode()</span></code> method in detail</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#target"><code class="docutils literal notranslate"><span class="pre">target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#default"><code class="docutils literal notranslate"><span class="pre">default</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#append"><code class="docutils literal notranslate"><span class="pre">append</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#intersect"><code class="docutils literal notranslate"><span class="pre">intersect</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#initialize"><code class="docutils literal notranslate"><span class="pre">initialize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#fillna"><code class="docutils literal notranslate"><span class="pre">fillna</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#custom-recode-examples">Custom recode examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#building-a-net-code">Building a net code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#create-and-fill">Create-and-fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#numerical-banding">Numerical banding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#complicated-segmentation">Complicated segmentation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#variable-creation">Variable creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#adding-derived-variables">Adding derived variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#interlocking-variables">Interlocking variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../dataprocessing/07_custom_recoding.html#condition-based-code-removal">Condition-based code removal</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Weights</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_background.html">Background and methodology</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="01_background.html#the-statistical-problem">The statistical problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_background.html#rim-weighting-concept">Rim weighting concept</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Weight scheme setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-rim-class">Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#target-distributions">Target distributions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#weight-groups-and-filters">Weight groups and filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-group-targets">Setting group targets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-within-dataset">Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#weighting-and-weighted-aggregations">Weighting and weighted aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="03_diags.html">Diagnostics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="03_diags.html#the-weighting-efficiency">The weighting efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_diags.html#gotchas">Gotchas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal notranslate"><span class="pre">Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../batch/01_create_load.html">Creating/ Loading a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/02_variables.html">Adding variables to a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#x-keys-and-y-keys">x-keys and y-keys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#arrays">Arrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#verbatims-open-ends">Verbatims/ open ends</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#special-aggregations">Special aggregations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-significance-testing">Filter, weights and significance testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal notranslate"><span class="pre">qp.DataSet</span></code> methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../engine/00_overview.html">Analysis &amp; aggregation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../engine/01_links_stacks.html">Collecting aggregations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal notranslate"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal notranslate"><span class="pre">qp.Stack</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/02_quantity.html">The computational engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/03_test.html">Significance testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../engine/04_agg_methods.html">View aggregation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#basic-views">Basic views</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#non-categorical-variables">Non-categorical variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#descriptive-statistics">Descriptive statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#nets">Nets</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../engine/04_agg_methods.html#net-definitions">Net definitions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../engine/04_agg_methods.html#calculations">Calculations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#cumulative-sums">Cumulative sums</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/04_agg_methods.html#significance-tests">Significance tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal notranslate"><span class="pre">Chain</span></code> aggregations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../builds/02_cm_edits.html">Deriving post aggregation results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../builds/02_cm_edits.html#summarizing-and-reducing-results">Summarizing and reducing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/02_cm_edits.html#custom-calculations">Custom calculations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_ref/00overview.html">API references</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Chain.html">Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Cluster.html">Cluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/DataSet.html">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/quantify_engine.html">quantify.engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/QuantipyViews.html">QuantipyViews</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/View.html">View</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api_ref/ViewMapper.html">ViewMapper</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Quantipy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="00_overview.html">Weights</a> &raquo;</li>
+        
+      <li>Weight scheme setup</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/sites/lib_doc/weights/02_rim.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="weight-scheme-setup">
+<h1>Weight scheme setup<a class="headerlink" href="#weight-scheme-setup" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="using-the-rim-class">
+<h2>Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class<a class="headerlink" href="#using-the-rim-class" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Rim</span></code> object’s purpose is to define the required setup of the weighting process, i.e. the <em>weight scheme</em> that should be used to compute the actual factor results per case in the dataset. While its main purpose is to provide a simple interface to structure weight schemes of all complexities, it also offers advanced options that control the underlying weighting algorithm itself and thus might impact the results.</p>
+<p>To start working with a <code class="docutils literal notranslate"><span class="pre">Rim</span></code> object, we only need to think of a name for our scheme:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Rim</span><span class="p">(</span><span class="s1">&#39;my_first_scheme&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="target-distributions">
+<h2>Target distributions<a class="headerlink" href="#target-distributions" title="Permalink to this headline">¶</a></h2>
+<p>A major and (probably the most important) step in specifying a weight scheme
+is mapping the desired target population proportions to the categories of the related variables inside the data. This is done via a <code class="docutils literal notranslate"><span class="pre">dict</span></code> mapping.</p>
+<p>For example, to equally weight female and male respondents in our sample, we
+simply define:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gender_targets</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gender_targets</span><span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gender_targets</span>
+<span class="go">{&#39;gender&#39;: {1: 50.0, 2: 50.0}}</span>
+</pre></div>
+</div>
+<p>Since we are normally dealing with multiple variables at once, we collect
+them in a <code class="docutils literal notranslate"><span class="pre">list</span></code>, adding other variables naturally in the same way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">band</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="mi">19</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="p">(</span><span class="mi">26</span><span class="o">-</span><span class="mi">35</span><span class="p">),</span> <span class="p">(</span><span class="mi">36</span><span class="p">,</span> <span class="mi">49</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">age_targets</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;age_banded&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mf">45.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">29.78</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">25.22</span><span class="p">}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">all_targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">gender_targets</span><span class="p">,</span> <span class="n">age_targets</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">set_targets()</span></code> method can now use the <code class="docutils literal notranslate"><span class="pre">all_targets</span></code> list to apply the target distributions to the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> weight scheme setup (we are also providing an optional name for our group of variables) .</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">set_targets</span><span class="p">(</span><span class="n">targets</span><span class="o">=</span><span class="n">all_targets</span><span class="p">,</span> <span class="n">group_name</span><span class="o">=</span><span class="s1">&#39;basic weights&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">Rim</span></code> instance also allows inspecting these targets from itself now (you can
+see the <code class="docutils literal notranslate"><span class="pre">group_name</span></code> parameter reflected here, it would fall back to
+<code class="docutils literal notranslate"><span class="pre">'_default_name_'</span></code> if none was provided):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="s1">&#39;basic weights&#39;</span><span class="p">][</span><span class="s1">&#39;targets&#39;</span><span class="p">]</span>
+<span class="go">[{&#39;gender&#39;: {1: 50.0, 2: 50.0}}, {&#39;age_banded&#39;: {1: 45.0, 2: 29.78, 3: 25.22}}]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="weight-groups-and-filters">
+<h2>Weight groups and filters<a class="headerlink" href="#weight-groups-and-filters" title="Permalink to this headline">¶</a></h2>
+<p>For more elaborate weight schemes, we are instead using the <code class="docutils literal notranslate"><span class="pre">add_group()</span></code> method
+which is effectively a generalized version of <code class="docutils literal notranslate"><span class="pre">set_targets()</span></code> that supports
+addressing subsets of the data by filtering. For example, differing target distributions (or even the scheme defining variables of interest) might be
+required across several market segments or between survey periods.</p>
+<p>We can illustrate this using the variable <code class="docutils literal notranslate"><span class="pre">'Wave'</span></code> from the dataset:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">Question          Wave. Wave</span>
+<span class="go">Values                     @</span>
+<span class="go">Question   Values</span>
+<span class="go">Wave. Wave All         100.0</span>
+<span class="go">           Wave 1       19.6</span>
+<span class="go">           Wave 2       20.2</span>
+<span class="go">           Wave 3       20.5</span>
+<span class="go">           Wave 4       19.8</span>
+<span class="go">           Wave 5       19.9</span>
+</pre></div>
+</div>
+<p>Let’s assume we want to use the original targets for the first three waves but
+the remaining two waves need to reflect some changes in both gender and the age
+distributions. We first define a new set of targets that should apply only to
+the waves 4 and 5:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gender_targets_2</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;gender&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">}}</span>
+<span class="n">age_targets_2</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;age_banded&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mf">35.4</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mf">60.91</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mf">3.69</span><span class="p">}}</span>
+<span class="n">all_targets_2</span> <span class="o">=</span> <span class="p">[</span><span class="n">gender_targets_2</span><span class="p">,</span> <span class="n">age_targets_2</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>We then set the filter expressions for the respective subsets of the data, as per:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">filter_wave1</span> <span class="o">=</span> <span class="s1">&#39;Wave == 1&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_wave2</span> <span class="o">=</span> <span class="s1">&#39;Wave == 2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_wave3</span> <span class="o">=</span> <span class="s1">&#39;Wave == 3&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_wave4</span> <span class="o">=</span> <span class="s1">&#39;Wave == 4&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filter_wave5</span> <span class="o">=</span> <span class="s1">&#39;Wave == 5&#39;</span>
+</pre></div>
+</div>
+<p>And add our weight specifications accordingly:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Rim</span><span class="p">(</span><span class="s1">&#39;my_complex_scheme&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;wave 1&#39;</span><span class="p">,</span> <span class="n">filter_def</span><span class="o">=</span><span class="n">filter_wave1</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">all_targets</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;wave 2&#39;</span><span class="p">,</span> <span class="n">filter_def</span><span class="o">=</span><span class="n">filter_wave2</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">all_targets</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;wave 3&#39;</span><span class="p">,</span> <span class="n">filter_def</span><span class="o">=</span><span class="n">filter_wave3</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">all_targets</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;wave 4&#39;</span><span class="p">,</span> <span class="n">filter_def</span><span class="o">=</span><span class="n">filter_wave4</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">all_targets_2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;wave 5&#39;</span><span class="p">,</span> <span class="n">filter_def</span><span class="o">=</span><span class="n">filter_wave5</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">all_targets_2</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For historical reasons, the <a class="reference internal" href="../dataprocessing/06_logics.html"><span class="doc">logic operators</span></a> currently <strong>do not</strong> work within the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> module. This means that all filter definitions need to be valid
+string expressions suitable for the <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame.query()</span></code> <a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.query.html">method</a>.
+We are planning to abandon this limitation as soon as possible to enable
+easier and more complex filters that are consistent with the rest of the library.</p>
+</div>
+</div>
+<div class="section" id="setting-group-targets">
+<h2>Setting group targets<a class="headerlink" href="#setting-group-targets" title="Permalink to this headline">¶</a></h2>
+<p>At this stage it might also be needed to balance out the survey waves themselves
+in a certain way, e.g. make each wave count exactly the same (as you can see above
+each wave accounts for roughly 20% of the full sample but not quite exactly).</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">Rim.group_targets()</span></code> we can apply an <strong>outer</strong> weighting to the <strong>between</strong>
+group distribution while keeping the already set <strong>inner</strong> target proportions <strong>within</strong> each of them. Again we are using a <code class="docutils literal notranslate"><span class="pre">dict</span></code>, this time mapping the
+group names from above to the desired outcome percentages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">group_targets</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;wave 1&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="s1">&#39;wave 2&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="s1">&#39;wave 3&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="s1">&#39;wave 4&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="s1">&#39;wave 5&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span><span class="o">.</span><span class="n">group_targets</span><span class="p">(</span><span class="n">group_targets</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To sum it up: Our weight scheme consists of five groups based on <code class="docutils literal notranslate"><span class="pre">'Wave'</span></code> that
+resp. need to match two different sets of target distributions on the <code class="docutils literal notranslate"><span class="pre">'gender'</span></code>
+and <code class="docutils literal notranslate"><span class="pre">'age_banded'</span></code> variables with each group coming out as 20% of the full sample.</p>
+</div>
+</div>
+<div class="section" id="integration-within-dataset">
+<h1>Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code><a class="headerlink" href="#integration-within-dataset" title="Permalink to this headline">¶</a></h1>
+<p>The computational core of the weighting algorithm is the
+<code class="docutils literal notranslate"><span class="pre">quantipy.core.weights.rim.Rake</span></code> class which can be accessed by working
+with <code class="docutils literal notranslate"><span class="pre">qp.WeightEngine()</span></code>, but it is much easier to directly use the <code class="docutils literal notranslate"><span class="pre">DataSet.weight()</span></code>
+method. Its full signature looks as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataSet</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">weight_scheme</span><span class="p">,</span>
+               <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span>
+               <span class="n">unique_key</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span>
+               <span class="n">subset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">report</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">path_report</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="weighting-and-weighted-aggregations">
+<h2>Weighting and weighted aggregations<a class="headerlink" href="#weighting-and-weighted-aggregations" title="Permalink to this headline">¶</a></h2>
+<p>As can been seen, we can simply provide our weight scheme <code class="docutils literal notranslate"><span class="pre">Rim</span></code> instance to
+the method. Since the dataset already contains a variable called <code class="docutils literal notranslate"><span class="pre">'weight'</span></code>
+(and we do not want to overwrite that one) we set <code class="docutils literal notranslate"><span class="pre">weight_name</span></code> to be
+<code class="docutils literal notranslate"><span class="pre">'weights_new'</span></code>. We also need to set <code class="docutils literal notranslate"><span class="pre">unique_key='unique_id'</span></code> as that is our
+identifying key variable (that is needed to map the weight factors back into our
+dataset):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">unique_key</span><span class="o">=</span><span class="s1">&#39;unique_id&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Before we take a look at the report that is printed (because of <code class="docutils literal notranslate"><span class="pre">report=True</span></code>),
+we want to manually check our results. For that, we can simply analyze some cross-
+tabulations, weighted by our new weights! For a start, we check if we arrived at
+the desired proportions for <code class="docutils literal notranslate"><span class="pre">'gender'</span></code> and <code class="docutils literal notranslate"><span class="pre">'age_banded'</span></code> per <code class="docutils literal notranslate"><span class="pre">'Wave'</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">Question                            Wave. Wave</span>
+<span class="go">Values                                     All Wave 1 Wave 2 Wave 3 Wave 4 Wave 5</span>
+<span class="go">Question                     Values</span>
+<span class="go">gender. What is your gender? All         100.0  100.0  100.0  100.0  100.0  100.0</span>
+<span class="go">                             Male         42.0   50.0   50.0   50.0   30.0   30.0</span>
+<span class="go">                             Female       58.0   50.0   50.0   50.0   70.0   70.0</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;age_banded&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">Question               Wave. Wave</span>
+<span class="go">Values                        All  Wave 1  Wave 2  Wave 3  Wave 4  Wave 5</span>
+<span class="go">Question        Values</span>
+<span class="go">age_banded. Age All        100.00  100.00  100.00  100.00  100.00  100.00</span>
+<span class="go">                19-25       41.16   45.00   45.00   45.00   35.40   35.40</span>
+<span class="go">                26-35       42.23   29.78   29.78   29.78   60.91   60.91</span>
+<span class="go">                36-49       16.61   25.22   25.22   25.22    3.69    3.69</span>
+</pre></div>
+</div>
+<p>Both results accurately reflect the desired proportions from our scheme. And we
+can also verify the weighted distribution of <code class="docutils literal notranslate"><span class="pre">'Wave'</span></code>, now completely
+balanced:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;Wave&#39;</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">Question          Wave. Wave</span>
+<span class="go">Values                     @</span>
+<span class="go">Question   Values</span>
+<span class="go">Wave. Wave All         100.0</span>
+<span class="go">           Wave 1       20.0</span>
+<span class="go">           Wave 2       20.0</span>
+<span class="go">           Wave 3       20.0</span>
+<span class="go">           Wave 4       20.0</span>
+<span class="go">           Wave 5       20.0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="the-isolated-weight-dataframe">
+<h2>The isolated weight dataframe<a class="headerlink" href="#the-isolated-weight-dataframe" title="Permalink to this headline">¶</a></h2>
+<p>By default, the weighting operates <code class="docutils literal notranslate"><span class="pre">inplace</span></code>, i.e. the weight vector will
+be placed into the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> instance as a regular <code class="docutils literal notranslate"><span class="pre">columns</span></code> element:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="s1">&#39;weights_new&#39;</span><span class="p">)</span>
+<span class="go">                                     float</span>
+<span class="go">weights_new: my_first_scheme weights   N/A</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;weights_new&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">   unique_id  weights_new</span>
+<span class="go">0     402891     0.885593</span>
+<span class="go">1   27541022     1.941677</span>
+<span class="go">2     335506     0.984491</span>
+<span class="go">3   22885610     1.282057</span>
+<span class="go">4     229122     0.593834</span>
+</pre></div>
+</div>
+<p>It is also possible to return a new <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code> that contains all relevant <code class="docutils literal notranslate"><span class="pre">Rim</span></code>
+scheme variables incl. the factor vector for external use cases or further
+analysis:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wdf</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">weight</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">weight_name</span><span class="o">=</span><span class="s1">&#39;weights_new&#39;</span><span class="p">,</span> <span class="n">unique_key</span><span class="o">=</span><span class="s1">&#39;unique_id&#39;</span><span class="p">,</span>
+<span class="go">                         inplace=False)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wdf</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="go">   unique_id  gender  age_banded  weights_new  Wave</span>
+<span class="go">0     402891       1         1.0     0.885593     4</span>
+<span class="go">1   27541022       2         1.0     1.941677     1</span>
+<span class="go">2     335506       1         2.0     0.984491     3</span>
+<span class="go">3   22885610       1         2.0     1.282057     5</span>
+<span class="go">4     229122       1         3.0     0.593834     1</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="03_diags.html" class="btn btn-neutral float-right" title="Diagnostics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="01_background.html" class="btn btn-neutral" title="Background and methodology" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Quantipy dev team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/custom.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

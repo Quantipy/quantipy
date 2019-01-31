@@ -19,7 +19,7 @@ class WeightEngine:
                 "\n You must pass a pandas.DataFrame to the 'data' argument of the WeightEngine"
                 "\n constructor. If your DataFrame is serialized please load it first."
                 )
-        
+
         self._df = data.copy()
 
         self.schemes = {}
@@ -151,7 +151,7 @@ class WeightEngine:
 
                     weights = the_scheme._compute()
                     self._df[the_scheme._weight_name()] = weights
-    
+
                 else:
                     raise Exception(("Scheme '%s' not found." % scheme))
         else:
