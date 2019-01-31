@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import numpy as np
 import pandas as pd
 import quantipy as qp
@@ -556,6 +555,25 @@ class Batch(qp.DataSet):
                     self.summaries.append(x)
         self._update()
         return None
+
+    @verify(variables={'name': 'columns'}, categorical='name')
+    def codes_in_data(self, name):
+        """
+        Get a list of codes that exist in (batch filtered) data.
+        """
+        slicer = self.manifest_filter(self.filter)
+        data = self._data.copy().ix[slicer, name]
+        if self.is_delimited_set(name):
+            if not data.dropna().empty:
+                data_codes = data.str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
+        else:
+            data_codes = pd.get_dummies(data).columns.tolist()
+        return data_codes
+
+
 
     def hide_empty(self, xks=True, summaries=True):
         """
