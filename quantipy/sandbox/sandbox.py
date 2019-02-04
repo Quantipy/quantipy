@@ -2059,7 +2059,10 @@ class Chain(object):
                 if c_colrow_pct:
                     return 'counts_colpct_rowpct'
                 elif c_colpct:
-                    return 'counts_colpct'
+                    if self._counts_first:
+                        return 'counts_colpct'
+                    else:
+                        return 'colpct_counts'
                 else:
                     return 'counts_rowpct'
 
@@ -2194,7 +2197,7 @@ class Chain(object):
         return None
 
 
-    @lazy_property
+    # @lazy_property
     def _counts_first(self):
         for v in self.views:
             sname = v.split('|')[-1]

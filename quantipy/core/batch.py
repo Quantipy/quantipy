@@ -129,6 +129,7 @@ class Batch(qp.DataSet):
             self.xks = []
             self.yks = ['@']
             self._variables = []
+            self._section_starts = {}
             self.total = True
             self.extended_yks_global = None
             self.extended_yks_per_x = {}
@@ -188,7 +189,8 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'name', 'skip_items', 'total',
-                     'unwgt_counts', 'y_filter_map', 'build_info'
+                     'unwgt_counts', 'y_filter_map', 'build_info',
+                     '_section_starts'
                      ]:
             attr_update = {attr: attrs.get(attr, attrs.get('_{}'.format(attr)))}
             self._meta['sets']['batches'][self.name].update(attr_update)
@@ -205,7 +207,7 @@ class Batch(qp.DataSet):
                      'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
                      'cell_items', 'weights', 'sigproperties', 'additional',
                      'sample_size', 'language', 'skip_items', 'total', 'unwgt_counts',
-                     'y_filter_map', 'build_info',
+                     'y_filter_map', 'build_info', '_section_starts'
                      ]:
             attr_load = {attr: bdefs.get(attr, bdefs.get('_{}'.format(attr)))}
             self.__dict__.update(attr_load)
@@ -573,7 +575,36 @@ class Batch(qp.DataSet):
             data_codes = pd.get_dummies(data).columns.tolist()
         return data_codes
 
+    def add_section(self, x_anchor, section):
+        """
+        """
+        if not isinstance(section, (unicode, str)):
+            raise TypeError("'section' must be a string.")
+        if x_anchor in self.xks:
+            self._section_starts[x_anchor] = section
+        self._update()
+        return None
 
+    @property
+    def sections(self):
+        """
+        """
+        if not self._section_starts: return None
+        sects = self._section_starts
+        full_sections = OrderedDict()
+        rev_full_sections = OrderedDict()
+        for x in self.xks:
+            if x in sects:
+                full_sections[x] = sects[x]
+                last_group = sects[x]
+            else:
+                full_sections[x] = last_group
+        for k, v in full_sections.items():
+            if v in rev_full_sections:
+                rev_full_sections[v].append(k)
+            else:
+                rev_full_sections[v] = [k]
+        return rev_full_sections
 
     def hide_empty(self, xks=True, summaries=True):
         """
