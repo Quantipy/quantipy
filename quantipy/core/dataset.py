@@ -36,6 +36,8 @@ from quantipy.core.tools.dp.prep import (
     frange,
     index_mapper)
 
+from quantipy.sandbox.sandbox import ChainManager
+
 from cache import Cache
 
 import copy as org_copy
@@ -1806,6 +1808,146 @@ class DataSet(object):
         show = 'values' if not text else 'text'
         return ct(org_copy.deepcopy(meta), data, x=x, y=y, get=get, weight=w,
                   show=show, rules=rules, xtotal=xtotal, decimals=decimals)
+
+    @modify(to_list=['x', 'y', 'ci', 'sig_level'])
+    @verify(variables={'x': 'both', 'y': 'both', 'w': 'columns'})
+    def crosstab2(self, x, y=[], w=None, f=None, ci='counts', stats=False,
+                 sig_level=None, rules=False, decimals=1, xtotal=False,
+                 painted=True):
+        """
+        Return a well formated crosstab. (New version)
+
+        Parameters
+        ----------
+        x: str/ list of str
+            Name(s) of the downbreak variable(s).
+        y: str/ list of str
+            Name(s) of the crossbreak variable(s).
+        w: str, default None
+            Name of a weight variable.
+        f: str or logic
+            The name of a string variable or a logic statements which can be
+            used in DataSet.take().
+        ci: str/ list of str {'c%', 'counts'}, default 'counts'
+            Defines the output cellitem.
+        stats: bool, default False
+            Add std stats to the output dataframe (mean, median, stddev,
+            quartiles).
+        sig_level: float
+            Add a sigtest (only one level provided) to the output dataframe.
+        rules: bool, default False
+            Apply given rules from the meta object to the output dataframe.
+        decimals: int, default 1
+            Rounding for the output dataframe.
+        xtotal: bool, default False
+            If True, the first column of the returned dataframe will be the
+            regular frequency of the x column.
+        painted: bool, default True
+            Add texts from the meta to the index and columns.
+        """
+        def _rounding(x, dec):
+            try:
+                return np.round(x, decimals=dec)
+            except:
+                return x
+        #######################################################################
+        # prepare stack
+        #######################################################################
+        if isinstance(f, basestring) or not f:
+            idx = self.manifest_filter(f)
+        else:
+            idx = self.take(f)
+        data = self._data.copy().iloc[idx]
+        stack = qp.Stack(name='ct', add_data={'ct': (data, self._meta)})
+        if xtotal or not y:
+            y = ['@'] + self.unroll(y)
+        else:
+            y = self.unroll(y)
+        test_y =  [yk for yk in y if yk != '@']
+        views = ['cbase', 'rbase']
+        for i in ci:
+            if not i in ['counts', 'c%']:
+                raise ValueError("Provides only counts and c%")
+            else:
+                views.append(i)
+        stack.add_link('ct', x=x, y=y, views=views, weights=w)
+        if stats:
+            stats = ['mean', 'median', 'stddev', 'lower_q', 'upper_q']
+            options = {
+                'stats': '',
+                'axis': 'x'}
+            view = qp.ViewMapper()
+            view.make_template('descriptives')
+            for stat in stats:
+                options['stats'] = stat
+                view.add_method('stat', kwargs=options)
+                stack.add_link('ct', x=x, y=y, views=view, weights=w)
+        if sig_level and test_y:
+            view = qp.ViewMapper().make_template(
+                method='coltests',
+                iterators={
+                    'metric': ['props', 'means'],
+                    'mimic': ['Dim'],
+                    'level': sig_level})
+            view.add_method(
+                'significance',
+                kwargs = {
+                    'flag_bases': [30, 100],
+                    'test_total': None,
+                    'groups': 'Tests'})
+            stack.add_link('ct', x=x, y=y, views=view, weights=w)
+        #######################################################################
+        # prepare ViewManager
+        #######################################################################
+        vm = qp.ViewManager(stack)
+        if ci == ['counts']:
+            cellitems = 'counts'
+        elif ci == ['c%']:
+            cellitems = 'colpct'
+        elif 'counts' in ci and 'c%' in ci:
+            cellitems = 'counts_colpct'
+        vm.get_views(
+            data_key='ct',
+            filter_key='no_filter',
+            weight=w,
+            freqs=True,
+            stats=stats,
+            tests=sig_level,
+            cell_items=cellitems,
+            bases='both')
+        vm.set_bases('both', False, False, 'both')
+        #######################################################################
+        # prepare ChainManager
+        #######################################################################
+        cm = ChainManager(stack)
+        cm.get(
+            data_key   = 'ct',
+            filter_key = 'no_filter',
+            x_keys     = x,
+            y_keys     = y,
+            views      = vm.views,
+            orient     = 'x',
+            prioritize = True,
+            rules      = rules,
+            rules_weight = w or '',
+            folder     = 'ct')
+
+        if painted:
+            cm.paint_all(totalize=True)
+
+        dfs = []
+        for chain in cm['ct']:
+            df = chain.dataframe
+            if not painted:
+                columns = [('Total', y ) if y == '@' else (x, y)
+                           for x, y in df.columns.tolist()]
+                df.columns = pd.MultiIndex.from_tuples(columns)
+            dfs.append(df)
+        all_df = pd.concat(dfs)
+        for c in df.columns:
+            all_df[c] = all_df[c].apply(lambda x: _rounding(x, decimals))
+        return all_df, stack
+
 
     def data(self):
         """

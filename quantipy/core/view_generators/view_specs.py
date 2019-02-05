@@ -153,9 +153,9 @@ class ViewManager(object):
             self.group(switch=True)
         return self
 
-    def set_bases(self, base='w', gross=False, effective=False,
-                  order=['base', 'gross', 'effective'], uw_pos='before',
-                  sticky_gross=False):
+    def set_bases(self, base='w', gross=False, effective=False, rbase=False,
+                  order=['base', 'gross', 'rbase', 'effective'],
+                  uw_pos='before', sticky_gross=False):
         """
         Set the base (sample size) view presentation.
 
@@ -170,8 +170,11 @@ class ViewManager(object):
         effective : {'w', 'uw', 'both'}, default False
             Show the *weighted* or *unweighted* version of the effective base
             or *both*.
-        order : list of elements 'base', 'gross', 'effective',
-                default ['base', 'gross', 'effective']
+        rbase : {'w', 'uw', 'both'}, default False
+            Show the *weighted* or *unweighted* version of the row base or
+            *both*.
+        order : list of elements 'base', 'gross', 'effective', 'rbase'
+                default ['base', 'gross', 'rbase' 'effective']
             Set the order in that regular, gross and effective bases should
             appear.
         uw_pos : {'after', 'before'}, default 'after'
@@ -197,7 +200,8 @@ class ViewManager(object):
             if base: base = 'uw'
             if gross: gross = 'uw'
             if effective: effective = 'uw'
-        valid_order_items = ['base', 'gross', 'effective']
+            if rbase: rbase = 'uw'
+        valid_order_items = ['base', 'gross', 'rbase', 'effective']
         if not all(b in valid_order_items for b in order):
             err = "Items in 'order' must be one of: {}!".format(valid_order_items)
             raise ValueError(err)
@@ -205,16 +209,20 @@ class ViewManager(object):
         base_vk = 'x|f|x:||{}|cbase'
         gross_vk = 'x|f|x:||{}|cbase_gross'
         effective_vk = 'x|f|x:||{}|ebase'
+        rbase_vk = 'x|f|:y||{}|rbase'
         uw_base_vk = base_vk.format('')
         uw_gross_vk = gross_vk.format('')
         uw_effective_vk = effective_vk.format('')
+        uw_rbase_vk = rbase_vk.format('')
         if self.weighted:
             w_base_vk = base_vk.format(self.weighted)
             w_gross_vk = gross_vk.format(self.weighted)
             w_effective_vk = effective_vk.format(self.weighted)
+            w_rbase_vk = rbase_vk.format(self.weighted)
         else:
-            w_base_vk = w_gross_vk = w_effective_vk = None
+            w_base_vk = w_gross_vk = w_effective_vk = w_rbase_vk = None
         base_dict = {'base': [base, uw_base_vk, w_base_vk],
+                     'rbase': [rbase, uw_rbase_vk, w_rbase_vk],
                      'gross': [gross, uw_gross_vk, w_gross_vk],
                      'effective': [effective, uw_effective_vk, w_effective_vk]}
         # assembling all base types...
