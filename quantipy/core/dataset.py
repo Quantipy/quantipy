@@ -1864,7 +1864,8 @@ class DataSet(object):
         else:
             y = self.unroll(y)
         test_y =  [yk for yk in y if yk != '@']
-        views = ['cbase', 'rbase']
+        # views = ['cbase', 'rbase']
+        views = ['cbase']
         for i in ci:
             if not i in ['counts', 'c%']:
                 raise ValueError("Provides only counts and c%")
@@ -1946,7 +1947,7 @@ class DataSet(object):
         all_df = pd.concat(dfs)
         for c in df.columns:
             all_df[c] = all_df[c].apply(lambda x: _rounding(x, decimals))
-        return all_df, stack
+        return all_df
 
 
     def data(self):
