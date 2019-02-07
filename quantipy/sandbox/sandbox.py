@@ -2059,7 +2059,7 @@ class Chain(object):
                 if c_colrow_pct:
                     return 'counts_colpct_rowpct'
                 elif c_colpct:
-                    if self._counts_first:
+                    if self._counts_first():
                         return 'counts_colpct'
                     else:
                         return 'colpct_counts'
@@ -2291,14 +2291,14 @@ class Chain(object):
                             rowpcts = rowpcts + ['__viewlike__']
                     dims = self._frame.shape
                     for row in range(0, dims[0]):
-                        if ci == 'counts_colpct' and self.grouping:
+                        if ci in ['counts_colpct', 'colpct_counts'] and self.grouping:
                             if row % 2 == 0:
-                                if self._counts_first:
+                                if self._counts_first():
                                     vc = counts
                                 else:
                                     vc = colpcts
                             else:
-                                if not self._counts_first:
+                                if not self._counts_first():
                                     vc = counts
                                 else:
                                     vc = colpcts
