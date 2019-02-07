@@ -6915,7 +6915,7 @@ class DataSet(object):
                     codes.extend(self._data[i].dropna().unique().tolist())
                 codes = sorted(list(set(codes)))
             dummy_data = []
-            if self._is_multicode_array(items[0]):
+            if any(self._is_multicode_array(i) for i in items):
                 for i in items:
                     try:
                         i_dummy = self[i].str.get_dummies(';')
