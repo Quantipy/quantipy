@@ -13,7 +13,11 @@ from pptx.util import (
     Cm,
     Inches)
 
-from pptx.shapes import table
+try:
+    from pptx import table
+except:
+    from pptx.shapes import table
+
 from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.dml.color import RGBColor
