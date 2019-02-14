@@ -5638,6 +5638,22 @@ class DataSet(object):
         return None
 
     @staticmethod
+    def _used_text_keys(text_dict, tks):
+        new = [tk for tk in text_dict.keys()
+               if not tk in ['x edits', 'y edits'] + tks['tks']]
+        tks['tks'] += new
+
+    def used_text_keys(self):
+        """
+        Get a list of all used textkeys in the dataset instance.
+        """
+        text_func = self._used_text_keys
+        args = ()
+        kwargs = {'tks': {'tks': []}}
+        DataSet._apply_to_texts(text_func, self._meta, args, kwargs)
+        return kwargs['tks']['tks']
+
+    @staticmethod
     def _force_texts(text_dict, copy_to, copy_from, update_existing):
         new_text_key = None
         for new_tk in reversed(copy_from):
