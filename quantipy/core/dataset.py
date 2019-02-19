@@ -50,7 +50,7 @@ from collections import OrderedDict, Counter
 
 VALID_TKS = [
     'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR',
-    'es-ES', 'it-IT']
+    'es-ES', 'it-IT', 'pl-PL']
 
 VAR_SUFFIXES = [
     '_rc', '_net', ' (categories', ' (NET', '_rec']
