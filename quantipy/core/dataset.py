@@ -6386,9 +6386,8 @@ class DataSet(object):
         else:
             df = self._data.copy()
         for n in name:
-            test_df = df[self.unroll(n)].sum()
-            slicer = test_df == 0
-            empty_items = test_df.loc[slicer].index.values.tolist()
+            empty_items = [i for i in self.unroll(n)
+                if df[i].value_counts().sum() == 0]
             if not by_name: empty_items = [self.item_no(i) for i in empty_items]
             if empty_items: empty[n] = empty_items
         if empty:
@@ -6725,9 +6724,9 @@ class DataSet(object):
         """
         meta = self._meta
         new_meta = self.start_meta(self.text_key)
-        new_meta['info']['dataset'] = {'name': ''}
-        dname = '{}_derotate'.format(meta['info']['dataset']['name'])
-        new_meta['info']['dataset']['name'] = dname
+        n = meta['info'].get('dataset', meta['info']).get('name')
+        dname = '{}_derotate'.format(n)
+        new_meta['info']['dataset'] = {'name': dname}
         for var in other:
             new_meta = self._assume_meta(new_meta, var, var)
 
@@ -6916,7 +6915,7 @@ class DataSet(object):
                     codes.extend(self._data[i].dropna().unique().tolist())
                 codes = sorted(list(set(codes)))
             dummy_data = []
-            if self._is_multicode_array(items[0]):
+            if any(self._is_multicode_array(i) for i in items):
                 for i in items:
                     try:
                         i_dummy = self[i].str.get_dummies(';')

@@ -1750,7 +1750,7 @@ class Test(object):
                 self.values = self.values[:, 1:]
                 self.cbases = self.cbases[:, 1:]
         elif self.metric == 'proportions':
-            if not self.test_total:
+            if not self.test_total or self.rebased:
                 if view.is_cumulative():
                     agg = self.Quantity.count(
                         margin=False, as_df=False, cum_sum=False)

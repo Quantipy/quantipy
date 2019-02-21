@@ -2071,6 +2071,8 @@ class Chain(object):
         ci = []
         if self.views:
             for v in self.views:
+                if 'significance' in v:
+                    continue
                 if ']*:' in v:
                     if v.split('|')[3] == '':
                         if 'N' not in ci:
