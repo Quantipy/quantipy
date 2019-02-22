@@ -6943,6 +6943,7 @@ class DataSet(object):
         Filter the DataSet using a Quantipy logical expression.
         """
         data = self._data.copy()
+        data.index = pd.Index(range(0, len(data.index)))
         filter_idx, _ = get_logic_index(pd.Series(data.index), condition, data)
         filtered_data = data.iloc[filter_idx, :]
         if inplace:
