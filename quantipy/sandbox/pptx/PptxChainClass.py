@@ -293,7 +293,7 @@ class PptxDataFrame(object):
     def __call__(self):
         return self.df
 
-    def to_table(self, decimals=2, pct_decimals=2):
+    def to_table(self, decimals=2, pct_decimals=2, decimal_separator='.'):
         """
         Returns self.df formatted to be added to a table in a slide.
         Basically just rounds values and if cell type = % then multiply values with 100
@@ -305,6 +305,8 @@ class PptxDataFrame(object):
             Number of decimals for not percentage cell_types
         pct_decimals: int
             Number of decimals for percentage cell_types
+        decimal_separator: str
+
         Returns
         -------
         self
@@ -317,26 +319,27 @@ class PptxDataFrame(object):
         if self.array_style == -1:
             df = df.T
 
-        rows_not_nan = pd.notnull(df).any(axis='columns')
-
         df = df.fillna('')
 
         # Percent type cells
-        indexes = get_indexes_from_list(self.cell_items, PCT_TYPES, exact=False)
-        df.iloc[:, indexes] *= 100
-        df.iloc[:, indexes] = df.iloc[:, indexes].round(decimals=pct_decimals)
-        if pct_decimals == 0:
-            columns = df.columns[indexes].tolist()
-            columns_to_int=dict(zip(columns, ['int'] * len(columns)))
-            df[rows_not_nan] = df[rows_not_nan].astype(columns_to_int)
+        pct_indexes = get_indexes_from_list(self.cell_items, PCT_TYPES, exact=False)
+        df.iloc[:, pct_indexes] *= 100
+        df.iloc[:, pct_indexes] = df.iloc[:, pct_indexes].round(decimals=pct_decimals)
 
         # Not percent type cells
-        indexes = get_indexes_from_list(self.cell_items, NOT_PCT_TYPES, exact=False)
-        df.iloc[:, indexes] = df.iloc[:, indexes].round(decimals=decimals)
-        if decimals == 0:
-            columns = df.columns[indexes].tolist()
-            columns_to_int=dict(zip(columns, ['int'] * len(columns)))
-            df[rows_not_nan] = df[rows_not_nan].astype(columns_to_int)
+        not_pct_indexes = get_indexes_from_list(self.cell_items, NOT_PCT_TYPES, exact=False)
+        df.iloc[:, not_pct_indexes] = df.iloc[:, not_pct_indexes].round(decimals=decimals)
+
+        df = df.astype('str')
+
+        if pct_decimals == 0 or decimals == 0:
+            pct_columns = df.columns[pct_indexes].tolist() if pct_decimals == 0 else []
+            not_pct_columns = df.columns[not_pct_indexes].tolist() if decimals == 0 else []
+            columns = pct_columns + not_pct_columns
+            df[columns] = df[columns].replace('\.0', '', regex=True)
+
+        if not decimal_separator == '.':
+            df = df.replace('\.', ',', regex=True)
 
         if self.array_style == -1:
             df = df.T

@@ -300,7 +300,7 @@ class PptxPainter(object):
         if rgb is not None:
             run.font.color.rgb = RGBColor(*rgb)
 
-    def queue_slide_items(self, pptx_chain, slide_items):
+    def queue_slide_items(self, pptx_chain, slide_items, decimal_separator='.', pct_decimals=0, decimals=2):
         """
         Helper function to queue a full automated slide.
         Includes queueing of header with question text, a table or chart with optional side table,
@@ -357,13 +357,19 @@ class PptxPainter(object):
         for slide_item in slide_items:
             if slide_item.startswith('table'):
                 cell_items = slide_item.split(':')[1]
-                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(pct_decimals=0)
+                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(pct_decimals=pct_decimals,
+                                                                          decimals=decimals,
+                                                                          decimal_separator=decimal_separator,
+                                                                          )
                 if not pptx_frame().empty:
                     table_draft = self.draft_table(pptx_frame())
                     self.queue_table(settings=table_draft)
             if slide_item.startswith('side_table'):
                 cell_items = slide_item.split(':')[1]
-                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(pct_decimals=0)
+                pptx_frame = pptx_chain.chart_df.get(cell_items).to_table(pct_decimals=pct_decimals,
+                                                                          decimals=decimals,
+                                                                          decimal_separator=decimal_separator,
+                                                                          )
                 if not pptx_frame().empty:
                     side_table_draft = self.draft_side_table(pptx_frame())
                     pct_index = [index for index, value in enumerate(pptx_frame.cell_items) if 'is_c_pct' in value]
