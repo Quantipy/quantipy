@@ -300,7 +300,11 @@ class PptxPainter(object):
         if rgb is not None:
             run.font.color.rgb = RGBColor(*rgb)
 
-    def queue_slide_items(self, pptx_chain, slide_items, decimal_separator='.', pct_decimals=0, decimals=2):
+    def queue_slide_items(self, pptx_chain, slide_items,
+                          decimal_separator='.',
+                          pct_decimals=0,
+                          decimals=2,
+                          ):
         """
         Helper function to queue a full automated slide.
         Includes queueing of header with question text, a table or chart with optional side table,
