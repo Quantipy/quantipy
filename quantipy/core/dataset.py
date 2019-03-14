@@ -3957,9 +3957,10 @@ class DataSet(object):
                     meta['sets']['data file']['items'] = n_items
                     if self._has_categorical_data(var):
                         values = meta['lib']['values'][var]
-                        for source in self.sources(var):
+                    for source in self.sources(var):
+                        if self._has_categorical_data(var):
                             meta['columns'][source]['values'] = values
-                            meta['columns'][source]['parent'] = {}
+                        meta['columns'][source]['parent'] = {}
 
         df_items = meta['sets']['data file']['items']
         n_items = [i for i in df_items if not i.split('@')[-1] in name]
