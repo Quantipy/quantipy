@@ -6681,7 +6681,6 @@ class DataSet(object):
                 else:
                     self._meta['columns'][v]['missings'] = v_m_map
             if hide_on_y:
-                print missing_map
                 self.hiding(var, missing_map, 'y', True)
 
         return None
