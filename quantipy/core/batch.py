@@ -606,7 +606,7 @@ class Batch(qp.DataSet):
         else:
             data_codes = pd.get_dummies(data).columns.tolist()
         return data_codes
-      
+
     def hide_empty(self, xks=True, summaries=True):
         """
         Drop empty variables and hide array items from summaries.
@@ -743,7 +743,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list='xbrk')
-    @verify(variables={'xbrk': 'both'}, categorical='xbrk')
+    @verify(variables={'xbrk': 'both_nested'}, categorical='xbrk')
     def add_crossbreak(self, xbrk):
         """
         Set the y (crossbreak/banner) variables of the Batch.
@@ -767,7 +767,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list='yks')
-    @verify(variables={'yks': 'both'}, categorical='yks')
+    @verify(variables={'yks': 'both_nested'}, categorical='yks')
     def add_y(self, yks):
         """
         Set the y (crossbreak/banner) variables of the Batch.
@@ -936,7 +936,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=['ext_yks', 'on'])
-    @verify(variables={'ext_yks': 'columns'})
+    @verify(variables={'ext_yks': 'columns_nested'})
     def extend_y(self, ext_yks, on=None):
         """
         Add y (crossbreak/banner) variables to specific x (downbreak) variables.
@@ -979,7 +979,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=['new_yks', 'on'])
-    @verify(variables={'new_yks': 'both', 'on': 'both'})
+    @verify(variables={'new_yks': 'both_nested', 'on': 'both'})
     def replace_y(self, new_yks, on):
         """
         Replace y (crossbreak/banner) variables on specific x (downbreak) variables.

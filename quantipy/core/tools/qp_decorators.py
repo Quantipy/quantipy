@@ -26,6 +26,10 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
         all_args = getargspec(func)[0]
         ds = args[0]
         for variable, collection in variables.items():
+            nested = False
+            if collection.endswith('_nested'):
+                nested = True
+                collection = collection.split('_')[0]
             # get collection for argument
             if collection == 'both':
                 collection = ['columns', 'masks']
@@ -35,10 +39,21 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             # get the variable argument to check
             v_index = all_args.index(variable)
             var = kwargs.get(variable, args[v_index])
-            if var is None: return func(*args, **kwargs)
-            if not isinstance(var, list): var = [var]
+            if var is None:
+                return func(*args, **kwargs)
+            if not isinstance(var, list):
+                var = [var]
+            if nested:
+                valid = []
+                for v in var:
+                    if ' > ' in v:
+                        valid.extend(v.replace(' ', '').split('>'))
+                    else:
+                        valid.append(v)
+            else:
+                valid = var
             # check the variable
-            not_valid = [v for v in var if not v in c + ['@']]
+            not_valid = [v for v in valid if not v in c + ['@']]
             if not_valid:
                 msg = "'{}' argument for {}() must be in {}.\n"
                 msg += '{} is not in {}.'

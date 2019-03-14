@@ -2947,7 +2947,7 @@ class DataSet(object):
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
-    @verify(variables={'varlist': 'both', 'keep': 'masks'})
+    @verify(variables={'varlist': 'both_nested', 'keep': 'masks'})
     def unroll(self, varlist, keep=None, both=None):
         """
         Replace mask with their items, optionally excluding/keeping certain ones.
@@ -2967,19 +2967,26 @@ class DataSet(object):
         unrolled : list
             The modified ``varlist``.
         """
+        def _unroll(unrolled_v, v, keep, both):
+            if not self.is_array(v) or keep:
+                unrolled_v.append(v)
+            else:
+                if both:
+                    unrolled_v.append(v)
+                unrolled_v.extend(self.sources(v))
+            return unrolled_v
+
         if both and both[0] == 'all':
-            both = [mask for mask in varlist if mask in self._meta['masks']]
+            both = self.masks()
         unrolled = []
         for var in varlist:
-            if not self.is_array(var):
-                unrolled.append(var)
+            if ' > ' in var:
+                nested = var.replace(' ', '').split('>')
+                unrolled_nested = product(*[
+                    _unroll([], n, n in keep, n in both) for n in nested])
+                unrolled.extend([' > '.join(list(un)) for un in unrolled_nested])
             else:
-                if not var in keep:
-                    if var in both:
-                        unrolled.append(var)
-                    unrolled.extend(self.sources(var))
-                else:
-                    unrolled.append(var)
+                unrolled = _unroll(unrolled, var, var in keep, var in both)
         return unrolled
 
     def _apply_order(self, variables):
