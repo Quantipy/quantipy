@@ -72,9 +72,14 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             var = kwargs.get(cat, args[v_index])
             if var is None: return func(*args, **kwargs)
             if not isinstance(var, list): var = [var]
-            var = [v for v in var if not v == '@']
+            valid = []
+            for v in var:
+                if ' > ' in v:
+                    valid.extend(v.replace(' ', '').split('>'))
+                elif not '@' == v:
+                    valid.append(v)
             # check if varaibles are categorical
-            not_cat = [v for v in var if not ds._has_categorical_data(v)]
+            not_cat = [v for v in valid if not ds._has_categorical_data(v)]
             if not_cat:
                 msg = "'{}' argument for {}() must reference categorical "
                 msg += 'variable.\n {} is not categorical.'

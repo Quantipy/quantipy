@@ -2905,8 +2905,23 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
-    @modify(to_list=['varlist'])
-    @verify(variables={'varlist': 'both'})
+
+    def _array_and_item_list(self, v, keep):
+        new_list = []
+        if not self.is_array(v):
+            # columns
+            if keep in ['both', 'items']:
+                new_list.append(v)
+        else:
+            # masks
+            if keep in ['both', 'mask']:
+                new_list.append(v)
+            if keep in ['both', 'items']:
+                new_list.extend(self.sources(v))
+        return new_list
+
+    @modify(to_list=['varlist', 'ignore_arrays'])
+    @verify(variables={'varlist': 'both_nested', 'ignore_arrays': 'masks'})
     def roll_up(self, varlist, ignore_arrays=None):
         """
         Replace any array items with their parent mask variable definition name.
@@ -2918,32 +2933,46 @@ class DataSet(object):
         ignore_arrays : (list of) str
             A list of array mask names that should not be rolled up if their
             items are found inside ``varlist``.
+
+        Note
+        ----
+        varlist can also contain nesting `var1 > var2`. The variables which are
+        included in the nesting can also be controlled by keep and both, even
+        if the variables are also included as a "normal" variable.
+
         Returns
         -------
         rolled_up : list
             The modified ``varlist``.
         """
-        if ignore_arrays:
-            if not isinstance(ignore_arrays, list):
-                ignore_arrays = [ignore_arrays]
-        else:
-            ignore_arrays = []
-        arrays_defs = {arr: self.sources(arr) for arr in self.masks()
-                       if not arr in ignore_arrays}
-        item_map = {}
-        for k, v in arrays_defs.items():
-            for item in v:
-                item_map[item] = k
-        rolled_up = []
-        for v in varlist:
-            if not self.is_array(v):
-                if v in item_map:
-                    if not item_map[v] in rolled_up:
-                        rolled_up.append(item_map[v])
-                else:
-                    rolled_up.append(v)
+        def _var_to_keep(var, ignore):
+            if self.is_array(var):
+                to_keep = 'mask'
             else:
-                rolled_up.append(v)
+                to_keep = 'items'
+                if self._is_array_item(var):
+                    parent = self._maskname_from_item(var)
+                    if parent not in ignore_arrays:
+                        var = parent
+                        to_keep = 'mask'
+            return var, to_keep
+
+        rolled_up = []
+        for var in varlist:
+            if ' > ' in var:
+                nested = var.replace(' ', '').split('>')
+                n_list = []
+                for n in nested:
+                    n, to_keep = _var_to_keep(n, ignore_arrays)
+                    n_list.append(self._array_and_item_list(n, to_keep))
+                for ru in [' > '.join(list(un)) for un in product(*n_list)]:
+                    if ru not in rolled_up:
+                        rolled_up.append(ru)
+            else:
+                var, to_keep = _var_to_keep(var, ignore_arrays)
+                for ru in self._array_and_item_list(var, to_keep):
+                    if ru not in rolled_up:
+                        rolled_up.append(ru)
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
@@ -2962,31 +2991,50 @@ class DataSet(object):
             The names of masks that will be included both as themselves and as
             collections of their items.
 
+        Note
+        ----
+        varlist can also contain nesting `var1 > var2`. The variables which are
+        included in the nesting can also be controlled by keep and both, even
+        if the variables are also included as a "normal" variable.
+
+        Example::
+            >>> ds.unroll(varlist = ['q1', 'q1 > gender'], both='all')
+            ['q1',
+             'q1_1',
+             'q1_2',
+             'q1 > gender',
+             'q1_1 > gender',
+             'q1_2 > gender']
+
         Returns
         -------
         unrolled : list
             The modified ``varlist``.
         """
-        def _unroll(unrolled_v, v, keep, both):
-            if not self.is_array(v) or keep:
-                unrolled_v.append(v)
-            else:
-                if both:
-                    unrolled_v.append(v)
-                unrolled_v.extend(self.sources(v))
-            return unrolled_v
-
         if both and both[0] == 'all':
             both = self.masks()
         unrolled = []
         for var in varlist:
             if ' > ' in var:
                 nested = var.replace(' ', '').split('>')
-                unrolled_nested = product(*[
-                    _unroll([], n, n in keep, n in both) for n in nested])
-                unrolled.extend([' > '.join(list(un)) for un in unrolled_nested])
+                n_list = []
+                for n in nested:
+                    if n in keep:
+                        to_keep = 'mask'
+                    elif n in both:
+                        to_keep = 'both'
+                    else:
+                        to_keep = 'items'
+                    n_list.append(self._array_and_item_list(n, to_keep))
+                unrolled.extend([' > '.join(list(un)) for un in product(*n_list)])
             else:
-                unrolled = _unroll(unrolled, var, var in keep, var in both)
+                if var in keep:
+                    to_keep = 'mask'
+                elif var in both:
+                    to_keep = 'both'
+                else:
+                    to_keep = 'items'
+                unrolled += self._array_and_item_list(var, to_keep)
         return unrolled
 
     def _apply_order(self, variables):
