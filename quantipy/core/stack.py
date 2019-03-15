@@ -2395,10 +2395,12 @@ class Stack(defaultdict):
                     raise ValueError(msg.format(v))
                 else:
                     check_on.append(v)
-                if any(v in meta['sets']['batches'][b]['transposed_arrays']
-                       for b in _batches):
-                    on_vars += [('@', v)]
-
+                for b in _batches:
+                    batch = meta['sets']['batches'][b]
+                    transposed = batch.get('transposed_arrays', batch['transposed'])
+                    if v in transposed:
+                        on_vars += [('@', v)]
+                        break
             if not only_recode:
                 all_batches = copy.deepcopy(meta['sets']['batches'])
                 for n, b in all_batches.items():
@@ -2646,9 +2648,12 @@ class Stack(defaultdict):
                     check_on = list(set(check_on + [items[0]]))
                 else:
                     check_on = list(set(check_on + [v]))
-                if any(v in meta['sets']['batches'][b]['transposed_arrays']
-                       for b in _batches):
-                    on_vars += [('@', v)]
+                for b in _batches:
+                    batch = meta['sets']['batches'][b]
+                    transposed = batch.get('transposed_arrays', batch['transposed'])
+                    if v in transposed:
+                        on_vars += [('@', v)]
+                        break
 
                 ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
