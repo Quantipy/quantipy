@@ -3026,7 +3026,9 @@ class DataSet(object):
                     else:
                         to_keep = 'items'
                     n_list.append(self._array_and_item_list(n, to_keep))
-                unrolled.extend([' > '.join(list(un)) for un in product(*n_list)])
+                for ur in [' > '.join(list(un)) for un in product(*n_list)]:
+                    if ur not in unrolled:
+                        unrolled.append(ur)
             else:
                 if var in keep:
                     to_keep = 'mask'
@@ -3034,7 +3036,9 @@ class DataSet(object):
                     to_keep = 'both'
                 else:
                     to_keep = 'items'
-                unrolled += self._array_and_item_list(var, to_keep)
+                for ur in self._array_and_item_list(var, to_keep):
+                    if ur not in unrolled:
+                        unrolled.append(ur)
         return unrolled
 
     def _apply_order(self, variables):
