@@ -64,6 +64,7 @@ class Quantity(object):
         self.type = self._get_type()
         if self.type == 'nested':
             self.nest_def = Nest(self.y, self.d(), self.meta()).nest()
+        self.levelled = self.ds.get_property(self.x, 'level')
         self._squeezed = False
         self.idx_map = None
         self.xdef = self.ydef = None
@@ -250,6 +251,8 @@ class Quantity(object):
         swapped.x, swapped.y = x, y
         swapped.f, swapped.w = f, w
         swapped.type = swapped._get_type()
+        if swapped.type == 'nested':
+            swapped.nest_def = Nest(swapped.y, swapped.d(), swapped.meta()).nest()
         swapped._get_matrix()
         if not update_axis_def and array_swap:
             swapped.x = org_name
@@ -2347,3 +2350,74 @@ class Nest(object):
         interlocked_valtexts = list(product(*all_valtexts))
         interlocked_qtexts = list(product(*all_qtexts))
         return interlocked_qtexts, interlocked_valtexts
+
+class Level(object):
+    """
+    """
+    def __init__(self, quantity):
+        """
+        """
+        self.quantity = quantity
+        self.dataset = self.quantity.ds
+        self._lvlspec = self.dataset.get_property(self.quantity.x, 'level')
+        self.array = self._lvlspec['source']
+        self.level_codes = self._lvlspec['level_codes']
+        self._auxdf = self.quantity.count(margin=False).result.reset_index()
+        self._collapse_codes()
+        self.lvldf = None
+
+    def _reindex(self, like='freq'):
+        ds = self.dataset
+        arr = self.array
+        itemres = self.quantity.swap(ds.sources(arr)[0], axis='x', inplace=False)
+        if like == 'freq':
+            itemres.count(margin=False, axis=None, as_df=True)
+            self.lvldf = self.lvldf.reindex(ds.codes(arr))
+        elif like == 'base':
+            itemres.count(margin=False, axis='x', as_df=True)
+        x = [self.quantity.x]
+        vals = itemres.result.index.get_level_values(1).tolist()
+        idx = pd.MultiIndex.from_product([x, vals],
+                                         names=['Question', 'Values'])
+        self.lvldf.index = idx
+        None
+
+    def _collapse_codes(self):
+        df = self._auxdf
+        for org, lvls in self.level_codes.items():
+            for lvl in lvls:
+                df['Values']  = df['Values'].replace(
+                    lvl, int(org), inplace=False)
+        return None
+
+    def count(self):
+        """
+        """
+        df = self._auxdf.set_index(['Question', 'Values'])
+        self.lvldf = df.sum(level=1, axis=0)
+        self._reindex()
+        return None
+
+    def base(self):
+        """
+        """
+        df = self._auxdf.set_index(['Question', 'Values'])
+        self.lvldf = df.sum(level=0, axis=0)
+        self._reindex(like='base')
+        return None
+
+    def percent(self):
+        """
+        """
+        self.count()
+        c = self.lvldf
+        self.base()
+        b = self.lvldf
+        pcts = c.values / b.values * 100
+        self.lvldf = pd.DataFrame(pcts, index=c.index, columns=c.columns)
+        return None
+
+    def as_view(self):
+        """
+        """
+        pass

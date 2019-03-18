@@ -606,7 +606,7 @@ class Batch(qp.DataSet):
         else:
             data_codes = pd.get_dummies(data).columns.tolist()
         return data_codes
-      
+
     def hide_empty(self, xks=True, summaries=True):
         """
         Drop empty variables and hide array items from summaries.
