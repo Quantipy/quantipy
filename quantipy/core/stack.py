@@ -778,7 +778,8 @@ class Stack(defaultdict):
                                     continue
                             else:
                                 dataset = qp.DataSet('stack')
-                                dataset.from_components(self[dk].data, self[dk].meta)
+                                dataset.from_components(self[dk].data, self[dk].meta,
+                                                        reset=False)
                                 f_dataset = dataset.filter(filter_def, logic, inplace=False)
                                 self[dk][filter_def].data = f_dataset._data
                                 self[dk][filter_def].meta = f_dataset._meta
