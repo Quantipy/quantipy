@@ -738,7 +738,6 @@ class Stack(defaultdict):
                     "You cannot pass both 'variables' and 'x' and/or 'y' to stack.add_link() "
                     "at the same time."
                 )
-
         x = self._force_key_as_list(x)
         y = self._force_key_as_list(y)
 
@@ -1973,6 +1972,7 @@ class Stack(defaultdict):
                 xs = [x for x in x_y_f_w_map.keys() if x in x_in_stack]
             else:
                 xs = [x for x in xs if x in x_in_stack or isinstance(x, tuple)]
+
             v_typ = self.variable_types(dk, verbose=False)
             numerics = v_typ['int'] + v_typ['float']
             masks = self[dk].meta['masks']
@@ -2396,10 +2396,12 @@ class Stack(defaultdict):
                     raise ValueError(msg.format(v))
                 else:
                     check_on.append(v)
-                if any(v in meta['sets']['batches'][b]['transposed_arrays']
-                       for b in _batches):
-                    on_vars += [('@', v)]
-
+                for b in _batches:
+                    batch = meta['sets']['batches'][b]
+                    transposed = batch.get('transposed_arrays', batch['transposed'])
+                    if v in transposed:
+                        on_vars += [('@', v)]
+                        break
             if not only_recode:
                 all_batches = copy.deepcopy(meta['sets']['batches'])
                 for n, b in all_batches.items():
@@ -2647,9 +2649,12 @@ class Stack(defaultdict):
                     check_on = list(set(check_on + [items[0]]))
                 else:
                     check_on = list(set(check_on + [v]))
-                if any(v in meta['sets']['batches'][b]['transposed_arrays']
-                       for b in _batches):
-                    on_vars += [('@', v)]
+                for b in _batches:
+                    batch = meta['sets']['batches'][b]
+                    transposed = batch.get('transposed_arrays', batch['transposed'])
+                    if v in transposed:
+                        on_vars += [('@', v)]
+                        break
 
                 ds = qp.DataSet(dk, dimensions_comp=meta['info'].get('dimensions_comp'))
                 ds.from_stack(self, dk)
