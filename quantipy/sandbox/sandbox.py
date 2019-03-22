@@ -1912,7 +1912,10 @@ class Chain(object):
 
     @lazy_property
     def _default_text(self):
-        return self._meta['lib']['default text']
+        tk = self._meta['lib']['default text']
+        if tk not in self._transl:
+            self._transl[tk] = self._transl['en-GB']
+        return tk
 
     @lazy_property
     def orientation(self):
