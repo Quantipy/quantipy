@@ -316,7 +316,7 @@ class DataSet(object):
     def _get_type(self, var):
         if var in self._meta['masks'].keys():
             return self._meta['masks'][var]['type']
-        else:
+        if var in self._meta['columns'].keys():
             return self._meta['columns'][var]['type']
 
     def _get_subtype(self, name):

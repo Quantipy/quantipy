@@ -368,15 +368,15 @@ class QuantipyViews(ViewMapper):
                 view.dataframe = q.result
             view._kwargs['exclude'] = q.miss_x
 
-            if q.levelled and not logic and not calc:
-                levelled = Level(q)
+            if q.leveled and not logic and not calc:
+                leveled = Level(q)
                 if rel_to is not None:
-                    levelled.percent()
+                    leveled.percent()
                 elif axis == 'x':
-                    levelled.base()
+                    leveled.base()
                 else:
-                    levelled.count()
-                view.dataframe = levelled.lvldf
+                    leveled.count()
+                view.dataframe = leveled.lvldf
 
             link[notation] = view
 

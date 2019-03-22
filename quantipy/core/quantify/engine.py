@@ -64,7 +64,10 @@ class Quantity(object):
         self.type = self._get_type()
         if self.type == 'nested':
             self.nest_def = Nest(self.y, self.d(), self.meta()).nest()
-        self.levelled = self.ds.get_property(self.x, 'level')
+        if not self.x == '@':
+            self.leveled = self.ds.get_property(self.x, 'level')
+        else:
+            self.leveled = False
         self._squeezed = False
         self.idx_map = None
         self.xdef = self.ydef = None
