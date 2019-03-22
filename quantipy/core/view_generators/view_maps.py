@@ -23,6 +23,7 @@ import quantipy.core.tools as tools
 import quantipy as qp
 
 from quantipy.core.cache import Cache
+from quantipy.core.quantify.engine import Level
 
 import time
 class QuantipyViews(ViewMapper):
@@ -366,6 +367,17 @@ class QuantipyViews(ViewMapper):
             else:
                 view.dataframe = q.result
             view._kwargs['exclude'] = q.miss_x
+
+            if q.levelled and not logic and not calc:
+                levelled = Level(q)
+                if rel_to is not None:
+                    levelled.percent()
+                elif axis == 'x':
+                    levelled.base()
+                else:
+                    levelled.count()
+                view.dataframe = levelled.lvldf
+
             link[notation] = view
 
     def descriptives(self, link, name, kwargs):

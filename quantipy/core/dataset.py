@@ -4533,6 +4533,46 @@ class DataSet(object):
             self.drop(var)
         return None
 
+    @verify(variables={'name': 'masks'})
+    def level(self, name):
+        """
+        """
+        self.copy(name, 'level')
+        if self._dimensions_comp:
+            temp = self._dims_free_arr_name(name)
+            lvlname = self._dims_compat_arr_name('{}_level'.format(temp))
+        else:
+            lvlname = '{}_level'.format(name)
+        items = self.items(name)
+        sources = enumerate(self.sources(lvlname), 1)
+        codes = self.codes(lvlname)
+        max_code = len(codes)
+        replace_codes = {}
+        mapped_codes = {c: [] for c in self.codes(name)}
+
+        for no, source in sources:
+            offset = (no-1) * max_code
+            new_codes = frange('{}-{}'.format((offset + 1), (offset + max_code)))
+            replace_codes[source] = dict(zip(codes, new_codes))
+
+        for source, codes in replace_codes.items():
+            self[source].replace(codes, inplace=True)
+            self[source].replace(np.NaN, '', inplace=True)
+            for org, new in codes.items():
+                mapped_codes[org].append(new)
+
+        code_range = frange('1-{}'.format(max_code * len(items)))
+        labels = self.value_texts(name) * len(items)
+        cats = zip(code_range, labels)
+        new_sources = self.sources(lvlname)
+        self.unbind(lvlname)
+        self.add_meta(lvlname, 'delimited set', self.text(name), cats)
+        self[lvlname] = self[new_sources].astype('str').apply(lambda x: ';'.join(x).replace('.0', ''), axis=1)
+        self.drop(new_sources)
+        self._meta['columns'][lvlname]['properties']['level'] = {'source': name,
+                                                                    'level_codes': mapped_codes}
+        return None
+
     @verify(text_keys='text_key')
     def derive(self, name, qtype, label, cond_map, text_key=None):
         """
@@ -6268,7 +6308,7 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
                        'recoded_filter', '_no_valid_items', '_no_valid_values',
-                       'simple_org_expr']
+                       'simple_org_expr', 'level']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
