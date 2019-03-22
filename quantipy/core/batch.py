@@ -653,7 +653,7 @@ class Batch(qp.DataSet):
         Deprecated! Transposed summary tables are created for defined arrays.
         """
         msg = ("Depricated! `transpose_arrays()` is not available anymore, "
-               "please use `exclusive_arrays()` to skip items.")
+               "please use `transpose()` instead.")
         raise NotImplementedError(msg)
 
     @modify(to_list=['array'])
