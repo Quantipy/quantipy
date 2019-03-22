@@ -2,9 +2,19 @@
 	:maxdepth: 5
 	:includehidden:
 
+
 ===================
 Latest (xx/04/2019)
 ===================
+
+**New** Nesting in ``Batch.add_crossbreak()``
+
+Nested crossbreaks can be defined for Excel deliverables, the nesting can be
+defined by ``"var1 > var2"``. Nesting in more than two levels is available
+``"var1 > var2 > var3 > ..."``, but nesting a group of variables is NOT supported
+~~"var1 > (var2, var3)"~~.
+
+""""
 
 **Update** Batch (transposed) summaries
 
