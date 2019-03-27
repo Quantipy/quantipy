@@ -180,6 +180,7 @@ class Batch(qp.DataSet):
         """
         self._map_x_to_y()
         self._map_x_to_filter()
+        self._split_level_arrays()
         self._map_y_on_y_filter()
         self._samplesize_from_batch_filter()
         attrs = self.__dict__
@@ -690,26 +691,26 @@ class Batch(qp.DataSet):
 
     @modify(to_list='array')
     @verify(variables={'array': 'masks'})
-    def level(self, array, levels={}):
+    def level(self, array):
         """
-        Level arrays by defined level variables.
+        Produce leveled (a flat view of all item reponses) array aggregations.
 
         Parameters
         ----------
         array: str/ list of str
             Names of the arrays to add the levels to.
-        levels: list/ dict of lists
-            The levels which should be used for the specific arrays.
+
+        Returns
+        -------
+        None
         """
         not_valid = [a for a in array if a not in self.xks]
         if not_valid:
             raise ValueError('{} not defined as xks.'.format(not_valid))
         for a in array:
-            if not isinstance(levels, list):
-                l = levels.get(a) or self.yks
-            else:
-                l = levels
-            self.leveled[a] = l
+            self.leveled[a] = self.yks
+            if not '{}_level'.format(a) in self:
+                self._level(a)
         self._update()
         return None
 
@@ -1081,6 +1082,19 @@ class Batch(qp.DataSet):
             if x in self.transposed:
                 mapping.append(('@', [x]))
         self.x_y_map = mapping
+        return None
+
+    def _split_level_arrays(self):
+        _x_y_map = []
+        for x, y in self.x_y_map:
+            if x in self.leveled.keys():
+                lvl_name = '{}_level'.format(x)
+                _x_y_map.append((x, ['@']))
+                _x_y_map.append((lvl_name, y))
+                self.x_filter_map[lvl_name] = self.x_filter_map[x]
+            else:
+                _x_y_map.append((x, y))
+        self.x_y_map = _x_y_map
         return None
 
     def _map_x_to_filter(self):

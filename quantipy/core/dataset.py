@@ -4538,7 +4538,7 @@ class DataSet(object):
         return None
 
     @verify(variables={'name': 'masks'})
-    def level(self, name):
+    def _level(self, name):
         """
         """
         self.copy(name, 'level')
@@ -4571,10 +4571,11 @@ class DataSet(object):
         new_sources = self.sources(lvlname)
         self.unbind(lvlname)
         self.add_meta(lvlname, 'delimited set', self.text(name), cats)
-        self[lvlname] = self[new_sources].astype('str').apply(lambda x: ';'.join(x).replace('.0', ''), axis=1)
+        self[lvlname] = self[new_sources].astype('str').apply(
+            lambda x: ';'.join(x).replace('.0', ''), axis=1)
         self.drop(new_sources)
-        self._meta['columns'][lvlname]['properties']['level'] = {'source': name,
-                                                                    'level_codes': mapped_codes}
+        self._meta['columns'][lvlname]['properties']['level'] = {
+            'source': name, 'level_codes': mapped_codes}
         return None
 
     @verify(text_keys='text_key')
@@ -7148,19 +7149,18 @@ class DataSet(object):
         -------
         qp.Stack
         """
+
         dk = self.name
         meta = self._meta
         data = self._data
         stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
         batches = stack._check_batches(dk, batches)
-
         for name in batches:
-            batch = self._meta['sets']['batches'][name]
+            batch = meta['sets']['batches'][name]
             xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
             my  = batch['yks']
-
             total_len = len(xys) + len(batch['y_on_y'])
             for idx, xy in enumerate(xys, start=1):
                 x, y = xy

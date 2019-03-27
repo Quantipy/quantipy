@@ -330,7 +330,16 @@ class QuantipyViews(ViewMapper):
         if q.type == 'array' and not q.y == '@':
             pass
         else:
-            if logic is not None:
+            if q.leveled:
+                leveled = Level(q)
+                if rel_to is not None:
+                    leveled.percent()
+                elif axis == 'x':
+                    leveled.base()
+                else:
+                    leveled.count()
+                view.dataframe = leveled.lvldf
+            elif logic is not None:
                 try:
                     q.group(groups=logic, axis=axis, expand=expand, complete=complete)
                 except NotImplementedError, e:
@@ -362,21 +371,12 @@ class QuantipyViews(ViewMapper):
                 method_nota = 'f'
             notation = view.notation(method_nota, condition)
             view._notation = notation
-            if q.type == 'array':
-                view.dataframe = q.result.T if link.y == '@' else q.result
-            else:
-                view.dataframe = q.result
-            view._kwargs['exclude'] = q.miss_x
-
-            if q.leveled and not logic and not calc:
-                leveled = Level(q)
-                if rel_to is not None:
-                    leveled.percent()
-                elif axis == 'x':
-                    leveled.base()
+            if not q.leveled:
+                if q.type == 'array':
+                    view.dataframe = q.result.T if link.y == '@' else q.result
                 else:
-                    leveled.count()
-                view.dataframe = leveled.lvldf
+                    view.dataframe = q.result
+            view._kwargs['exclude'] = q.miss_x
 
             link[notation] = view
 
