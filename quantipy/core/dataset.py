@@ -4575,7 +4575,9 @@ class DataSet(object):
             lambda x: ';'.join(x).replace('.0', ''), axis=1)
         self.drop(new_sources)
         self._meta['columns'][lvlname]['properties']['level'] = {
-            'source': name, 'level_codes': mapped_codes}
+            'source': name,
+            'level_codes': mapped_codes,
+            'item_look': self.sources(name)[0]}
         return None
 
     @verify(text_keys='text_key')

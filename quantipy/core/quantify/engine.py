@@ -2365,17 +2365,18 @@ class Level(object):
         self._lvlspec = self.dataset.get_property(self.quantity.x, 'level')
         self.array = self._lvlspec['source']
         self.level_codes = self._lvlspec['level_codes']
+        self.item_look = self._lvlspec['item_look']
         self._auxdf = self.quantity.count(margin=False).result.reset_index()
         self._collapse_codes()
         self.lvldf = None
 
     def _reindex(self, like='freq'):
         ds = self.dataset
-        arr = self.array
-        itemres = self.quantity.swap(ds.sources(arr)[0], axis='x', inplace=False)
+        like_item = self.item_look
+        itemres = self.quantity.swap(like_item, axis='x', inplace=False)
         if like == 'freq':
             itemres.count(margin=False, axis=None, as_df=True)
-            self.lvldf = self.lvldf.reindex(ds.codes(arr))
+            self.lvldf = self.lvldf.reindex(ds.codes(like_item))
         elif like == 'base':
             itemres.count(margin=False, axis='x', as_df=True)
         x = [self.quantity.x]
