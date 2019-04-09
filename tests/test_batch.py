@@ -219,10 +219,10 @@ class TestBatch(unittest.TestCase):
 	def test_level(self):
 		batch, ds = _get_batch('test', full=True)
 		batch.add_downbreak(['q5', 'q6'])
-		batch.level(['q5', 'q6'], {'q5': ['@', 'gender']})
+		batch.level(['q5', 'q6'])
 		b_meta = _get_meta(batch)
 		leveled = {
-			'q5': ['@', 'gender'],
+			'q5': ['@', 'gender', 'q2'],
 			'q6': ['@', 'gender', 'q2']}
 		self.assertEqual(b_meta['leveled'], leveled)
 
