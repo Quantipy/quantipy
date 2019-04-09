@@ -1802,7 +1802,18 @@ class Chain(object):
                                     self._org_col.get_level_values(1))}
             self.df.columns = self._edit_col
             self.array_mi = c._array_style == 0
+            self.nested_y = c._nested_y
+            self._nest_mul = self._nesting_multiplier()
             return None
+
+        def _nesting_multiplier(self):
+            """
+            """
+            levels = self._org_col.nlevels
+            if levels == 2:
+                return 1
+            else:
+                return (levels / 2) + 1
 
         def _insert_viewlikes(self, new_index_flat, org_index_mapped):
             inserts = [new_index_flat.index(val) for val in new_index_flat
@@ -1844,7 +1855,9 @@ class Chain(object):
                 if org_tuples[idx][1] == merged_val:
                     new_tuples.append(org_tuples[idx])
                 else:
-                    new_tuples.append(('*', merged_val))
+                    empties = ['*'] * self._nest_mul
+                    new_tuple = tuple(empties + [merged_val])
+                    new_tuples.append(new_tuple)
                     d += 1
                 i += 1
             return new_tuples
@@ -1857,6 +1870,7 @@ class Chain(object):
                 x_names = y_names
             else:
                 x_names = ['Array', 'Questions']
+            if self.nested_y: y_names = y_names * (self._nest_mul - 1)
             tuples = self._updated_index_tuples(axis=1)
             self.df.columns = pd.MultiIndex.from_tuples(tuples, names=y_names)
             tuples = self._updated_index_tuples(axis=0)

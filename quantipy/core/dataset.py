@@ -316,7 +316,7 @@ class DataSet(object):
     def _get_type(self, var):
         if var in self._meta['masks'].keys():
             return self._meta['masks'][var]['type']
-        else:
+        if var in self._meta['columns'].keys():
             return self._meta['columns'][var]['type']
 
     def _get_subtype(self, name):
@@ -2905,8 +2905,23 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
-    @modify(to_list=['varlist'])
-    @verify(variables={'varlist': 'both'})
+
+    def _array_and_item_list(self, v, keep):
+        new_list = []
+        if not self.is_array(v):
+            # columns
+            if keep in ['both', 'items']:
+                new_list.append(v)
+        else:
+            # masks
+            if keep in ['both', 'mask']:
+                new_list.append(v)
+            if keep in ['both', 'items']:
+                new_list.extend(self.sources(v))
+        return new_list
+
+    @modify(to_list=['varlist', 'ignore_arrays'])
+    @verify(variables={'varlist': 'both_nested', 'ignore_arrays': 'masks'})
     def roll_up(self, varlist, ignore_arrays=None):
         """
         Replace any array items with their parent mask variable definition name.
@@ -2918,36 +2933,50 @@ class DataSet(object):
         ignore_arrays : (list of) str
             A list of array mask names that should not be rolled up if their
             items are found inside ``varlist``.
+
+        Note
+        ----
+        varlist can also contain nesting `var1 > var2`. The variables which are
+        included in the nesting can also be controlled by keep and both, even
+        if the variables are also included as a "normal" variable.
+
         Returns
         -------
         rolled_up : list
             The modified ``varlist``.
         """
-        if ignore_arrays:
-            if not isinstance(ignore_arrays, list):
-                ignore_arrays = [ignore_arrays]
-        else:
-            ignore_arrays = []
-        arrays_defs = {arr: self.sources(arr) for arr in self.masks()
-                       if not arr in ignore_arrays}
-        item_map = {}
-        for k, v in arrays_defs.items():
-            for item in v:
-                item_map[item] = k
-        rolled_up = []
-        for v in varlist:
-            if not self.is_array(v):
-                if v in item_map:
-                    if not item_map[v] in rolled_up:
-                        rolled_up.append(item_map[v])
-                else:
-                    rolled_up.append(v)
+        def _var_to_keep(var, ignore):
+            if self.is_array(var):
+                to_keep = 'mask'
             else:
-                rolled_up.append(v)
+                to_keep = 'items'
+                if self._is_array_item(var):
+                    parent = self._maskname_from_item(var)
+                    if parent not in ignore_arrays:
+                        var = parent
+                        to_keep = 'mask'
+            return var, to_keep
+
+        rolled_up = []
+        for var in varlist:
+            if ' > ' in var:
+                nested = var.replace(' ', '').split('>')
+                n_list = []
+                for n in nested:
+                    n, to_keep = _var_to_keep(n, ignore_arrays)
+                    n_list.append(self._array_and_item_list(n, to_keep))
+                for ru in [' > '.join(list(un)) for un in product(*n_list)]:
+                    if ru not in rolled_up:
+                        rolled_up.append(ru)
+            else:
+                var, to_keep = _var_to_keep(var, ignore_arrays)
+                for ru in self._array_and_item_list(var, to_keep):
+                    if ru not in rolled_up:
+                        rolled_up.append(ru)
         return rolled_up
 
     @modify(to_list=['varlist', 'keep', 'both'])
-    @verify(variables={'varlist': 'both', 'keep': 'masks'})
+    @verify(variables={'varlist': 'both_nested', 'keep': 'masks'})
     def unroll(self, varlist, keep=None, both=None):
         """
         Replace mask with their items, optionally excluding/keeping certain ones.
@@ -2962,24 +2991,54 @@ class DataSet(object):
             The names of masks that will be included both as themselves and as
             collections of their items.
 
+        Note
+        ----
+        varlist can also contain nesting `var1 > var2`. The variables which are
+        included in the nesting can also be controlled by keep and both, even
+        if the variables are also included as a "normal" variable.
+
+        Example::
+            >>> ds.unroll(varlist = ['q1', 'q1 > gender'], both='all')
+            ['q1',
+             'q1_1',
+             'q1_2',
+             'q1 > gender',
+             'q1_1 > gender',
+             'q1_2 > gender']
+
         Returns
         -------
         unrolled : list
             The modified ``varlist``.
         """
         if both and both[0] == 'all':
-            both = [mask for mask in varlist if mask in self._meta['masks']]
+            both = self.masks()
         unrolled = []
         for var in varlist:
-            if not self.is_array(var):
-                unrolled.append(var)
+            if ' > ' in var:
+                nested = var.replace(' ', '').split('>')
+                n_list = []
+                for n in nested:
+                    if n in keep:
+                        to_keep = 'mask'
+                    elif n in both:
+                        to_keep = 'both'
+                    else:
+                        to_keep = 'items'
+                    n_list.append(self._array_and_item_list(n, to_keep))
+                for ur in [' > '.join(list(un)) for un in product(*n_list)]:
+                    if ur not in unrolled:
+                        unrolled.append(ur)
             else:
-                if not var in keep:
-                    if var in both:
-                        unrolled.append(var)
-                    unrolled.extend(self.sources(var))
+                if var in keep:
+                    to_keep = 'mask'
+                elif var in both:
+                    to_keep = 'both'
                 else:
-                    unrolled.append(var)
+                    to_keep = 'items'
+                for ur in self._array_and_item_list(var, to_keep):
+                    if ur not in unrolled:
+                        unrolled.append(ur)
         return unrolled
 
     def _apply_order(self, variables):
@@ -4477,6 +4536,49 @@ class DataSet(object):
         self.derive(name, qtype, label, categories)
         for var in new_variables:
             self.drop(var)
+        return None
+
+    @verify(variables={'name': 'masks'})
+    def _level(self, name):
+        """
+        """
+        self.copy(name, 'level')
+        if self._dimensions_comp:
+            temp = self._dims_free_arr_name(name)
+            lvlname = self._dims_compat_arr_name('{}_level'.format(temp))
+        else:
+            lvlname = '{}_level'.format(name)
+        items = self.items(name)
+        sources = enumerate(self.sources(lvlname), 1)
+        codes = self.codes(lvlname)
+        max_code = len(codes)
+        replace_codes = {}
+        mapped_codes = {c: [] for c in self.codes(name)}
+
+        for no, source in sources:
+            offset = (no-1) * max_code
+            new_codes = frange('{}-{}'.format((offset + 1), (offset + max_code)))
+            replace_codes[source] = dict(zip(codes, new_codes))
+
+        for source, codes in replace_codes.items():
+            self[source].replace(codes, inplace=True)
+            self[source].replace(np.NaN, '', inplace=True)
+            for org, new in codes.items():
+                mapped_codes[org].append(new)
+
+        code_range = frange('1-{}'.format(max_code * len(items)))
+        labels = self.value_texts(name) * len(items)
+        cats = zip(code_range, labels)
+        new_sources = self.sources(lvlname)
+        self.unbind(lvlname)
+        self.add_meta(lvlname, 'delimited set', self.text(name), cats)
+        self[lvlname] = self[new_sources].astype('str').apply(
+            lambda x: ';'.join(x).replace('.0', ''), axis=1)
+        self.drop(new_sources)
+        self._meta['columns'][lvlname]['properties']['level'] = {
+            'source': name,
+            'level_codes': mapped_codes,
+            'item_look': self.sources(name)[0]}
         return None
 
     @verify(text_keys='text_key')
@@ -6230,7 +6332,7 @@ class DataSet(object):
         if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
                        'recoded_filter', '_no_valid_items', '_no_valid_values',
-                       'simple_org_expr']
+                       'simple_org_expr', 'level']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
         has_props = False
@@ -6698,7 +6800,6 @@ class DataSet(object):
                 else:
                     self._meta['columns'][v]['missings'] = v_m_map
             if hide_on_y:
-                print missing_map
                 self.hiding(var, missing_map, 'y', True)
 
         return None
@@ -7068,19 +7169,18 @@ class DataSet(object):
         -------
         qp.Stack
         """
+
         dk = self.name
         meta = self._meta
         data = self._data
         stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
         batches = stack._check_batches(dk, batches)
-
         for name in batches:
-            batch = self._meta['sets']['batches'][name]
+            batch = meta['sets']['batches'][name]
             xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
             my  = batch['yks']
-
             total_len = len(xys) + len(batch['y_on_y'])
             for idx, xy in enumerate(xys, start=1):
                 x, y = xy
