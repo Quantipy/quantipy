@@ -94,7 +94,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (xx/04/2019)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (09/04/2019)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-14-01-2019">sd (14/01/2019)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-26-10-2018">sd (26/10/2018)</a></li>
@@ -332,6 +332,7 @@
 <li class="toctree-l2"><a class="reference internal" href="quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -2391,18 +2392,28 @@ applications.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>varlist</strong> (<em>list</em>) – A list of meta <code class="docutils literal notranslate"><span class="pre">'columns'</span></code> and/or <code class="docutils literal notranslate"><span class="pre">'masks'</span></code> names.</li>
 <li><strong>ignore_arrays</strong> (<em>(</em><em>list of</em><em>) </em><em>str</em>) – A list of array mask names that should not be rolled up if their
 items are found inside <code class="docutils literal notranslate"><span class="pre">varlist</span></code>.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>rolled_up</strong> – The modified <code class="docutils literal notranslate"><span class="pre">varlist</span></code>.</p>
-</td>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">varlist can also contain nesting <cite>var1 &gt; var2</cite>. The variables which are
+included in the nesting can also be controlled by keep and both, even
+if the variables are also included as a “normal” variable.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>rolled_up</strong> – The modified <code class="docutils literal notranslate"><span class="pre">varlist</span></code>.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
-</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
 </tr>
 </tbody>
 </table>
@@ -3087,7 +3098,7 @@ to which normally would get appended to.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>varlist</strong> (<em>list</em>) – A list of meta <code class="docutils literal notranslate"><span class="pre">'columns'</span></code> and/or <code class="docutils literal notranslate"><span class="pre">'masks'</span></code> names.</li>
 <li><strong>keep</strong> (<em>str</em><em> or </em><em>list</em><em>, </em><em>default None</em>) – The names of masks that will not be replaced with their items.</li>
 <li><strong>both</strong> (<em>'all'</em><em>, </em><em>str</em><em> or </em><em>list of str</em><em>, </em><em>default None</em>) – The names of masks that will be included both as themselves and as
@@ -3095,11 +3106,34 @@ collections of their items.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>unrolled</strong> – The modified <code class="docutils literal notranslate"><span class="pre">varlist</span></code>.</p>
-</td>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>varlist can also contain nesting <cite>var1 &gt; var2</cite>. The variables which are
+included in the nesting can also be controlled by keep and both, even
+if the variables are also included as a “normal” variable.</p>
+<dl class="last docutils">
+<dt>Example::</dt>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">unroll</span><span class="p">(</span><span class="n">varlist</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q1&#39;</span><span class="p">,</span> <span class="s1">&#39;q1 &gt; gender&#39;</span><span class="p">],</span> <span class="n">both</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+<span class="go">[&#39;q1&#39;,</span>
+<span class="go"> &#39;q1_1&#39;,</span>
+<span class="go"> &#39;q1_2&#39;,</span>
+<span class="go"> &#39;q1 &gt; gender&#39;,</span>
+<span class="go"> &#39;q1_1 &gt; gender&#39;,</span>
+<span class="go"> &#39;q1_2 &gt; gender&#39;]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>unrolled</strong> – The modified <code class="docutils literal notranslate"><span class="pre">varlist</span></code>.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
-</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
 </tr>
 </tbody>
 </table>
