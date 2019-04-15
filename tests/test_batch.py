@@ -49,7 +49,7 @@ class TestBatch(unittest.TestCase):
 		batch1 = dataset.add_batch('batch1')
 		batch2 = dataset.add_batch('batch2', 'c', 'weight', .05)
 		self.assertTrue(isinstance(batch1, qp.Batch))
-		self.assertEqual(len(_get_meta(batch1).keys()), 32)
+		self.assertEqual(len(_get_meta(batch1).keys()), 31)
 		b_meta = _get_meta(batch2)
 		self.assertEqual(b_meta['name'], 'batch2')
 		self.assertEqual(b_meta['cell_items'], ['c'])
@@ -60,13 +60,16 @@ class TestBatch(unittest.TestCase):
 		batch, ds = _get_batch('test', full=True)
 		self.assertRaises(KeyError, ds.get_batch, 'name')
 		b = ds.get_batch('test')
-		attr = ['xks', 'yks', 'filter', 'filter_names',
-				'x_y_map', 'x_filter_map', 'y_on_y',
-				'forced_names', 'summaries', 'transposed_arrays', 'verbatims',
-				'extended_yks_global', 'extended_yks_per_x',
-				'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
-				'cell_items', 'weights', 'sigproperties', 'additional',
-				'sample_size', 'language', 'name', 'total']
+		attr = [
+			'xks', 'yks', '_variables', 'filter', 'filter_names',
+             'x_y_map', 'x_filter_map', 'y_on_y', 'y_on_y_filter',
+             'forced_names', 'transposed', 'leveled', 'verbatims',
+             'extended_yks_per_x',
+             'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
+             'cell_items', 'weights', 'sigproperties', 'additional',
+             'sample_size', 'language', 'name', 'skip_items', 'total',
+             'unwgt_counts', 'y_filter_map', 'build_info',
+             '_section_starts']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 
@@ -103,7 +106,6 @@ class TestBatch(unittest.TestCase):
 		                 				 u'q14r03c01', u'q14r04c01', u'q14r05c01', u'q14r06c01',
 		                 				 u'q14r07c01', u'q14r08c01', u'q14r09c01', u'q14r10c01'])
 		self.assertEqual(b_meta['forced_names'], {'q3': 'q3_label', 'q5': 'q5_label'})
-		self.assertEqual(b_meta['summaries'], ['q5', 'q14_1'])
 		x_y_map = [('q1', ['@']), ('q2', ['@']), ('q2b', ['@']),
 							   ('q3', ['@']), ('q4', ['@']), ('q5', ['@']),
 							   (u'q5_1', ['@']), (u'q5_2', ['@']),
@@ -169,11 +171,13 @@ class TestBatch(unittest.TestCase):
 		batch2 = batch1.clone('test_copy')
 		batch3 = batch1.clone('test_copy2', as_addition=True)
 		attributes = ['xks', 'yks', 'filter', 'filter_names', 'x_y_map',
-				      'x_filter_map', 'y_on_y', 'forced_names', 'summaries',
-					  'transposed_arrays', 'extended_yks_global', 'extended_yks_per_x',
+				      'x_filter_map', 'y_on_y', 'forced_names',
+					  'transposed', 'extended_yks_per_x',
 	                  'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
 	                  'cell_items', 'weights', 'sigproperties', 'additional',
-	                  'sample_size', 'language']
+	                  'sample_size', 'language', '_variables', 'y_on_y_filter',
+                      'leveled', 'skip_items', 'total', 'unwgt_counts',
+                     '_section_starts']
 		for a in attributes:
 			value = batch1.__dict__[a]
 			value2 = batch2.__dict__[a]
@@ -212,20 +216,42 @@ class TestBatch(unittest.TestCase):
 		batch.set_sigtests(.05)
 		self.assertEqual(_get_meta(batch)['sigproperties']['siglevels'],  [0.05])
 
-	def test_make_summaries_transpose_arrays(self):
-		batch, ds = _get_batch('test')
+	def test_level(self):
+		batch, ds = _get_batch('test', full=True)
+		batch.add_downbreak(['q5', 'q6'])
+		batch.level(['q5', 'q6'])
 		b_meta = _get_meta(batch)
-		batch.add_downbreak(['q5', 'q6', 'q14_2', 'q14_3', 'q14_1'])
-		batch.make_summaries(None)
-		self.assertEqual(b_meta['summaries'], [])
-		batch.transpose_arrays(['q5', 'q6'], False)
-		batch.transpose_arrays(['q14_2', 'q14_3'], True)
-		self.assertEqual(b_meta['summaries'], ['q5', 'q6', 'q14_2', 'q14_3'])
-		t_a = {'q14_2': True, 'q14_3': True, 'q5': False, 'q6': False}
-		self.assertEqual(b_meta['transposed_arrays'], t_a)
-		batch.make_summaries('q5')
-		self.assertEqual(b_meta['transposed_arrays'], {'q5': False})
-		self.assertRaises(ValueError, batch.make_summaries, 'q7')
+		leveled = {
+			'q5': ['@', 'gender', 'q2'],
+			'q6': ['@', 'gender', 'q2']}
+		self.assertEqual(b_meta['leveled'], leveled)
+
+	def test_transpose(self):
+		batch, ds = _get_batch('test', full=True)
+		batch.add_downbreak(['q5', 'q6'])
+		batch.transpose(['q5'])
+		batch.exclusive_arrays(['q5', 'q6'])
+		b_meta = _get_meta(batch)
+		x_y_map = [
+			('q5', ['@']),
+			('@', ['q5']),
+			('q6', ['@'])]
+		self.assertEqual(b_meta['x_y_map'], x_y_map)
+
+	# def test_make_summaries_transpose_arrays(self):
+	# 	batch, ds = _get_batch('test')
+	# 	b_meta = _get_meta(batch)
+	# 	batch.add_downbreak(['q5', 'q6', 'q14_2', 'q14_3', 'q14_1'])
+	# 	batch.make_summaries(None)
+	# 	self.assertEqual(b_meta['summaries'], [])
+	# 	batch.transpose_arrays(['q5', 'q6'], False)
+	# 	batch.transpose_arrays(['q14_2', 'q14_3'], True)
+	# 	self.assertEqual(b_meta['summaries'], ['q5', 'q6', 'q14_2', 'q14_3'])
+	# 	t_a = {'q14_2': True, 'q14_3': True, 'q5': False, 'q6': False}
+	# 	self.assertEqual(b_meta['transposed_arrays'], t_a)
+	# 	batch.make_summaries('q5')
+	# 	self.assertEqual(b_meta['transposed_arrays'], {'q5': False})
+	# 	self.assertRaises(ValueError, batch.make_summaries, 'q7')
 
 	def test_extend_y(self):
 		batch1, ds = _get_batch('test1', full=True)
@@ -235,26 +261,25 @@ class TestBatch(unittest.TestCase):
 		self.assertRaises(ValueError, batch1.extend_y, 'q2b', 'q5')
 		batch1.extend_y('q2b')
 		x_y_map = [('q1', ['@', 'gender', 'q2', 'q2b']),
-							   ('q2', ['@', 'gender', 'q2', 'q2b']),
-							   ('q6', ['@']),
-							   (u'q6_1', ['@', 'gender', 'q2', 'q2b']),
-							   (u'q6_2', ['@', 'gender', 'q2', 'q2b']),
-							   (u'q6_3', ['@', 'gender', 'q2', 'q2b']),
-							   ('age', ['@', 'gender', 'q2', 'q2b'])]
+				   ('q2', ['@', 'gender', 'q2', 'q2b']),
+				   ('q6', ['@']),
+				   (u'q6_1', ['@', 'gender', 'q2', 'q2b']),
+				   (u'q6_2', ['@', 'gender', 'q2', 'q2b']),
+				   (u'q6_3', ['@', 'gender', 'q2', 'q2b']),
+				   ('age', ['@', 'gender', 'q2', 'q2b'])]
 		self.assertEqual(b_meta1['x_y_map'], x_y_map)
-		self.assertEqual(b_meta1['extended_yks_global'], ['q2b'])
 		batch2.extend_y('q2b', 'q2')
 		batch2.extend_y('q3', 'q6')
 		extended_yks_per_x = {u'q6_3': ['q3'], 'q2': ['q2b'], u'q6_1': ['q3'],
-							  u'q6_2': ['q3'], 'q6': ['q3']}
+							  u'q6_2': ['q3']}
 		self.assertEqual(b_meta2['extended_yks_per_x'], extended_yks_per_x)
 		x_y_map = [('q1', ['@', 'gender', 'q2']),
-							   ('q2', ['@', 'gender', 'q2', 'q2b']),
-							   ('q6', ['@']),
-							   (u'q6_1', ['@', 'gender', 'q2', 'q3']),
-							   (u'q6_2', ['@', 'gender', 'q2', 'q3']),
-							   (u'q6_3', ['@', 'gender', 'q2', 'q3']),
-							   ('age', ['@', 'gender', 'q2'])]
+				   ('q2', ['@', 'gender', 'q2', 'q2b']),
+				   ('q6', ['@']),
+				   (u'q6_1', ['@', 'gender', 'q2', 'q3']),
+				   (u'q6_2', ['@', 'gender', 'q2', 'q3']),
+				   (u'q6_3', ['@', 'gender', 'q2', 'q3']),
+				   ('age', ['@', 'gender', 'q2'])]
 		self.assertEqual(b_meta2['x_y_map'], x_y_map)
 
 	def test_replace_y(self):
@@ -264,8 +289,7 @@ class TestBatch(unittest.TestCase):
 		batch.replace_y('q2b', 'q6')
 		exclusive_yks_per_x = {u'q6_3': ['@', 'q2b'],
 							   u'q6_1': ['@', 'q2b'],
-							   u'q6_2': ['@', 'q2b'],
-							   'q6': ['@', 'q2b']}
+							   u'q6_2': ['@', 'q2b']}
 		self.assertEqual(b_meta['exclusive_yks_per_x'], exclusive_yks_per_x)
 		x_y_map = [('q1', ['@', 'gender', 'q2']),
 							   ('q2', ['@', 'gender', 'q2']),
