@@ -1193,4 +1193,142 @@ class Batch(qp.DataSet):
         else:
             idx = self._data.index
         self.sample_size = len(idx)
+
         return None
+
+    @modify(to_list=["mode", "misc"])
+    def to_dataset(self, mode=None, from_set=None, additions="sort_within",
+                   manifest_edits="keep", integrate_rc=(["_rc", "_rb"], True),
+                   misc=["RecordNo", "caseid", "identity"]):
+        """
+        Create a qp.DataSet instance out of the batch settings.
+
+        Parameters
+        ----------
+        mode: list of str {'x', 'y', 'v', 'oe', 'w', 'f'}
+            Variables to keep.
+        from_set: str or list of str, default None
+            Set name or a list of variables to sort against.
+        additions: str {'sort_within, sort_between', False}
+            Add variables from additional batches.
+        manifest_edits: str {'keep', 'apply', False}
+            Keep meta from edits or apply rules.
+        """
+        batches = self._meta['sets']['batches']
+        adds = batches[self.name]['additions']
+
+        # prepare variable list
+        if not mode:
+            mode = ['x', 'y', 'v', 'oe', 'w', 'f']
+        vlist = self._get_vlist(batches[self.name], mode)
+        if additions == "sort_between":
+            for add in adds:
+                vlist += self._get_vlist(batches[add], mode)
+        vlist = self.align_order(vlist, from_set, integrate_rc, fix=misc)
+        if additions == "sort_within":
+            for add in adds:
+                add_list = self._get_vlist(batches[add], mode)
+                add_list = self.align_order(add_list, from_set, integrate_rc,
+                                            fix=misc)
+                vlist += add_list
+        vlist = self.de_duplicate(vlist)
+        vlist = self.roll_up(vlist)
+
+        # handle filters
+        merge_f = False
+        f = self.filter
+        if adds:
+            filters = [self.filter] + [batches[add]['filter'] for add in adds]
+            filters = [fi for fi in filters if fi]
+            if len(filters) == 1:
+                f = filters[0]
+            elif not self.compare_filter(filters[0], filters[1:]):
+                f = "merge_filter"
+                merge_f = filters
+            else:
+                f = filters[0]
+
+        # create ds
+        ds = qp.DataSet(self.name, self._dimensions_comp)
+        ds.from_components(self._data.copy(), org_copy.deepcopy(self._meta),
+                           True, self.language)
+
+        if merge_f:
+            ds.merge_filter(f, filters)
+            if not manifest_edits:
+                vlist.append(f)
+        if f and manifest_edits:
+            ds.filter(self.name, {f: 0}, True)
+            if merge_f:
+                ds.drop(f)
+
+        ds.create_set(str(self.name), included=vlist, overwrite=True)
+        ds.subset(from_set=self.name, inplace=True)
+        ds.order(vlist)
+
+        # manifest edits
+        if manifest_edits in ['apply', 'keep']:
+            b_meta = batches[self.name]['meta_edits']
+            for v in ds.variables():
+                if ds.is_array(v) and b_meta.get(v):
+                    ds._meta['masks'][v] = b_meta[v]
+                    try:
+                        ds._meta['lib']['values'][v] = b_meta['lib'][v]
+                    except:
+                        pass
+                elif b_meta.get(v):
+                    ds._meta['columns'][v] = b_meta[v]
+                if manifest_edits == "apply" and not ds._is_array_item(v):
+                    for axis in ['x', 'y']:
+                        if all(rule in ds._get_rules(v, axis)
+                               for rule in ['dropx', 'slicex']):
+                            drops = ds._get_rules(v, axis)['dropx']['values']
+                            slicer = ds._get_rules(v, axis)['slicex']['values']
+                        elif 'dropx' in ds._get_rules(v, axis):
+                            drops = ds._get_rules(v, axis)['dropx']['values']
+                            slicer = ds.codes(v)
+                        elif 'slicex' in ds._get_rules(v, axis):
+                            drops = []
+                            slicer = ds._get_rules(v, axis)['slicex']['values']
+                        else:
+                            drops = slicer = []
+                        if drops or slicer:
+                            if not all(isinstance(c, int) for c in drops):
+                                item_no = [ds.item_no(d) for d in drops]
+                                ds.remove_items(v, item_no)
+                            else:
+                                codes = ds.codes(v)
+                                n_codes = [c for c in slicer if not c in drops]
+                                if not len(n_codes) == len(codes):
+                                    remove = [c for c in codes
+                                              if not c in n_codes]
+                                    ds.remove_values(v, remove)
+                                ds.reorder_values(v, n_codes)
+                                if ds.is_array(v):
+                                    ds._meta['masks'][v].pop('rules')
+                                else:
+                                    ds._meta['columns'][v].pop('rules')
+        return ds
+
+    def _get_vlist(self, batch, mode):
+        match = {
+            "x": "xks",
+            "y": "yks",
+            "v": "_variables",
+            "w": "weights",
+            "f": "filter",
+            "oe": "verbatims"
+        }
+        vlist = []
+        for key in mode:
+            var = batch[match[key]]
+            if key == "oe":
+                oes = []
+                for oe in var[:]:
+                    oes += oe["break_by"] + oe["columns"] + [oe["filter"]]
+                var = oes
+            if not isinstance(var, list): var = [var]
+            for v in var:
+                if v and v in self and v not in vlist:
+                    vlist.append(v)
+        return vlist

@@ -1818,6 +1818,15 @@ class DataSet(object):
     # ------------------------------------------------------------------------
 
     @staticmethod
+    def de_duplicate(seq):
+        unique = []
+        for x in seq:
+            if x in unique:
+                continue
+            unique.append(x)
+        return unique
+
+    @staticmethod
     def _is_all_ints(s):
         try:
             return all(s.dropna().astype(int) == s.dropna())
@@ -3120,6 +3129,57 @@ class DataSet(object):
                 if not v in sort_them: grouped.append(v)
         return grouped
 
+    @modify(to_list=['vlist', 'fix'])
+    def align_order(self, vlist, align_against=None,
+                    integrate_rc=(["_rc", "_rb"], True), fix=[]):
+        """
+        Align list to existing order.
+
+        Parameters
+        ----------
+        vlist: list of str
+            The list which should be reordered.
+        align_against: str or list of str, default None
+            The list of variables to align against. If a string is provided,
+            the depending set list is taken. If None, "data file" set is taken.
+        integrate_rc: tuple (list, bool)
+            The provided list are the suffixes for recodes, the bool decides
+            whether parent variables should be replaced by their recodes if
+            the parent variable is not in vlist.
+        fix: list of str
+            Variables which are fixed at the beginning of the reordered list.
+        """
+        # get list to align against
+        if not align_against:
+            align_against = self._variables_from_set("data file")
+        elif isinstance(align_against, basestring):
+            align_against = self._variables_from_set(align_against)
+
+        # recode suffixes and replace parent
+        if not integrate_rc:
+            integrate_rc = ([], False)
+        rec_suf, repl_parent = integrate_rc
+
+        # create aligned order
+        new_vlist = fix[:]
+        for v in align_against:
+            recodes = ["{}{}".format(v, suf) for suf in rec_suf]
+            if v in vlist:
+                if v not in new_vlist:
+                    new_vlist.append(v)
+                for rec in recodes:
+                    if rec in vlist and rec not in new_vlist:
+                        new_vlist.append(rec)
+            elif repl_parent:
+                for rec in recodes:
+                    if rec in vlist and rec not in new_vlist:
+                        new_vlist.append(rec)
+
+        # add missing vars
+        miss = [v for v in vlist if v not in new_vlist]
+        new_vlist += miss
+        return new_vlist
+
     @modify(to_list='reposition')
     def order(self, new_order=None, reposition=None, regroup=False):
         """
@@ -3438,6 +3498,17 @@ class DataSet(object):
         if not self.is_filter(name):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         return self.take({name: 0})
+
+    @modify(to_list="filters")
+    def merge_filter(self, name, filters):
+        if not all(f in self.filters() for f in filters):
+            raise KeyError("Not all included names are valid filters.")
+        logic = {
+            'label': 'merged filter logics',
+            'logic': union([{f: 0} for f in filters])
+            }
+        self.add_filter_var(name, logic, True)
+        return None
 
     @modify(to_list=['name2'])
     @verify(variables={'name1': 'both', 'name2': 'both'})
