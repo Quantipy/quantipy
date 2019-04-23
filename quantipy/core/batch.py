@@ -581,6 +581,7 @@ class Batch(qp.DataSet):
         sects = self._section_starts
         full_sections = OrderedDict()
         rev_full_sections = OrderedDict()
+        last_group = None
         for x in self.xks:
             if x in sects:
                 full_sections[x] = sects[x]
@@ -592,6 +593,8 @@ class Batch(qp.DataSet):
                 rev_full_sections[v].append(k)
             else:
                 rev_full_sections[v] = [k]
+        if None in rev_full_sections.keys():
+            del rev_full_sections[None]
         return rev_full_sections
 
     def hide_empty(self, xks=True, summaries=True):
