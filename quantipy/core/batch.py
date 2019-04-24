@@ -1198,7 +1198,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=["mode", "misc"])
-    def to_dataset(self, mode=None, from_set=None, additions="sort_within",
+    def to_dataset(self, mode=None, from_set="data file", additions="sort_within",
                    manifest_edits="keep", integrate_rc=(["_rc", "_rb"], True),
                    misc=["RecordNo", "caseid", "identity"]):
         """
@@ -1225,6 +1225,8 @@ class Batch(qp.DataSet):
         if additions == "sort_between":
             for add in adds:
                 vlist += self._get_vlist(batches[add], mode)
+        if not from_set:
+            from_set = vlist
         vlist = self.align_order(vlist, from_set, integrate_rc, fix=misc)
         if additions == "sort_within":
             for add in adds:
