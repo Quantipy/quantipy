@@ -707,6 +707,13 @@ class ChainManager(object):
         if base and not 'All' in values:
             values = ['All'] + values
         for c in self.chains:
+            # force ci parameter for proper targeting on array summaries...
+            if c.array_style == 0 and ci is None:
+                _ci = c.cell_items.split('_')[0]
+                if not _ci.startswith('counts'):
+                    ci = '%'
+                else:
+                    ci = 'counts'
             if c.sig_test_letters: c._remove_letter_header()
             idxs, names, order = c._view_idxs(
                 values, keep_tests=tests, keep_bases=base, names=True, ci=ci)
@@ -2422,6 +2429,7 @@ class Chain(object):
                 rp_idx = self._row_pattern(ci)[0]
                 rowmeta = rowmeta[rp_idx]
             else:
+                rp_idx = 0
                 rowmeta = rowmeta[0]
         rows = []
         for r in rowmeta:
