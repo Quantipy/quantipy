@@ -805,6 +805,7 @@ class Batch(qp.DataSet):
         self.filter_names = []
         self.extended_filters_per_x = {}
         self.y_on_y_filter = {}
+        self.y_filter_map = {}
         self._update()
         return None
 
@@ -1130,8 +1131,9 @@ class Batch(qp.DataSet):
         -------
         None
         """
-        self.y_filter_map = {}
         for y_on_y in self.y_on_y:
+            if y_on_y in self.y_filter_map:
+                continue
             ext_rep, y_f = self.y_on_y_filter[y_on_y]
             logic = {'label': y_on_y, 'logic': y_f}
             if ext_rep == 'replace':
@@ -1200,7 +1202,7 @@ class Batch(qp.DataSet):
         return None
 
     @modify(to_list=["mode", "misc"])
-    def to_dataset(self, mode=None, from_set=None, additions="sort_within",
+    def to_dataset(self, mode=None, from_set="data file", additions="sort_within",
                    manifest_edits="keep", integrate_rc=(["_rc", "_rb"], True),
                    misc=["RecordNo", "caseid", "identity"]):
         """
@@ -1227,6 +1229,8 @@ class Batch(qp.DataSet):
         if additions == "sort_between":
             for add in adds:
                 vlist += self._get_vlist(batches[add], mode)
+        if not from_set:
+            from_set = vlist
         vlist = self.align_order(vlist, from_set, integrate_rc, fix=misc)
         if additions == "sort_within":
             for add in adds:
@@ -1330,6 +1334,8 @@ class Batch(qp.DataSet):
                 for oe in var[:]:
                     oes += oe["break_by"] + oe["columns"] + [oe["filter"]]
                 var = oes
+            if key == "f":
+                var = batch["filter_names"] + batch["y_filter_map"].values()
             if not isinstance(var, list): var = [var]
             for v in var:
                 if v and v in self and v not in vlist:
