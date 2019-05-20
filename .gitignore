@@ -38,7 +38,5 @@ docs/API/_templates/
 *.egg
 .eggs/
 .cache
-.pytest_cache/
-.pytest_cache/v/cache/nodeids
-
+.pytest_cache/*
 build
