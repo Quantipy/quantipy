@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 from rim import Rim
 from collections import OrderedDict
+import re
+
+from quantipy.core.dataset import DataSet
 
 
 class WeightEngine:
@@ -19,7 +22,7 @@ class WeightEngine:
                 "\n You must pass a pandas.DataFrame to the 'data' argument of the WeightEngine"
                 "\n constructor. If your DataFrame is serialized please load it first."
                 )
-        
+        self.dataset = None
         self._df = data.copy()
 
         self.schemes = {}
@@ -41,6 +44,9 @@ class WeightEngine:
                     "\n constructor. If your meta is serialized please load it first."
                     )
             self._meta = meta
+            self.dataset = DataSet('__weights__', False)
+            self.dataset.from_components(self._df.copy(), self._meta)
+
 
     def get_report(self):
         """
@@ -151,7 +157,7 @@ class WeightEngine:
 
                     weights = the_scheme._compute()
                     self._df[the_scheme._weight_name()] = weights
-    
+
                 else:
                     raise Exception(("Scheme '%s' not found." % scheme))
         else:
@@ -187,5 +193,39 @@ class WeightEngine:
     def add_scheme(self, scheme, key, verbose=True):
         if scheme.name in self.schemes:
             print "Overwriting existing scheme '%s'." % scheme.name
+        self._resolve_filters(scheme)
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
         scheme._minimize_columns(self._df, key, verbose)
+
+    def _resolve_filters(self, scheme):
+        grps = scheme.groups
+        for grp in grps:
+            f = grps[grp]['filters']
+            if f is not None:
+                grps[grp]['filter_vars'] = self._find_filter_variables(f)
+                if not isinstance(f, (str, unicode)):
+                    f = self._replace_logical_filter(f, grp)
+                    msg = 'Converted {} filter to logical dummy expression: {}'
+                    print msg.format(grp, f)
+                    grps[grp]['filter_vars'].append(f.split('=')[0])
+                grps[grp]['filters'] = f
+        return None
+
+    def _find_filter_variables(self, filter_expression):
+        """
+        """
+        filter_variables = []
+        for col in self._df.columns:
+            if re.search(r"\b"+col+r"\b", unicode(filter_expression)):
+                filter_variables.append(col)
+        return filter_variables
+
+    def _replace_logical_filter(self, filter_expression, grp_name):
+        """
+        """
+        varname = '{}__logic_dummy__'.format(grp_name)
+        category = [(1, 'select', filter_expression)]
+        meta = (varname, 'single', '', category)
+        self.dataset.derive(*meta)
+        self._df[varname] = self.dataset._data[varname].copy()
+        return '{}==1'.format(varname)

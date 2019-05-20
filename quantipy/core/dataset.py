@@ -2886,9 +2886,16 @@ class DataSet(object):
             meta, data = ds.split()
         else:
             meta, data = self.split()
-        engine = qp.WeightEngine(data, meta)
+        engine = qp.WeightEngine(data, meta=meta)
         engine.add_scheme(weight_scheme, key=unique_key, verbose=verbose)
+
+        # ===================================================
+        eds = engine.dataset
+        if any('__logic_dummy__' in v for v in eds.singles()):
+            self._meta, self._data = eds.split()
         engine.run()
+        # ===================================================
+
         org_wname = weight_name
         if report:
             print engine.get_report()

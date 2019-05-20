@@ -9,6 +9,14 @@ import copy
 import warnings
 import time
 
+from quantipy.core.tools.view.logic import (
+    has_any, has_all, has_count,
+    not_any, not_all, not_count,
+    is_lt, is_ne, is_gt,
+    is_le, is_eq, is_ge,
+    union, intersection, get_logic_index)
+
+
 class Rim:
     def __init__(self,
                  name,
@@ -44,6 +52,7 @@ class Rim:
 
         # Constants
         self._FILTER_DEF = 'filters'
+        self._FILTER_VARS = 'filter_vars'
         self._TARGETS = 'targets'
         self._TARGETS_INDEX = 'targets_index'
         self._REPORT = 'report'
@@ -238,7 +247,7 @@ class Rim:
         weight_var = self._weight_name()
         if filters is not None:
             wdf = self._df.copy().query(filters)
-            filter_vars = list(set(self._get_group_filter_cols(filters)))
+            filter_vars = self.groups[group][self._FILTER_VARS]
             selected_cols = target_vars + filter_vars + [weight_var]
         else:
             wdf = self._df.copy()
@@ -282,8 +291,7 @@ class Rim:
             self._specific_impute[target] = method
 
     def _get_scheme_filter_cols(self):
-        scheme_filter_cols = [self._get_group_filter_cols(
-            self.groups[group][self._FILTER_DEF])
+        scheme_filter_cols = [self.groups[group][self._FILTER_VARS]
                               for group in self.groups]
         scheme_filter_cols = list(set([filter_col
                                        for sublist in scheme_filter_cols
