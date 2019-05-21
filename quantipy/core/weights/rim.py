@@ -67,6 +67,7 @@ class Rim:
         self.groups[self._DEFAULT_NAME] = {}
         self.groups[self._DEFAULT_NAME][self._REPORT] = None
         self.groups[self._DEFAULT_NAME][self._FILTER_DEF] = None
+        self.groups[self._DEFAULT_NAME][self._FILTER_VARS] = []
         self.groups[self._DEFAULT_NAME][self._TARGETS] = self._empty_target_list()
         self.groups[self._DEFAULT_NAME][self._TARGETS_INDEX] = None
         self.groups[self._DEFAULT_NAME][self._ITERATIONS_] = None
@@ -352,11 +353,12 @@ class Rim:
         None
         """
         if isinstance(group_targets, dict):
+            if all (group_targets[group] < 1 for group in group_targets):
+                div_by = 1.0
+            else:
+                div_by = 100.0
             for group in group_targets:
-                if group_targets[group] < 1:
-                    self._group_targets[group] = group_targets[group]
-                else:
-                    self._group_targets[group] = group_targets[group] / 100.0
+                self._group_targets[group] = group_targets[group] / div_by
         else:
             raise ValueError(('Group_targets must be of type %s NOT %s ') % \
                              (type({}), type(group_targets)))
