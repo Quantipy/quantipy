@@ -52,6 +52,7 @@ class Rim:
 
         # Constants
         self._FILTER_DEF = 'filters'
+        self._FILTER_DEF_ORG = 'filters_org'
         self._FILTER_VARS = 'filter_vars'
         self._TARGETS = 'targets'
         self._TARGETS_INDEX = 'targets_index'
@@ -67,6 +68,7 @@ class Rim:
         self.groups[self._DEFAULT_NAME] = {}
         self.groups[self._DEFAULT_NAME][self._REPORT] = None
         self.groups[self._DEFAULT_NAME][self._FILTER_DEF] = None
+        self.groups[self._DEFAULT_NAME][self._FILTER_DEF_ORG] = None
         self.groups[self._DEFAULT_NAME][self._FILTER_VARS] = []
         self.groups[self._DEFAULT_NAME][self._TARGETS] = self._empty_target_list()
         self.groups[self._DEFAULT_NAME][self._TARGETS_INDEX] = None
@@ -146,6 +148,7 @@ class Rim:
         if targets is not None:
             self.set_targets(targets=targets, group_name=gn)
         self.groups[gn][self._FILTER_DEF] = filter_def
+        self.groups[gn][self._FILTER_DEF_ORG] = filter_def
 
     def _compute(self):
         self._get_base_factors()

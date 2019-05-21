@@ -204,10 +204,13 @@ class WeightEngine:
             if f is not None:
                 grps[grp]['filter_vars'] = self._find_filter_variables(f)
                 if not isinstance(f, (str, unicode)):
-                    f = self._replace_logical_filter(f, grp)
+                    f = self.dataset._logic_as_pd_expr(f, grp)
+                    filter_var = f.split('=')[0]
+                    self._df[filter_var] = self.dataset._data[filter_var].copy()
+                    self.dataset.drop(filter_var)
                     msg = 'Converted {} filter to logical dummy expression: {}'
                     print msg.format(grp, f)
-                    grps[grp]['filter_vars'].append(f.split('=')[0])
+                    grps[grp]['filter_vars'].append(filter_var)
                 grps[grp]['filters'] = f
         return None
 
@@ -220,12 +223,12 @@ class WeightEngine:
                 filter_variables.append(col)
         return filter_variables
 
-    def _replace_logical_filter(self, filter_expression, grp_name):
-        """
-        """
-        varname = '{}__logic_dummy__'.format(grp_name)
-        category = [(1, 'select', filter_expression)]
-        meta = (varname, 'single', '', category)
-        self.dataset.derive(*meta)
-        self._df[varname] = self.dataset._data[varname].copy()
-        return '{}==1'.format(varname)
+    # def _replace_logical_filter(self, filter_expression, grp_name):
+    #     """
+    #     """
+    #     varname = '{}__logic_dummy__'.format(grp_name)
+    #     category = [(1, 'select', filter_expression)]
+    #     meta = (varname, 'single', '', category)
+    #     self.dataset.derive(*meta)
+    #     self._df[varname] = self.dataset._data[varname].copy()
+    #     return '{}==1'.format(varname)
