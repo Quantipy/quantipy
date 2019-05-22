@@ -2886,9 +2886,10 @@ class DataSet(object):
             meta, data = ds.split()
         else:
             meta, data = self.split()
-        engine = qp.WeightEngine(data, meta)
+        engine = qp.WeightEngine(data, meta=meta)
         engine.add_scheme(weight_scheme, key=unique_key, verbose=verbose)
         engine.run()
+
         org_wname = weight_name
         if report:
             print engine.get_report()
@@ -7058,6 +7059,15 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # DATA MANIPULATION/HANDLING
     # ------------------------------------------------------------------------
+
+    def _logic_as_pd_expr(self, logic, prefix='default'):
+        """
+        """
+        varname = '{}__logic_dummy__'.format(prefix)
+        category = [(1, 'select', logic)]
+        meta = (varname, 'single', '', category)
+        self.derive(*meta)
+        return '{}==1'.format(varname)
 
     def make_dummy(self, var, partitioned=False):
         if not self.is_array(var):
