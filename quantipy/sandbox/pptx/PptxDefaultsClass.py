@@ -110,6 +110,7 @@ class PptxDefaults(object):
         """
         parameter_map = {'shapes': self._shapes,
                       'charts': self._charts,
+                      'tables': self._tables,
                       'textboxes': self._textboxes,
                       'chart_bar': self._chart_bar,
                       'chart_bar_stacked100': self._chart_bar_stacked100,

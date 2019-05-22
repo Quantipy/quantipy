@@ -534,15 +534,16 @@ class Batch(qp.DataSet):
                         msg = '{}: Cannot use an array item as position'
                         raise ValueError(msg.format(pos))
                     if not isinstance(var, list): var = [var]
-                    for v in var:
+                    for v in self.unroll(var, both="all"):
                         if v in self.xks:
                             msg = '{} is already included as downbreak.'
                             raise ValueError(msg.format(v))
                         self.xks.insert(self.xks.index(pos), v)
             else:
-                if x not in self:
-                    raise KeyError('{} is not included.'.format(x))
-                self.xks.append(x)
+                for var in self.unroll(x, both="all"):
+                    if var not in self:
+                        raise KeyError('{} is not included.'.format(var))
+                    self.xks.append(var)
         self._update()
         return None
 
@@ -1258,6 +1259,9 @@ class Batch(qp.DataSet):
         ds = qp.DataSet(self.name, self._dimensions_comp)
         ds.from_components(self._data.copy(), org_copy.deepcopy(self._meta),
                            True, self.language)
+        for b in ds.batches():
+            if not (b in adds or b == ds.name):
+                del ds._meta['sets']['batches'][b]
 
         if merge_f:
             ds.merge_filter(f, filters)
