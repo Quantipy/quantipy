@@ -203,7 +203,7 @@ class DataSet(object):
         return self._by_property('recoded_net')
 
     def _by_property(self, prop):
-        return [v for v in self.variables() if self.get_property(v, prop)]
+        return [v for v in self.variables() if self._get_property(v, prop)]
 
     @verify(variables={'name': 'both'})
     def missings(self, name=None):
@@ -6399,14 +6399,20 @@ class DataSet(object):
     def get_property(self, name, prop_name, text_key=None):
         """
         """
-        mask_ref = self._meta['masks']
-        col_ref = self._meta['columns']
-        if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
                        'recoded_filter', '_no_valid_items', '_no_valid_values',
                        'simple_org_expr', 'level']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        return self._get_property(name, prop_name, text_key)
+
+    @verify(variables={'name': 'both'})
+    def _get_property(self, name, prop_name, text_key=None):
+        """
+        """
+        mask_ref = self._meta['masks']
+        col_ref = self._meta['columns']
+        if not text_key: text_key = self.text_key
         has_props = False
         if self.is_array(name):
             if 'properties' in mask_ref[name]:
