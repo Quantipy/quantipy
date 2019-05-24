@@ -74,12 +74,14 @@
           
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -92,8 +94,11 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest (01/10/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../release_notes/01_latest.html">Latest (xx/04/2019)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-14-01-2019">sd (14/01/2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-26-10-2018">sd (26/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-01-10-2018">sd (01/10/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
@@ -124,16 +129,16 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../release_notes/03_how_to_snippets.html">How-to-snippets</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#the-compatibility-mode">The compatibility mode</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal"><span class="pre">array</span></code> data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal notranslate"><span class="pre">array</span></code> data</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/create_categorical_meta.html">Different ways of creating categorical values</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html">Derotation</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-is-derotation">What is derotation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal"><span class="pre">DataSet.derotate()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal"><span class="pre">arrays</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal notranslate"><span class="pre">DataSet.derotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal notranslate"><span class="pre">arrays</span></code>?</a></li>
 </ul>
 </li>
 </ul>
@@ -143,16 +148,16 @@
 <li class="toctree-l1 current"><a class="reference internal" href="00_overview.html">Data processing</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="01_components.html">DataSet components</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="01_components.html#case-and-meta-data">Case and meta data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="01_components.html#columns-and-masks-objects"><code class="docutils literal"><span class="pre">columns</span></code> and <code class="docutils literal"><span class="pre">masks</span></code> objects</a></li>
-<li class="toctree-l3"><a class="reference internal" href="01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal"><span class="pre">text</span></code> and <code class="docutils literal"><span class="pre">text_key</span></code> mappings</a></li>
-<li class="toctree-l3"><a class="reference internal" href="01_components.html#categorical-values-object">Categorical <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="01_components.html#the-array-type">The <code class="docutils literal"><span class="pre">array</span></code> type</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#columns-and-masks-objects"><code class="docutils literal notranslate"><span class="pre">columns</span></code> and <code class="docutils literal notranslate"><span class="pre">masks</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal notranslate"><span class="pre">text</span></code> and <code class="docutils literal notranslate"><span class="pre">text_key</span></code> mappings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#categorical-values-object">Categorical <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="01_components.html#the-array-type">The <code class="docutils literal notranslate"><span class="pre">array</span></code> type</a></li>
 </ul>
 </li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">I/O</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#starting-from-native-components">Starting from native components</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#csv-json-pairs"><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#csv-json-pairs"><code class="docutils literal notranslate"><span class="pre">.csv</span></code> / <code class="docutils literal notranslate"><span class="pre">.json</span></code> pairs</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#third-party-conversions">Third party conversions</a><ul>
@@ -186,10 +191,10 @@
 <li class="toctree-l2"><a class="reference internal" href="04_editing.html">Editing metadata</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="04_editing.html#creating-meta-from-scratch">Creating meta from scratch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="04_editing.html#renaming">Renaming</a></li>
-<li class="toctree-l3"><a class="reference internal" href="04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal"><span class="pre">text</span></code> info</a></li>
-<li class="toctree-l3"><a class="reference internal" href="04_editing.html#extending-the-values-object">Extending the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="04_editing.html#removing-dataset-objects">Removing <code class="docutils literal"><span class="pre">DataSet</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal notranslate"><span class="pre">text</span></code> info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#extending-the-values-object">Extending the <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_editing.html#removing-dataset-objects">Removing <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> objects</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="05_transforming.html">Transforming variables</a><ul>
@@ -202,29 +207,29 @@
 <li class="toctree-l2"><a class="reference internal" href="06_logics.html">Logic and set operaters</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="06_logics.html#ranges">Ranges</a></li>
 <li class="toctree-l3"><a class="reference internal" href="06_logics.html#complex-logic">Complex logic</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#union"><code class="docutils literal notranslate"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#intersection"><code class="docutils literal notranslate"><span class="pre">intersection</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="06_logics.html#list-logic">“List” logic</a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-all"><code class="docutils literal"><span class="pre">not_all</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-count"><code class="docutils literal"><span class="pre">has_count</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-count"><code class="docutils literal"><span class="pre">not_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-any"><code class="docutils literal notranslate"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-any"><code class="docutils literal notranslate"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-all"><code class="docutils literal notranslate"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-all"><code class="docutils literal notranslate"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#has-count"><code class="docutils literal notranslate"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="06_logics.html#not-count"><code class="docutils literal notranslate"><span class="pre">not_count</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="06_logics.html#boolean-slicers-and-code-existence">Boolean slicers and code existence</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="07_custom_recoding.html">Custom data recoding</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal"><span class="pre">recode()</span></code> method in detail</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#target"><code class="docutils literal"><span class="pre">target</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#mapper"><code class="docutils literal"><span class="pre">mapper</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#default"><code class="docutils literal"><span class="pre">default</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#append"><code class="docutils literal"><span class="pre">append</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#intersect"><code class="docutils literal"><span class="pre">intersect</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#initialize"><code class="docutils literal"><span class="pre">initialize</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#fillna"><code class="docutils literal"><span class="pre">fillna</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal notranslate"><span class="pre">recode()</span></code> method in detail</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#target"><code class="docutils literal notranslate"><span class="pre">target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#default"><code class="docutils literal notranslate"><span class="pre">default</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#append"><code class="docutils literal notranslate"><span class="pre">append</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#intersect"><code class="docutils literal notranslate"><span class="pre">intersect</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#initialize"><code class="docutils literal notranslate"><span class="pre">initialize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="07_custom_recoding.html#fillna"><code class="docutils literal notranslate"><span class="pre">fillna</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="07_custom_recoding.html#custom-recode-examples">Custom recode examples</a><ul>
@@ -242,27 +247,52 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal"><span class="pre">Batch</span></code></a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../batch/01_create_load.html">Creating/ Loading a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../batch/02_variables.html">Adding variables to a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="../weights/00_overview.html">Weights</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../weights/01_background.html">Background and methodology</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/01_background.html#the-statistical-problem">The statistical problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/01_background.html#rim-weighting-concept">Rim weighting concept</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../weights/02_rim.html">Weight scheme setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#using-the-rim-class">Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#target-distributions">Target distributions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#weight-groups-and-filters">Weight groups and filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#setting-group-targets">Setting group targets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../weights/02_rim.html#integration-within-dataset">Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#weighting-and-weighted-aggregations">Weighting and weighted aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/02_rim.html#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../weights/03_diags.html">Diagnostics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../weights/03_diags.html#the-weighting-efficiency">The weighting efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../weights/03_diags.html#gotchas">Gotchas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../batch/00_overview.html"><code class="docutils literal notranslate"><span class="pre">Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../batch/01_create_load.html">Creating/ Loading a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/02_variables.html">Adding variables to a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#x-keys-and-y-keys">x-keys and y-keys</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#arrays">Arrays</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#verbatims-open-ends">Verbatims/ open ends</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../batch/02_variables.html#special-aggregations">Special aggregations</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../batch/03_properties.html">Set properties of a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#filter-weights-and-significance-testing">Filter, weights and significance testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal"><span class="pre">qp.DataSet</span></code> methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../batch/04_subclass.html">Inherited <code class="docutils literal notranslate"><span class="pre">qp.DataSet</span></code> methods</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../engine/00_overview.html">Analysis &amp; aggregation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../engine/01_links_stacks.html">Collecting aggregations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal"><span class="pre">qp.Stack</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal notranslate"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal notranslate"><span class="pre">qp.Stack</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../engine/02_quantity.html">The computational engine</a></li>
@@ -284,12 +314,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../builds/00_overview.html">Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../builds/01_chains.html">Combining results</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../builds/01_chains.html#customizing-results">Customizing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal notranslate"><span class="pre">Chain</span></code> aggregations</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../builds/02_cm_edits.html">Deriving post aggregation results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../builds/02_cm_edits.html#summarizing-and-reducing-results">Summarizing and reducing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../builds/02_cm_edits.html#custom-calculations">Custom calculations</a></li>
 </ul>
 </li>
 </ul>
@@ -301,7 +332,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../../api_ref/quantify_engine.html">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../api_ref/QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../api_ref/Rim_scheme.html">Rim</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../api_ref/Stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../api_ref/View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../api_ref/ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -359,13 +389,13 @@
 <div class="section" id="starting-from-native-components">
 <h2>Starting from native components<a class="headerlink" href="#starting-from-native-components" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="using-a-standalone-pd-dataframe">
-<h3>Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code><a class="headerlink" href="#using-a-standalone-pd-dataframe" title="Permalink to this headline">¶</a></h3>
-<p><code class="docutils literal"><span class="pre">Quantipy</span></code> can create a meta document from a inferring its variable types from
-the <code class="docutils literal"><span class="pre">dtypes</span></code> of a <code class="docutils literal"><span class="pre">pd.DataFrame</span></code>. In that process, <code class="docutils literal"><span class="pre">ìnt</span></code>, <code class="docutils literal"><span class="pre">float</span></code> and
-<code class="docutils literal"><span class="pre">string</span></code> data types are created inside the meta component of the <code class="docutils literal"><span class="pre">DataSet</span></code>.
-In this basic form, <code class="docutils literal"><span class="pre">text</span></code> label information is missing. For a example, given
-a <code class="docutils literal"><span class="pre">pd.DataFrame</span></code> as per:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">casedata</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s1">&#39;text1&#39;</span><span class="p">],</span>
+<h3>Using a standalone <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code><a class="headerlink" href="#using-a-standalone-pd-dataframe" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Quantipy</span></code> can create a meta document from a inferring its variable types from
+the <code class="docutils literal notranslate"><span class="pre">dtypes</span></code> of a <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>. In that process, <code class="docutils literal notranslate"><span class="pre">ìnt</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code> and
+<code class="docutils literal notranslate"><span class="pre">string</span></code> data types are created inside the meta component of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>.
+In this basic form, <code class="docutils literal notranslate"><span class="pre">text</span></code> label information is missing. For a example, given
+a <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code> as per:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">casedata</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s1">&#39;text1&#39;</span><span class="p">],</span>
 <span class="gp">... </span>            <span class="p">[</span><span class="mi">1001</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">,</span> <span class="s1">&#39;jjda&#39;</span><span class="p">],</span>
 <span class="gp">... </span>            <span class="p">[</span><span class="mi">1002</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="s1">&#39;what?&#39;</span><span class="p">],</span>
 <span class="gp">... </span>            <span class="p">[</span><span class="mi">1003</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mf">7.81</span><span class="p">,</span> <span class="s1">&#39;---&#39;</span> <span class="p">],</span>
@@ -380,8 +410,8 @@ a <code class="docutils literal"><span class="pre">pd.DataFrame</span></code> as
 <span class="go">4      1004   5  3.00  hello world!</span>
 </pre></div>
 </div>
-<p>… the conversion is adding matching metadata to the <code class="docutils literal"><span class="pre">DataSet</span></code> instance:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">DataSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">,</span> <span class="n">dimensions_comp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<p>… the conversion is adding matching metadata to the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> instance:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">DataSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">,</span> <span class="n">dimensions_comp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">from_components</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 <span class="go">Inferring meta data from pd.DataFrame.columns (4)...</span>
 <span class="go">identity: dtype: int64 - converted: int</span>
@@ -390,22 +420,22 @@ a <code class="docutils literal"><span class="pre">pd.DataFrame</span></code> as
 <span class="go">q3: dtype: object - converted: string</span>
 </pre></div>
 </div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;q2&#39;</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;q2&#39;</span><span class="p">]</span>
 <span class="go">{&#39;text&#39;: {&#39;en-GB&#39;: &#39;&#39;}, &#39;type&#39;: &#39;float&#39;, &#39;name&#39;: &#39;q2&#39;, &#39;parent&#39;: {}, &#39;properties&#39;: {&#39;created&#39;: True}}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="csv-json-pairs">
-<h3><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs<a class="headerlink" href="#csv-json-pairs" title="Permalink to this headline">¶</a></h3>
-<p>We can easily read in <code class="docutils literal"><span class="pre">Quantipy</span></code> native data with the <code class="docutils literal"><span class="pre">read_quantipy()</span></code>
-method and providing the paths to both the <code class="docutils literal"><span class="pre">.csv</span></code> and <code class="docutils literal"><span class="pre">.json</span></code> file (file
+<h3><code class="docutils literal notranslate"><span class="pre">.csv</span></code> / <code class="docutils literal notranslate"><span class="pre">.json</span></code> pairs<a class="headerlink" href="#csv-json-pairs" title="Permalink to this headline">¶</a></h3>
+<p>We can easily read in <code class="docutils literal notranslate"><span class="pre">Quantipy</span></code> native data with the <code class="docutils literal notranslate"><span class="pre">read_quantipy()</span></code>
+method and providing the paths to both the <code class="docutils literal notranslate"><span class="pre">.csv</span></code> and <code class="docutils literal notranslate"><span class="pre">.json</span></code> file (file
 extensions are handled automatically), e.g.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">folder</span> <span class="o">=</span> <span class="s1">&#39;./Data/&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">folder</span> <span class="o">=</span> <span class="s1">&#39;./Data/&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">file_name</span> <span class="o">=</span> <span class="s1">&#39;Example Data (A)&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_csv</span> <span class="o">=</span> <span class="n">path_json</span> <span class="o">=</span> <span class="n">folder</span> <span class="o">+</span> <span class="n">file_name</span>
 </pre></div>
 </div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">DataSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">,</span> <span class="n">dimensions_comp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">DataSet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">,</span> <span class="n">dimensions_comp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">read_quantipy</span><span class="p">(</span><span class="n">path_json</span><span class="p">,</span> <span class="n">path_csv</span><span class="p">)</span>
 <span class="go">DataSet: ./Data/example</span>
 <span class="go">rows: 8255 - columns: 76</span>
@@ -413,7 +443,7 @@ extensions are handled automatically), e.g.:</p>
 </pre></div>
 </div>
 <p>We can that access the case and metadata components:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">data</span><span class="p">()[</span><span class="s1">&#39;q4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="o">.</span><span class="n">data</span><span class="p">()[</span><span class="s1">&#39;q4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 <span class="go">0    1</span>
 <span class="go">1    2</span>
 <span class="go">2    2</span>
@@ -422,7 +452,7 @@ extensions are handled automatically), e.g.:</p>
 <span class="go">Name: q4, dtype: int64</span>
 </pre></div>
 </div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;q4&#39;</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">meta</span><span class="p">()[</span><span class="s1">&#39;columns&#39;</span><span class="p">][</span><span class="s1">&#39;q4&#39;</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
 <span class="go">{</span>
 <span class="go">    &quot;values&quot;: [</span>
@@ -454,7 +484,7 @@ extensions are handled automatically), e.g.:</p>
 <h2>Third party conversions<a class="headerlink" href="#third-party-conversions" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="supported-conversions">
 <h3>Supported conversions<a class="headerlink" href="#supported-conversions" title="Permalink to this headline">¶</a></h3>
-<p>In adddition to providing plain <code class="docutils literal"><span class="pre">.csv</span></code>/<code class="docutils literal"><span class="pre">.json</span></code> data (pairs), source files
+<p>In adddition to providing plain <code class="docutils literal notranslate"><span class="pre">.csv</span></code>/<code class="docutils literal notranslate"><span class="pre">.json</span></code> data (pairs), source files
 can be read into Quantipy using a number of I/O functions to deal with
 standard file formats encountered in the market research industry:</p>
 <table border="1" class="docutils">
@@ -504,47 +534,47 @@ structures into inputs understood by Quantipy.</p>
 <div class="section" id="spss-statistics">
 <h3>SPSS Statistics<a class="headerlink" href="#spss-statistics" title="Permalink to this headline">¶</a></h3>
 <p><strong>Reading:</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_spss</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_spss</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">On a Windows machine you MUST use <code class="docutils literal"><span class="pre">ioLocale=None</span></code> when reading
+<p class="last">On a Windows machine you MUST use <code class="docutils literal notranslate"><span class="pre">ioLocale=None</span></code> when reading
 from SPSS. This means if you are using a Windows machine your base
 example for reading from SPSS is
-<code class="docutils literal"><span class="pre">meta,</span> <span class="pre">data</span> <span class="pre">=</span> <span class="pre">read_spss(path_sav,</span> <span class="pre">ioLocale=None)</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">meta,</span> <span class="pre">data</span> <span class="pre">=</span> <span class="pre">read_spss(path_sav,</span> <span class="pre">ioLocale=None)</span></code>.</p>
 </div>
 <p>When reading from SPSS you have the opportunity to specify a custom
 dichotomous values map, that will be used to convert all dichotomous
-sets into Quantipy delimited sets, using the <code class="docutils literal"><span class="pre">dichot</span></code> argument.</p>
+sets into Quantipy delimited sets, using the <code class="docutils literal notranslate"><span class="pre">dichot</span></code> argument.</p>
 <p>The entire read operation will use the same map on all dichotomous
 sets so they must be applied uniformly throughout the SAV file. The
 default map that will be used if none is provided will be
-<code class="docutils literal"><span class="pre">{'yes':</span> <span class="pre">1,</span> <span class="pre">'no':</span> <span class="pre">0}</span></code>.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">dichot</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;yes&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;no&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<code class="docutils literal notranslate"><span class="pre">{'yes':</span> <span class="pre">1,</span> <span class="pre">'no':</span> <span class="pre">0}</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">dichot</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;yes&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;no&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
 </pre></div>
 </div>
 <p>SPSS dates will be converted to pandas dates by default but
 if this results in conversion issues or failures you can read
 the dates in as Quantipy strings to deal with them later, using the
-<code class="docutils literal"><span class="pre">dates_as_strings</span></code> argument.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">dates_as_strings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<code class="docutils literal notranslate"><span class="pre">dates_as_strings</span></code> argument.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">dates_as_strings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>Writing:</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">write_spss</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">write_spss</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">write_spss</span><span class="p">(</span><span class="n">path_sav</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>By default SPSS files will be generated from the <code class="docutils literal"><span class="pre">'data</span> <span class="pre">file'</span></code>
-set found in <code class="docutils literal"><span class="pre">meta['sets']</span></code>, but a custom set can be named instead
-using the <code class="docutils literal"><span class="pre">from_set</span></code> argument.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">write_spss</span><span class="p">(</span><span class="n">path_sav_analysis</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">from_set</span><span class="o">=</span><span class="s1">&#39;sav-export&#39;</span><span class="p">)</span>
+<p>By default SPSS files will be generated from the <code class="docutils literal notranslate"><span class="pre">'data</span> <span class="pre">file'</span></code>
+set found in <code class="docutils literal notranslate"><span class="pre">meta['sets']</span></code>, but a custom set can be named instead
+using the <code class="docutils literal notranslate"><span class="pre">from_set</span></code> argument.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">write_spss</span><span class="p">(</span><span class="n">path_sav_analysis</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">from_set</span><span class="o">=</span><span class="s1">&#39;sav-export&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The custom set must be well-formed:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;sets&quot;</span> <span class="p">:</span> <span class="p">{</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;sets&quot;</span> <span class="p">:</span> <span class="p">{</span>
 <span class="gp">... </span>    <span class="s2">&quot;sav-export&quot;</span><span class="p">:</span> <span class="p">{</span>
 <span class="gp">... </span>        <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
 <span class="gp">... </span>            <span class="s2">&quot;columns@Q1&quot;</span><span class="p">,</span>
@@ -560,7 +590,7 @@ using the <code class="docutils literal"><span class="pre">from_set</span></code
 <div class="section" id="dimensions">
 <h3>Dimensions<a class="headerlink" href="#dimensions" title="Permalink to this headline">¶</a></h3>
 <p><strong>Reading:</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_dimensions</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_dimensions</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_dimensions</span><span class="p">(</span><span class="n">path_mdd</span><span class="p">,</span> <span class="n">path_ddf</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -568,7 +598,7 @@ using the <code class="docutils literal"><span class="pre">from_set</span></code
 <div class="section" id="decipher">
 <h3>Decipher<a class="headerlink" href="#decipher" title="Permalink to this headline">¶</a></h3>
 <p><strong>Reading:</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_decipher</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_decipher</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_decipher</span><span class="p">(</span><span class="n">path_json</span><span class="p">,</span> <span class="n">path_txt</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -576,7 +606,7 @@ using the <code class="docutils literal"><span class="pre">from_set</span></code
 <div class="section" id="ascribe">
 <h3>Ascribe<a class="headerlink" href="#ascribe" title="Permalink to this headline">¶</a></h3>
 <p><strong>Reading:</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_ascribe</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">quantipy.core.tools.dp.io</span> <span class="k">import</span> <span class="n">read_ascribe</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">read_ascribe</span><span class="p">(</span><span class="n">path_xml</span><span class="p">,</span> <span class="n">path_txt</span><span class="p">)</span>
 </pre></div>
 </div>

@@ -547,6 +547,23 @@ class Batch(qp.DataSet):
         self._update()
         return None
 
+    @verify(variables={'name': 'columns'}, categorical='name')
+    def codes_in_data(self, name):
+        """
+        Get a list of codes that exist in (batch filtered) data.
+        """
+        slicer = self.manifest_filter(self.filter)
+        data = self._data.copy().ix[slicer, name]
+        if self.is_delimited_set(name):
+            if not data.dropna().empty:
+                data_codes = data.str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
+        else:
+            data_codes = pd.get_dummies(data).columns.tolist()
+        return data_codes
+
     def add_section(self, x_anchor, section):
         """
         """
@@ -580,23 +597,6 @@ class Batch(qp.DataSet):
         if None in rev_full_sections.keys():
             del rev_full_sections[None]
         return rev_full_sections
-
-    @verify(variables={'name': 'columns'}, categorical='name')
-    def codes_in_data(self, name):
-        """
-        Get a list of codes that exist in (batch filtered) data.
-        """
-        slicer = self.manifest_filter(self.filter)
-        data = self._data.copy().ix[slicer, name]
-        if self.is_delimited_set(name):
-            if not data.dropna().empty:
-                data_codes = data.str.get_dummies(';').columns.tolist()
-                data_codes = [int(c) for c in data_codes]
-            else:
-                data_codes = []
-        else:
-            data_codes = pd.get_dummies(data).columns.tolist()
-        return data_codes
 
     def hide_empty(self, xks=True, summaries=True):
         """
@@ -1199,6 +1199,7 @@ class Batch(qp.DataSet):
         else:
             idx = self._data.index
         self.sample_size = len(idx)
+
         return None
 
     @modify(to_list=["mode", "misc"])

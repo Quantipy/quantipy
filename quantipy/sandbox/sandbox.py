@@ -2793,8 +2793,7 @@ class Chain(object):
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
 
                 self.shapes.append(x_frames[-1].shape)
-
-            self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
+                self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
 
             if self._group_style == 'reduced' and self.array_style >- 1:

@@ -1,9 +1,10 @@
-======
+------
 Builds
-======
+------
 
 .. toctree::
-	:maxdepth: 5
-	:includehidden:
+    :maxdepth: 5
+    :includehidden:
 
-	01_chains
+    01_chains
+    02_cm_edits

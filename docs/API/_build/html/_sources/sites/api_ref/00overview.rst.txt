@@ -11,6 +11,6 @@ API references
    quantify_engine
    QuantipyViews
    Rim_scheme
-   Stack
+   stack
    View
    ViewMapper
