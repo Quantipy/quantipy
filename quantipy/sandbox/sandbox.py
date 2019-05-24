@@ -105,6 +105,9 @@ class ChainManager(object):
             raise StopIteration
     next = __next__
 
+    def add_chain(self, chain):
+        self.__chains.append(chain)
+
     @property
     def folders(self):
         """
