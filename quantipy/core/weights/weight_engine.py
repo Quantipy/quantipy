@@ -193,11 +193,11 @@ class WeightEngine:
     def add_scheme(self, scheme, key, verbose=True):
         if scheme.name in self.schemes:
             print "Overwriting existing scheme '%s'." % scheme.name
-        self._resolve_filters(scheme)
+        self._resolve_filters(scheme, key)
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
         scheme._minimize_columns(self._df, key, verbose)
 
-    def _resolve_filters(self, scheme):
+    def _resolve_filters(self, scheme, key):
         grps = scheme.groups
         for grp in grps:
             f = grps[grp]['filters']
@@ -206,8 +206,20 @@ class WeightEngine:
                 if not isinstance(f, (str, unicode)):
                     f = self.dataset._logic_as_pd_expr(f, grp)
                     filter_var = f.split('=')[0]
+
+                    # make sure scheme df is sorted by key variable
+                    self._df.set_index(key, inplace=True)
+                    self._df.sort_index(inplace=True)
+                    # make sure dataset is sorted by key variable
+                    self.dataset._data.set_index(key, inplace=True)
+                    self.dataset._data.sort_index(inplace=True)
+                    # assign filter
                     self._df[filter_var] = self.dataset._data[filter_var].copy()
+                    # restore key as column
+                    self._df.reset_index(inplace=True)
+                    self.dataset._data.reset_index(inplace=True)
                     self.dataset.drop(filter_var)
+
                     msg = 'Converted {} filter to logical dummy expression: {}'
                     print msg.format(grp, f)
                     grps[grp]['filter_vars'].append(filter_var)
