@@ -7069,7 +7069,7 @@ class DataSet(object):
     def _logic_as_pd_expr(self, logic, prefix='default'):
         """
         """
-        varname = '{}__logic_dummy__'.format(prefix)
+        varname = '{}__logic_dummy__'.format(prefix).replace(' ', '_')
         category = [(1, 'select', logic)]
         meta = (varname, 'single', '', category)
         self.derive(*meta)
