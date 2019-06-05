@@ -22,7 +22,7 @@ from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.dml.color import RGBColor
 
-from enumerations import (
+from .enumerations import (
     fill_type_dct,
     data_label_pos_dct,
     legend_pos_dct,
@@ -34,8 +34,8 @@ from enumerations import (
     chart_type_dct
 )
 
-from PptxDefaultsClass import PptxDefaults
-from PptxChainClass import float2String
+from .PptxDefaultsClass import PptxDefaults
+from .PptxChainClass import float2String
 import pandas as pd
 import copy
 
@@ -230,7 +230,7 @@ class PptxPainter(object):
         for s, series in enumerate(plot_values):
             values = [
                 value
-                for value in series.values()[0]
+                for value in list(series.values())[0]
                 if convertable(value, float)
             ]
             for v, value in enumerate(values):
@@ -292,9 +292,9 @@ class PptxPainter(object):
         run = frame.paragraphs[0].runs[0]
         original_text = frame.text
         if prepend:
-            run.text = u'{}{}'.format(text, original_text)
+            run.text = '{}{}'.format(text, original_text)
         elif append:
-            run.text = u'{}{}'.format(original_text, text)
+            run.text = '{}{}'.format(original_text, text)
         else:
             run.text = text
         if rgb is not None:
@@ -430,13 +430,13 @@ class PptxPainter(object):
         # Find the side_table with the lowest 'left' number
         table_max_left=12240000
         table_width=0
-        for table, table_settings in self.slide_kwargs['side_tables'].iteritems():
+        for table, table_settings in self.slide_kwargs['side_tables'].items():
             if table_settings['left'] < table_max_left:
                 table_max_left = table_settings['left']
                 table_width = table_settings['width']
 
         # If any charts overlay a side_table then adjust width of chart
-        for chart, chart_settings in self.slide_kwargs['charts'].iteritems():
+        for chart, chart_settings in self.slide_kwargs['charts'].items():
             if chart_settings['left'] + chart_settings['width'] > table_max_left:
                 chart_settings['width'] -= table_width
 
@@ -500,7 +500,7 @@ class PptxPainter(object):
 
         """
         if key=='all':
-            for item in self.slide_kwargs.keys():
+            for item in list(self.slide_kwargs.keys()):
                 self.slide_kwargs[item].clear()
         elif key=='charts':
             self.slide_kwargs['charts'].clear()
@@ -655,7 +655,7 @@ class PptxPainter(object):
                              'line',
                              ]
         # Validate the user-provided chart types.
-        if not isinstance(chart_type, basestring):
+        if not isinstance(chart_type, str):
             raise ValueError('The chart_type argument must be a string')
         if chart_type not in valid_chart_types:
                 error_msg ='Invalid chart_type {}. Valid chart types are {}'
@@ -813,22 +813,22 @@ class PptxPainter(object):
         """
         slide= self.add_slide(slide_layout=slide_layout)
         kwargs = self.slide_kwargs
-        for _type, draft in kwargs.iteritems():
+        for _type, draft in kwargs.items():
             # Add text boxes
             if _type == 'textboxs':
-                for name, settings in draft.iteritems():
+                for name, settings in draft.items():
                     textbox=self.add_textbox(slide, **settings)
             # Add charts
             if _type == 'charts':
-                for name, settings in draft.iteritems():
+                for name, settings in draft.items():
                     chart=self.add_chart(slide, **settings)
             # Add tables
             if _type == 'tables':
-                for name, settings in draft.iteritems():
+                for name, settings in draft.items():
                     table=self.add_table(slide, **settings)
             # Add side tables
             if _type == 'side_tables':
-                for name, settings in draft.iteritems():
+                for name, settings in draft.items():
                     side_table=self.add_table(slide, **settings)
         return slide
 
@@ -930,7 +930,7 @@ class PptxPainter(object):
                 PptxPainter.add_textframe(cell, col_label, **top_member_textframe_kwargs)
 
         # add values
-        df_cols_range = range(len(dataframe.columns))
+        df_cols_range = list(range(len(dataframe.columns)))
         if values_prefix_columns =='all': values_prefix_columns = df_cols_range
         if values_suffix_columns == 'all': values_suffix_columns = df_cols_range
         table_values = dataframe.values
@@ -943,7 +943,7 @@ class PptxPainter(object):
                 table.columns[col_idx].width = values_column_width
                 cell = table.cell(row_idx, col_idx)
                 PptxPainter.set_cell_properties(cell, **values_cell_kwargs)
-                if subval <> '':
+                if subval != '':
                     prefix = None
                     if x in values_prefix_columns: prefix = values_prefix
                     suffix = None
@@ -1213,7 +1213,7 @@ class PptxPainter(object):
                 self.show_data_labels(plot, decimals=0)
                 for serie, column in enumerate(sig_test_results[::-1]):
                     for point, test_result in enumerate(column[::-1]):
-                        if not isinstance(test_result, basestring): continue
+                        if not isinstance(test_result, str): continue
                         for text in ['*.',
                                      '*',
                                      '**.',
@@ -1225,7 +1225,7 @@ class PptxPainter(object):
                                      ]:
                             test_result = test_result.replace(text,'')
                         if test_result == '': continue
-                        text =  u' ({})'.format(test_result)
+                        text =  ' ({})'.format(test_result)
                         self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
         # # ================================ series

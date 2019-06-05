@@ -7,7 +7,7 @@ from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
 import os
 
 def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None,
-                   dates_as_strings=False, text_key="main"):
+                   dates_as_strings=False, text_key="en-GB"):
     """ Parses a .sav file and returns a touple of Data and Meta
 
         Parameters
@@ -32,7 +32,7 @@ dates_as_strings : bool, default=False
                      : The meta is a JSON dictionary
     """
     filepath="{}{}".format(path or '', filename)
-    filepath = os.path.abspath(filepath).decode('cp1252')
+    filepath = os.path.abspath(filepath)
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
     meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale,
                                   ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings,
@@ -43,15 +43,15 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
     """ see parse_sav_file doc """
     with sr.SavReader(sav_file, returnHeader=True, ioLocale=ioLocale, ioUtf8=ioUtf8) as reader:
         header = next(reader)
-        dataframe = pd.DataFrame.from_records((x for x in reader), coerce_float=False)
+        dataframe = pd.DataFrame.from_records((x for x in reader[1:]), coerce_float=False)
         dataframe.columns = header
         for column in header:
             if isinstance(dataframe[column].dtype, np.object):
                 # Replace None with NaN because SRW returns None if casting dates fails (dates are of type np.object))
                 values = dataframe[column].dropna().values
                 if len(values) > 0:
-                    if isinstance(values[0], unicode):
-                        dataframe[column] = dataframe[column].dropna().map(unicode.strip)
+                    if isinstance(values[0], str):
+                        dataframe[column] = dataframe[column].dropna().map(str.strip)
                     elif isinstance(values[0], str):
                         # savReaderWriter casts dates to str
                         dataframe[column] = dataframe[column].dropna().map(str.strip)
@@ -60,7 +60,7 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
 
 def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                      ioUtf8=True, dichot=None, dates_as_strings=False,
-                     text_key="main"):
+                     text_key="en-GB"):
 
     if dichot is None: dichot = {'yes': 1, 'no': 0}
 
@@ -93,8 +93,8 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             # ValueLabels is type = 'single' (possibry 1-1 map)
             meta['columns'][column]['values'] = []
             meta['columns'][column]['type'] = "single"
-            for value, text in metadata.valueLabels[column].iteritems():
-                values = {'text': {text_key: unicode(text)},
+            for value, text in metadata.valueLabels[column].items():
+                values = {'text': {text_key: str(text)},
                           'value': int(value)}
                 meta['columns'][column]['values'].append(values)
         else:
@@ -136,7 +136,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                                         pass
                                     meta['columns'][column]['type'] = "int"
 
-                        elif isinstance(value, unicode) or isinstance(value, str):
+                        elif isinstance(value, str) or isinstance(value, str):
                             # Strings
                             meta['columns'][column]['text'] = {text_key: [column]}
                             meta['columns'][column]['type'] = "string"
@@ -217,4 +217,3 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             del meta['columns'][varName]
 
     return meta, data
-

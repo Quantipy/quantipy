@@ -1,2 +1,2 @@
-import dp
-import view
+from . import dp
+from . import view

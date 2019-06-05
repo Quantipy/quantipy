@@ -68,10 +68,10 @@ def DataFrame_from_ChartData(cd):
     else:
         idx = pd.Index(tuples)
     cols = pd.Index([series.name for series in cd])
-    data = zip(*[
+    data = list(zip(*[
         [value if value != None else np.NaN for value in series.values]
         for series in cd
-    ])
+    ]))
 
     df = pd.DataFrame(data, index=idx, columns=cols)
 
@@ -129,7 +129,7 @@ def verify_ChartData_vs_DataFrame(cd, df):
     Print a comparison of the given ChartData and DataFrame.
     """
 
-    print(df.fillna('') == DataFrame_from_ChartData(cd).fillna(''))
+    print((df.fillna('') == DataFrame_from_ChartData(cd).fillna('')))
 
 
 def verify_DataFrame_vs_DataFrame(df1, df2):
@@ -137,7 +137,7 @@ def verify_DataFrame_vs_DataFrame(df1, df2):
     Print a comparison of the two given DataFrames.
     """
 
-    print(df1.fillna('') == df2.fillna(''))
+    print((df1.fillna('') == df2.fillna('')))
 
 def example_dataframe(hierarchical):
     """

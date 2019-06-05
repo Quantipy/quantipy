@@ -4,10 +4,10 @@
 @author: Majeed.sahebzadha
 '''
 
-from __future__ import unicode_literals
+
 from os import path
 import pandas as pd
-from transformations import(
+from .transformations import(
   color_setter,
   clean_axes_labels
   )
@@ -740,7 +740,7 @@ def add_bar_chart(
 
         for s, series in enumerate(chart_values):
             values = [
-                value for value in series.values()[0]
+                value for value in list(series.values())[0]
             ]
 
         for v, value in enumerate(values):

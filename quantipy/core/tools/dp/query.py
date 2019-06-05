@@ -10,7 +10,7 @@ def get_views(qp_structure):
         qp_structure = < stack[data_key]['data'] >
     '''
 
-    for k, v in qp_structure.iteritems():
+    for k, v in qp_structure.items():
         if not isinstance(v, qp.View):
             for item in get_views(v):
                 yield item
@@ -49,11 +49,11 @@ def get_variable_types(data, meta):
         except:
             not_found.append(col)
 
-    for mask in meta['masks'].keys():
+    for mask in list(meta['masks'].keys()):
         types[meta['masks'][mask]['type']].append(mask)
 
     if not_found:
-        print '%s not found in meta file. Ignored.' %(not_found)
+        print('%s not found in meta file. Ignored.' %(not_found))
 
     return types
 
@@ -301,10 +301,10 @@ def request_views(stack, data_key=None, filter_key=None, weight=None,
     lvls = []
     for level in sig_levels:
         # Remove leading 0
-        if not isinstance(level, (str, unicode)):
+        if not isinstance(level, str):
             level = str(level)
         if level[0]=='0': level = level[1:]
-        if level in levels_ref.keys():
+        if level in list(levels_ref.keys()):
             lvls.append(levels_ref[level])
         elif not re.match('\.[0-9]$', level) is None:
             lvls.append('{}0'.format(level))
@@ -599,7 +599,7 @@ def reorder_set_keys(view_set):
         The now-ordered dict of column names keys to lists of view keys.
     """
 
-    for key, value in view_set['items'].iteritems():
+    for key, value in view_set['items'].items():
         old_order = view_set['items'][key]
         new_order = reorder_test_keys(value)
         view_set['items'][key] = new_order

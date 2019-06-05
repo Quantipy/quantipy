@@ -2,7 +2,7 @@ import io
 import sys
 import numpy as np
 import pandas as pd
-from rim import Rim
+from .rim import Rim
 from collections import OrderedDict
 import re
 
@@ -145,7 +145,7 @@ class WeightEngine:
         return report_df
 
     def run(self, schemes=[]):
-        if isinstance(schemes, (str, unicode)):
+        if isinstance(schemes, str):
             schemes = [schemes]
         if isinstance(schemes, list):
 
@@ -168,7 +168,7 @@ class WeightEngine:
         report = self.schemes[scheme][self._SCHEME].report(group)
         group_names = sorted(report.keys())
         summary_df = pd.DataFrame([report[gn]['summary'] for gn in group_names]).T
-        idx_tuples = zip(*[summary_df.columns, group_names])
+        idx_tuples = list(zip(*[summary_df.columns, group_names]))
         summary_df.columns = pd.MultiIndex.from_tuples(idx_tuples, names=['Weight variable', 'Weight group'])
         report['summary'] = summary_df
         return report
@@ -177,7 +177,7 @@ class WeightEngine:
         if scheme is None:
             # Return the whole dataframe if no scheme is selected
             return self._df
-        elif isinstance(scheme, (str, unicode)):
+        elif isinstance(scheme, str):
             if scheme in self.schemes:
                 the_scheme = self.schemes[scheme][self._SCHEME]
                 key_column = self.schemes[scheme][self._KEY]
@@ -188,12 +188,12 @@ class WeightEngine:
             raise ValueError(
                 (
                     'scheme must be of type %s, %s or %s NOT %s '
-                ) % (type(str), type(unicode), type(None), type(scheme))
+                ) % (type(str), type(str), type(None), type(scheme))
             )
 
     def add_scheme(self, scheme, key, verbose=True):
         if scheme.name in self.schemes:
-            print "Overwriting existing scheme '%s'." % scheme.name
+            print("Overwriting existing scheme '%s'." % scheme.name)
         self._resolve_filters(scheme)
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
         scheme._minimize_columns(self._df, key, verbose)
@@ -204,13 +204,13 @@ class WeightEngine:
             f = grps[grp]['filters']
             if f is not None:
                 grps[grp]['filter_vars'] = self._find_filter_variables(f)
-                if not isinstance(f, (str, unicode)):
+                if not isinstance(f, str):
                     f = self.dataset._logic_as_pd_expr(f, grp)
                     filter_var = f.split('=')[0]
                     self._df[filter_var] = self.dataset._data[filter_var].copy()
                     self.dataset.drop(filter_var)
                     msg = 'Converted {} filter to logical dummy expression: {}'
-                    print msg.format(grp, f)
+                    print(msg.format(grp, f))
                     grps[grp]['filter_vars'].append(filter_var)
                 grps[grp]['filters'] = f
         return None
@@ -220,7 +220,7 @@ class WeightEngine:
         """
         filter_variables = []
         for col in self._df.columns:
-            if re.search(r"\b"+col+r"\b", unicode(filter_expression)):
+            if re.search(r"\b"+col+r"\b", str(filter_expression)):
                 filter_variables.append(col)
         return filter_variables
 

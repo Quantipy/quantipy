@@ -36,7 +36,7 @@ from quantipy.core.tools.dp.prep import (
     frange,
     index_mapper)
 
-from .cache import Cache
+from cache import Cache
 
 import copy as org_copy
 import json
@@ -47,7 +47,6 @@ import sys
 import os
 from itertools import product, chain
 from collections import OrderedDict, Counter
-import importlib
 
 VALID_TKS = [
     'en-GB', 'da-DK', 'fi-FI', 'nb-NO', 'sv-SE', 'de-DE', 'fr-FR', 'ar-AR',
@@ -109,7 +108,7 @@ class DataSet(object):
             name = name[1]
         else:
             sliced_insert = False
-        scalar_insert = isinstance(val, (int, float, str))
+        scalar_insert = isinstance(val, (int, float, str, unicode))
         if scalar_insert and self._has_categorical_data(name):
             if not val in self.codes(name) and not np.isnan(val):
                 msg = "{} is undefined for '{}'! Valid: {}"
@@ -130,21 +129,21 @@ class DataSet(object):
         if self._meta:
             meta = self._meta['columns']
             if vtype:
-                return [c for c in list(meta.keys()) if self._get_type(c) == vtype]
+                return [c for c in meta.keys() if self._get_type(c) == vtype]
             else:
-                return list(meta.keys())
+                return meta.keys()
         else:
             return None
 
     def _get_masks(self):
         if self._meta:
-            return list(self._meta['masks'].keys())
+            return self._meta['masks'].keys()
         else:
             return None
 
     def _get_sets(self):
         if self._meta:
-            return list(self._meta['sets'].keys())
+            return self._meta['sets'].keys()
         else:
             return None
 
@@ -219,7 +218,7 @@ class DataSet(object):
     def batches(self, main=True, add=True):
         if not 'batches' in self._meta['sets'] or (not main and not add):
             return []
-        batches =  list(self._meta['sets']['batches'].keys())
+        batches =  self._meta['sets']['batches'].keys()
         if main and add:
             return batches
         if main:
@@ -244,14 +243,14 @@ class DataSet(object):
         """
         bmeta = self._meta['sets']['batches']
         adds_per_mains = {bname: bdef['additions'] for bname, bdef
-                          in list(bmeta.items()) if bdef['additions']}
+                          in bmeta.items() if bdef['additions']}
         if not reverse:
             return adds_per_mains
         else:
             rev = {}
-            adds = self._typed_batches(list(bmeta.keys()), 'add')
+            adds = self._typed_batches(bmeta.keys(), 'add')
             for add in adds:
-                for m, a in list(adds_per_mains.items()):
+                for m, a in adds_per_mains.items():
                     if add in a:
                         if add in rev:
                             rev[add].append(m)
@@ -303,7 +302,7 @@ class DataSet(object):
         import sys
         default_stdout = sys.stdout
         default_stderr = sys.stderr
-        importlib.reload(sys)
+        reload(sys)
         sys.setdefaultencoding(encoding)
         sys.stdout = default_stdout
         sys.stderr = default_stderr
@@ -315,9 +314,9 @@ class DataSet(object):
         self._cache = Cache()
 
     def _get_type(self, var):
-        if var in list(self._meta['masks'].keys()):
+        if var in self._meta['masks'].keys():
             return self._meta['masks'][var]['type']
-        if var in list(self._meta['columns'].keys()):
+        if var in self._meta['columns'].keys():
             return self._meta['columns'][var]['type']
 
     def _get_subtype(self, name):
@@ -409,7 +408,7 @@ class DataSet(object):
         if isinstance(mapper, list):
             logics = [val[-1] for val in mapper]
         elif isinstance(mapper, dict):
-            logics = list(mapper.values())
+            logics = mapper.values()
         else:
             msg = ("mapper must have the form: {1: logic, 2: logic,...} or ",
                    "[(1, label, logic), (2, label, logic),...]")
@@ -474,7 +473,7 @@ class DataSet(object):
             warnings.warn(w)
             return None
         self._meta, self._data = self._cache['savepoint']
-        print('Reverted to last savepoint of {}'.format(self.name))
+        print 'Reverted to last savepoint of {}'.format(self.name)
         return None
 
     def read_quantipy(self, path_meta, path_data, reset=True):
@@ -508,7 +507,7 @@ class DataSet(object):
                 renamed = '{}_{}'.format(col, self._get_type(col).replace(' ', '_'))
                 msg = ("*** WARNING ***: Found {}-type variable name also in "
                        "'masks'. Renaming to '{}'")
-                print(msg.format(self._get_type(col), renamed))
+                print msg.format(self._get_type(col), renamed)
                 self.rename(col, renamed)
         if not self._dimensions_comp == 'ignore':
             d_comp = self._dimensions_comp
@@ -667,8 +666,8 @@ class DataSet(object):
         path_ddf = path_ddf.replace('//', '/')
         w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
                      run=run, clean_up=clean_up)
-        file_msg = "\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
-        print(file_msg)
+        file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
+        print file_msg
         return None
 
     def write_quantipy(self, path_meta=None, path_data=None):
@@ -786,8 +785,8 @@ class DataSet(object):
                'masks':   'masks{}'.format(k if key else ''),
                'sets':    'sets{}'.format(k if key else ''),
                'lib':     'lib@values{}'.format(k if key else '')}
-        if collection and not collection in list(col.keys()):
-            raise ValueError('collection must be one of {}'.format(list(col.keys())))
+        if collection and not collection in col.keys():
+            raise ValueError('collection must be one of {}'.format(col.keys()))
         if key and not collection:
             collection = 'masks' if key in self.masks() else 'columns'
         if not (key or collection):
@@ -804,7 +803,7 @@ class DataSet(object):
         path = os.path.join(ds_path, ''.json([self.name, '_', name, '.json']))
         with open(path, 'w') as file:
             json.dump(obj, file)
-        print('create: {}'.format(path))
+        print u'create: {}'.format(path)
         return None
 
     @verify(text_keys='text_key')
@@ -887,20 +886,20 @@ class DataSet(object):
         -------
         None
         """
-        if data_key is None and len(list(stack.keys())) > 1:
+        if data_key is None and len(stack.keys()) > 1:
             msg = 'Please specify a data_key, the Stack contains more than one.'
             raise ValueError(msg)
         elif data_key is None:
-            data_key = list(stack.keys())[0]
-        elif not data_key in list(stack.keys()):
+            data_key = stack.keys()[0]
+        elif not data_key in stack.keys():
             msg = "data_key '{}' does not exist.".format(data_key)
             raise KeyError(msg)
 
         if not dk_filter:
             dk_f = 'no_filter'
-        elif dk_filter in list(stack[data_key].keys()):
+        elif dk_filter in stack[data_key].keys():
             msg = 'Please pass an existing filter of the Stack:\n{}'.format(
-                list(stack[data_key].keys()))
+                stack[data_key].keys())
             raise KeyError(msg)
 
         meta = stack[data_key].meta
@@ -951,17 +950,17 @@ class DataSet(object):
         f = batch_def['filter']
         if f is None:
             b_ds = self.clone()
-        elif isinstance(f, str):
+        elif isinstance(f, basestring):
             b_ds = self.filter(batch_name, {f: 0})
         else:
-            b_ds = self.filter(batch_name, list(f.values())[0])
+            b_ds = self.filter(batch_name, f.values()[0])
         # build the variable collection based in Batch setup & requirements:
         main_variables = b_ds._vars_from_batch(batch_def, 'batch-full')
         if additions in ['full', 'filters']:
             if batch_def['additions']:
                 for add_batch in batch_def['additions']:
                     f = add_batch['filter']
-                    if not f is None and isinstance(f, str):
+                    if not f is None and isinstance(f, basestring):
                         if not f in main_variables:
                             main_variables.append(f)
         if additions in ['full', 'variables']:
@@ -1063,21 +1062,21 @@ class DataSet(object):
         f = batch['filter']
         if f is None:
             b_ds = self.clone()
-        elif isinstance(f, str):
+        elif isinstance(f, basestring):
             b_ds = self.filter(batch_name, {f: 0})
         else:
-            b_ds = self.filter(batch_name, list(f.values())[0])
+            b_ds = self.filter(batch_name, f.values()[0])
 
         # Get a subset of variables (xks, yks, oe, weights)
         variables = ['@1'] + include[:]
         adds = batch['additions'] if additions in ['full', 'variables'] else []
-        for b_name, ba in list(batches.items()):
+        for b_name, ba in batches.items():
             if not b_name in [batch_name] + adds: continue
             variables += ba['xks'] + ba['yks'] + ba['_variables']
             for oe in ba['verbatims']:
                 variables += oe['columns']
             variables += ba['weights']
-            for yks in list(ba['extended_yks_per_x'].values()) + list(ba['exclusive_yks_per_x'].values()):
+            for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
                 variables += yks
             if additions in ['full', 'filters']:
                 variables += ba['filter_names']
@@ -1087,7 +1086,7 @@ class DataSet(object):
         # Modify meta of new instance
         b_ds.name = b_ds._meta['info']['name'] = batch_name
         b_ds.set_text_key(batch['language'])
-        for b in list(b_ds._meta['sets']['batches'].keys()):
+        for b in b_ds._meta['sets']['batches'].keys():
             if not b in [batch_name] + adds: b_ds._meta['sets']['batches'].pop(b)
         # apply edits
         if apply_edits:
@@ -1126,9 +1125,9 @@ class DataSet(object):
 
         xlsx = pd.read_excel(path_xlsx, sheetname=None)
 
-        if not len(list(xlsx.keys())) == 1:
+        if not len(xlsx.keys()) == 1:
             raise KeyError("The XLSX must have exactly 1 sheet.")
-        key = list(xlsx.keys())[0]
+        key = xlsx.keys()[0]
         sheet = xlsx[key]
         if merge and not unique_key in sheet.columns:
             raise KeyError(
@@ -1152,14 +1151,14 @@ class DataSet(object):
         self.valid_tks = self._meta['lib'].get('valid text', VALID_TKS)
         self._data['@1'] = np.ones(len(self._data))
         self._meta['columns']['@1'] = {'type': 'int'}
-        self._data.index = list(range(0, len(self._data.index)))
+        self._data.index = list(xrange(0, len(self._data.index)))
         if self._verbose_infos: self._show_file_info()
         if reset:
             # drop user-defined / unknown 'sets' & 'lib' entries:
             valid_sets = self.masks() + ['data file', 'batches']
-            found_sets = list(self._meta['sets'].keys())
+            found_sets = self._meta['sets'].keys()
             valid_libs = ['default text', 'valid text', 'values']
-            found_libs = list(self._meta['lib'].keys())
+            found_libs = self._meta['lib'].keys()
             for set_def in found_sets:
                 if set_def not in valid_sets:
                     del self._meta['sets'][set_def]
@@ -1169,16 +1168,16 @@ class DataSet(object):
         return None
 
     def _show_file_info(self):
-        file_spec = ('DataSet: {}\nrows: {} - columns: {}\n'
-                     'Dimensions compatibility mode: {}')
+        file_spec = (u'DataSet: {}\nrows: {} - columns: {}\n'
+                     u'Dimensions compatibility mode: {}')
         if not self.path: self.path = '/'
         file_name = os.path.join(self.path, self.name)
-        print(file_spec.format(
+        print file_spec.format(
             file_name,
             len(self._data.index),
             len(self._data.columns)-1,
             self._dimensions_comp
-        ).encode('utf-8'))
+        ).encode('utf-8')
         return None
 
     def _rename_weak_dupes(self):
@@ -1200,24 +1199,24 @@ class DataSet(object):
                     msg = 'Auto rename not possible: {} is already included!'
                     raise KeyError(msg.format(new_name))
                 self.rename(first_d, new_name)
-                print("A weak duplicate has been renamed: '{}' to '{}'".format(first_d, new_name))
-            print('')
+                print "A weak duplicate has been renamed: '{}' to '{}'".format(first_d, new_name)
+            print ''
         return None
 
     def _rename_blacklist_vars(self):
-        blacklist_txt = ('Variables identified as part of a blacklist: {}. \n'
-                         'They have been renamed by adding "_" as prefix')
+        blacklist_txt = (u'Variables identified as part of a blacklist: {}. \n'
+                         u'They have been renamed by adding "_" as prefix')
         blacklist_var = []
         for var in BLACKLIST_VARIABLES:
             n_var = '_%s' % var
             if var in self and not n_var in self:
-                self.rename(var, '_{}'.format(var))
+                self.rename(var, u'_{}'.format(var))
                 blacklist_var.append(var)
             elif var in self:
                 w = "{} cannot be renamed because {} is already used".format(var, n_var)
                 warnings.warn(w)
         if blacklist_var:
-            print(blacklist_txt.format(blacklist_var).encode('utf-8'))
+            print blacklist_txt.format(blacklist_var).encode('utf-8')
         return None
 
     # ------------------------------------------------------------------------
@@ -1380,7 +1379,7 @@ class DataSet(object):
         if not ignore_items:
             all_names = self.unroll(all_names, both='all')
         lower_names = [n.lower() for n in all_names]
-        multiple_names = [k for k, v in list(Counter(lower_names).items()) if v > 1]
+        multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
         if not multiple_names: return self.variables()
         weak_dupes = OrderedDict()
         for name in all_names:
@@ -1389,8 +1388,8 @@ class DataSet(object):
                     weak_dupes[name.lower()] = [name]
                 elif not name in weak_dupes[name.lower()]:
                     weak_dupes[name.lower()].append(name)
-        max_wd = max(len(v) for v in list(weak_dupes.values()))
-        for k, v in list(weak_dupes.items()):
+        max_wd = max(len(v) for v in weak_dupes.values())
+        for k, v in weak_dupes.items():
             while not len(v) == max_wd:
                 v.append(None)
             weak_dupes[k] = v
@@ -1401,7 +1400,7 @@ class DataSet(object):
         """
         """
         multiples = isinstance(self.names(), pd.DataFrame)
-        in_multiples = multiples and name in list(self.names().keys())
+        in_multiples = multiples and name in self.names().keys()
         if not name in self or in_multiples:
             all_names = self.variables()
             lowered = [v.lower() for v in all_names]
@@ -1449,10 +1448,10 @@ class DataSet(object):
                              ].append(col)
                     except:
                         types['N/A'].append(col)
-            for mask in list(self._meta['masks'].keys()):
+            for mask in self._meta['masks'].keys():
                 types[self._meta['masks'][mask]['type']].append(mask)
-            idx_len = max([len(t) for t in list(types.values())])
-            for t in list(types.keys()):
+            idx_len = max([len(t) for t in types.values()])
+            for t in types.keys():
                 typ_padded = types[t] + [''] * (idx_len - len(types[t]))
                 types[t] = typ_padded
             types = pd.DataFrame(types)
@@ -1850,7 +1849,7 @@ class DataSet(object):
             self._data.drop('index', axis=1, inplace=True)
         msg = "Inferring meta data from pd.DataFrame.columns ({})..."
         msg = msg.format(len(self._data.columns))
-        print(msg)
+        print msg
         self._meta = self.start_meta(tk)
         self.text_key = tk
         for col in self._data.columns:
@@ -1867,16 +1866,16 @@ class DataSet(object):
             if not qptype:
                 if self._verbose_infos:
                     msg = "Could not infer type for {} (dtype: {})!"
-                    print(msg.format(name, pdtype))
+                    print msg.format(name, pdtype)
                     self._data.drop(col, axis=1, inplace=True)
             else:
                 if self._verbose_infos:
                     msg = "{}: dtype: {} - converted: {}"
-                    print(msg.format(name, pdtype, qptype))
+                    print msg.format(name, pdtype, qptype)
                 self.add_meta(name, qptype, '', replace=False)
         msg = "Converted {} columns!"
         msg = msg.format(len(self._data.columns))
-        print(msg)
+        print msg
         return None
 
     def _variables_to_set_format(self, variables):
@@ -1888,7 +1887,7 @@ class DataSet(object):
 
     def _check_and_update_element_def(self, element_def):
         all_int = all(isinstance(v, int) for v in element_def)
-        all_str = all(isinstance(v, str) for v in element_def)
+        all_str = all(isinstance(v, (str, unicode)) for v in element_def)
         all_tuple = all(isinstance(v, tuple) for v in element_def)
         if not (all_int or all_str or all_tuple):
             err = ("The provided value or item element defintion is invalid:\n{}\n"
@@ -1914,7 +1913,7 @@ class DataSet(object):
         else:
             vals = [self._value(cat[0], text_key, cat[1]) for cat in categories]
         codes = [v['value'] for v in vals]
-        dupes = [c for c, count in list(Counter(codes).items()) if count > 1]
+        dupes = [c for c, count in Counter(codes).items() if count > 1]
         if dupes:
             err = "Cannot resolve category definition due to code duplicates: {}"
             raise ValueError(err.format(dupes))
@@ -1931,14 +1930,14 @@ class DataSet(object):
         return None
 
     def _add_all_renames_to_mapper(self, mapper, old, new):
-        mapper['masks@{}'.format(old)] = 'masks@{}'.format(new)
-        mapper['columns@{}'.format(old)] = 'columns@{}'.format(new)
-        mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
+        mapper['masks@{}'.format(old).encode('utf8')] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old).encode('utf8')] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old).encode('utf8')] = 'lib@values@{}'.format(new)
         mapper[old.encode('utf8')] = new
-        mapper['masks@{}'.format(old)] = 'masks@{}'.format(new)
-        mapper['columns@{}'.format(old)] = 'columns@{}'.format(new)
-        mapper['lib@values@{}'.format(old)] = 'lib@values@{}'.format(new)
-        mapper[old] = new
+        mapper['masks@{}'.format(old).decode('utf8')] = 'masks@{}'.format(new)
+        mapper['columns@{}'.format(old).decode('utf8')] = 'columns@{}'.format(new)
+        mapper['lib@values@{}'.format(old).decode('utf8')] = 'lib@values@{}'.format(new)
+        mapper[old.decode('utf8')] = new
         return mapper
 
     @classmethod
@@ -1970,7 +1969,7 @@ class DataSet(object):
         for n in name:
             if len(self.codes(n)) == 1:
                 self.convert(n, 'single')
-                print(msg.format(n))
+                print msg.format(n)
         return None
 
     def _check_against_weak_dupes(self, name):
@@ -1985,12 +1984,12 @@ class DataSet(object):
         if not name in self: return None
         if name in self.columns() or self._is_array_item(name):
             if not is_array and self._verbose_infos:
-                print("Overwriting meta for '{}', column already exists!".format(name))
+                print "Overwriting meta for '{}', column already exists!".format(name)
             elif is_array:
                 raise ValueError("{} already exists as column.".format(name))
         elif name in self.masks():
             if is_array and self._verbose_infos:
-                print("Overwriting meta for '{}', mask already exists!".format(name))
+                print "Overwriting meta for '{}', mask already exists!".format(name)
             elif not is_array:
                 raise ValueError("{} already exists as mask.".format(name))
 
@@ -2061,7 +2060,7 @@ class DataSet(object):
 
     @classmethod
     def _consecutive_codes(cls, codes):
-        return sorted(codes) == list(range(min(codes), max(codes)+1))
+        return sorted(codes) == range(min(codes), max(codes)+1)
 
     @classmethod
     def _highest_code(cls, codes):
@@ -2073,7 +2072,7 @@ class DataSet(object):
 
     def _code_from_text(self, valuemap, text):
         check = dict(valuemap)
-        for c, t in list(check.items()):
+        for c, t in check.items():
             t = t.replace(' ', '').lower()
             if t == text: return c
 
@@ -2095,7 +2094,7 @@ class DataSet(object):
                 return miss['exclude']
             else:
                 miss_list = []
-                for miss_type in list(miss.keys()):
+                for miss_type in miss.keys():
                     miss_list.extend(miss[miss_type])
                 return miss_list
         else:
@@ -2111,11 +2110,11 @@ class DataSet(object):
         if wild_codes:
             if self._verbose_errors:
                 msg = "Warning: Meta not consistent with case data for '{}'!"
-                print('*' * 60)
-                print(msg.format(name))
-                if raiseError: print('*' * 60)
-                print('Found in data: {}'.format(data_codes))
-                print('Defined as per meta: {}'.format(meta_codes))
+                print '*' * 60
+                print msg.format(name)
+                if raiseError: print '*' * 60
+                print 'Found in data: {}'.format(data_codes)
+                print 'Defined as per meta: {}'.format(meta_codes)
             if raiseError:
                 raise ValueError('Please review your data processing!')
         return None
@@ -2127,16 +2126,16 @@ class DataSet(object):
             missing_codes = [c for c in org_codes if c not in new_codes]
             wild_codes = [c for c in new_codes if c not in org_codes]
             if self._verbose_errors:
-                print('*' * 60)
+                print '*' * 60
                 if missing_codes:
                     msg = "Warning: Code order is incomplete for '{}'!"
-                    print(msg.format(name))
+                    print msg.format(name)
                 if wild_codes:
                     msg = "Warning: Order contains unknown codes for '{}'!"
-                    print(msg.format(name))
-                print('*' * 60)
-                if missing_codes: print('Missing: {}'.format(missing_codes))
-                if wild_codes: print('Unknown: {}'.format(wild_codes))
+                    print msg.format(name)
+                print '*' * 60
+                if missing_codes: print 'Missing: {}'.format(missing_codes)
+                if wild_codes: print 'Unknown: {}'.format(wild_codes)
             raise ValueError('Please review your data processing!')
         return None
 
@@ -2185,7 +2184,7 @@ class DataSet(object):
         if non_mapped == 'lists':
             return codes, texts
         else:
-            return list(zip(codes, texts))
+            return zip(codes, texts)
 
     def _get_itemmap(self, var, non_mapped=None, text_key=None, axis_edit=None):
         if text_key is None: text_key = self.text_key
@@ -2209,7 +2208,7 @@ class DataSet(object):
         if non_mapped == 'lists':
             return items, items_texts
         else:
-            return list(zip(items, items_texts))
+            return zip(items, items_texts)
 
     def _get_source_ref(self, var):
         if self.is_array(var):
@@ -2232,10 +2231,10 @@ class DataSet(object):
                 codes, texts = self._get_valuemap(var, 'lists', text_key, axis_edit)
                 if missings:
                     codes_copy = codes[:]
-                    for miss_types, miss_codes in list(missings.items()):
+                    for miss_types, miss_codes in missings.items():
                         for code in miss_codes:
                             codes_copy[codes_copy.index(code)] = miss_types
-                    missings = [c  if isinstance(c, str) else None
+                    missings = [c  if isinstance(c, (str, unicode)) else None
                                 for c in codes_copy]
                 else:
                     missings = [None] * len(codes)
@@ -2261,12 +2260,12 @@ class DataSet(object):
                 idx_len = len(codes)
                 elements = [codes, texts, missings]
                 columns = ['codes', 'texts', 'missing']
-            meta_s = [pd.Series(element, index=list(range(0, idx_len)))
+            meta_s = [pd.Series(element, index=range(0, idx_len))
                       for element in elements]
             meta_df = pd.concat(meta_s, axis=1)
             meta_df.columns = columns
             meta_df.columns.name = var_type
-            meta_df.index = range(1, len(meta_df.index) + 1)
+            meta_df.index = xrange(1, len(meta_df.index) + 1)
             meta_df.index.name = '{}: {}'.format(var, label)
         else:
             meta_df = pd.DataFrame(['N/A'])
@@ -2354,9 +2353,9 @@ class DataSet(object):
         """
         masks = self._meta['masks']
         cols = self._meta['columns']
-        for name, meta in list(masks.items()):
+        for name, meta in masks.items():
             meta['name'] = name
-        for name, meta in list(cols.items()):
+        for name, meta in cols.items():
             meta['name'] = name
         return None
 
@@ -2639,7 +2638,7 @@ class DataSet(object):
             if not isinstance(text_obj, dict):
                 return False
             else:
-                for tk, text in list(text_obj.items()):
+                for tk, text in text_obj.items():
                     if ((tk in edits and not validate_text_obj(text_obj[tk]))
                         or text in [None, '', ' ']):
                         return False
@@ -2656,11 +2655,11 @@ class DataSet(object):
 
         def validate_limits(text_obj, limit):
             if isinstance(text_obj, dict):
-                for text in list(text_obj.values()):
-                    if isinstance(text, str):
+                for text in text_obj.values():
+                    if isinstance(text, (str, unicode)):
                         if len(text) > limit:
                             return False
-                    elif not validate_limits(list(text.values()), limit):
+                    elif not validate_limits(text.values(), limit):
                         return False
                 return True
 
@@ -2669,7 +2668,7 @@ class DataSet(object):
             tks = []
             for obj in all_text_obj:
                 if not isinstance(obj, dict): continue
-                for tk in list(obj.keys()):
+                for tk in obj.keys():
                     if tk in ['x edits', 'y edits']: continue
                     if not tk in tks: tks.append(tk)
             if not self.text_key in tks: return False
@@ -2749,14 +2748,14 @@ class DataSet(object):
 
         if not all(self.var_exists(v.split('@')[-1])
                    for v in self._meta['sets']['data file']['items']) and verbose:
-            print("'dataset._meta['sets']['data file']['items']' is not consistent!")
+            print "'dataset._meta['sets']['data file']['items']' is not consistent!"
         if not len(err_df) == 0:
             if verbose:
-                print(msg)
-                print(self.validate.__doc__)
+                print msg
+                print self.validate.__doc__
             return err_df.sort_index()
         else:
-            if verbose: print('No issues found in the dataset!')
+            if verbose: print 'No issues found in the dataset!'
             return None
 
     @modify(to_list=['variables', 'text_key'])
@@ -2807,7 +2806,7 @@ class DataSet(object):
         comp = [key for key in vars2 if key in vars1 and key in variables]
         no_comp = [key for key in vars2 if not key in vars1 and key in variables]
         if no_comp:
-            print('{} are not included in main DataSet.\n'.format(no_comp))
+            print '{} are not included in main DataSet.\n'.format(no_comp)
         for var in comp:
             if var == '@1': continue
             row = ['' for x in range(4)]
@@ -2826,8 +2825,8 @@ class DataSet(object):
                             c, text1 = values
                             if not _comp_texts(text1, text2, strict):
                                 val_texts[c] += '{}, '.format(tk)
-                    if not all(text=='' for text in list(val_texts.values())):
-                        for c, tk in list(val_texts.items()):
+                    if not all(text=='' for text in val_texts.values()):
+                        for c, tk in val_texts.items():
                             if not tk == '':
                                 row[3] += '{}: {}'.format(c, tk)
             for tk in text_key:
@@ -2878,7 +2877,7 @@ class DataSet(object):
             the weight factors.
         """
         if subset:
-            if isinstance(subset, str):
+            if isinstance(subset, basestring):
                 if self.is_filter(subset):
                     subset = {subset: 0}
                 else:
@@ -2893,13 +2892,13 @@ class DataSet(object):
 
         org_wname = weight_name
         if report:
-            print(engine.get_report())
-            print()
+            print engine.get_report()
+            print
         if path_report:
             df = engine.get_report()
             full_file_path = '{} ({}).xlsx'.format(path_report, weight_name)
             df.to_excel(full_file_path)
-            print('Weight report saved to:\n{}'.format(full_file_path))
+            print 'Weight report saved to:\n{}'.format(full_file_path)
         s_name = weight_scheme.name
         s_w_name = 'weights_{}'.format(s_name)
         if inplace:
@@ -3113,13 +3112,13 @@ class DataSet(object):
                     for recoded_view in recoded_views[var]:
                         if recoded_view not in by_origins[var]:
                             by_origins[var].append(recoded_view)
-        for k, v in list(by_origins.items()):
+        for k, v in by_origins.items():
             if not k in varlist:
                 del by_origins[k]
                 if not v[0] in varlist:
                     by_origins[v[0]] = v[1:]
         sort_them = []
-        for k, v in list(by_origins.items()):
+        for k, v in by_origins.items():
             sort_them.append(k)
             sort_them.extend(v)
         grouped = []
@@ -3154,7 +3153,7 @@ class DataSet(object):
         # get list to align against
         if not align_against:
             align_against = self._variables_from_set("data file")
-        elif isinstance(align_against, str):
+        elif isinstance(align_against, basestring):
             align_against = self._variables_from_set(align_against)
 
         # recode suffixes and replace parent
@@ -3220,7 +3219,7 @@ class DataSet(object):
         elif reposition:
             check = []
             for r in reposition:
-                check.extend(list(list(r.keys()) + list(r.values())))
+                check.extend(list(r.keys() + r.values()))
         elif regroup:
             new_order = self._map_to_origins()
             check = new_order
@@ -3234,8 +3233,8 @@ class DataSet(object):
         if reposition:
             new_order = self._variables_from_set('data file')
             for repos in reposition:
-                before_var = list(repos.keys())[0]
-                repos_vars = list(repos.values())[0]
+                before_var = repos.keys()[0]
+                repos_vars = repos.values()[0]
                 if not isinstance(repos_vars, list): repos_vars = [repos_vars]
                 repos_vars = list(reversed(repos_vars))
                 idx = new_order.index(before_var)
@@ -3298,7 +3297,7 @@ class DataSet(object):
         elif not isinstance(replace, dict):
             raise TypeError("'replace' must be a dict.")
         else:
-            for var in list(replace.keys()) + list(replace.values()):
+            for var in replace.keys() + replace.values():
                 if var not in included:
                     raise KeyError("{} is not in 'included'".format(var))
 
@@ -3326,7 +3325,7 @@ class DataSet(object):
 
         if replace:
             new_items = fset['items']
-            for k, v in list(replace.items()):
+            for k, v in replace.items():
                 for x, item in enumerate(new_items):
                     if v == item.split('@')[-1]: posv, move = x, item
                     if k == item.split('@')[-1]: posk = x
@@ -3379,7 +3378,7 @@ class DataSet(object):
             else:
                 self.drop(name)
                 if self._verbose_infos:
-                    print('Overwriting {}'.format(name))
+                    print 'Overwriting {}'.format(name)
         values = [(0, 'keep', None)]
         values += self._transform_filter_logics(logic, 1)
         self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
@@ -3436,7 +3435,7 @@ class DataSet(object):
         if not logic: logic = ['@1']
         values = []
         for x, l in enumerate(logic, start):
-            if isinstance(l, str):
+            if isinstance(l, basestring):
                 if not l in self:
                     raise KeyError("{} is not included in Dataset".format(l))
                 val = (x, '{} not empty'.format(l), {l: not_count(0)})
@@ -3459,7 +3458,7 @@ class DataSet(object):
 
     def _verify_filter_name(self, name, suf='f', number=False):
         f = '{}_{}'.format(name, suf) if suf else name
-        #f = f.encode('utf8')
+        f = f.encode('utf8')
         repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', ''), ('&', '_')]
         for r in repl:
             f = f.replace(r[0], r[1])
@@ -3765,7 +3764,7 @@ class DataSet(object):
                 cases_after = self._data.shape[0]
                 droped_cases = cases_before - cases_after
                 msg = '%s duplicated case(s) dropped, %s cases remaining'
-                print(msg % (droped_cases, cases_after))
+                print msg % (droped_cases, cases_after)
         return None
 
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
@@ -3870,7 +3869,7 @@ class DataSet(object):
             raise ValueError(val_err.format(qtype))
         elif qtype == 'delimited set' and len(categories) == 1:
             qtype = 'single'
-            print('Only one category is given, qtype is switched to single.')
+            print 'Only one category is given, qtype is switched to single.'
         elif qtype in numerical and categories:
             val_err = "Numerical data of type {} does not accept 'categories'."
             raise ValueError(val_err.format(qtype))
@@ -3901,7 +3900,7 @@ class DataSet(object):
         item_objects = []
         array_name = name
         items = self._check_and_update_element_def(items)
-        if isinstance(items[0], str):
+        if isinstance(items[0], (str, unicode)):
             items = [(idx, txt) for idx, txt in enumerate(items, start=1)]
         value_ref = 'lib@values@{}'.format(array_name)
         values = None
@@ -4004,7 +4003,7 @@ class DataSet(object):
             self.extend_values(dicho_name, (0, value_texts[1]), text_key=text_key)
             self[self.is_nan(dicho_name), dicho_name] = 0
         if self._verbose_infos:
-            print('created: {}'.format(new_vars))
+            print 'created: {}'.format(new_vars)
         if replace:
             new_order = {name: new_vars}
             self.order(reposition=new_order)
@@ -4117,7 +4116,7 @@ class DataSet(object):
             self.drop(n, ignore_items=True)
             remove.append(n)
         if remove and self._verbose_infos:
-            print("Remove mask structure for: '{}'".format("', '".join(remove)))
+            print "Remove mask structure for: '{}'".format("', '".join(remove))
         return None
 
     @modify(to_list=['copy_only', 'copy_not'])
@@ -4299,14 +4298,14 @@ class DataSet(object):
         """
         append = self.is_delimited_set(name)
         if exclusive: append = False
-        for old_code, new_code in list(code_map.items()):
+        for old_code, new_code in code_map.items():
             self.recode(name, {new_code: {name: [old_code]}},
                         append=append, intersect=slicer)
             if not slicer:
                 self.remove_values(name, old_code)
             else:
                 msg = "Unified {} >> {} on data slice. Remove values meta if needed!"
-                print(msg.format(old_code, new_code))
+                print msg.format(old_code, new_code)
         return None
 
     @modify(to_list=['ignore_items', 'ignore_values'])
@@ -4390,7 +4389,7 @@ class DataSet(object):
                     self.recode(trans_item, {new_val_code: slicer},
                                 append=True)
         if self._verbose_infos:
-            print('Transposed array: {} into {}'.format(org_name, new_name))
+            print 'Transposed array: {} into {}'.format(org_name, new_name)
 
     @verify(variables={'target': 'columns'})
     def recode(self, target, mapper, default=None, append=False,
@@ -4528,7 +4527,7 @@ class DataSet(object):
             index_map = index_mapper(meta, data, mapper, default, intersect)
 
             uncode_series = self[target].copy()
-            for code, index in list(index_map.items()):
+            for code, index in index_map.items():
                 uncode_series[index] = uncode_series[index].apply(lambda x:
                                                     self._remove_code(x, code))
 
@@ -4576,8 +4575,8 @@ class DataSet(object):
         new_variables = []
         for var in variables:
             if isinstance(var, dict):
-                v = list(var.keys())[0]
-                mapper = list(var.values())[0]
+                v = var.keys()[0]
+                mapper = var.values()[0]
                 if self._is_delimited_set_mapper(mapper):
                     qtype = 'delimited set'
                 else:
@@ -4597,7 +4596,7 @@ class DataSet(object):
 
         codes = [self._get_valuemap(v, 'codes') for v in i_variables]
         texts = [self._get_valuemap(v, 'texts') for v in i_variables]
-        zipped = list(zip(list(product(*codes)), list(product(*texts))))
+        zipped = zip(list(product(*codes)), list(product(*texts)))
         categories = []
         cat_id = 0
         for codes, texts in zipped:
@@ -4631,17 +4630,17 @@ class DataSet(object):
         for no, source in sources:
             offset = (no-1) * max_code
             new_codes = frange('{}-{}'.format((offset + 1), (offset + max_code)))
-            replace_codes[source] = dict(list(zip(codes, new_codes)))
+            replace_codes[source] = dict(zip(codes, new_codes))
 
-        for source, codes in list(replace_codes.items()):
+        for source, codes in replace_codes.items():
             self[source].replace(codes, inplace=True)
             self[source].replace(np.NaN, '', inplace=True)
-            for org, new in list(codes.items()):
+            for org, new in codes.items():
                 mapped_codes[org].append(new)
 
         code_range = frange('1-{}'.format(max_code * len(items)))
         labels = self.value_texts(name) * len(items)
-        cats = list(zip(code_range, labels))
+        cats = zip(code_range, labels)
         new_sources = self.sources(lvlname)
         self.unbind(lvlname)
         self.add_meta(lvlname, 'delimited set', self.text(name), cats)
@@ -4701,7 +4700,7 @@ class DataSet(object):
             idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
         elif all(len(cond) == 2 for cond in cond_map):
             all_int = all(isinstance(cond[0], int) for cond in cond_map)
-            all_str = all(isinstance(cond[0], str) for cond in cond_map)
+            all_str = all(isinstance(cond[0], (str, unicode)) for cond in cond_map)
             if not (all_str or all_int):
                 raise TypeError(err_msg)
             categories = [cond[0] for cond in cond_map]
@@ -4766,8 +4765,8 @@ class DataSet(object):
         for idx, band in enumerate(bands, start=1):
             lab = None
             if isinstance(band, dict):
-                lab = list(band.keys())[0]
-                band = list(band.values())[0]
+                lab = band.keys()[0]
+                band = band.values()[0]
             if isinstance(band, tuple):
                 if band[0] < 0:
                     raise ValueError('Cannot band with lower bound < 0.')
@@ -4816,9 +4815,9 @@ class DataSet(object):
         """
         if self.var_exists(name):
             raise ValueError('{} does already exist.'.format(name))
-        elif not all(isinstance(c, (str, tuple)) for c in variables):
+        elif not all(isinstance(c, (str, unicode, tuple)) for c in variables):
             raise ValueError('Input of variables must be string or tuple.')
-        cols = [c if isinstance(c, str) else c[0] for c in variables]
+        cols = [c if isinstance(c, (str, unicode)) else c[0] for c in variables]
         if not all(self.var_exists(c) for c in cols):
             not_in_ds = [c for c in cols if not self.var_exists(c)]
             raise KeyError('{} not found in dataset!'.format(not_in_ds))
@@ -4882,13 +4881,13 @@ class DataSet(object):
             if safe:
                 raise ValueError('{} does already exist.'.format(name))
             self.drop(newname, ignore_items=True)
-        var_list = [list(v.keys())[0] if isinstance(v, dict)
+        var_list = [v.keys()[0] if isinstance(v, dict)
                      else v for v in variables]
         if not all(self.var_exists(v) for v in var_list):
             raise KeyError("'variables' must be included in DataSet.")
         elif not len(set(var_list)) == len(var_list):
             raise ValueError("'variables' contains duplicates!")
-        to_comb = {list(v.keys())[0]: list(v.values())[0] for v in variables if isinstance(v, dict)}
+        to_comb = {v.keys()[0]: v.values()[0] for v in variables if isinstance(v, dict)}
         for var in var_list:
             to_comb[var] = self.text(var) if var in variables else to_comb[var]
         first = var_list[0]
@@ -5084,7 +5083,7 @@ class DataSet(object):
         text_key = self.text_key
         if org_type == 'int':
             num_vals = sorted(self._data[name].dropna().astype(int).unique())
-            values_obj = [self._value(num_val, text_key, str(num_val))
+            values_obj = [self._value(num_val, text_key, unicode(num_val))
                           for num_val in num_vals]
         elif org_type == 'date':
             vals = self._data[name].order().astype(str).unique()
@@ -5096,7 +5095,7 @@ class DataSet(object):
         elif org_type == 'string':
             self[name] = self[name].replace('__NA__', np.NaN)
             vals = sorted(self[name].dropna().unique().tolist())
-            values_obj = [self._value(i, text_key, str(v)) for i, v
+            values_obj = [self._value(i, text_key, unicode(v)) for i, v
                           in enumerate(vals, start=1)]
             replace_map = {v: i for i, v in enumerate(vals, start=1)}
             if replace_map:
@@ -5105,7 +5104,7 @@ class DataSet(object):
             if not len(self.codes(name)) == 1:
                 raise TypeError(msg.format(name, org_type))
             self._data[name] = self._data[name].apply(lambda x:
-                int(x.replace(';', '')) if isinstance(x, str) else np.NaN)
+                int(x.replace(';', '')) if isinstance(x, basestring) else np.NaN)
             values_obj = self._get_value_loc(name)
         self._meta['columns'][name]['type'] = 'single'
         self._meta['columns'][name]['values'] = values_obj
@@ -5237,7 +5236,7 @@ class DataSet(object):
             """
             Rename lib@values objects using mapper.
             """
-            for name, rename in mapper.items():
+            for name, rename in mapper.iteritems():
                 if name in lib_values:
                     lib_values[rename] = org_copy.deepcopy(lib_values[name])
                     if not keep_original: del lib_values[name]
@@ -5246,7 +5245,7 @@ class DataSet(object):
             """
             Rename mask objects using mapper.
             """
-            for name, rename in mapper.items():
+            for name, rename in mapper.iteritems():
                 if name in masks:
                     masks[rename] = org_copy.deepcopy(masks[name])
                     if not keep_original: del masks[name]
@@ -5254,7 +5253,7 @@ class DataSet(object):
 
                     if masks[rename].get('values'):
                         values = masks[rename]['values']
-                        if isinstance(values, str):
+                        if isinstance(values, (str, unicode)):
                             if values in mapper:
                                 masks[rename]['values'] = mapper[values]
 
@@ -5269,7 +5268,7 @@ class DataSet(object):
             """
             Rename column objects using mapper.
             """
-            for name, rename in mapper.items():
+            for name, rename in mapper.iteritems():
                 if name in columns:
                     columns[rename] = org_copy.deepcopy(columns[name])
                     if 'parent' in columns[name]:
@@ -5278,7 +5277,7 @@ class DataSet(object):
                         parents = {}
                     if not keep_original: del columns[name]
                     columns[rename]['name'] = rename
-                    for parent_name, parent_spec in list(parents.items()):
+                    for parent_name, parent_spec in parents.items():
                         new_parent_map = {}
                         if parent_name in mapper:
                             new_name = mapper[parent_name]
@@ -5286,7 +5285,7 @@ class DataSet(object):
                             columns[rename]['parent'] = new_parent_map
                     if columns[rename].get('values'):
                         values = columns[rename]['values']
-                        if isinstance(values, str):
+                        if isinstance(values, (str, unicode)):
                             if values in mapper:
                                 columns[rename]['values'] = mapper[values]
 
@@ -5294,7 +5293,7 @@ class DataSet(object):
             """
             Rename set object items using mapper.
             """
-            for name, rename in mapper.items():
+            for name, rename in mapper.iteritems():
                 if name in sets:
                     sets[rename] = org_copy.deepcopy(sets[name])
                     if not keep_original: del sets[name]
@@ -5311,10 +5310,10 @@ class DataSet(object):
             def _iterate_props(obj, mapper):
                 if isinstance(obj, bool):
                     pass
-                elif isinstance(obj, str):
+                elif isinstance(obj, basestring):
                     return mapper.get(obj)
                 elif isinstance(obj, dict):
-                    for k, v in list(obj.items()):
+                    for k, v in obj.items():
                         if _iterate_props(k, mapper):
                             obj[_iterate_props(k, mapper)] = _iterate_props(v, mapper) or v
                             del obj[k]
@@ -5325,7 +5324,7 @@ class DataSet(object):
                 elif isinstance(obj, tuple):
                     return tuple(_iterate_props(a, mapper) or a for a in obj)
 
-            for batch, defs in list(batches.items()):
+            for batch, defs in batches.items():
                 _iterate_props(defs, mapper)
 
 
@@ -5333,7 +5332,7 @@ class DataSet(object):
             """
             Rename standard set object items using mapper.
             """
-            for set_name in list(sets.keys()):
+            for set_name in sets.keys():
                 try:
                     items = sets[set_name].get('items', False)
                     if items:
@@ -5378,7 +5377,7 @@ class DataSet(object):
 
         if not names: names = self.variables()
         mapper = {}
-        for org_mn, mask in masks.items():
+        for org_mn, mask in masks.iteritems():
             if org_mn in names:
                 mask_name = fix(org_mn)
                 new_mask_name = '{mn}.{mn}{s}'.format(mn=mask_name, s=suffix)
@@ -5405,7 +5404,7 @@ class DataSet(object):
                     new_col_mapper = 'columns@{ncn}'.format(ncn=new_col_name)
                     mapper[col_mapper] = new_col_mapper
 
-        for col_name, col in columns.items():
+        for col_name, col in columns.iteritems():
             if col_name in names and not self._is_array_item(col_name):
                 new_col_name = fix(col_name)
                 if new_col_name == col_name: continue
@@ -5442,8 +5441,8 @@ class DataSet(object):
 
         mapper = {}
         if not names:
-            names = list(masks.keys()) + list(columns.keys())
-        for mask_name in list(masks.keys()):
+            names = masks.keys() + columns.keys()
+        for mask_name in masks.keys():
             if mask_name in names:
                 matches = re.findall(mask_pattern, mask_name)
                 if matches:
@@ -5458,7 +5457,7 @@ class DataSet(object):
                     new_values_mapper = 'lib@values@{nmn}'.format(nmn=new_mask_name)
                     mapper[values_mapper] = new_values_mapper
 
-        for col_name in list(columns.keys()):
+        for col_name in columns.keys():
             if col_name in names:
                 matches = re.findall(column_pattern, col_name)
                 if matches:
@@ -5560,11 +5559,11 @@ class DataSet(object):
         codes = self.codes(name)
         ignore_codes = [r for r in remove if r not in codes]
         if ignore_codes:
-            print('Warning: Cannot remove values...')
-            print('*' * 60)
+            print 'Warning: Cannot remove values...'
+            print '*' * 60
             msg = "Codes {} not found in values object of '{}'!"
-            print(msg.format(ignore_codes, name))
-            print('*' * 60)
+            print msg.format(ignore_codes, name)
+            print '*' * 60
             remove = [x for x in remove if x not in ignore_codes]
         # Would be remove all defined values? - Prevent user from doing this!
         new_values = [value for value in values
@@ -5675,7 +5674,7 @@ class DataSet(object):
                              for s, ref in zip(sources, s_ref)])
         if not set(org_i.keys()) == set(new_order):
             msg = "Only these item numbers are valid for 'new_order': {}"
-            raise ValueError(msg.format(list(org_i.keys())))
+            raise ValueError(msg.format(org_i.keys()))
         n_set = []
         n_items = []
         for i in new_order:
@@ -5751,8 +5750,8 @@ class DataSet(object):
         source0 = self._meta['columns'][self.sources(name)[0]]
         for n_item in ext_items:
             if isinstance(n_item, dict):
-                col = list(n_item.keys())[0]
-                label = list(n_item.values())[0]
+                col = n_item.keys()[0]
+                label = n_item.values()[0]
             else:
                 col = '{}_{}'.format(name, len(self.sources(name))+1)
                 label = n_item
@@ -5815,7 +5814,7 @@ class DataSet(object):
 
     @staticmethod
     def _used_text_keys(text_dict, tks):
-        new = [tk for tk in list(text_dict.keys())
+        new = [tk for tk in text_dict.keys()
                if not tk in ['x edits', 'y edits'] + tks['tks']]
         tks['tks'] += new
 
@@ -5833,7 +5832,7 @@ class DataSet(object):
     def _force_texts(text_dict, copy_to, copy_from, update_existing):
         new_text_key = None
         for new_tk in reversed(copy_from):
-            if new_tk in list(text_dict.keys()):
+            if new_tk in text_dict.keys():
                 if new_tk in ['x edits', 'y edits']:
                     if text_dict[new_tk].get(copy_to):
                         new_text_key = new_tk
@@ -5889,7 +5888,7 @@ class DataSet(object):
     @staticmethod
     def _remove_html(text_dict):
         htmls = ['_', '**', '*']
-        for tk, text in list(text_dict.items()):
+        for tk, text in text_dict.items():
             if not tk in ['x edits', 'y edits']:
                 for html in htmls:
                     text = text.replace(html, '')
@@ -5899,7 +5898,7 @@ class DataSet(object):
                 remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
                 text_dict[tk] = re.sub(remove, '', text)
             else:
-                for etk, etext in list(text_dict[tk].items()):
+                for etk, etext in text_dict[tk].items():
                     for html in htmls:
                         etext = etext.replace(html, '')
                     remove = re.compile('<.*?>')
@@ -5926,14 +5925,14 @@ class DataSet(object):
 
     @staticmethod
     def _replace_from_dict(text_dict, replace_map, text_key):
-        for tk, text in list(text_dict.items()):
+        for tk, text in text_dict.items():
             if tk in text_key:
-                for k, v in list(replace_map.items()):
+                for k, v in replace_map.items():
                     text_dict[tk] = text_dict[tk].replace(k, v)
             elif tk in ['x edits', 'y edits']:
-                for etk, etext in list(text_dict[tk].items()):
+                for etk, etext in text_dict[tk].items():
                     if etk in text_key:
-                        for k, v in list(replace_map.items()):
+                        for k, v in replace_map.items():
                             text_dict[tk][etk] = text_dict[tk][etk].replace(k, v)
 
     @modify(to_list='text_key')
@@ -5995,7 +5994,7 @@ class DataSet(object):
         for ax in ['x edits', 'y edits']:
             if not isinstance(text_dict.get(ax, {}), dict):
                 text_dict[ax] = {tk: text_dict[ax]
-                                 for tk in list(text_dict.keys()) if tk in text_key}
+                                 for tk in text_dict.keys() if tk in text_key}
 
     @verify(text_keys='text_key')
     def repair_text_edits(self, text_key=None):
@@ -6023,12 +6022,12 @@ class DataSet(object):
         if not any(tk in text_dict for tk in text_key):
             msg = 'Cannot select {}. A variable does not contain any of it.'
             raise ValueError(msg.format(text_key))
-        for tk in list(text_dict.keys()):
+        for tk in text_dict.keys():
             if not tk in ['x edits', 'y edits']:
                 if not tk in text_key:
                     text_dict.pop(tk)
             else:
-                for etk in list(text_dict[tk].keys()):
+                for etk in text_dict[tk].keys():
                     if not etk in text_key:
                         text_dict[tk].pop(etk)
 
@@ -6060,7 +6059,7 @@ class DataSet(object):
         Cycle through all ``text`` objects editing them via the passed function.
         """
         if isinstance(meta_dict, dict):
-            for key in list(meta_dict.keys()):
+            for key in meta_dict.keys():
                 if key in ['sets', 'ddf']:
                     pass
                 elif key == 'text' and isinstance(meta_dict[key], dict):
@@ -6137,7 +6136,7 @@ class DataSet(object):
         if not text_key and not axis_edit:
             text_key = [self.text_key]
         elif not text_key and axis_edit:
-            text_key = [tk for tk in list(textobj.keys())
+            text_key = [tk for tk in textobj.keys()
                         if tk not in ['x edits', 'y edits']]
 
         if self._is_array_item(name):
@@ -6247,12 +6246,12 @@ class DataSet(object):
             if not axis_edit:
                 text_key = [self.text_key]
             else:
-                text_key = list(valuesobj[0]['text'].keys())
+                text_key = valuesobj[0]['text'].keys()
 
         text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
 
         if self.codes(name):
-            ignore = [k for k in list(renamed_vals.keys()) if k not in self.codes(name)]
+            ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
             if ignore:
                 msg = 'Warning: Cannot set new value texts... '
                 msg = msg + "Codes {} not found in values object of '{}'!"
@@ -6262,14 +6261,14 @@ class DataSet(object):
             msg = msg + ' ...falling back to extend_values() now!'
             warnings.warn(msg.format(name))
             for tk in text_key:
-                for k, v in list(renamed_vals.items()):
+                for k, v in renamed_vals.items():
                     self.extend_values(name, (k, v), tk)
             return None
 
 
         for value in valuesobj:
             val = value['value']
-            if val in list(renamed_vals.keys()):
+            if val in renamed_vals.keys():
                 value_texts = value['text']
                 for tk in text_key:
                     if axis_edit:
@@ -6279,7 +6278,7 @@ class DataSet(object):
                             if tk in value_texts:
                                 value_texts[edit_key][tk] = renamed_vals[val]
                     else:
-                        if tk in list(value_texts.keys()):
+                        if tk in value_texts.keys():
                             value['text'][tk] = renamed_vals[val]
                         else:
                             value['text'].update({tk: renamed_vals[val]})
@@ -6320,7 +6319,7 @@ class DataSet(object):
         None
             The ``DataSet`` is modified inplace.
         """
-        for item_no, item_text in list(renamed_items.items()):
+        for item_no, item_text in renamed_items.items():
             source = self.sources(name)[item_no - 1]
             self.set_variable_text(source, item_text, text_key, axis_edit)
         return None
@@ -6381,7 +6380,7 @@ class DataSet(object):
             else:
                 return None
         vals = self.codes(name)
-        facts = list(factormap.keys())
+        facts = factormap.keys()
         val_loc = self._get_value_loc(name)
         if not all(f in vals for f in facts):
             err = 'At least one factor is mapped to a code that does not exist '
@@ -6617,7 +6616,7 @@ class DataSet(object):
         if empty_items:
             if isinstance(empty_items, list):
                 empty_items = {arrays[0]: empty_items}
-            for arr, items in list(empty_items.items()):
+            for arr, items in empty_items.items():
                 if len(items) == len(self.sources(arr)):
                     self.set_property(arr, '_no_valid_items', True, True)
                 self.hiding(arr, items, axis='x', hide_values=False)
@@ -6672,9 +6671,9 @@ class DataSet(object):
                 if verbose:
                     if 'All' in hide or all(c in hide for c in codes):
                         msg = '{}: All values have less counts than {}.'
-                        print(msg.format(v, min))
+                        print msg.format(v, min)
                     else:
-                        print('{}: Hide values {}'.format(v, hide))
+                        print '{}: Hide values {}'.format(v, hide)
                 hide = [h for h in hide if not h == 'All']
                 self.hiding(v, hide, axis)
         return None
@@ -6801,7 +6800,7 @@ class DataSet(object):
         valid_flags = ['d.exclude', 'exclude']
         valid_codes = self._get_valuemap(var, non_mapped='codes')
         valid_map = {}
-        for mtype, mcodes in list(missing_map.items()):
+        for mtype, mcodes in missing_map.items():
             if not isinstance(mcodes, list): mcodes = [mcodes]
             if mtype in valid_flags:
                 codes = [c for c in mcodes if c in valid_codes]
@@ -6810,9 +6809,9 @@ class DataSet(object):
 
     def _set_default_missings(self, ignore=None):
         excludes = [
-            'weißnicht',
+            u'weißnicht',
             'keineangabe',
-            'weißnicht/keineangabe',
+            u'weißnicht/keineangabe',
                     'keineangabe/weißnicht', 'kannmichnichterinnern',
                     'weißichnicht', 'nichtindeutschland']
         d = self.describe()
@@ -6893,10 +6892,10 @@ class DataSet(object):
         """
         data = self._data
         dfs = []
-        level = list(levels.keys())[0]
+        level = levels.keys()[0]
         for question_group in mapper:
-            new_var = list(question_group.keys())[0]
-            q_group = list(question_group.values())[0]
+            new_var = question_group.keys()[0]
+            q_group = question_group.values()[0]
 
             df = data[q_group]
             df = df.stack().reset_index([1])
@@ -6911,7 +6910,7 @@ class DataSet(object):
 
         new_df = new_df.join(data[other])
 
-        new_df.index = list(range(0, len(new_df.index)))
+        new_df.index = list(xrange(0, len(new_df.index)))
 
         return new_df
 
@@ -6928,8 +6927,8 @@ class DataSet(object):
             new_meta = self._assume_meta(new_meta, var, var)
 
         for question_group in mapper:
-            new_var = list(question_group.keys())[0]
-            old_var = list(question_group.values())[0][0]
+            new_var = question_group.keys()[0]
+            old_var = question_group.values()[0][0]
             new_meta = self._assume_meta(new_meta, new_var, old_var)
         return new_meta
 
@@ -7008,17 +7007,17 @@ class DataSet(object):
         data = self._data
         meta = self._meta
 
-        if not (isinstance(list(levels.values())[0], list) and isinstance(levels, dict)):
+        if not (isinstance(levels.values()[0], list) and isinstance(levels, dict)):
             raise ValueError('``levels`` must be a ``dict`` of ``lists``.')
-        if not all(isinstance(e, dict) and isinstance(list(e.values())[0], list) and
+        if not all(isinstance(e, dict) and isinstance(e.values()[0], list) and
                    isinstance(mapper, list) for e in mapper):
             msg = '``mapper`` must be ``list`` of ``dicts`` of ``lists``.'
             raise ValueError(msg)
         for q_group in mapper:
-            if not len(list(levels.values())[0]) == len(list(q_group.values())[0]):
+            if not len(levels.values()[0]) == len(q_group.values()[0]):
                 raise ValueError('``lists`` of source ``columns`` and level '
                                  'variables must have same length.')
-        level = list(levels.keys())[0]
+        level = levels.keys()[0]
         if other:
             exist_vars = [unique_key] + other + levels[level]
         else:
@@ -7052,7 +7051,7 @@ class DataSet(object):
             ds.recode('{}_levelled'.format(level), rec, intersect={level: x})
 
         cols = (['@1', unique_key, level, '{}_levelled'.format(level)] +
-                levels[level] + [list(new_var.keys())[0] for new_var in mapper] +
+                levels[level] + [new_var.keys()[0] for new_var in mapper] +
                 self.unroll(other))
         ds._data = ds._data[cols]
 
@@ -7149,7 +7148,7 @@ class DataSet(object):
         Filter the DataSet using a Quantipy logical expression.
         """
         data = self._data.copy()
-        data.index = pd.Index(list(range(0, len(data.index))))
+        data.index = pd.Index(range(0, len(data.index)))
         filter_idx, _ = get_logic_index(pd.Series(data.index), condition, data)
         filtered_data = data.iloc[filter_idx, :]
         if inplace:
@@ -7286,9 +7285,9 @@ class DataSet(object):
                     stack.add_link(dk, fi, x=x, y=y)
                 if verbose:
                     done = float(idx) / float(total_len) *100
-                    print('\r', end=' ')
+                    print '\r',
                     time.sleep(0.01)
-                    print('Batch [{}]: {} %'.format(name, round(done, 1)), end=' ')
+                    print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
             for idx, y_on_y in enumerate(batch['y_on_y'], len(xys)+1):
                 if fy[y_on_y] is None:
@@ -7298,10 +7297,10 @@ class DataSet(object):
                 stack.add_link(dk, fi, x=my[1:], y=my)
                 if verbose:
                     done = float(idx) / float(total_len) *100
-                    print('\r', end=' ')
+                    print '\r',
                     time.sleep(0.01)
-                    print('Batch [{}]: {} %'.format(name, round(done, 1)), end=' ')
+                    print  'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
             if verbose:
-                print('\n')
+                print '\n'
         return stack

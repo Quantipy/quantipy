@@ -38,7 +38,7 @@ class DimLabels():
 		self.incl_labeltypes = []
 
 	def add_text(self, text_object, replace=True):
-		if isinstance(text_object, (str, unicode)):
+		if isinstance(text_object, str):
 			text_object = {self.text_key: text_object}
 		self.text = text_object
 		self.labels_from_text(replace)
@@ -58,9 +58,9 @@ class DimLabels():
 
 	def labels_from_text(self, replace=True):
 		if replace: self.labels = []
-		for item in self.text.items():
+		for item in list(self.text.items()):
 			if isinstance(item[1], dict):
-				for e_item in item[1].items():
+				for e_item in list(item[1].items()):
 					dimlabel = DimLabel(e_item, item[0], self.text_key)
 					if not self._label_exists(dimlabel):
 						self.labels.append(dimlabel)
@@ -90,7 +90,7 @@ class DimLabel():
 			self.to_dim(text, edit)
 
 	def to_dim(self, text, edit=None):
-		if isinstance(text, (str, unicode)):
+		if isinstance(text, str):
 			self.language = self.default_lan
 			self.text = text
 		else:

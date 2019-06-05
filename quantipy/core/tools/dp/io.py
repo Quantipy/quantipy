@@ -22,6 +22,7 @@ from quantipy.core.tools.dp.decipher.reader import quantipy_from_decipher
 from quantipy.core.tools.dp.spss.reader import parse_sav_file
 from quantipy.core.tools.dp.spss.writer import save_sav
 from quantipy.core.tools.dp.ascribe.reader import quantipy_from_ascribe
+import importlib
 
 def make_like_ascii(text):
     """
@@ -29,18 +30,18 @@ def make_like_ascii(text):
     """
 
     unicode_ascii_mapper = {
-        u'\u2022': u'-',         # http://www.fileformat.info/info/unicode/char/2022/index.htm
-        u'\u2013': u'-',         # http://www.fileformat.info/info/unicode/char/2013/index.htm
-        u'\u2018': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2018/index.htm
-        u'\u2019': u'\u0027',    # http://www.fileformat.info/info/unicode/char/2019/index.htm
-        u'\u201c': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201C/index.htm
-        u'\u201d': u'\u0022',    # http://www.fileformat.info/info/unicode/char/201D/index.htm
-        u'\u00a3': u'GBP ',      # http://www.fileformat.info/info/unicode/char/a3/index.htm
-        u'\u20AC': u'EUR ',      # http://www.fileformat.info/info/unicode/char/20aC/index.htm
-        u'\u2026': u'\u002E\u002E\u002E', # http://www.fileformat.info/info/unicode/char/002e/index.htm
+        '\u2022': '-',         # http://www.fileformat.info/info/unicode/char/2022/index.htm
+        '\u2013': '-',         # http://www.fileformat.info/info/unicode/char/2013/index.htm
+        '\u2018': '\u0027',    # http://www.fileformat.info/info/unicode/char/2018/index.htm
+        '\u2019': '\u0027',    # http://www.fileformat.info/info/unicode/char/2019/index.htm
+        '\u201c': '\u0022',    # http://www.fileformat.info/info/unicode/char/201C/index.htm
+        '\u201d': '\u0022',    # http://www.fileformat.info/info/unicode/char/201D/index.htm
+        '\u00a3': 'GBP ',      # http://www.fileformat.info/info/unicode/char/a3/index.htm
+        '\u20AC': 'EUR ',      # http://www.fileformat.info/info/unicode/char/20aC/index.htm
+        '\u2026': '\u002E\u002E\u002E', # http://www.fileformat.info/info/unicode/char/002e/index.htm
     }
 
-    for old, new in unicode_ascii_mapper.iteritems():
+    for old, new in unicode_ascii_mapper.items():
         text = text.replace(old, new)
 
     return text
@@ -75,13 +76,13 @@ def unicoder(obj, decoder='UTF-8', like_ascii=False):
     elif isinstance(obj, (dict)):
         obj = {
             key: unicoder(value, decoder, like_ascii)
-            for key, value in obj.iteritems()}
+            for key, value in obj.items()}
     elif isinstance(obj, str):
-        obj = fix_text(unicode(obj, decoder))
-    elif isinstance(obj, unicode):
+        obj = fix_text(str(obj))
+    elif isinstance(obj, str):
         obj = fix_text(obj)
 
-    if like_ascii and isinstance(obj, unicode):
+    if like_ascii and isinstance(obj, str):
         obj = make_like_ascii(obj)
 
     return obj
@@ -117,7 +118,7 @@ def encoder(obj, encoder='UTF-8'):
     elif isinstance(obj, (dict)):
         obj = {
             key: unicoder(value)
-            for key, value in obj.iteritems()
+            for key, value in obj.items()
         }
     elif isinstance(obj, str):
         obj = obj.endoce(encoder)
@@ -186,12 +187,12 @@ def verify_dtypes_vs_meta(data, meta):
 
     dtypes = data.dtypes
     dtypes.name = 'dtype'
-    var_types = pd.DataFrame({k: v['type'] for k, v in meta['columns'].iteritems()}, index=['meta']).T
+    var_types = pd.DataFrame({k: v['type'] for k, v in meta['columns'].items()}, index=['meta']).T
     df = pd.concat([var_types, dtypes.astype(str)], axis=1)
 
     missing = df.loc[df['dtype'].isin([np.NaN])]['meta']
     if missing.size>0:
-        print '\nSome meta not paired to data columns was found (these may be special data types):\n', missing, '\n'
+        print('\nSome meta not paired to data columns was found (these may be special data types):\n', missing, '\n')
 
     df = df.dropna(how='any')
     df['verified'] = df.apply(lambda x: x['dtype'] in DTYPE_MAP[x['meta']], axis=1)
@@ -247,7 +248,7 @@ def read_ddf(path_ddf, auto_index_tables=True):
         ddf['table_info'] = {
             table_name:
             pd.read_sql("PRAGMA table_info('%s');" % (table_name), conn)
-            for table_name in ddf['tables'].keys()
+            for table_name in list(ddf['tables'].keys())
         }
 
     # If required, set the index for the expected Dataframes that should
@@ -263,7 +264,7 @@ def read_ddf(path_ddf, auto_index_tables=True):
             print (
                 "Couldn't set 'name' into the index for 'sqlite_master'."
             )
-        for table_name in ddf['table_info'].keys():
+        for table_name in list(ddf['table_info'].keys()):
             try:
                 ddf['table_info'][table_name].set_index(
                     ['name'],
@@ -271,11 +272,11 @@ def read_ddf(path_ddf, auto_index_tables=True):
                     inplace=True
                 )
             except:
-                print (
+                print((
                     "Couldn't set 'name' into the index for '%s'."
-                ) % (table_name)
+                ) % (table_name))
 
-        for table_name in ddf['tables'].keys():
+        for table_name in list(ddf['tables'].keys()):
             index_col = 'TableName' if table_name=='Levels' else ':P0'
             try:
                 ddf['table_info'][table_name].set_index(
@@ -284,10 +285,10 @@ def read_ddf(path_ddf, auto_index_tables=True):
                     inplace=True
                 )
             except:
-                print (
+                print((
                     "Couldn't set '%s' into the index for the '%s' "
                     "Dataframe."
-                ) % (index_col, table_name)
+                ) % (index_col, table_name))
 
     return ddf
 
@@ -301,7 +302,7 @@ def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
 
     default_stdout = sys.stdout
     default_stderr = sys.stderr
-    reload(sys)
+    importlib.reload(sys)
     sys.setdefaultencoding("cp1252")
     sys.stdout = default_stdout
     sys.stderr = default_stderr
@@ -311,7 +312,7 @@ def write_dimensions(meta, data, path_mdd, path_ddf, text_key=None,
 
     default_stdout = sys.stdout
     default_stderr = sys.stderr
-    reload(sys)
+    importlib.reload(sys)
     sys.setdefaultencoding("utf-8")
     sys.stdout = default_stdout
     sys.stderr = default_stderr
@@ -356,7 +357,7 @@ def read_quantipy(path_json, path_csv):
     meta = load_json(path_json)
     data = load_csv(path_csv)
 
-    for col in meta['columns'].keys():
+    for col in list(meta['columns'].keys()):
         if meta['columns'][col]['type']=='date':
             data[col] = pd.to_datetime(data[col])
 

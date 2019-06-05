@@ -1,5 +1,5 @@
 
-import cPickle
+import pickle
 from itertools import chain, combinations
 
 DESCRIPTIVES = [
@@ -165,7 +165,7 @@ class XlsxFormats(object):
 
             # Convert properties in the constructor to method calls.
             #--------------------------
-            for key, value in properties.items():
+            for key, value in list(properties.items()):
                 command = 'set_{}'.format(key)
                 getattr(self, command)(value)
             #--------------------------
@@ -1387,7 +1387,7 @@ class XlsxFormats(object):
                 chain(
                     *[
                         list(combinations(additional_borders, r))
-                        for r in xrange(2, len(additional_borders)+1)])))
+                        for r in range(2, len(additional_borders)+1)])))
         borders_list = ['-']
         borders_list.extend(
             [
@@ -1437,7 +1437,7 @@ class XlsxFormats(object):
         if key.endswith(('-DESCRIPTIVES', '-DESCRIPTIVES-XT')):
             if not key.endswith('XT'):
                 for border in ['top', 'bottom']:
-                    if not border in result.keys():
+                    if not border in list(result.keys()):
                         result.update(
                             self._get_border(
                                 border,
@@ -1464,7 +1464,7 @@ class XlsxFormats(object):
             result.update(self._get_bg_format('N', 'bg' in key))
         elif key.endswith(('-N-NET', '-N-NET-UP', '-N-NET-DOWN')):
             for border in ['top']:
-                if not border in result.keys():
+                if not border in list(result.keys()):
                     result.update(
                         self._get_border(
                             border,
@@ -1484,7 +1484,7 @@ class XlsxFormats(object):
             result.update(self._get_bg_format('PCT', 'bg' in key))
         elif key.endswith(('-PCT-NET', '-PCT-NET-UP', '-PCT-NET-DOWN')):
             for border in ['top']:
-                if not border in result.keys():
+                if not border in list(result.keys()):
                     result.update(
                         self._get_border(
                             border,
@@ -1499,7 +1499,7 @@ class XlsxFormats(object):
             else:
                 result.update(self._get_bg_format('NET', True))
         elif key.endswith('-STR'):
-            if not 'right' in result.keys():
+            if not 'right' in list(result.keys()):
                 result.update(self._get_border('right', self.border_style_int))
             result.update(self._get_font_format('STR'))
         elif '-TESTS' in key:
@@ -1516,7 +1516,7 @@ class XlsxFormats(object):
                             self.border_style_int,
                             self.border_color_descriptives_top))
                     result = {
-                        k: v for k, v in result.items()
+                        k: v for k, v in list(result.items())
                               if 'bottom' not in k}
                 elif key.endswith(('NET', 'NET-UP', 'NET-DOWN')):
                     result.update(
@@ -1533,12 +1533,12 @@ class XlsxFormats(object):
         # Delete bottom row if "mrow"
         if 'mrow' in key:
             result = {
-                k: v for k, v in result.items()
+                k: v for k, v in list(result.items())
                 if not k.startswith(('top', 'bottom'))}
         # Delete top row if "brow"
         if 'brow' in key:
             result = {
-                k: v for k, v in result.items()
+                k: v for k, v in list(result.items())
                 if not k.startswith(('top'))}
         # Is this an arrow format? If so, modify the font color.
         if key.endswith('UP'):
@@ -1651,10 +1651,10 @@ class XlsxFormats(object):
     def _add_italic(self):
         """ Add all format with italic set to True
         """
-        for key, value in self.format_dict.items():
+        for key, value in list(self.format_dict.items()):
             if not key.endswith(('STR', 'TESTS')):
                 new_key = '-'.join([key, 'italic'])
-                self.format_dict[new_key] = cPickle.loads(
-                    cPickle.dumps(value, cPickle.HIGHEST_PROTOCOL))
+                self.format_dict[new_key] = pickle.loads(
+                    pickle.dumps(value, pickle.HIGHEST_PROTOCOL))
                 self.format_dict[new_key]['italic'] = True
         return None

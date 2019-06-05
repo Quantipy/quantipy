@@ -200,21 +200,21 @@ def derotate(data, input_mapper, output_mapper, others=None, dropna=True):
     else:
         new_level = 1
 
-    rotation_name = output_mapper.keys()[0]
+    rotation_name = list(output_mapper.keys())[0]
     rotation_index = output_mapper[rotation_name]
 
     # Collect all of the stacked column groups into a list
     dfs = []
     for question_group in input_mapper:
-        question_name = question_group.keys()[0]
-        question_columns = question_group.values()[0]
+        question_name = list(question_group.keys())[0]
+        question_columns = list(question_group.values())[0]
         df = derotate_column_group(
             data=data,
             cols=question_columns,
             rotation_name=rotation_name,
             data_name=question_name,
             dropna=dropna,
-            rotation_map=dict(zip(question_columns, rotation_index))
+            rotation_map=dict(list(zip(question_columns, rotation_index)))
         )
         dfs.append(df)
 
@@ -412,7 +412,7 @@ def frange(range_def, sep=','):
             a, b = int(a), int(b)
             lo = min([a, b])
             hi = max([a, b])
-            ints = range(lo, hi+1)
+            ints = list(range(lo, hi+1))
             if b <= a:
                 ints = list(reversed(ints))
             res.extend(ints)
@@ -761,7 +761,7 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
     if default is None:
         # Check that mapper isn't in a default-requiring
         # format
-        for key, val in mapper.iteritems():
+        for key, val in mapper.items():
             if not isinstance(val, (dict, tuple)):
                 raise TypeError(
                     "'%s' recode definition appears to be using "
@@ -778,7 +778,7 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
             {default: has_any(val)}
             if isinstance(val, list)
             else {default: val}
-            for key, val in mapper.iteritems()
+            for key, val in mapper.items()
         }
 
     # Apply any implied intersection
@@ -787,7 +787,7 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
             key: intersection([
                 intersect,
                 value if isinstance(value, dict) else {default: value}])
-            for key, value in keyed_mapper.iteritems()
+            for key, value in keyed_mapper.items()
         }
 
     # Create temp series with a full data index
@@ -797,7 +797,7 @@ def index_mapper(meta, data, mapper, default=None, intersect=None):
     # Creates: {value: index}
     index_mapper = {
         key: get_logic_index(series, logic, data)[0]
-        for key, logic in keyed_mapper.iteritems()
+        for key, logic in keyed_mapper.items()
     }
 
     return index_mapper
@@ -827,17 +827,18 @@ def join_delimited_set_series(ds1, ds2, append=True):
     joined : pandas.Series
         The joined result of ds1 and ds2.
     """
+    #import pdb; pdb.set_trace()
     if pd.__version__ == '0.19.2':
         df = pd.concat([ds1, ds2], axis=1, ignore_index=True)
     else:
         df = pd.concat([ds1, ds2], axis=1)
     df.fillna('', inplace=True)
     if append:
-        df['joined'] = df[0] + df[1]
+        df['joined'] = ds1 + ds2
     else:
-        df['joined'] = df[0].copy()
-        df[1] = df[1].replace('', np.NaN)
-        df['joined'].update(df[1].dropna())
+        df['joined'] = ds1.copy()
+        dfs2 = ds2.replace('', np.NaN)
+        df['joined'].update(ds2.dropna())
 
     joined = df['joined'].replace('', np.NaN)
     return joined
@@ -871,7 +872,6 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         The series in which the recoded data will be stored and
         returned.
     """
-
     qtype = meta['columns'][series.name]['type']
 
     if qtype in ['delimited set']:
@@ -886,7 +886,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
             codes = [c['value'] for c in vals]
             cols = [str(c) for c in codes]
         ds = pd.DataFrame(0, index=series.index, columns=cols)
-        for key, idx in index_mapper.iteritems():
+        for key, idx in index_mapper.items():
             ds[str(key)].loc[idx] = 1
         ds2 = condense_dichotomous_set(ds)
         org_name = series.name
@@ -906,7 +906,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         series = condense_dichotomous_set(ds)
 
     elif qtype in ['single', 'int', 'float']:
-        for key, idx in index_mapper.iteritems():
+        for key, idx in index_mapper.items():
             series.loc[idx] = key
     else:
         raise TypeError(
@@ -978,7 +978,6 @@ def recode(meta, data, target, mapper, default=None, append=False,
     """
 
     # Error handling
-
     # Check meta, data
     if not isinstance(meta, dict):
         raise ValueError("'meta' must be a dictionary.")
@@ -990,7 +989,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
         raise ValueError("'mapper' must be a dictionary.")
 
     # Check target
-    if not isinstance(target, (str, unicode)):
+    if not isinstance(target, str):
         raise ValueError("The value for 'target' must be a string.")
     if not target in meta['columns']:
         raise ValueError("'%s' not found in meta['columns']." % (target))
@@ -1005,7 +1004,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
 
     # Check default
     if not default is None:
-        if not isinstance(default, (str, unicode)):
+        if not isinstance(default, str):
             raise ValueError("The value for 'default' must be a string.")
         if not default in meta['columns']:
             raise ValueError("'%s' not found in meta['columns']." % (default))
@@ -1013,7 +1012,7 @@ def recode(meta, data, target, mapper, default=None, append=False,
     # Check initialize
     initialize_is_string = False
     if not initialize is None:
-        if isinstance(initialize, (str, unicode)):
+        if isinstance(initialize, str):
             initialize_is_string = True
             if not initialize in meta['columns']:
                 raise ValueError("'%s' not found in meta['columns']." % (target))
@@ -1065,7 +1064,7 @@ def merge_text_meta(left_text, right_text, overwrite=False):
     if overwrite:
         left_text.update(right_text)
     else:
-        for text_key in right_text.keys():
+        for text_key in list(right_text.keys()):
             if not text_key in left_text:
                 left_text[text_key] = right_text[text_key]
 
@@ -1157,7 +1156,7 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
     for mask in masks:
         old = left_meta['masks'][mask]
         new = right_meta['masks'][mask]
-        for tk, t in new['text'].items():
+        for tk, t in list(new['text'].items()):
             if not tk in old['text'] or overwrite:
                old['text'].update({tk: t})
         for item in new['items']:
@@ -1167,14 +1166,14 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
                 if old_item['source'] == check_source:
                     check = 1
                     try:
-                        for tk, t in item['text'].items():
+                        for tk, t in list(item['text'].items()):
                             if not tk in old_item['text'] or overwrite:
                                old_item['text'].update({tk: t})
                     except:
                         if  verbose:
                             e = "'text' meta not valid for mask {}: item {}"
                             e = e.format(mask, item['source'].split('@')[-1])
-                            print '{} - skipped!'.format(e)
+                            print('{} - skipped!'.format(e))
                         else:
                             pass
             if check == 0:
@@ -1187,7 +1186,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
                get_cols=False, get_updates=False, verbose=True):
 
     if verbose:
-        print '\n', 'Merging meta...'
+        print('\n', 'Merging meta...')
 
     if from_set is None:
         from_set = 'data file'
@@ -1195,8 +1194,8 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
     # Find the columns to be merged
     if from_set in meta_right['sets']:
         if verbose:
-            print ("New columns will be appended in the order found in"
-                   " meta['sets']['{}'].".format(from_set))
+            print(("New columns will be appended in the order found in"
+                   " meta['sets']['{}'].".format(from_set)))
 
         cols = []
         masks = []
@@ -1219,7 +1218,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
             for mask in masks:
                 if not mask in meta_left['masks']:
                     if verbose:
-                        print "Adding meta['masks']['{}']".format(mask)
+                        print("Adding meta['masks']['{}']".format(mask))
                     meta_left['masks'][mask] = meta_right['masks'][mask]
                 else:
                     _update_mask_meta(meta_left, meta_right, mask, verbose,
@@ -1230,13 +1229,13 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
         if sets:
             for set_name in sorted(sets):
                 if verbose:
-                    print "Adding meta['sets']['{}']".format(set_name)
+                    print("Adding meta['sets']['{}']".format(set_name))
                 meta_left['sets'][set_name] = meta_right['sets'][set_name]
 
-        for val in meta_right['lib']['values'].keys():
+        for val in list(meta_right['lib']['values'].keys()):
             if not val in meta_left['lib']['values']:
                 if verbose:
-                    print "Adding meta['lib']['values']['{}']".format(val)
+                    print("Adding meta['lib']['values']['{}']".format(val))
                 meta_left['lib']['values'][val] = meta_right['lib']['values'][val]
             elif val == 'ddf' or (meta_left['lib']['values'][val] ==
                  meta_right['lib']['values'][val]):
@@ -1252,16 +1251,16 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
 
     else:
         if verbose:
-            print (
+            print((
                 "No '{}' set was found, new columns will be appended"
                 " alphanumerically.".format(from_set)
-            )
-        cols = meta_right['columns'].keys().sort(key=str.lower)
+            ))
+        cols = list(meta_right['columns'].keys()).sort(key=str.lower)
 
     col_updates = []
     for col_name in cols:
         if verbose:
-            print '...', col_name
+            print('...', col_name)
         # store properties
         props = copy.deepcopy(
             meta_right['columns'][col_name].get('properties', {}))
@@ -1507,7 +1506,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
         data_right = data_right.loc[slicer, :]
 
         if verbose:
-            print '\n', 'Checking metadata...'
+            print('\n', 'Checking metadata...')
 
         if from_set is None:
             from_set = 'data file'
@@ -1526,7 +1525,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             update_right_on = False
 
         if verbose:
-            print '\n', 'Merging data...'
+            print('\n', 'Merging data...')
 
         # update columns which are in left and in right data
         if col_updates:
@@ -1540,14 +1539,14 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             non_sets = [c for c in col_updates if not c in sets]
 
             if verbose:
-                print '------ updating data for known columns'
+                print('------ updating data for known columns')
             updata_left.update(updata_right[non_sets])
             if merge_existing:
                 for col in sets:
                     if not (merge_existing == 'all' or col in merge_existing):
                         continue
                     if verbose:
-                        print "..{}".format(col)
+                        print("..{}".format(col))
                     updata_left[col] = updata_left[col].combine(
                         updata_right[col],
                         lambda x, y: _merge_delimited_sets(str(x)+str(y)))
@@ -1557,7 +1556,7 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
         # append completely new columns
         if verbose:
-            print '------ appending new columns'
+            print('------ appending new columns')
         new_cols = [col for col in cols if not col in col_updates]
         if update_right_on:
             new_cols.append(right_on)
@@ -1577,8 +1576,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
         if verbose:
             for col_name in new_cols:
-                print '..{}'.format(col_name)
-            print '\n'
+                print('..{}'.format(col_name))
+            print('\n')
 
     return meta_left, data_left
 
@@ -1748,13 +1747,13 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
                     left_id = str(left_id)
                     right_id = str(right_id)
             if verbose:
-                print (
+                print((
                     "'{}' was not found in the left meta so a new"
                     " column definition will be created for it. Based"
                     " on the given 'left_id' and 'right_id' types this"
                     " new column will be given the type '{}'.".format(
                         row_id_name,
-                        id_type))
+                        id_type)))
             text_key_left = meta_left['lib']['default text']
             text_key_right = meta_right['lib']['default text']
             meta_left['columns'][row_id_name] = {
@@ -1778,7 +1777,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
             data_right[row_id_name] = right_id
 
     if verbose:
-        print '\n', 'Checking metadata...'
+        print('\n', 'Checking metadata...')
 
     # Merge the right meta into the left meta
     meta_left, cols, col_updates = merge_meta(
@@ -1818,7 +1817,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
         vdata.reset_index(drop=True, inplace=True)
 
     if verbose:
-        print '\n'
+        print('\n')
 
     return meta_left, vdata
 

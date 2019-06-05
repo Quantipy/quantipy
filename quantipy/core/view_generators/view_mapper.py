@@ -24,7 +24,7 @@ class ViewMapper(OrderedDict):
 
         # If no view method is views the choose all known_methods
         if views is None:
-            views = self.known_methods.keys()
+            views = list(self.known_methods.keys())
 
         # populate the view instance with the views methods from the known_methods.
         for method in views:
@@ -48,16 +48,16 @@ class ViewMapper(OrderedDict):
 
     def __reduce__(self):
         class_type = self.__class__
-        arguments = self.keys()
+        arguments = list(self.keys())
         setitem_dict = {}
 
         # Must use .keys() because the loop removes callable methods from self
-        for view_name in self.keys():
+        for view_name in list(self.keys()):
             if callable(self[view_name]['method']):
                 view = self.pop(view_name)
                 kwargs = view['kwargs']
                 method = view['method']
-                setitem_dict[view_name] = {'method':marshal.dumps(method.func_code), 'kwargs':kwargs}
+                setitem_dict[view_name] = {'method':marshal.dumps(method.__code__), 'kwargs':kwargs}
 
         return (class_type, tuple(arguments), setitem_dict, None, None)
 
@@ -80,7 +80,7 @@ class ViewMapper(OrderedDict):
         view_method = eval('qp.QuantipyViews().' + method)
         if iterators is not None:
             template = {'method': view_method,
-                        'kwargs': {'iterators': {k: v for k, v in iterators.items()}}}
+                        'kwargs': {'iterators': {k: v for k, v in list(iterators.items())}}}
         else:
             template = {'method': view_method, 'kwargs': {}}
         self.template = template
@@ -144,7 +144,7 @@ class ViewMapper(OrderedDict):
         -------
         subset : ViewMapper instance
         """
-        if isinstance(views, (str, unicode)):
+        if isinstance(views, str):
             views = [views]
         self_keys = set(self.keys())
         requested_keys = set(views)
@@ -153,7 +153,7 @@ class ViewMapper(OrderedDict):
             raise KeyError(
                 "None of the view keys you attempted to extract using 'subset' "
                 "were found in this ViewMapper instance. "
-                "You requested: %s, found: %s" % (views, self.keys())
+                "You requested: %s, found: %s" % (views, list(self.keys()))
             )
         if strict_selection:
             invalid_keys = requested_keys - self_keys
@@ -161,10 +161,10 @@ class ViewMapper(OrderedDict):
                 raise KeyError(
                     "Some of the view keys you attempted to extract using 'subset' "
                     "were not found in this ViewMapper instance. "
-                    "You requested: %s, found: %s" % (views, self.keys())
+                    "You requested: %s, found: %s" % (views, list(self.keys()))
                 )
         subset = self.copy()
-        for view in subset.keys():
+        for view in list(subset.keys()):
             if not view in views:
                 del subset[view]
         return subset
@@ -203,7 +203,7 @@ class ViewMapper(OrderedDict):
                               "delimited set", "array"]:
                     transpose = False
             except:
-                print "Can't find a y called %s" % (link.y)
+                print("Can't find a y called %s" % (link.y))
 
         else:
             # Infer the type from the pandas types
@@ -249,7 +249,7 @@ class ViewMapper(OrderedDict):
         # Keep a clean cope of the weights given in args
         arg_weights = weights
 
-        for name, values in self.items():
+        for name, values in list(self.items()):
 
             # Take a copy of the clean arg_weights value
             weights = copy.copy(arg_weights)
@@ -319,7 +319,7 @@ class ViewMapper(OrderedDict):
 
     # Private
     def __print_exception_message__(self,message, link, name):
-        print "Error generating View: '{name}', x: '{x}', y: '{y}'. Error : '{message}'.\n".format(name=name, x=link.x, y=link.y, message=message)
+        print("Error generating View: '{name}', x: '{x}', y: '{y}'. Error : '{message}'.\n".format(name=name, x=link.x, y=link.y, message=message))
 
     # "proxy" methods. The core class doesn't know any view methods but this method can be extended.
     def __init_custom_methods__(self):
@@ -345,7 +345,7 @@ class ViewMapper(OrderedDict):
         ----------
         iterations : list of dicts
         '''
-        keys, items = zip(*iterators.items())
-        iterations = [dict(zip(keys, x)) for x in product(*items)]
+        keys, items = list(zip(*list(iterators.items())))
+        iterations = [dict(list(zip(keys, x))) for x in product(*items)]
 
         return iterations

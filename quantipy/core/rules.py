@@ -163,7 +163,7 @@ class Rules(object):
 
             # get all views of the link, depending on axis
             col_key = self._xrule_col if axis == 0 else self._yrule_col
-            views = self.link_base[col_key]['@'].keys()
+            views = list(self.link_base[col_key]['@'].keys())
 
             # get df (-slice) to apply rule on
             if 'sortx' in rule_axis:
@@ -172,7 +172,7 @@ class Rules(object):
                 sort_on_stat = False
                 sort_on_net = False
 
-                if isinstance(sort_on, (str, unicode)):
+                if isinstance(sort_on, str):
                     sort_on_stat = sort_on in [
                         'median', 'stddev', 'sem', 'max', 'min', 'mean',
                         'upper_q', 'lower_q']
@@ -222,7 +222,7 @@ class Rules(object):
         else:
             vk = 'x|f|:||{}|counts'.format(weight)
             view_weight = self.view_name.split('|')[-2]
-            link_weights = [k.split('|')[-2] for k in self.link.keys()
+            link_weights = [k.split('|')[-2] for k in list(self.link.keys())
                             if not 'base' in k.split('|')[-1]]
             if not (weight == view_weight or weight in link_weights):
                 msg = "\n{}: view-weight and weight to sort on differ ('{}' vs '{}')\n"
@@ -241,7 +241,7 @@ class Rules(object):
     def _get_descriptive_via_stack(self, col, desc='mean'):
         l = self.link_base[col]['@']
         w = self._sort_weight
-        desc_key = [k for k in l.keys() if 'd.{}'.format(desc) in k.split('|')[1]
+        desc_key = [k for k in list(l.keys()) if 'd.{}'.format(desc) in k.split('|')[1]
                     and k.split('|')[-2] == w]
         if not desc_key:
             msg = "No {} view to sort '{}' on found!"
@@ -258,7 +258,7 @@ class Rules(object):
         l = self.link_base[col]['@']
         w = self._sort_weight
         net_no = int(net.split('_')[-1])
-        net_key = [k for k in l.keys() if k.split('|')[-1] == 'net'
+        net_key = [k for k in list(l.keys()) if k.split('|')[-1] == 'net'
                     and len(k.split('|')[2].split(',x')) >= net_no
                     and k.split('|')[-2] == w]
         if not net_key:
@@ -276,8 +276,8 @@ class Rules(object):
             ('sortx', self.sortx),
             ('dropx', self.dropx)])
 
-        if not apply_rules: apply_rules = rulesx.keys()
-        for r, method in rulesx.items():
+        if not apply_rules: apply_rules = list(rulesx.keys())
+        for r, method in list(rulesx.items()):
             if apply_rules and r in apply_rules:
                 if r in rules:
                     f = method(f, **rules[r])
@@ -301,15 +301,15 @@ class Rules(object):
         view = exp_net_view
         logic = view._kwargs.get('logic')
         description = view.describe_block()
-        groups['codes'] = [c for c, d in description.items() if d == 'normal']
-        net_names = [v for v, d in description.items() if d == 'net']
+        groups['codes'] = [c for c, d in list(description.items()) if d == 'normal']
+        net_names = [v for v, d in list(description.items()) if d == 'net']
         for l in logic:
             new_l = copy.deepcopy(l)
             for k in l:
                 if k not in net_names:
                     del new_l[k]
-            groups[new_l.keys()[0]] = new_l.values()[0]
-        groups['codes'] = [c for c, d in description.items() if d == 'normal']
+            groups[list(new_l.keys())[0]] = list(new_l.values())[0]
+        groups['codes'] = [c for c, d in list(description.items()) if d == 'normal']
         return groups
 
     def sort_expanded_nets(self, view, sortx):
@@ -335,7 +335,7 @@ class Rules(object):
         net_groups = self._find_expanded_net_groups(view)
         sort = [(name, v) for v in df.index.get_level_values(1)
                 if (v in net_groups['codes'] or
-                v in net_groups.keys()) and not v in fix_codes]
+                v in list(net_groups.keys())) and not v in fix_codes]
         # sort between groups
         if between:
             if pd.__version__ == '0.19.2':
@@ -470,7 +470,7 @@ class Rules(object):
             df = df.loc[s_all+s_sort+s_fixed]
             return df
         except UnboundLocalError:
-            print 'Could not sort on {}'.format(sort_on)
+            print(('Could not sort on {}'.format(sort_on)))
             return df
 
     def slicex(self, df, values, keep_margins=True):

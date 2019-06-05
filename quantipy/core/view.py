@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import quantipy.core.helpers.functions as helpers
-from operator import add, sub, mul, div
+from operator import add, sub, mul, truediv
 import pandas as pd
 import copy
 from collections import OrderedDict
@@ -55,7 +55,7 @@ class View(object):
         xname = link.x
         yname = link.y
         filemeta = link.get_meta()
-        masks = filemeta['masks'].keys()
+        masks = list(filemeta['masks'].keys())
         if filemeta['columns'] is None:
             metas = [{'name': xname, 'is_multi': False, 'is_nested': False},
                      {'name': yname, 'is_multi': False, 'is_nested': False}]
@@ -91,7 +91,7 @@ class View(object):
                     net_texts.append(net_text)
                 else:
                     net_texts.append(None)
-                net_names.extend([key for key in l.keys()
+                net_names.extend([key for key in list(l.keys())
                                    if not key == 'expand'])
             grp_text_map = {name: text
                             for name, text in zip(net_names, net_texts)}
@@ -100,9 +100,9 @@ class View(object):
                 if calc_text is not None:
                     del calc['text']
                 if not calc_only:
-                    grp_text_map[calc.keys()[0]] = calc_text
+                    grp_text_map[list(calc.keys())[0]] = calc_text
                 else:
-                    grp_text_map = {calc.keys()[0]: calc_text}
+                    grp_text_map = {list(calc.keys())[0]: calc_text}
         else:
             grp_text_map = None
         return grp_text_map
@@ -143,9 +143,9 @@ class View(object):
                     if expand is None:
                         expand = global_expand
                     if expand is None:
-                        block_ref[item.keys()[0]] = 'normal'
+                        block_ref[list(item.keys())[0]] = 'normal'
                     elif expand in ['before', 'after']:
-                        for key in item.keys():
+                        for key in list(item.keys()):
                             if not key in ['text', 'expand', 'complete']:
                                 net = key
                                 break
@@ -301,16 +301,16 @@ class View(object):
         if conditionals: conditionals = list(reversed(conditionals))
         logic_codes = []
         for grp in logic:
-            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
+            if any(isinstance(val, (tuple, dict)) for val in list(grp.values())):
                 codes = conditionals.pop()
                 logic_codes.append(codes)
             else:
                 expand_cond = expand
-                if 'expand' in grp.keys():
+                if 'expand' in list(grp.keys()):
                     grp = copy.deepcopy(grp)
                     expand_cond = grp['expand']
                     del grp['expand']
-                codes = '{'+','.join(map(str, grp.values()[0]))+'}'
+                codes = '{'+','.join(map(str, list(grp.values())[0]))+'}'
                 if expand_cond is None:
                     logic_codes.append("{}[{}]".format(axis, codes))
                 elif expand_cond == 'after':
@@ -323,7 +323,7 @@ class View(object):
         if self._kwargs.get('source', None): return self._kwargs['source']
         try:
             var = link.x if not link.x == '@' else link.y
-            if var in link.get_meta()['masks'].keys():
+            if var in list(link.get_meta()['masks'].keys()):
                 values = link.get_meta()['lib']['values'][var]
             else:
                 values = link.get_meta()['columns'][var].get('values', None)
@@ -349,19 +349,19 @@ class View(object):
         return condition
 
     def _calc_condition(self, logic, conditions, calc):
-        op = calc.values()[0][1]
-        val1, val2 = calc.values()[0][0], calc.values()[0][2]
+        op = list(calc.values())[0][1]
+        val1, val2 = list(calc.values())[0][0], list(calc.values())[0][2]
         symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
         calc_strct = '{}{}{}'
         if logic:
             cond_names = []
             for l in logic:
-                cond_names.extend([key for key in l.keys()
+                cond_names.extend([key for key in list(l.keys())
                                    if not key in ['expand', 'text']])
-            name_cond_pairs = zip(cond_names, conditions)
+            name_cond_pairs = list(zip(cond_names, conditions))
             cond_map = {name: cond for name, cond in name_cond_pairs}
-            v1 = cond_map[val1] if val1 in cond_map.keys() else val1[0]
-            v2 = cond_map[val2] if val2 in cond_map.keys() else val2[0]
+            v1 = cond_map[val1] if val1 in list(cond_map.keys()) else val1[0]
+            v2 = cond_map[val2] if val2 in list(cond_map.keys()) else val2[0]
         else:
             v1 = val1 if isinstance(val1, list) else conditions
             v2 = val2 if isinstance(val2, list) else conditions
@@ -768,7 +768,7 @@ class View(object):
         }
         for lang in mdict:
             for key in mdict[lang]:
-                mdict[lang][key] = mdict[lang][key].decode('utf-8')
+                mdict[lang][key] = mdict[lang][key]
 
         return mdict
 

@@ -1,4 +1,4 @@
-import agg
-import meta
-import struct
-import query
+from . import agg
+from . import meta
+from . import struct
+from . import query

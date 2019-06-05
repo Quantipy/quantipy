@@ -8,7 +8,7 @@ class Cache(defaultdict):
         super(Cache, self).__init__(Cache)
 
     def __reduce__(self):
-        return self.__class__, tuple(), None, None, self.iteritems()
+        return self.__class__, tuple(), None, None, iter(list(self.items()))
 
 
     def set_obj(self, collection, key, obj):
@@ -24,7 +24,7 @@ class Cache(defaultdict):
     		The reference key for the object.
     	obj : Specific Quantipy or arbitrary Python object.
     		The object to store inside the cache.
-    	
+
     	Returns
     	-------
     	None
@@ -50,7 +50,7 @@ class Cache(defaultdict):
     	'''
     	if collection == 'matrices':
     		return self[collection].get(key, (None, None))
-        elif collection == 'squeezed':
-            return self[collection].get(key, (None, None, None, None, None, None, None))
+    	elif collection == 'squeezed':
+    		return self[collection].get(key, (None, None, None, None, None, None, None))
     	else:
     		return self[collection].get(key, None)

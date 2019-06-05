@@ -1,7 +1,7 @@
-import cPickle
+import pickle
 from collections import defaultdict
-from helpers import functions as helpers
-from view import View
+from .helpers import functions as helpers
+from .view import View
 import pandas as pd
 import copy
 
@@ -56,7 +56,7 @@ class Chain(defaultdict):
         self.__dict__.update(attr_dict)
 
     def __reduce__(self):
-        return self.__class__, (self.name, ), self.__dict__, None, self.iteritems()
+        return self.__class__, (self.name, ), self.__dict__, None, iter(list(self.items()))
 
     def save(self, path=None):
         """
@@ -72,7 +72,7 @@ class Chain(defaultdict):
         else:
             path_chain = path
         f = open(path_chain, 'wb')
-        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
         f.close()
 
     def copy(self):
@@ -80,8 +80,8 @@ class Chain(defaultdict):
         Create a copy of self by serializing to/from a bytestring using
         cPickle.
         """
-        new_chain = cPickle.loads(
-            cPickle.dumps(self, cPickle.HIGHEST_PROTOCOL))
+        new_chain = pickle.loads(
+            pickle.dumps(self, pickle.HIGHEST_PROTOCOL))
         return new_chain
 
     def _lazy_name(self):
@@ -183,7 +183,7 @@ class Chain(defaultdict):
     def view_lengths(self):
 
         lengths = [
-            list(zip(*view_size)[0])
+            next(zip(*view_size))
             for view_size in [y_size for y_size in self.view_sizes()]]
 
         return lengths
@@ -192,23 +192,23 @@ class Chain(defaultdict):
         """ Generates a list of all link defining stack keys.
         """
         stack_tree = []
-        for dk in self.keys():
+        for dk in list(self.keys()):
             path_dk = [dk]
             filters = self[dk]
 
-            for fk in filters.keys():
+            for fk in list(filters.keys()):
                 path_fk = path_dk + [fk]
                 xs = self[dk][fk]
 
-                for sk in xs.keys():
+                for sk in list(xs.keys()):
                     path_sk = path_fk + [sk]
                     ys = self[dk][fk][sk]
 
-                    for tk in ys.keys():
+                    for tk in list(ys.keys()):
                         path_tk = path_sk + [tk]
                         views = self[dk][fk][sk][tk]
 
-                        for vk in views.keys():
+                        for vk in list(views.keys()):
                             path_vk = path_tk + [vk, 1]
                             stack_tree.append(tuple(path_vk))
 
@@ -234,6 +234,6 @@ class Chain(defaultdict):
               Example of use: new_stack = Chain.load("./tests/ChainName.chain")
         """
         f = open(filename, 'rb')
-        new_stack = cPickle.load(f)
+        new_stack = pickle.load(f)
         f.close()
         return new_stack

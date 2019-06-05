@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
-import cPickle
+import pickle
 import re
 import copy
 import itertools
@@ -9,8 +9,8 @@ import math
 import re, string
 
 from collections import OrderedDict, defaultdict
-from constants import DTYPE_MAP
-from constants import MAPPED_PATTERN
+from .constants import DTYPE_MAP
+from .constants import MAPPED_PATTERN
 from itertools import product
 import quantipy as qp
 
@@ -82,12 +82,12 @@ def verify_dtypes_vs_meta(data, meta):
 
     dtypes = data.dtypes
     dtypes.name = 'dtype'
-    var_types = pd.DataFrame({k: v['type'] for k, v in meta['columns'].iteritems()}, index=['meta']).T
+    var_types = pd.DataFrame({k: v['type'] for k, v in meta['columns'].items()}, index=['meta']).T
     df = pd.concat([var_types, dtypes.astype(str)], axis=1)
 
     missing = df.loc[df['dtype'].isin([np.NaN])]['meta']
     if missing.size>0:
-        print '\nSome meta not paired to data columns was found (these may be special data types):\n', missing, '\n'
+        print('\nSome meta not paired to data columns was found (these may be special data types):\n', missing, '\n')
 
     df = df.dropna(how='any')
     df['verified'] = df.apply(lambda x: x['dtype'] in DTYPE_MAP[x['meta']], axis=1)
@@ -282,7 +282,7 @@ def get_index_levels(index):
         levels.append(unzipped[0][0])
         levels.append([unzipped[0][1]])
     else:
-        unzipped = zip(*index.values)
+        unzipped = list(zip(*index.values))
         levels.append(unzipped[0][0])
         levels.append(unzipped[1])
 
@@ -317,12 +317,12 @@ def paint_add_text_map(meta, add_text_map, text_key):
         try:
             add_text_map = {
                 key: get_text(text, text_key)
-                for key, text in add_text_map.iteritems()}
+                for key, text in add_text_map.items()}
         except UnicodeEncodeError:
             add_text_map = {
                 key: qp.core.tools.dp.io.unicoder(
                     get_text(text, text_key, like_ascii=True))
-                for key, text in add_text_map.iteritems()}
+                for key, text in add_text_map.items()}
 
     return add_text_map
 
@@ -679,14 +679,14 @@ def get_text(text, text_key, axis=None):
     if text is None:
         text = ''
 
-    if isinstance(text, (str, unicode)):
+    if isinstance(text, str):
         return text
 
     elif isinstance(text, (dict, OrderedDict)):
 
         if axis is None:
 
-            if isinstance(text_key, (str, unicode)):
+            if isinstance(text_key, str):
                 if text_key in text:
                     return text[text_key]
             else:
@@ -694,7 +694,7 @@ def get_text(text, text_key, axis=None):
                     if key in text:
                         return text[key]
         else:
-            if axis in text_key.keys():
+            if axis in list(text_key.keys()):
                 for key in text_key[axis]:
                     if key in text:
                         return text[key]
@@ -719,8 +719,8 @@ def finish_text_key(meta, text_key):
     if text_key is None:
         text_key = {}
     for key in ['x', 'y']:
-        if key in text_key.keys():
-            if isinstance(text_key[key], (str, unicode)):
+        if key in list(text_key.keys()):
+            if isinstance(text_key[key], str):
                 text_key[key] = [text_key[key], default_text]
             elif isinstance(text_key[key], list):
                 text_key[key].append(default_text)
@@ -743,7 +743,7 @@ def get_values(var_meta, meta):
         if isinstance(value, dict):
             values.append(value)
 
-        elif isinstance(value, (str, unicode)):
+        elif isinstance(value, str):
             values += get_mapped_meta(meta, value)
 
     return values
@@ -771,7 +771,7 @@ def is_mapped_meta(item):
     syntax.
     """
 
-    if isinstance(item, (str, unicode)):
+    if isinstance(item, str):
         if item.split('@')[0] in ['lib', 'columns', 'masks', 'info', 'sets']:
             if re.match(MAPPED_PATTERN, item):
                 return True
@@ -834,7 +834,7 @@ def emulate_meta(meta, item):
         return item
 
     elif isinstance(item, (dict, OrderedDict)):
-        for k in item.keys():
+        for k in list(item.keys()):
             item[k] = emulate_meta(meta, item[k])
         return item
 
@@ -860,7 +860,7 @@ def as_datetime64(data, date_format='dmy', date_sep='/', time_format='hm', time_
     if has_time:
         if 's' not in time_format:
             data = data + ':00'
-        date_time = zip(*(data.str.split(' ')))
+        date_time = list(zip(*(data.str.split(' '))))
         time = pd.Series(date_time[1])
         date = pd.Series(date_time[0])
 
@@ -934,7 +934,7 @@ def single_value_counts_groups(data, groupby):
     if groupby:
         grouped = data.dropna().groupby(groupby)
         groups = sorted(grouped.groups.keys())
-        if grouped.groups.keys():
+        if list(grouped.groups.keys()):
             df = pd.concat([single_value_counts(group_data[1][[data.columns[0], data.columns[2]]]) for group_data in grouped], axis=0).T
             df.columns = [int(g) for g in groups]
         else:
@@ -983,7 +983,7 @@ def delimited_set_value_counts_groups(data, groupby, value_map=None):
     '''
     grouped = data.dropna().groupby(groupby)
     groups = sorted(grouped.groups.keys())
-    if grouped.groups.keys():
+    if list(grouped.groups.keys()):
         df = pd.concat([delimited_set_value_counts(group_data[1][[data.columns[0], data.columns[2]]], value_map) for group_data in grouped], axis=1)
         df.columns = [int(g) for g in groups]
         if len(df.index) == 1:
@@ -1022,7 +1022,7 @@ def get_views(qp_structure):
         qp_structure = < stack[data_key]['data'] >
     '''
 
-    for k, v in qp_structure.iteritems():
+    for k, v in qp_structure.items():
         if not isinstance(v, qp.View):
             for item in get_views(v):
                 yield item
@@ -1038,7 +1038,7 @@ def get_links(qp_structure):
         qp_structure = < stack[data_key]['data'] >
     '''
 
-    for k, v in qp_structure.iteritems():
+    for k, v in qp_structure.items():
         if not isinstance(v, qp.Link):
             for item in get_links(v):
                 yield item
@@ -1223,14 +1223,14 @@ def get_var_nest_combo(var):
         return (var, None)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def create_multiindex_from_length(name, length, names=[u'Question', u'Values'], margins=True):
+def create_multiindex_from_length(name, length, names=['Question', 'Values'], margins=True):
     if margins:
         multiindex = pd.MultiIndex(levels=[[name], [str(s) for s in range(1, length + 1)] + ['All']],
-                                   labels=[[0]*(length + 1), range(length + 1)],
+                                   labels=[[0]*(length + 1), list(range(length + 1))],
                                     names=names)
     else:
         multiindex = pd.MultiIndex(levels=[[name], [str(s) for s in range(1, length + 1)]],
-                                   labels=[[0]*length, range(length)],
+                                   labels=[[0]*length, list(range(length))],
                                     names=names)
     return multiindex
 
@@ -1279,7 +1279,7 @@ def create_nest_meta(x, y, data, meta=None):
 #                 'length':len(data[var].unique())} for var in x.split('>') + y.split('>') }
     if meta is None:
         return None
-    if x in meta['columns'].keys() and not meta['columns'][x]['type'] in ['int', 'float'] and not meta['columns'][y]['type'] in ['int', 'float']:
+    if x in list(meta['columns'].keys()) and not meta['columns'][x]['type'] in ['int', 'float'] and not meta['columns'][y]['type'] in ['int', 'float']:
         return {var:{'items': get_values_from_categorical(meta['columns'][var]['values'], meta)} for var in x.split('>') + y.split('>') if var in data}
     else:
         return {var:{'items': sorted(data[var].unique())} for var in x.split('>') + y.split('>') if var in data}
@@ -1328,7 +1328,7 @@ def get_unique_level_values(index):
     """
     return [
         index.get_level_values(i).unique().tolist()
-        for i in xrange(len(index.levels))]
+        for i in range(len(index.levels))]
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def translate(items, text_keys):
@@ -1509,8 +1509,8 @@ def flatten(stack, separator='-', prefix=''):
     (This is straight from stackoverflow.com)
     """
     return {prefix + separator + k if prefix else k : v
-            for kk, vv in stack.items()
-            for k, v in flatten(vv, separator, kk).items()
+            for kk, vv in list(stack.items())
+            for k, v in list(flatten(vv, separator, kk).items())
             } if isinstance(stack, dict) else {prefix : stack}
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1535,12 +1535,12 @@ def create_range_as_list(rng, as_type=str):
     for sub_rng in rng.split(','):
         if '-' in sub_rng:
             lo, hi = sub_rng.split('-')
-            res.extend([i for i in xrange(int(lo), int(hi)+1)])
+            res.extend([i for i in range(int(lo), int(hi)+1)])
         else:
             res.append(sub_rng)
     if as_type==str:
         return res
-    return map(as_type, res)
+    return list(map(as_type, res))
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def add_combined_codes_view(create_method, source, combine_codes, label):
@@ -1564,7 +1564,7 @@ def add_combined_codes_view(create_method, source, combine_codes, label):
     """
     view=ViewMapper()
     if isinstance(combine_codes[0], list):
-        for i in xrange(max(len(combine_codes), len(label))):
+        for i in range(max(len(combine_codes), len(label))):
             name = 'net_%s_%s_%s_%s' % (combine_codes[i][0],
                                         combine_codes[i][-1],
                                         source,
@@ -1613,7 +1613,7 @@ def hide_codes_x(x, codes_to_hide, views, exclude_from_base=False):
                                              'x_hidden_in_views': views,
                                              'x_exclude_from_base': exclude_from_base})
             else:
-                print 'hide_codes_x(): %s not found --> ignored.' % (view)
+                print('hide_codes_x(): %s not found --> ignored.' % (view))
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def reorder_codes_x(x, new_order, views):
@@ -1650,7 +1650,7 @@ def create_delimited_from_single(data, meta = None, mrs_spec = {}):
     df = data.copy()
     mrs_data = []
     mrs_meta = None
-    for name, definition in mrs_spec.items():
+    for name, definition in list(mrs_spec.items()):
 
         mrs_name = name
         mrs_q = sorted(definition, key=lambda num: int(num.split('_')[-1]))
@@ -1698,44 +1698,44 @@ def slice_stack(stack, dks=None, fks=None, xks=None, yks=None,
     all_vks = vks is None
 
     if all_dks:
-        dks = stack.keys()
+        dks = list(stack.keys())
 
     for d in dks:
 
-        if not d in stack.keys():
+        if not d in list(stack.keys()):
             del stack[d]
         else:
             if all_fks:
-                fks = stack[d]['data'].keys()
+                fks = list(stack[d]['data'].keys())
 
-            for f in stack[d]['data'].keys():
+            for f in list(stack[d]['data'].keys()):
                 if not f in fks:
                     del stack[d]['data'][f]
                 else:
                     if all_xks:
-                        xks = stack[d]['data'][f].keys()
+                        xks = list(stack[d]['data'][f].keys())
 
                     if att_xks and not '@' in xks:
                         xks.append('@')
 
-                    for x in stack[d]['data'][f].keys():
+                    for x in list(stack[d]['data'][f].keys()):
                         if x not in xks:
                             del stack[d]['data'][f][x]
                         else:
                             if all_yks:
-                                yks = stack[d]['data'][f][x].keys()
+                                yks = list(stack[d]['data'][f][x].keys())
 
                             if att_yks and not '@' in yks:
                                 yks.append('@')
 
-                            for y in stack[d]['data'][f][x].keys():
+                            for y in list(stack[d]['data'][f][x].keys()):
                                 if y not in yks:
                                     del stack[d]['data'][f][x][y]
                                 else:
                                     if all_vks:
-                                        vks = stack[d]['data'][f][x][y].keys()
+                                        vks = list(stack[d]['data'][f][x][y].keys())
 
-                                    for v in stack[d]['data'][f][x][y].keys():
+                                    for v in list(stack[d]['data'][f][x][y].keys()):
                                         if v not in vks:
                                             del stack[d]['data'][f][x][y][v]
 
@@ -1797,12 +1797,12 @@ def map_multiindex(index, levels_map=None, names_map=None):
                     "the target levels (given %s, expected %s)"
                     ) % (len(levels_map), len(index.levels)))
             else:
-                mapped_levels = [[levels_map[l][i] if i in levels_map[l].keys() else i for i in level] for l, level in enumerate(index.levels)]
+                mapped_levels = [[levels_map[l][i] if i in list(levels_map[l].keys()) else i for i in level] for l, level in enumerate(index.levels)]
 
         if not names_map:
             mapped_names = index.names
         else:
-            mapped_names = [names_map[n] if n in names_map.keys() else n for n in index.names]
+            mapped_names = [names_map[n] if n in list(names_map.keys()) else n for n in index.names]
 
         mapped_index = pd.MultiIndex(
             levels=mapped_levels,
@@ -1976,11 +1976,11 @@ def aggregate_matrix(value_matrix,  x_def, y_def, calc_bases=True, as_df=True):
         xcodes = len(x_def)+1
         if not y_def is None:
             # bivariate calculation (cross-tabulation)
-            ycodes = reversed(xrange(1, len(y_def)+1))
+            ycodes = reversed(range(1, len(y_def)+1))
             freq = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, 1:xcodes], axis=0)
                        for ycode in ycodes])
             if calc_bases:
-                ycodes = reversed(xrange(1, len(y_def)+1))
+                ycodes = reversed(range(1, len(y_def)+1))
                 cb = np.array([np.sum(value_matrix[value_matrix[:, -ycode] == 1][:, :1])
                             for ycode in ycodes])
                 rb = np.sum(value_matrix[:, 1:xcodes], axis=0)
@@ -2394,7 +2394,7 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
     if not source_view.meta['x']['is_multi'] or force_raw_sum:
         boolmask = [int(index_val[1]) in combine_codes
                     for index_val in source_view.index
-                    if not (isinstance(index_val[1], (str, unicode))
+                    if not (isinstance(index_val[1], str)
                     and index_val[1] == 'None')]
         if any(boolmask):
             net_values = np.array(source_view[boolmask].values.sum(axis=0))
@@ -2406,7 +2406,7 @@ def calc_net_values(link, source_view, combine_codes, force_raw_sum=False):
                                                       limit_x=combine_codes,
                                                       weights=source_view.meta['agg']['weights'])
             xcodes = len(x_def)+1
-            ycodes = reversed(xrange(1, len(y_def)+1))
+            ycodes = reversed(range(1, len(y_def)+1))
             net_values = np.array([matrix[(matrix[:, 1:xcodes].sum(axis=1) > 0) & (matrix[:, -ycode] == 1)][:, 0].sum() for ycode in ycodes])
         else:
             matrix, x_def, y_def = df_to_value_matrix(data=link.get_data(), x=link.x, y=None,
@@ -2450,7 +2450,7 @@ def get_variable_types(data, meta):
     for col in data.columns[1:]:
         types[meta['columns'][col]['type']].append(col)
 
-    for mask in meta['masks'].keys():
+    for mask in list(meta['masks'].keys()):
         types[meta['masks'][mask]['type']].append(mask)
 
     return types
@@ -2495,7 +2495,7 @@ def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
 
     if included is None:
         included = []
-    elif isinstance(included, (str, unicode)):
+    elif isinstance(included, str):
         included = [included]
     if not isinstance(included, (list, tuple, set)):
         raise ValueError (
@@ -2505,7 +2505,7 @@ def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
 
     if excluded is None:
         excluded = []
-    elif isinstance(excluded, (str, unicode)):
+    elif isinstance(excluded, str):
         excluded = [excluded]
     elif not isinstance(excluded, (list, tuple, set)):
         raise ValueError (
@@ -2551,7 +2551,7 @@ def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
         else:
             try:
                 if item in meta['columns'] and meta['columns'][item]['parent']:
-                    items.append(meta['columns'][item]['parent'].keys()[0])
+                    items.append(list(meta['columns'][item]['parent'].keys())[0])
             except:
                 if 'masks@{}'.format(re.sub(pattern, '', item)) in meta['sets'][based_on]['items']:
                     items.append('masks@{}'.format(re.sub(pattern, '', item)))
@@ -2567,7 +2567,7 @@ def filtered_set(meta, based_on, masks=True, included=None, excluded=None,
     return fset
 
 def cpickle_copy(obj):
-    copy = cPickle.loads(cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL))
+    copy = pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
     return copy
 
 def parrot():
@@ -2578,4 +2578,4 @@ def parrot():
     try:
         return display(Image(filename=filename, format='png'))
     except:
-        print ':sad_parrot: Looks like the parrot is not available!'
+        print(':sad_parrot: Looks like the parrot is not available!')

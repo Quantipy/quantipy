@@ -6,7 +6,7 @@ from pptx.util import (
     Cm,
     Inches)
 
-import pptx_defaults as pptx
+from . import pptx_defaults as pptx
 import re
 
 def update_dict_from_dict(update_dict, from_dict):
@@ -17,7 +17,7 @@ def update_dict_from_dict(update_dict, from_dict):
         from_dict:
     :return: None, update_dict are updated inplace
     """
-    for key, value in from_dict.iteritems():
+    for key, value in from_dict.items():
         if isinstance(value, dict):
             update_dict_from_dict(update_dict[key], from_dict[key])
         else:
@@ -122,7 +122,7 @@ class PptxDefaults(object):
                       'side_table': self._side_table,
                       }
 
-        available_shapes = parameter_map.keys()
+        available_shapes = list(parameter_map.keys())
         shape = re.sub(' +', '', shape)
         if shape not in available_shapes:
             error_text = "Shape: {} is not an available shape. \n Available shapes are {}"

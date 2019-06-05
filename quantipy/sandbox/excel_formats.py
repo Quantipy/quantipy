@@ -3,7 +3,7 @@ Excel cell formats
 """
 
 import re
-from excel_formats_constants import (_ATTRIBUTES,
+from .excel_formats_constants import (_ATTRIBUTES,
                                      _DEFAULT_ATTRIBUTES,
                                      _VIEWS_GROUPS)
 from quantipy.core.tools.qp_decorators import lazy_property
@@ -20,7 +20,7 @@ class _Format(dict):
 
     def __init__(self, **kwargs):
         for name in self.__attributes__:
-            if name in kwargs.keys():
+            if name in list(kwargs.keys()):
                 self[name] = kwargs[name]
         for name in kwargs:
             if name not in self.__attributes__:
@@ -63,7 +63,7 @@ class _ExcelFormats(object):
 
     @staticmethod
     def _extract_from(name, source, kwargs):
-        for view, group in source.iteritems():
+        for view, group in source.items():
             pattern = r'(\w+)(%s)(_text|$)' % view
             match = re.match(pattern, name)
             if match:
@@ -104,7 +104,7 @@ class ExcelFormats(_ExcelFormats):
             if method in ('bottom', 'interior', 'left', 'right', 'top'):
                 updates = getattr(self, '_' + method)()
                 if ('left' in name) and (method == 'right'):
-                    updates = {k: v for k, v in updates.iteritems()
+                    updates = {k: v for k, v in updates.items()
                                if k != 'left'}
                 format_.update(updates)
             else:

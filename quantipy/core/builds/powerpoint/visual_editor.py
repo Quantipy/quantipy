@@ -4,7 +4,7 @@
 @author: Majeed.sahebzadha
 '''
 
-from __future__ import print_function, unicode_literals
+
 import numpy as np
 import pandas as pd
 import re
@@ -15,8 +15,8 @@ import json
 import pickle
 from pptx import Presentation
 from pptx.chart.data import ChartData
-from add_shapes import *
-from transformations import *
+from .add_shapes import *
+from .transformations import *
 from os.path import ( 
     basename, 
     dirname,

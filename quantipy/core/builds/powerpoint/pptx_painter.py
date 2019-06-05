@@ -4,7 +4,7 @@
 @author: Majeed.sahebzadha
 '''
 
-from __future__ import unicode_literals
+
 import copy
 import time
 import numpy as np
@@ -67,7 +67,7 @@ def chain_generator(cluster):
         quantipy cluster object
     '''
 
-    for chain_name in cluster.keys():
+    for chain_name in list(cluster.keys()):
         yield cluster[chain_name]
 
 '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -211,7 +211,7 @@ def gen_meta_df(painted_df, qp_view):
     for row in df_meta.index:
         if qp_view.is_net():
             v_described = qp_view.describe_block()
-            all_normal = all(vt == 'normal' for vt in v_described.itervalues())
+            all_normal = all(vt == 'normal' for vt in v_described.values())
             if not all_normal:
                 if row in v_described:
                     if v_described[row] == 'net':
@@ -383,9 +383,9 @@ def PowerPointPainter(
         if True, spreads busy dataframes evenly across multiple slide
     '''
     if verbose:
-        print(
+        print((
             '\n{ast}\n{ast}\n{ast}\nINITIALIZING POWERPOINT '
-            'AUTOMATION SCRIPT...'.format(ast='*' * 80))
+            'AUTOMATION SCRIPT...'.format(ast='*' * 80)))
 
     # check path extension
     if path_pptx.endswith('.pptx'):
@@ -408,7 +408,7 @@ def PowerPointPainter(
             clusters.append(c)
     elif isinstance(cluster, dict):
         names_clusters_dict = cluster
-        for sheet_name, c in cluster.iteritems():
+        for sheet_name, c in cluster.items():
             names.append(sheet_name)
             clusters.append(c)
 
@@ -497,12 +497,12 @@ def PowerPointPainter(
     # loop over clusters, returns pptx for each cluster
     for cluster_name, cluster in zip(names, clusters):
         if verbose:
-            print(
+            print((
                 '\nPowerPoint minions are building your PPTX, '
                 'please stand by...\n\n{indent:>2}Building '
                 'PPTX for {file_name}').format(
                     indent='',
-                    file_name=cluster_name)
+                    file_name=cluster_name))
 
         # log start time
         pptx_start_time = time.time()
@@ -515,7 +515,7 @@ def PowerPointPainter(
         validate_cluster_orientations(cluster)
 
         # pull orientation of chains in cluster
-        orientation = cluster[cluster.keys()[0]].orientation
+        orientation = cluster[list(cluster.keys())[0]].orientation
 
         # open pptx template file
         prs = Presentation(path_pptx_template)
@@ -525,8 +525,8 @@ def PowerPointPainter(
 
         # Get Client and Topic tag from meta    
         if isinstance(spec, dict):
-            topic = u"{}".format(spec.get('topic', ""))        
-            client = u"{}".format(spec.get('name', ""))            
+            topic = "{}".format(spec.get('topic', ""))        
+            client = "{}".format(spec.get('name', ""))            
         else:
             topic = ""        
             client = ""                    
@@ -618,18 +618,18 @@ def PowerPointPainter(
                     else:
                         meta_props = []
 
-                if text_key['x'] in meta['columns'][downbreak]['text'].keys():
+                if text_key['x'] in list(meta['columns'][downbreak]['text'].keys()):
                     question_label = meta['columns'][downbreak]['text'][text_key['x']]
                 else:
-                    question_label = meta['columns'][downbreak]['text'].values()[0]
+                    question_label = list(meta['columns'][downbreak]['text'].values())[0]
                 chart_type = meta_props['chart_type'] if 'chart_type' in meta_props else default_props['chart_type']
                 layout_type = meta_props['chart_layout'] if 'chart_layout' in meta_props else default_props['chart_layout']
                 sort_order = meta_props['sort_order'] if 'sort_order' in meta_props else default_props['sort_order']
                 fixed_categories = meta_props['fixed_categories'] if 'fixed_categories' in meta_props else default_props['fixed_categories']
                 if fixed_categories:
-                    fixed_values = map(lambda x: int(x['value']), fixed_categories)
+                    fixed_values = [int(x['value']) for x in fixed_categories]
                     values = loc_values = meta['columns'][downbreak]['values']
-                    if isinstance(loc_values, (str, unicode)):
+                    if isinstance(loc_values, str):
                         loc_values = loc_values.split('@')
                         values = meta[loc_values.pop(0)]
                         while loc_values:
@@ -651,10 +651,10 @@ def PowerPointPainter(
                         gridname = meta['masks'][grid]['items'][x]['source'].split('columns@')[-1]
                         if downbreak == gridname:
 
-                            if text_key['x'] in meta['masks'][grid]['text'].keys():
+                            if text_key['x'] in list(meta['masks'][grid]['text'].keys()):
                                 grid_question_label = meta['masks'][grid]['text'][text_key['x']]
                             else:
-                                grid_question_label = meta['masks'][grid]['text'].values()[0]
+                                grid_question_label = list(meta['masks'][grid]['text'].values())[0]
 
                             # check if grid is in grid container, if it's not then continue
                             if not grid in grid_container:
@@ -747,7 +747,7 @@ def PowerPointPainter(
 
                                 slide_num += 1
                                 if verbose:
-                                    print(
+                                    print((
                                         '\n{indent:>5}Slide {num}. '
                                         'Adding a 100% STACKED BAR CHART '
                                         'for {qname} cut by '
@@ -755,7 +755,7 @@ def PowerPointPainter(
                                             indent='',
                                             num=slide_num,
                                             qname=grid,
-                                            war_msg=''))
+                                            war_msg='')))
 
                                 #extract df for net
                                 if net_setup:
@@ -986,7 +986,7 @@ def PowerPointPainter(
                             # append nets to fixed categories
                             for x, item in enumerate(grped_meta['is_net'].tolist()):
                                 if item == 'True':
-                                    if fixed_categories<>[]:
+                                    if fixed_categories!=[]:
                                         fixed_categories.append(grped_meta['label'].tolist()[x])
                                     else:
                                         fixed_categories = [grped_meta['label'].tolist()[x]]
@@ -1141,7 +1141,7 @@ def PowerPointPainter(
 
                                 slide_num += 1
                                 if verbose:
-                                    print(
+                                    print((
                                         '\n{indent:>5}Slide {slide_number}. '
                                         'Adding a {chart_name} '
                                         'CHART for {question_name} '
@@ -1152,20 +1152,20 @@ def PowerPointPainter(
                                             chart_name=chart_type.upper().strip(),
                                             question_name=downbreak,
                                             crossbreak_name='Total' if crossbreak == '@' else crossbreak,
-                                            x='(cont ('+str(i)+'))' if i > 0 else ''))
+                                            x='(cont ('+str(i)+'))' if i > 0 else '')))
 
                         else:
                             if verbose:
-                                print(
+                                print((
                                     '\n{indent:>5}***Skipping {question_name}, '
                                     'no views match your conditions: '
                                     '{conditions}'.format(
                                         indent='',
                                         question_name=downbreak,
-                                        conditions=chartdata_conditions))
+                                        conditions=chartdata_conditions)))
 
             prs.save('{}.pptx'.format(path_pptx))
-            print 'Created: {}.pptx\n'.format(path_pptx)
+            print('Created: {}.pptx\n'.format(path_pptx))
 
         ############################################################################
         # Y ORIENTATION CODE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1182,10 +1182,10 @@ def PowerPointPainter(
 
     if verbose:
         pptx_elapsed_time = time.time() - pptx_start_time
-        print(
+        print((
             '\n{indent:>2}Presentation saved, '
             'time elapsed: {time:.2f} seconds\n'
             '\n{line}'.format(
                 indent='',
                 time=pptx_elapsed_time,
-                line= '_' * 80))
+                line= '_' * 80)))

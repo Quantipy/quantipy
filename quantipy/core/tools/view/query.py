@@ -184,7 +184,7 @@ def get_num_stats_fullname_from_subset(link, subset, weights):
     '''
     if weights is None:
         weights = ''
-    subset_name = ''.join(subset.keys())
+    subset_name = ''.join(list(subset.keys()))
     kwargs = subset[subset_name]['kwargs']
     exclude = kwargs.get('exclude', None)
     rescale = kwargs.get('rescale', None)
@@ -321,7 +321,7 @@ def sortx(df, sort_on='@', within=True, between=True, ascending=False,
         df = df.loc[s_all+s_sort+s_fixed]
         return df
     except UnboundLocalError:
-        print 'Could not sort on {}'.format(sort_on)
+        print('Could not sort on {}'.format(sort_on))
         return df
 
 
@@ -448,22 +448,22 @@ def get_dataframe(obj, described=None, loc=None, keys=None,
     vk = keys[4]
 
     if verbose:
-        print 'dk:\t', dk
-        print 'fk:\t', fk
-        print 'xk:\t', xk
-        print 'yk:\t', yk
-        print 'vk:\t', vk
-        print ''
+        print('dk:\t', dk)
+        print('fk:\t', fk)
+        print('xk:\t', xk)
+        print('yk:\t', yk)
+        print('vk:\t', vk)
+        print('')
 
-    if not dk in obj.keys():
+    if not dk in list(obj.keys()):
         raise KeyError('dk not found: {}'.format(dk))
-    if not fk in obj[dk].keys():
+    if not fk in list(obj[dk].keys()):
         raise KeyError('fk not found: {}'.format(fk))
-    if not xk in obj[dk][fk].keys():
+    if not xk in list(obj[dk][fk].keys()):
         raise KeyError('xk not found: {}'.format(xk))
-    if not yk in obj[dk][fk][xk].keys():
+    if not yk in list(obj[dk][fk][xk].keys()):
         raise KeyError('yk not found: {}'.format(yk))
-    if not vk in obj[dk][fk][xk][yk].keys():
+    if not vk in list(obj[dk][fk][xk][yk].keys()):
         raise KeyError('vk not found: {}'.format(vk))
 
     try:

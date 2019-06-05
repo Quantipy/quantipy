@@ -39,7 +39,7 @@ def manage_decipher_quota_variables(meta, data, quotas):
 
     for qt, qtable in enumerate(['vqtable', 'voqtable']):
         if quotas[qtable]:
-            for key, item in sorted(quotas[qtable].iteritems()):
+            for key, item in sorted(quotas[qtable].items()):
                 
                 # Create column meta
                 meta['columns'][key] = {
@@ -187,9 +187,9 @@ def get_vgroup_types(vgroups, variables):
         ]):
             vgroup_types[vgroup] = vgroup_types[vgroup][0]
         else:
-            print "vgroup '%s' has mixed types: %s" % (
+            print("vgroup '%s' has mixed types: %s" % (
                 vgroup, vgroup_types[vgroup]
-            )
+            ))
     
     return vgroup_types
 
@@ -659,9 +659,9 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
 
     # If they're not already in memory, read in the Decipher meta and
     # data files
-    if isinstance(decipher_meta, (str, unicode)):
+    if isinstance(decipher_meta, str):
         dmeta = load_json(decipher_meta)
-    if isinstance(decipher_data, (str, unicode)):
+    if isinstance(decipher_data, str):
         data = pd.DataFrame.from_csv(decipher_data, sep='\t')
         data[data.index.name] = data.index
 
@@ -769,7 +769,7 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
                 ]
             }        
 
-        if 'multiple' in vgroup_types.values():
+        if 'multiple' in list(vgroup_types.values()):
             # This is a multiple grid
             # vgroup and vgroup_variables needs to be
             # edited to make them useable in the next step
@@ -857,11 +857,11 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     meta, data = manage_decipher_quota_variables(meta, data, quotas)
 
     # Confirm that all meta columns exist in the data
-    for col in meta['columns'].keys():
+    for col in list(meta['columns'].keys()):
         if not col in data.columns:
-            print (
+            print((
                 "Unpaired data warning: {} found in meta['columns']"
-                " but not in data.columns. Removing it.".format(col))
+                " but not in data.columns. Removing it.".format(col)))
             del meta['columns'][col]
             set_item = 'columns@{}'.format(col)
             if set_item in meta['sets']['data file']['items']:
@@ -870,9 +870,9 @@ def quantipy_from_decipher(decipher_meta, decipher_data, text_key='main'):
     # Confirm that all data columns exist in the meta
     for col in data.columns:
         if not col in meta['columns']:
-            print (
+            print((
                 "Unpaired meta warning: {} found in data.columns"
-                " but not in meta['columns']. Removing it.".format(col))
+                " but not in meta['columns']. Removing it.".format(col)))
             data.drop(col, axis=1, inplace=True)
 
     return meta, data

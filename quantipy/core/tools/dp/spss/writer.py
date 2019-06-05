@@ -174,12 +174,12 @@ def get_value_text(values, value, text_key):
                 text = val['text'][text_key]
                 return text
             except KeyError:
-                print (
+                print((
                     "The text key '%s' was not found in the text object: %s" % (
                         text_key,
                         json.dumps(val)
                     )
-                )
+                ))
     raise ValueError(
             "The value '%s' was not found in the values object: %s" % (
                 value,
@@ -340,7 +340,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
 #         except:
 #             pass
 
-    for key, val in meta['columns'].iteritems():
+    for key, val in meta['columns'].items():
         if val['type'] == 'string':
             if key in data.columns:
                 data[key].fillna('', inplace=True)
@@ -364,21 +364,21 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
         if col not in known_columns:
             if col != '@1':
                 if verbose:
-                    print (
+                    print((
                         "Data column '{}' not included in"
                         " the '{}' set, it will be excluded"
                         " from the SAV file."
-                    ).format(col, from_set)
+                    ).format(col, from_set))
             data.drop(col, axis=1, inplace=True)
 
     # Remove columns from meta not found in data
     for col in known_columns:
         if col not in data.columns:
             if verbose:
-                print (
+                print((
                     'Meta column "%s" not found in data, it will '
                     'be excluded from the SAV file.'
-                ) % (col)
+                ) % (col))
             if col in meta['columns']:
                 del meta['columns'][col]
 
@@ -401,7 +401,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                 )
         new_names.append(new_name)
         column_mapper[varName] = new_name
-    for old_name, new_name in column_mapper.iteritems():
+    for old_name, new_name in column_mapper.items():
         if new_name not in meta['columns']:
             meta['columns'][new_name] = meta['columns'].pop(old_name)
             idx = varNames.index(old_name)
@@ -520,15 +520,15 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     }
 
     # Create the formats definition for the savWriter
-    numerics = [v for v, t in varTypes.iteritems() if t == 0]
+    numerics = [v for v, t in varTypes.items() if t == 0]
     strings = [
         v
-        for v in varTypes.keys()
+        for v in list(varTypes.keys())
         if meta['columns'][v]['type'] in ['string', 'delimited set']
     ]
     dates = [
         v
-        for v in varTypes.keys()
+        for v in list(varTypes.keys())
         if meta['columns'][v]['type'] in ['date']
     ]
 

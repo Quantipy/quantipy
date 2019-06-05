@@ -1,4 +1,4 @@
-import SocketServer
+import socketserver
 import threading
 import json
 import time
@@ -48,13 +48,13 @@ def cleanup_tmp_folder():
             if os.path.isfile(file_path):
                 os.unlink(file_path)
             elif os.path.isdir(file_path): shutil.rmtree(file_path)
-        except Exception, e:
+        except Exception as e:
             pass
             # print e
 
 def is_port_taken(host, port):
     """ Return True/False depending on if the port is taken or not"""
-    socket = SocketServer.socket
+    socket = socketserver.socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((host, port))
@@ -71,9 +71,9 @@ def shutdown_server(server_target):
     assassin.start()
 
 def print_server_message(host, port, handler):
-    print "Quantipy http server version 1.0"
-    print "Serving at: http://{host}:{port}".format(host=host, port=port)
-    print "Handler : {name}".format(name=handler.__name__)
+    print("Quantipy http server version 1.0")
+    print("Serving at: http://{host}:{port}".format(host=host, port=port))
+    print("Handler : {name}".format(name=handler.__name__))
 
 def start_server(host, port, handler):
     """ Starts a SimpleHTTPServer with a speciffic handler.
@@ -81,6 +81,6 @@ def start_server(host, port, handler):
         The handler needs to trigger the TCPServer.shutdown method or 
         else the server runs until doomsday.
     """
-    httpd = SocketServer.TCPServer((host, port), handler)
+    httpd = socketserver.TCPServer((host, port), handler)
     print_server_message(host, port, handler)
     httpd.serve_forever() # This is stopped by using the handler

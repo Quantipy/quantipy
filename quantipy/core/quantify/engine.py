@@ -6,7 +6,8 @@ from collections import defaultdict, OrderedDict
 import quantipy as qp
 import pandas as pd
 import numpy as np
-from operator import add, sub, mul, div
+from operator import add, sub, mul
+from operator import truediv as div
 from quantipy.core.view import View
 from quantipy.core.cache import Cache
 from quantipy.core.tools.view.logic import (
@@ -44,7 +45,7 @@ class Quantity(object):
         self.base_all = base_all
         self._dataidx = link.get_data().index
         self.meta = self._meta
-        if self.meta().values() == [None] * len(self.meta().values()):
+        if list(self.meta().values()) == [None] * len(list(self.meta().values())):
             self._uses_meta = False
             self.meta = None
         else:
@@ -111,10 +112,10 @@ class Quantity(object):
         """
         if self._uses_meta:
             masks = [self.x, self.y]
-            if any(mask in self.meta()['masks'].keys() for mask in masks):
+            if any(mask in list(self.meta()['masks'].keys()) for mask in masks):
                 mask = {
                     True: self.x,
-                    False: self.y}.get(self.x in self.meta()['masks'].keys())
+                    False: self.y}.get(self.x in list(self.meta()['masks'].keys()))
                 if self.meta()['masks'][mask]['type'] == 'array':
                     if self.x == '@':
                         self.x, self.y = self.y, self.x
@@ -178,7 +179,7 @@ class Quantity(object):
         return self
 
     def _reset(self):
-        for prop in self.__dict__.keys():
+        for prop in list(self.__dict__.keys()):
             if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
                         'd', 'idx_map', 'ds', 'logical_conditions']:
                 pass
@@ -279,12 +280,12 @@ class Quantity(object):
         self
         """
         proper_scaling = {old_code: new_code for old_code, new_code
-                         in scaling.items() if old_code in self.xdef}
-        xdef_ref = [proper_scaling[code] if code in proper_scaling.keys()
+                         in list(scaling.items()) if old_code in self.xdef}
+        xdef_ref = [proper_scaling[code] if code in list(proper_scaling.keys())
                     else code for code in self.xdef]
         if drop:
             to_drop = [code for code in self.xdef if code not in
-                       proper_scaling.keys()]
+                       list(proper_scaling.keys())]
             self.exclude(to_drop, axis='x')
         self.xdef = xdef_ref
         return self
@@ -329,8 +330,8 @@ class Quantity(object):
             column = self.x
             logic = condition
         else:
-            column = condition.keys()[0]
-            logic = condition.values()[0]
+            column = list(condition.keys())[0]
+            logic = list(condition.values())[0]
         idx, logical_expression = get_logic_index(self.d()[column], logic, self.d())
         logical_expression = logical_expression.split(':')[0]
         if not column == self.x:
@@ -564,7 +565,7 @@ class Quantity(object):
             combined_matrix = combined_matrix.swapaxes(1, 2)
             self._switch_axes()
         # update the sectional information
-        new_sect_def = range(0, combined_matrix.shape[1] - 1)
+        new_sect_def = list(range(0, combined_matrix.shape[1] - 1))
         if axis == 'x':
             self.xdef = new_sect_def
             self._x_indexers = self._get_x_indexers()
@@ -642,7 +643,7 @@ class Quantity(object):
                 check = code[0][0]
             else:
                 check = code[0]
-            if check in frame_lookup.keys():
+            if check in list(frame_lookup.keys()):
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
         return frame
 
@@ -659,17 +660,17 @@ class Quantity(object):
         if not self._grp_type(grp_def) == 'block':
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
-            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
+            if any(isinstance(val, (tuple, dict)) for val in list(grp.values())):
                 if complete:
                     ni_err = ('Logical expr. unsupported when complete=True. '
                               'Only list-type nets/groups can be completed.')
                     raise NotImplementedError(ni_err)
-                if 'expand' in grp.keys():
+                if 'expand' in list(grp.keys()):
                     del grp['expand']
                 expand = None
                 logical = True
             else:
-                if 'expand' in grp.keys():
+                if 'expand' in list(grp.keys()):
                     grp = copy.deepcopy(grp)
                     expand = grp['expand']
                     if expand is None and complete:
@@ -678,12 +679,12 @@ class Quantity(object):
                 else:
                     expand = method_expand
                 logical = False
-            organized_def.append([grp.keys(), grp.values()[0], expand, logical])
+            organized_def.append([list(grp.keys()), list(grp.values())[0], expand, logical])
             if expand:
                 any_extensions = True
             if logical:
                 any_logical = True
-            codes_used.extend(grp.values()[0])
+            codes_used.extend(list(grp.values())[0])
         if not any_logical:
             if len(set(codes_used)) != len(codes_used) and any_extensions:
                 ni_err_extensions = ('Same codes in multiple groups unsupported '
@@ -786,13 +787,13 @@ class Quantity(object):
         is_df = self._force_to_nparray()
         has_margin = self._attach_margins()
         values = self.result
-        expr_name = expression.keys()[0]
+        expr_name = list(expression.keys())[0]
         if axis == 'x':
             self.calc_x = expr_name
         else:
             self.calc_y = expr_name
             values = values.T
-        expr = expression.values()[0]
+        expr = list(expression.values())[0]
         v1, op, v2, exp_type, index_codes = self._organize_expr_def(expr, axis)
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
@@ -1291,15 +1292,15 @@ class Quantity(object):
     def _get_y_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
             if self.ydef is not None:
-                idxs = range(1, len(self.ydef)+1)
+                idxs = list(range(1, len(self.ydef)+1))
                 return self._sort_indexer_as_codes(idxs, self.ydef)
             else:
                 return [1]
         else:
             y_indexers = []
             xdef_len = len(self.xdef)
-            zero_based_ys = [idx for idx in xrange(0, xdef_len)]
-            for y_no in xrange(0, len(self.ydef)):
+            zero_based_ys = [idx for idx in range(0, xdef_len)]
+            for y_no in range(0, len(self.ydef)):
                 if y_no == 0:
                     y_indexers.append(zero_based_ys)
                 else:
@@ -1309,7 +1310,7 @@ class Quantity(object):
 
     def _get_x_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
-            idxs = range(1, len(self.xdef)+1)
+            idxs = list(range(1, len(self.xdef)+1))
             return self._sort_indexer_as_codes(idxs, self.xdef)
         else:
             x_indexers = []
@@ -1526,7 +1527,7 @@ class Quantity(object):
             total_mi = pd.MultiIndex.from_product(total_mi_values,
                                                   names=nest_mi.names)
             full_nest_mi = nest_mi.union(total_mi)
-            for lvl, c in zip(range(1, len(full_nest_mi)+1, 2),
+            for lvl, c in zip(list(range(1, len(full_nest_mi)+1, 2)),
                               self.nest_def['level_codes']):
                 full_nest_mi.set_levels(['All'] + c, level=lvl, inplace=True)
             self.result.columns = full_nest_mi
@@ -2003,7 +2004,7 @@ class Test(object):
         decision rules check test-statistic against pre-defined treshholds
         while others check sig. level against p-value.
         """
-        if isinstance(level, (str, unicode)):
+        if isinstance(level, str):
             if level == 'low':
                 if self.mimic == 'Dim':
                     comparevalue = siglevel = 0.10
@@ -2158,7 +2159,7 @@ class Test(object):
         if not self.is_weighted:
             m /= m
         m[m == 0] = np.NaN
-        col_pairs = list(combinations(range(0, m.shape[1]), 2))
+        col_pairs = list(combinations(list(range(0, m.shape[1])), 2))
         if self.parameters['use_ebase'] and self.is_weighted:
             # Overlap computation when effective base is being used
             w_sum_sq = np.array([np.nansum(m[:, [c1]] + m[:, [c2]], axis=0)**2
@@ -2192,7 +2193,7 @@ class Test(object):
     def _output(self, sigs):
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
         test_columns = ['@'] + self.ydef if self.test_total else self.ydef
-        for col, val in sigs.iteritems():
+        for col, val in sigs.items():
             if self.is_nested and not col in self._valid_pairs:
                 continue
 
@@ -2209,7 +2210,7 @@ class Test(object):
                 b2_ok = self.flags['flagged_bases'][b2ix] != '**'
             else:
                 b1_ok, b2_ok = True, True
-            for row, v in val.iteritems():
+            for row, v in val.items():
                 if v > 0:
                     if b2_ok:
                         if col[0] == '@':
@@ -2345,9 +2346,9 @@ class Nest(object):
         for var in self.variables:
             var_valtexts = []
             values = self.meta['columns'][var]['values']
-            all_qtexts.append(self.meta['columns'][var]['text'].values())
+            all_qtexts.append(list(self.meta['columns'][var]['text'].values()))
             for value in values:
-                var_valtexts.append(value['text'].values()[0])
+                var_valtexts.append(list(value['text'].values())[0])
             all_valtexts.append(var_valtexts)
             self.level_codes.append([code['value'] for code in values])
         interlocked_valtexts = list(product(*all_valtexts))
@@ -2388,7 +2389,7 @@ class Level(object):
 
     def _collapse_codes(self):
         df = self._auxdf
-        for org, lvls in self.level_codes.items():
+        for org, lvls in list(self.level_codes.items()):
             for lvl in lvls:
                 df['Values']  = df['Values'].replace(
                     lvl, int(org), inplace=False)

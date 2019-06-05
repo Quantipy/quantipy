@@ -1,5 +1,5 @@
-from chain import Chain
-import cPickle
+from .chain import Chain
+import pickle
 from collections import OrderedDict
 import pandas as pd
 import copy
@@ -24,7 +24,7 @@ class Cluster(OrderedDict):
         self.__dict__.update(attr_dict)
 
     def __reduce__(self):
-        return self.__class__, (self.name, ), self.__dict__, None, self.iteritems()
+        return self.__class__, (self.name, ), self.__dict__, None, iter(list(self.items()))
 
     def _verify_banked_chain_spec(self, spec):
         """
@@ -46,14 +46,14 @@ class Cluster(OrderedDict):
         
         if not ctype=='banked-chain':
             return False
-        if not isinstance(cname, (str, unicode)):
+        if not isinstance(cname, str):
             return False        
         if not isinstance(ctext, dict):
             return False
-        for key, value in ctext.iteritems():
-            if not isinstance(key, (str, unicode)):
+        for key, value in list(ctext.items()):
+            if not isinstance(key, str):
                 return False
-            if not isinstance(value, (str, unicode)):
+            if not isinstance(value, str):
                 return False            
         if not isinstance(citems, list):
             return False
@@ -66,10 +66,10 @@ class Cluster(OrderedDict):
         if not all([len(item['text'])>0 for item in citems]):
             return False
         for item in citems:
-            for key, value in item['text'].iteritems():
-                if not isinstance(key, (str, unicode)):
+            for key, value in list(item['text'].items()):
+                if not isinstance(key, str):
                     return False
-                if not isinstance(value, (str, unicode)):
+                if not isinstance(value, str):
                     return False
                 
         cview = spec.get('view', None)
@@ -163,7 +163,7 @@ class Cluster(OrderedDict):
             The banked chain.
         """
         
-        if isinstance(text_key, (str, unicode)):
+        if isinstance(text_key, str):
             text_key = {'x': [text_key]}
         
         chains = [c['chain'] for c in spec['items']]
@@ -200,7 +200,7 @@ class Cluster(OrderedDict):
             else:
                 bvk = 'x|||||banked-{}'.format(spec['name'])
         
-        for yk in bchain[dk][fk][xk].keys():
+        for yk in list(bchain[dk][fk][xk].keys()):
             bchain[dk][fk][xk][yk][bvk] = bchain[dk][fk][xk][yk].pop(vks[0])
             bchain[dk][fk][xk][yk][bvk].name = bvk
         
@@ -278,7 +278,7 @@ class Cluster(OrderedDict):
                 
         bchain.name = 'banked-{}'.format(bchain.name)
         for yk in yks:
-            for vk in bchain[dk][fk][xk][yk].keys():
+            for vk in list(bchain[dk][fk][xk][yk].keys()):
                 if vk in bchain.views:                    
                     if 'cbase' in vk:
                         bchain[dk][fk][xk][yk][vk].dataframe.index = idx_cbase
@@ -314,8 +314,8 @@ class Cluster(OrderedDict):
         """
         Merges all Chains found in the Cluster into a new pandas.DataFrame.
         """
-        orient = self[self.keys()[0]].orientation
-        chainnames = self.keys()
+        orient = self[list(self.keys())[0]].orientation
+        chainnames = list(self.keys())
         if orient == 'y':
             return pd.concat([self[chainname].concat()
                               for chainname in chainnames], axis=1)
@@ -347,7 +347,7 @@ class Cluster(OrderedDict):
                 "cluster.save(path_cluster='%s', ...)" % (path_cluster)
             )
         f = open(path_cluster, 'wb')
-        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
         f.close()
 
     # STATIC METHODS
@@ -375,6 +375,6 @@ class Cluster(OrderedDict):
                 "cluster.load(path_cluster='%s', ...)" % (path_cluster)
             )
         f = open(path_cluster, 'rb')
-        obj = cPickle.load(f)
+        obj = pickle.load(f)
         f.close()
         return obj

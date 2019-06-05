@@ -1,5 +1,5 @@
 #-*- coding: utf-8 -*-
-from view_mapper import ViewMapper
+from .view_mapper import ViewMapper
 from quantipy.core.view import View
 
 import pandas as pd
@@ -9,7 +9,8 @@ import traceback
 import warnings
 from collections import defaultdict
 from itertools import combinations
-from operator import add, sub, mul, div
+from operator import add, sub, mul
+from operator import truediv as div
 
 from quantipy.core.tools.view.logic import (
     has_any, has_all, has_count,
@@ -299,7 +300,7 @@ class QuantipyViews(ViewMapper):
             view._kwargs['complete'], complete = False, False
             if logic is not None:
                 for no, logic_def in enumerate(logic):
-                    if 'expand' in logic_def.keys():
+                    if 'expand' in list(logic_def.keys()):
                         logic_def['expand'] = None
                         logic[no] = logic_def
                 view._kwargs['logic'] = logic
@@ -342,7 +343,7 @@ class QuantipyViews(ViewMapper):
             elif logic is not None:
                 try:
                     q.group(groups=logic, axis=axis, expand=expand, complete=complete)
-                except NotImplementedError, e:
+                except NotImplementedError as e:
                     warnings.warn('NotImplementedError: {}'.format(e))
                     return None
                 q.count(axis=None, as_df=False, margin=False)

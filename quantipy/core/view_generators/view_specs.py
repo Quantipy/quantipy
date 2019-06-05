@@ -2,7 +2,9 @@ import pandas as pd
 from quantipy.core.tools.qp_decorators import modify
 from collections import OrderedDict
 from itertools import chain
-from operator import add, sub, mul, div
+from operator import add, sub, mul
+from operator import truediv as div
+
 import re
 import warnings
 
@@ -88,7 +90,7 @@ class ViewManager(object):
         self.weighted = weight
         self.sums_pos = sums
         cimap = {'c': 'counts', 'p': 'colpct', 'cp': 'counts_colpct'}
-        for old, new in cimap.items():
+        for old, new in list(cimap.items()):
             if cell_items == old:
                 cell_items = new
                 msg = "'{}' is an old cell item reference, please use '{}' instead."
@@ -106,20 +108,20 @@ class ViewManager(object):
             raise ValueError(err.format(valid_ci, cell_items))
         stack = self.stack
         if not data_key:
-            if len(stack.keys()) > 1:
+            if len(list(stack.keys())) > 1:
                 err = ("Must provide 'data_key' if more than one datasets are "
                        "connected to the Stack!")
                 raise ValueError(err)
             else:
-                data_key = stack.keys()[0]
+                data_key = list(stack.keys())[0]
         if not filter_key:
-            no_filter_ph = 'no_filter' in stack[data_key] and stack[data_key].keys()
-            if len(stack[data_key].keys()) > 1 and not no_filter_ph:
+            no_filter_ph = 'no_filter' in stack[data_key] and list(stack[data_key].keys())
+            if len(list(stack[data_key].keys())) > 1 and not no_filter_ph:
                 err = ("Must provide 'filter_key' if more than one filter is "
                        "applied to the Stack!")
                 raise ValueError(err)
             else:
-                filter_key = stack[data_key].keys()[0]
+                filter_key = list(stack[data_key].keys())[0]
 
         views = self._request_views(
             data_key=data_key, filter_key=filter_key, weight=self.weighted,
@@ -498,10 +500,10 @@ class ViewManager(object):
         lvls = []
         for level in sig_levels:
             # Remove leading 0
-            if not isinstance(level, (str, unicode)):
+            if not isinstance(level, str):
                 level = str(level)
             if level[0]=='0': level = level[1:]
-            if level in levels_ref.keys():
+            if level in list(levels_ref.keys()):
                 lvls.append(levels_ref[level])
             elif not re.match('\.[0-9]$', level) is None:
                 lvls.append('{}0'.format(level))

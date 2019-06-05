@@ -4,7 +4,7 @@
 @author: Majeed.sahebzadha
 '''
 
-from __future__ import unicode_literals
+
 import numpy as np
 import pandas as pd
 from math import ceil
@@ -187,12 +187,12 @@ def df_splitter(df, min_rows, max_rows):
     '''
 
     #ensure the indexs are strings not ints or floats
-    if not isinstance(df.index, unicode):
-        df.index = df.index.map(unicode)
+    if not isinstance(df.index, str):
+        df.index = df.index.map(str)
 
     row_count = len(df.index)
 
-    maxs = pd.Series(range(min_rows, max_rows+1))
+    maxs = pd.Series(list(range(min_rows, max_rows+1)))
     rows = pd.Series([row_count]*maxs.size)
     mods = rows % maxs
     splitter = maxs[mods >= min_rows].max()
@@ -215,13 +215,13 @@ def strip_html_tags(text):
     '''
 
     rules = [
-             {r'<[^<]+?>': u''},                # remove remaining tags
-             {r'^\s+' : u'' },                  # remove spaces at the beginning
+             {r'<[^<]+?>': ''},                # remove remaining tags
+             {r'^\s+' : '' },                  # remove spaces at the beginning
              {r'\,([a-zA-Z])': r', \1'},        # add space after a comma
-             {r'\s+' : u' '}                    # replace consecutive spaces
+             {r'\s+' : ' '}                    # replace consecutive spaces
              ]
     for rule in rules:
-        for (k,v) in rule.items():
+        for (k,v) in list(rule.items()):
             regex = re.compile(k)
             text = regex.sub(v, text)
 
@@ -236,7 +236,7 @@ def strip_html_tags(text):
                "’": "'"
 
                }
-    for (k,v) in special.items():
+    for (k,v) in list(special.items()):
         text = text.replace(k, v)
 
     return text
@@ -255,8 +255,8 @@ def clean_axes_labels(df):
     '''
 
     #standardise all index/column elements as unicode
-    df_index_labels = df.index.map(unicode)
-    df_col_labels = df.columns.map(unicode)
+    df_index_labels = df.index.map(str)
+    df_col_labels = df.columns.map(str)
 
 #     df_index_labels = [unicode(w)
 #                        if not isinstance(w, unicode) and not isinstance(w, str)
@@ -362,7 +362,7 @@ def get_qestion_labels(cluster_name, meta, table_name=None):
 
     text_key = meta['lib']['default text']
 
-    table_list = cluster_name.keys()
+    table_list = list(cluster_name.keys())
 
     for table in table_list:
         view = cluster_name[table][cluster_name[table].data_key][cluster_name[table].filter][table][cluster_name[table].content_of_axis[0]][cluster_name[table].views[1]]
@@ -396,7 +396,7 @@ def validate_cluster_orientations(cluster):
     '''
     if len(set([
         cluster[chain_name].orientation
-        for chain_name in cluster.keys()
+        for chain_name in list(cluster.keys())
     ])) != 1:
         raise Exception(
             "Chain orientations must be consistent. Please review chain "
@@ -420,8 +420,8 @@ def get_base(df, base_description, is_mask):
     base_text_format = lambda txt, num: '{} ({})'.format(txt, num_to_str(num))
 
     #standardise all index/column elements as unicode
-    df_index_labels = df.index.map(unicode)
-    df_col_labels = df.columns.map(unicode)
+    df_index_labels = df.index.map(str)
+    df_col_labels = df.columns.map(str)
 
     # get col labels and row values
     top_members = df.columns.values
@@ -454,7 +454,7 @@ def get_base(df, base_description, is_mask):
         #     base_text = base_text_format(base_description, base_values[0][0])
         # else:
         if not is_mask:
-            it = zip(top_members, base_values[0])
+            it = list(zip(top_members, base_values[0]))
             base_texts = ', '.join([base_text_format(x, y) for x, y in it])
             base_text = ' - '.join([base_description, base_texts])
         else:

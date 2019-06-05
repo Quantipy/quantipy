@@ -25,7 +25,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
     def _var_in_ds(func, *args, **kwargs):
         all_args = getargspec(func)[0]
         ds = args[0]
-        for variable, collection in variables.items():
+        for variable, collection in list(variables.items()):
             nested = False
             if collection.endswith('_nested'):
                 nested = True
@@ -35,7 +35,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
                 collection = ['columns', 'masks']
             else:
                 collection = [collection]
-            c = [key for col in collection for key in ds._meta[col].keys()]
+            c = [key for col in collection for key in list(ds._meta[col].keys())]
             # get the variable argument to check
             v_index = all_args.index(variable)
             var = kwargs.get(variable, args[v_index])
@@ -57,7 +57,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             if not_valid:
                 msg = "'{}' argument for {}() must be in {}.\n"
                 msg += '{} is not in {}.'
-                msg = msg.format(variable, func.func_name, collection,
+                msg = msg.format(variable, func.__name__, collection,
                                  not_valid, collection)
                 raise KeyError(msg)
         return func(*args, **kwargs)
@@ -83,7 +83,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             if not_cat:
                 msg = "'{}' argument for {}() must reference categorical "
                 msg += 'variable.\n {} is not categorical.'
-                msg = msg.format(cat, func.func_name, not_cat)
+                msg = msg.format(cat, func.__name__, not_cat)
                 raise ValueError(msg)
         return func(*args, **kwargs)
 
@@ -129,7 +129,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             val_index = all_args.index(val)
             v = kwargs.get(val, args[val_index])
             if not isinstance(v, (list, tuple)): v = [v]
-            if not all(isinstance(text, (str, unicode)) for text in v):
+            if not all(isinstance(text, str) for text in v):
                 raise ValueError('Included value must be str or list of str.')
         return func(*args, **kwargs)
 
@@ -137,7 +137,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
     def _deco(func, *args, **kwargs):
         p = [variables, categorical, text_keys, axis, is_str]
         d = [_var_in_ds, _var_is_cat, _verify_text_key, _verify_axis, _is_str]
-        for arg, dec in reversed(zip(p, d)):
+        for arg, dec in reversed(list(zip(p, d))):
             if arg is None: continue
             func = dec(func)
         return func(*args, **kwargs)

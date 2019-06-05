@@ -46,58 +46,58 @@ def Dim(*args):
     return text
 
 def SetMDM():
-    text = u'Set MDM = CreateObject("MDM.Document")'
+    text = 'Set MDM = CreateObject("MDM.Document")'
     return text
 
 def section_break(n):
-    text = u"\n'{}".format('#'*n)
+    text = "\n'{}".format('#'*n)
     return text
 
 def comment(tabs, text):
-    text = u"{t}' {tx}".format(
+    text = "{t}' {tx}".format(
         t=tab(tabs),
         tx=text)
     return text
 
 def CreateVariable(tabs, name):
-    text = u'{t}Set newVar = MDM.CreateVariable("{n}")'.format(
+    text = '{t}Set newVar = MDM.CreateVariable("{n}")'.format(
         t=tab(tabs),
         n=name)
     return text
 
 def DataType(tabs, parent, dtype):
-    text = u'{t}{p}.DataType = {dt}'.format(
+    text = '{t}{p}.DataType = {dt}'.format(
         t=tab(tabs),
         p=parent,
         dt=dtype)
     return text
 
 def MaxValue(tabs, parent, mval):
-    text = u'{t}{p}.MaxValue = {mv}'.format(
+    text = '{t}{p}.MaxValue = {mv}'.format(
         t=tab(tabs),
         p=parent,
         mv=mval)
     return text
 
 def CreateElement(tabs, name):
-    text = u'{t}Set newElement = MDM.CreateElement("{n}")'.format(
+    text = '{t}Set newElement = MDM.CreateElement("{n}")'.format(
         t=tab(tabs),
         n=name)
     return text
 
 def ElementType(tabs):
-    text = u'{t}newElement.Type = 0'.format(
+    text = '{t}newElement.Type = 0'.format(
         t=tab(tabs))
     return text
 
 def ElementExpression(tabs, expression):
-    text = u'{t}newElement.Expression = {e}'.format(
+    text = '{t}newElement.Expression = {e}'.format(
         t=tab(tabs),
         e=expression)
     return text
 
 def AddLabel(tabs, element, labeltype, language, text):
-    text = u'{ta}{e}.Labels["{lt}"].Text["Analysis"]["{l}"] = "{t}"'.format(
+    text = '{ta}{e}.Labels["{lt}"].Text["Analysis"]["{l}"] = "{t}"'.format(
         ta=tab(tabs),
         e=element,
         lt = labeltype.replace(' ', ''),
@@ -106,27 +106,27 @@ def AddLabel(tabs, element, labeltype, language, text):
     return text
 
 def AddElement(tabs, parent, child):
-    text = u'{t}{p}.Elements.Add({c})'.format(
+    text = '{t}{p}.Elements.Add({c})'.format(
         t=tab(tabs),
         p=parent,
         c=child)
     return text
 
 def AddField(tabs, parent, child):
-    text = u'{t}{p}.Fields.Add({c})'.format(
+    text = '{t}{p}.Fields.Add({c})'.format(
         t=tab(tabs),
         p=parent,
         c=child)
     return text
 
 def CreateGrid(tabs, name):
-    text = u'{t}Set newGrid = MDM.CreateGrid("{n}")'.format(
+    text = '{t}Set newGrid = MDM.CreateGrid("{n}")'.format(
         t=tab(tabs),
         n=name)
     return text
 
 def MDMSave(tabs, path_mdd):
-    text = u'{t}MDM.Save("{p}")'.format(
+    text = '{t}MDM.Save("{p}")'.format(
         t=tab(tabs),
         p=path_mdd)
     return text
@@ -174,9 +174,9 @@ def create_mdd(meta, data, path_mrs, path_mdd, text_key, run):
         MDMSave(0, path_mdd if run else path_mdd.split('/')[-1])])
 
     if run:
-        mrs = u'\n'.join(mrs).encode('cp1252', errors='replace')
+        mrs = '\n'.join(mrs).encode('cp1252', errors='replace')
     else:
-        mrs = u'\n'.join(mrs).encode('utf-8', errors='replace')
+        mrs = '\n'.join(mrs).encode('utf-8', errors='replace')
 
     with open(path_mrs, 'w') as f:
         f.write(mrs)
@@ -305,7 +305,7 @@ def create_ddf(master_input, path_dms, CRLF):
     dms_dummy_path = os.path.dirname(__file__)
     dms = open(os.path.join(dms_dummy_path, '_create_ddf.dms'), 'r')
     header = [
-        u'#define MASTER_INPUT "{}"'.format(master_input).encode('utf-8'),
+        '#define MASTER_INPUT "{}"'.format(master_input).encode('utf-8'),
         '#define CRLF "{}"'.format(CRLF),
     ]
     full_dms = header + [line.replace('\n', '') for line in dms]
@@ -441,30 +441,30 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
     name = path_mdd.split('/')[-1].split('.')[0]
     path =  '/'.join(path_mdd.split('/')[:-1])
     if '/' in path_mdd: path = path + '/'
-    path_mrs = u'{}create_mdd [{}].mrs'.format(path, name)
-    path_dms = u'{}create_ddf [{}].dms'.format(path, name)
-    path_paired_csv = u'{}{}_paired.csv'.format(path, name)
-    path_datastore = u'{}{}_datastore.csv'.format(path, name)
+    path_mrs = '{}create_mdd [{}].mrs'.format(path, name)
+    path_dms = '{}create_ddf [{}].dms'.format(path, name)
+    path_paired_csv = '{}{}_paired.csv'.format(path, name)
+    path_datastore = '{}{}_datastore.csv'.format(path, name)
     all_paths = (path_dms, path_mrs, path_datastore, path_paired_csv)
 
     if not text_key: text_key = meta['lib']['default text']
     create_mdd(meta, data, path_mrs, path_mdd, text_key, run)
     create_ddf(name, path_dms, CRLF)
     get_case_data_inputs(meta, data, path_paired_csv, path_datastore)
-    print 'Case and meta data validated and transformed.'
+    print('Case and meta data validated and transformed.')
     if run:
         from subprocess import check_output, STDOUT, CalledProcessError
         try:
-            print 'Converting to .ddf/.mdd...'
+            print('Converting to .ddf/.mdd...')
             command = 'mrscriptcl "{}"'.format(path_mrs)
             check_output(command, stderr=STDOUT, shell=True)
-            print '.mdd file generated successfully.'
+            print('.mdd file generated successfully.')
             command = 'DMSRun "{}"'.format(path_dms)
             check_output(command, stderr=STDOUT, shell=True)
-            print '.ddf file generated successfully.\n'
-            print 'Conversion completed!'
+            print('.ddf file generated successfully.\n')
+            print('Conversion completed!')
         except CalledProcessError as exc:
-            print '\nERROR:\n', exc.output
+            print('\nERROR:\n', exc.output)
             if clean_up:
                 for file_loc in all_paths:
                     os.remove(file_loc)

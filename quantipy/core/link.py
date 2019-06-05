@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 import numpy as np
-from view_generators.view_maps import QuantipyViews as View
+from .view_generators.view_maps import QuantipyViews as View
 
 
 class Link(dict):
@@ -39,7 +39,7 @@ class Link(dict):
 
         data = stack[data_key].data
         if create_views:
-            if '@1' not in data.keys():
+            if '@1' not in list(data.keys()):
                 data['@1'] = np.ones(len(data.index))
             views._apply_to(self, weights)
 
@@ -63,7 +63,7 @@ class Link(dict):
         """
 
         if views is None:
-            views = link.keys()
+            views = list(link.keys())
 
         for vk in views:
             if overwrite or not vk in self:

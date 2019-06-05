@@ -9,10 +9,7 @@ __index_symbol__ = {
     Index.intersection: '&',
     Index.difference: '~',
 }
-if pd.__version__ == '0.19.2':
-    __index_symbol__[Index.symmetric_difference] = '^'
-else:
-    __index_symbol__[Index.sym_diff] = '^'
+__index_symbol__[Index.symmetric_difference] = '^'
 
 def verify_logic_values(values, func_name):
     """ Verifies that the values given are a list of ints.
@@ -1306,8 +1303,8 @@ def resolve_logic(series, logic, data):
     """
 
     if isinstance(logic, dict):
-        wildcard, logic = logic.keys()[0], logic.values()[0]
-        if isinstance(logic, (str, unicode)):
+        wildcard, logic = list(logic.keys())[0], list(logic.values())[0]
+        if isinstance(logic, str):
             idx = data[data[wildcard]==logic].index
             vkey = logic
         else:

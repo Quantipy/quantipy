@@ -9,7 +9,7 @@ import quantipy as qp
 # import matplotlib.image as mpimg
 
 import string
-import cPickle
+import pickle
 import warnings
 
 
@@ -36,7 +36,9 @@ from quantipy.core.helpers.functions import (paint_dataframe,
 from quantipy.core.tools.dp.prep import recode
 from quantipy.core.tools.qp_decorators import lazy_property
 
-from operator import add, sub, mul, div
+from operator import add, sub, mul
+from operator import truediv as div
+
 from scipy.stats.stats import _ttest_finish as get_pval
 from scipy.stats import chi2 as chi2dist
 from scipy.stats import f as fdist
@@ -78,11 +80,11 @@ class ChainManager(object):
         return self.__str__()
 
     def __getitem__(self, value):
-        if isinstance(value, (unicode, str)):
+        if isinstance(value, str):
             element = self.__chains[self._idx_from_name(value)]
             is_folder = isinstance(element, dict)
             if is_folder:
-                return element.values()[0]
+                return list(element.values())[0]
             else:
                 return element
         else:
@@ -113,7 +115,7 @@ class ChainManager(object):
         """
         Folder indices, names and number of stored ``qp.Chain`` items (as tuples).
         """
-        return [(self.__chains.index(f), f.keys()[0], len(f.values()[0]))
+        return [(self.__chains.index(f), list(f.keys())[0], len(list(f.values())[0]))
                 for f in self if isinstance(f, dict)]
 
     @property
@@ -121,7 +123,7 @@ class ChainManager(object):
         """
         The list of all non-folder ``qp.Chain`` indices and names (as tuples).
         """
-        return zip(self.single_idxs, self.single_names)
+        return list(zip(self.single_idxs, self.single_names))
 
     @property
     def chains(self):
@@ -131,7 +133,7 @@ class ChainManager(object):
         all_chains = []
         for c in self:
             if isinstance(c, dict):
-                all_chains.extend(c.values()[0])
+                all_chains.extend(list(c.values())[0])
             else:
                 all_chains.append(c)
         return all_chains
@@ -182,7 +184,7 @@ class ChainManager(object):
         return ['folder' if isinstance(k, dict) else 'single' for k in self]
 
     def _singles_to_idx(self):
-        return {name: i for i, name in self._idx_to_singles().items()}
+        return {name: i for i, name in list(self._idx_to_singles().items())}
 
     def _idx_to_singles(self):
         return dict(self.singles)
@@ -191,7 +193,7 @@ class ChainManager(object):
         return dict([(f[0], f[1]) for f in self.folders])
 
     def _folders_to_idx(self):
-        return {name: i for i, name in self._idx_fold().items()}
+        return {name: i for i, name in list(self._idx_fold().items())}
 
     def _names(self, unroll=False):
         if not unroll:
@@ -205,7 +207,7 @@ class ChainManager(object):
         return dict(singles + folders)
 
     def _names_to_idxs(self):
-        return {n: i for i, n in self._idxs_to_names().items()}
+        return {n: i for i, n in list(self._idxs_to_names().items())}
 
     def _name_from_idx(self, name):
         return self._idxs_to_names()[name]
@@ -231,11 +233,11 @@ class ChainManager(object):
             else:
                 iter_over = single_name_occ
                 is_folder = False
-            for name, occ in iter_over.items():
+            for name, occ in list(iter_over.items()):
                 if occ > 1:
                     new_names = ['{}_{}'.format(name, i) for i in range(1, occ + 1)]
                     idx = [s[0] for s in self.singles if s[1] == name]
-                    pairs = zip(idx, new_names)
+                    pairs = list(zip(idx, new_names))
                     if is_folder:
                         for idx, c in enumerate(self[is_folder]):
                             c.name = pairs[idx][1]
@@ -284,11 +286,11 @@ class ChainManager(object):
         if not len(chains1) == len(chains2):
             return False
         else:
-            paired = zip(chains1, chains2)
+            paired = list(zip(chains1, chains2))
             for c1, c2 in paired:
                 atts1 = c1.__dict__
                 atts2 = c2.__dict__
-                for att in atts1.keys():
+                for att in list(atts1.keys()):
                     if isinstance(atts1[att], (pd.DataFrame, pd.Index)):
                         if not atts1[att].equals(atts2[att]):
                             diffs[att] = [atts1[att], atts2[att]]
@@ -374,7 +376,7 @@ class ChainManager(object):
             result += '--------------------------------' + diffs_in
         else:
             result = 'ChainManagers are identical.'
-        print result
+        print(result)
         return None
 
     def save(self, path, keep_stack=False):
@@ -384,7 +386,7 @@ class ChainManager(object):
             del self.stack
             self.stack = None
         f = open(path, 'wb')
-        cPickle.dump(self, f, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
         f.close()
         return None
 
@@ -393,7 +395,7 @@ class ChainManager(object):
         """
         """
         f = open(path, 'rb')
-        obj = cPickle.load(f)
+        obj = pickle.load(f)
         f.close()
         return obj
 
@@ -401,8 +403,8 @@ class ChainManager(object):
         if not isinstance(chains, list): chains = [chains]
         for chain in chains:
             if isinstance(chain, dict):
-                fname = chain.keys()[0]
-                elements = chain.values()[0]
+                fname = list(chain.keys())[0]
+                elements = list(chain.values())[0]
                 fidx = self._idx_from_name(fname)
                 folder = self[fidx][fname]
                 for c in folder:
@@ -533,7 +535,7 @@ class ChainManager(object):
         if not all(self._is_folder_ref(f) for f in folders):
             err = "One or more folder names from 'folders' do not exist!"
             ValueError(err)
-        folders = [f if isinstance(f, (str, unicode)) else self._name_from_idx(f)
+        folders = [f if isinstance(f, str) else self._name_from_idx(f)
                   for f in folders]
         folder_idx = self._idx_from_name(folders[0])
         if not new_name: new_name = folders[0]
@@ -585,7 +587,7 @@ class ChainManager(object):
             all_chain_names = []
             singles = []
             for c in chains:
-                if isinstance(c, (str, unicode)):
+                if isinstance(c, str):
                     all_chain_names.append(c)
                 elif isinstance(c, int) and c in self._idx_to_singles():
                     all_chain_names.append(self._idx_to_singles()[c])
@@ -871,7 +873,7 @@ class ChainManager(object):
         if folder and not folder in self.folder_names:
             err = "A folder named '{}' does not exist!".format(folder)
             raise KeyError(err)
-        for old, new in names.items():
+        for old, new in list(names.items()):
             no_folder_name = folder and not old in self._names(False)
             no_name_across = not folder and not old in self._names(True)
             if no_folder_name and no_name_across:
@@ -920,7 +922,7 @@ class ChainManager(object):
         for c in self.chains:
             if c._y_keys not in ys:
                 ys.append(c._y_keys)
-        return zip(ys, letters)
+        return list(zip(ys, letters))
 
     def describe(self, by_folder=False, show_hidden=False):
         """
@@ -953,9 +955,9 @@ class ChainManager(object):
         for pos, chains in enumerate(self):
             is_folder = isinstance(chains, dict)
             if is_folder:
-                folder_name = chains.keys()
-                chains = chains.values()[0]
-                folder_items.extend(list(xrange(0, len(chains))))
+                folder_name = list(chains.keys())
+                chains = list(chains.values())[0]
+                folder_items.extend(list(range(0, len(chains))))
                 item_pos.extend([pos] * len(chains))
             else:
                 chains = [chains]
@@ -1075,8 +1077,8 @@ class ChainManager(object):
             """
             df, meta = tab['df'], tab['tmeta']
             mtd_slicer = df.index.get_level_values(0)
-            meta_limits = OrderedDict(
-                (i, mtd_slicer.tolist().count(i)) for i in mtd_slicer).values()
+            meta_limits = list(OrderedDict(
+                (i, mtd_slicer.tolist().count(i)) for i in mtd_slicer).values())
             meta_slices = []
             for start, end in enumerate(meta_limits):
                 if start == 0:
@@ -1095,7 +1097,7 @@ class ChainManager(object):
                 idx_meta = all_meta['index-emetas'][ms[0]: ms[1]]
                 all_meta['index-emetas'] = idx_meta
                 sub_metas.append(all_meta)
-            return zip(dfs, sub_metas)
+            return list(zip(dfs, sub_metas))
 
         def _get_axis_vars(df):
             axis_vars = []
@@ -1135,9 +1137,9 @@ class ChainManager(object):
         def mine_mtd(tab_collection, paint, chain_coll, folder=None):
             failed = []
             unsupported = []
-            for name, sub_tab in tab_collection.items():
+            for name, sub_tab in list(tab_collection.items()):
                 try:
-                    if isinstance(sub_tab.values()[0], dict):
+                    if isinstance(list(sub_tab.values())[0], dict):
                         mine_mtd(sub_tab, paint, chain_coll, name)
                     else:
                         tabs = split_tab(sub_tab)
@@ -1155,7 +1157,7 @@ class ChainManager(object):
                                 invalid = ['-', '*', '**']
                                 df = df.applymap(
                                     lambda x: float(x.replace(',', '.').replace('%', ''))
-                                              if isinstance(x, (str, unicode)) and not x in invalid
+                                              if isinstance(x, str) and not x in invalid
                                               else x
                                     )
                             x, y = _get_axis_vars(df)
@@ -1170,7 +1172,7 @@ class ChainManager(object):
                         if not folder:
                             chain_coll.extend(chain_dfs)
                         else:
-                            folders = [(i, c.keys()[0]) for i, c in
+                            folders = [(i, list(c.keys())[0]) for i, c in
                                        enumerate(chain_coll, 0) if
                                        isinstance(c, dict)]
 
@@ -1380,18 +1382,18 @@ class ChainManager(object):
 
         def mine_chain_structure(clusters):
             cluster_defs = []
-            for cluster_def_name, cluster in clusters.items():
+            for cluster_def_name, cluster in list(clusters.items()):
                 for name in cluster:
-                    if isinstance(cluster[name].items()[0][1], pd.DataFrame):
+                    if isinstance(list(cluster[name].items())[0][1], pd.DataFrame):
                         cluster_def = {'name': name,
                                        'oe': True,
-                                       'df': cluster[name].items()[0][1],
+                                       'df': list(cluster[name].items())[0][1],
                                        'filter': chain.filter,
                                        'data_key': chain.data_key}
 
                     else:
                         xs, views, weight = [], [], []
-                        for chain_name, chain in cluster[name].items():
+                        for chain_name, chain in list(cluster[name].items()):
                             for v in chain.views:
                                 w = v.split('|')[-2]
                                 if w not in weight: weight.append(w)
@@ -1448,7 +1450,7 @@ class ChainManager(object):
         keys = self._force_list(keys)
 
         meta = self.stack[data_key].meta
-        valid = meta['columns'].keys() + meta['masks'].keys()
+        valid = list(meta['columns'].keys()) + list(meta['masks'].keys())
 
         invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
 
@@ -1487,7 +1489,7 @@ class ChainManager(object):
         chain._frame_values = chain._frame.values
 
         if meta_from:
-            if isinstance(meta_from, (str, unicode)):
+            if isinstance(meta_from, str):
 
                 chain._meta = self.stack[meta_from].meta
             else:
@@ -1513,7 +1515,7 @@ class ChainManager(object):
 
         x_keys = self._check_keys(data_key, x_keys)
         y_keys = self._check_keys(data_key, y_keys)
-        if folder and not isinstance(folder, (str, unicode)):
+        if folder and not isinstance(folder, str):
             err = "'folder' must be a name provided as string!"
             raise ValueError(err)
         if orient == 'x':
@@ -1579,7 +1581,7 @@ class ChainManager(object):
         """
         for chain in self:
             if isinstance(chain, dict):
-                for c in chain.values()[0]:
+                for c in list(chain.values())[0]:
                     c.paint(*args, **kwargs)
             else:
                 chain.paint(*args, **kwargs)
@@ -1643,13 +1645,13 @@ class ChainAnnotations(dict):
             ar = 'Notes: None\n'
         if headers:
             ar += 'Headers\n'
-            for pos, text in dict(headers).items():
+            for pos, text in list(dict(headers).items()):
                 ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
         else:
             ar += 'Headers: None\n'
         if footers:
             ar += 'Footers\n'
-            for pos, text in dict(footers).items():
+            for pos, text in list(dict(footers).items()):
                 ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
         else:
             ar += 'Footers: None'
@@ -1697,7 +1699,7 @@ class ChainAnnotations(dict):
         """
         The annotation fields that are defined.
         """
-        return sorted([k for k, v in self.items() if v])
+        return sorted([k for k, v in list(self.items()) if v])
 
     @staticmethod
     def _annot_key(a_type, a_pos):
@@ -1747,14 +1749,14 @@ CELL_DETAILS = {'en-GB': {'cc':    'Cell Contents',
                           'N':     'Total',
                           'c%':    'Pourcentage de colonne',
                           'r%':    'Pourcentage de ligne',
-                          'str':   u'Résultats test statistique',
+                          'str':   'Résultats test statistique',
                           'cp':    'Proportions de colonne',
                           'cm':    'Moyennes de colonne',
                           'stats': 'Statistiques',
                           'mb':    'Base minimum',
                           'sb':    'Petite base',
-                          'up':    u' indique que le résultat est significativement supérieur au résultat de la colonne Total',
-                          'down':  u' indique que le résultat est significativement inférieur au résultat de la colonne Total'
+                          'up':    ' indique que le résultat est significativement supérieur au résultat de la colonne Total',
+                          'down':  ' indique que le résultat est significativement inférieur au résultat de la colonne Total'
                           }}
 
 class Chain(object):
@@ -1799,14 +1801,14 @@ class Chain(object):
             self.org_views = c.views
             self.df = c._frame
             self._org_idx = self.df.index
-            self._edit_idx = range(0, len(self._org_idx))
+            self._edit_idx = list(range(0, len(self._org_idx)))
             self._idx_valmap = {n: o for n, o in
                                 zip(self._edit_idx,
                                     self._org_idx.get_level_values(1))}
             self.df.index = self._edit_idx
 
             self._org_col = self.df.columns
-            self._edit_col = range(0, len(self._org_col))
+            self._edit_col = list(range(0, len(self._org_col)))
             self._col_valmap = {n: o for n, o in
                                 zip(self._edit_col,
                                     self._org_col.get_level_values(1))}
@@ -1827,9 +1829,9 @@ class Chain(object):
 
         def _insert_viewlikes(self, new_index_flat, org_index_mapped):
             inserts = [new_index_flat.index(val) for val in new_index_flat
-                       if not val in org_index_mapped.values()]
+                       if not val in list(org_index_mapped.values())]
             flatviews = []
-            for name, no in self.org_views.items():
+            for name, no in list(self.org_views.items()):
                 e = [name] * no
                 flatviews.extend(e)
             for vno, i in enumerate(inserts):
@@ -2015,7 +2017,7 @@ class Chain(object):
     @array_style.setter
     def array_style(self, link):
         array_style = -1
-        for view in link.keys():
+        for view in list(link.keys()):
             if link[view].meta()['x']['is_array']:
                 array_style = 0
             if link[view].meta()['y']['is_array']:
@@ -2140,7 +2142,7 @@ class Chain(object):
             contents = dict()
         for row, idx in enumerate(self._views_per_rows()):
             if nested:
-                for i, v in idx.items():
+                for i, v in list(idx.items()):
                     contents[row][i] = self._add_contents(v)
             else:
                 contents[row] = self._add_contents(idx)
@@ -2201,9 +2203,9 @@ class Chain(object):
     def describe(self):
         def _describe(cell_defs, row_id):
             descr = []
-            for r, m in cell_defs.items():
+            for r, m in list(cell_defs.items()):
                 descr.append(
-                    [k if isinstance(v, bool) else v for k, v in m.items() if v])
+                    [k if isinstance(v, bool) else v for k, v in list(m.items()) if v])
             if any('is_block' in d for d in descr):
                 blocks = self._describe_block(descr, row_id)
                 calc = 'calc' in blocks
@@ -2212,7 +2214,7 @@ class Chain(object):
                         d.append(b) if not calc else d.extend([b, 'has_calc'])
             return descr
         if self._array_style == 0:
-            description = {k: _describe(v, k) for k, v in self.contents.items()}
+            description = {k: _describe(v, k) for k, v in list(self.contents.items())}
         else:
             description = _describe(self.contents, None)
         return description
@@ -2303,7 +2305,7 @@ class Chain(object):
                     rowpcts = []
                     metrics = []
                     ci = self.cell_items
-                    for v in self.views.keys():
+                    for v in list(self.views.keys()):
                         if not v.startswith('__viewlike__'):
                             parts = v.split('|')
                             is_completed = ']*:' in v
@@ -2338,14 +2340,14 @@ class Chain(object):
 
     def _valid_views(self, flat=False):
         clean_view_list = []
-        valid = self.views.keys()
+        valid = list(self.views.keys())
         org_vc = self._given_views
         v_likes = [v for v in valid if v.startswith('__viewlike__')]
         if isinstance(org_vc, tuple):
             v_likes = tuple(v_likes)
         view_coll = org_vc + v_likes
         for v in view_coll:
-            if isinstance(v, (str, unicode)):
+            if isinstance(v, str):
                 if v in valid:
                     clean_view_list.append(v)
             else:
@@ -2520,11 +2522,11 @@ class Chain(object):
         if self.array_style == 0:
             n = self._frame.columns.get_level_values(1).values.tolist()
             n = self._remove_grouped_blanks(n)
-            mapped = {rowid: zip(n, rowmeta) for rowid, rowmeta in d.items()}
+            mapped = {rowid: list(zip(n, rowmeta)) for rowid, rowmeta in list(d.items())}
         else:
             n = self._frame.index.get_level_values(1).values.tolist()
             n = self._remove_grouped_blanks(n)
-            mapped = zip(n, d)
+            mapped = list(zip(n, d))
         if not self.painted: self.toggle_labels()
         return mapped
 
@@ -2690,11 +2692,11 @@ class Chain(object):
             repaint = False
         vpr = self._views_per_rows()
         if row_id is not None:
-            vpr = [v[1] for v in vpr[row_id].items()]
+            vpr = [v[1] for v in list(vpr[row_id].items())]
             idx = self.dataframe.columns.get_level_values(1).tolist()
         else:
             idx = self.dataframe.index.get_level_values(1).tolist()
-        idx_view_map = zip(idx, vpr)
+        idx_view_map = list(zip(idx, vpr))
         block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2 or
                         '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2]]
         has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])
@@ -2716,7 +2718,7 @@ class Chain(object):
         described_nets = 0
         for e in idx_view_map:
             if e:
-                if isinstance(e[0], (str, unicode)):
+                if isinstance(e[0], str):
                     if has_calc and described_nets == blocks_len:
                         block_net_def.append('calc')
                     else:
@@ -2830,9 +2832,9 @@ class Chain(object):
         df = self._frame
         is_array = self._array_style == 0
         contents = self.contents[0] if is_array else self.contents
-        has_wgt_b = [k for k, v in contents.items()
+        has_wgt_b = [k for k, v in list(contents.items())
                      if v['is_c_base'] and v['is_weighted']]
-        has_unwgt_b = [k for k, v in contents.items()
+        has_unwgt_b = [k for k, v in list(contents.items())
                        if v['is_c_base'] and not v['is_weighted']]
         if not (has_wgt_b and has_unwgt_b):
             return None
@@ -2842,7 +2844,7 @@ class Chain(object):
             names = ['x|f|x:|||cbase']
         else:
             drop_rows = has_wgt_b
-            names = ['x|f|x:||{}|cbase'.format(contents.values()[0]['weight'])]
+            names = ['x|f|x:||{}|cbase'.format(list(contents.values())[0]['weight'])]
 
         for v in self.views.copy():
             if v in names:
@@ -2913,8 +2915,8 @@ class Chain(object):
             if size < max_lab:
                 f = pd.concat([f, empty_frame(f)], axis=self.array_style)
                 order = [None] * (size * 2)
-                order[::2] = list(xrange(size))
-                order[1::2] = list(xrange(size, size * 2))
+                order[::2] = list(range(size))
+                order[1::2] = list(range(size, size * 2))
                 if self.array_style == 0:
                     frames[e] = f.iloc[order, :]
                 else:
@@ -2975,7 +2977,7 @@ class Chain(object):
 
         arrays = self._lzip(index.values)
         arrays[0:0] = [tuple('#pad-%s' % pid for _ in arrays[i])
-                       for i in xrange(pad + fill)] * pad
+                       for i in range(pad + fill)] * pad
 
         return pd.MultiIndex.from_arrays(arrays, names=names)
 
@@ -3141,7 +3143,7 @@ class Chain(object):
         """
         all_dfs  = []
         ignore = False
-        for col in replacement_map.keys():
+        for col in list(replacement_map.keys()):
             target_col = df.columns[0] if col == '@' else col
             value_df = df[[target_col]].copy()
             if not col == '@':
@@ -3151,7 +3153,7 @@ class Chain(object):
             new_values = []
             case = None
             for v in values:
-                if isinstance(v[0], (str, unicode)):
+                if isinstance(v[0], str):
                     if char_repr == 'upper':
                         case = 'up'
                     elif char_repr == 'lower':
@@ -3161,9 +3163,9 @@ class Chain(object):
                             case = 'low'
                         else:
                             case = 'up'
-                    for no, l in sorted(r.items(), reverse=True):
+                    for no, l in sorted(list(r.items()), reverse=True):
                         v = [char.replace(str(no), l if case == 'up' else l.lower())
-                             if isinstance(char, (str, unicode))
+                             if isinstance(char, str)
                              else char for char in v]
 
                     new_values.append(v)
@@ -3176,7 +3178,7 @@ class Chain(object):
         letter_df.replace('-', np.NaN, inplace=True)
         for signs in [('[', ''), (']', ''), (', ', '.')]:
             letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
-                                           if isinstance(x, (str, unicode)) else x)
+                                           if isinstance(x, str) else x)
         return letter_df
 
     @staticmethod
@@ -3199,11 +3201,11 @@ class Chain(object):
         return letters
 
     def _any_tests(self):
-        vms = [v.split('|')[1] for v in self._views.keys()]
+        vms = [v.split('|')[1] for v in list(self._views.keys())]
         return any('t.' in v for v in vms)
 
     def _no_of_tests(self):
-        tests = [v for v in self._views.keys()
+        tests = [v for v in list(self._views.keys())
                  if v.split('|')[1].startswith('t.')]
         levels = [v.split('|')[1].split('.')[-1] for v in tests]
         return len(set(levels))
@@ -3328,9 +3330,9 @@ class Chain(object):
                             base_texts[x] = bt
                 if base_texts:
                     if self.orientation == 'x':
-                        self.base_descriptions = base_texts.values()[0]
+                        self.base_descriptions = list(base_texts.values())[0]
                     else:
-                        self.base_descriptions = base_texts.values()
+                        self.base_descriptions = list(base_texts.values())
 
         return None
 
@@ -3458,7 +3460,7 @@ class Chain(object):
 
             if meta.get('values'):
                 values = meta['values']
-                if isinstance(values, basestring):
+                if isinstance(values, str):
                     pointers = values.split('@')
                     values = self._meta[pointers.pop(0)]
                     while pointers:
@@ -3526,10 +3528,10 @@ class Chain(object):
         if nlevels > 2:
             arrays = []
 
-            for i in xrange(0, nlevels, 2):
+            for i in range(0, nlevels, 2):
                 index_0 = index.get_level_values(i)
                 index_1 = index.get_level_values(i+1)
-                tuples = zip(index_0.values, index_1.values)
+                tuples = list(zip(index_0.values, index_1.values))
                 names = (index_0.name, index_1.name)
                 sub = pd.MultiIndex.from_tuples(tuples, names=names)
                 sub = self._paint_index(sub, text_keys, display, axis, bases,
@@ -3559,7 +3561,7 @@ class Chain(object):
             if str(value).startswith('#pad'):
                 pass
             elif pd.notnull(value):
-                if value in self._text_map.keys():
+                if value in list(self._text_map.keys()):
                     value = self._text_map[value]
                 else:
                     text = self._get_text(value, text_keys[axis], exclude_mask_text)
@@ -3572,7 +3574,7 @@ class Chain(object):
             level_0_text.append(value)
         if '@' in self._y_keys and self.totalize and axis == 'y':
             level_0_text = ['Total'] + level_0_text[1:]
-        return map(unicode, level_0_text)
+        return list(map(str, level_0_text))
 
     def _get_level_1(self, levels, text_keys, display, axis, bases):
         """
@@ -3593,8 +3595,8 @@ class Chain(object):
             elif str(value).startswith('#Level: '):
                 level_1_text.append(value.replace('#Level: ', ''))
             else:
-                translate = self._transl[self._transl.keys()[0]].keys()
-                if value in self._text_map.keys() and value not in translate:
+                translate = list(self._transl[list(self._transl.keys())[0]].keys())
+                if value in list(self._text_map.keys()) and value not in translate:
                     level_1_text.append(self._text_map[value])
                 elif value in translate:
                     if value == 'All':
@@ -3625,10 +3627,10 @@ class Chain(object):
                         except (ValueError, UnboundLocalError):
                             if self._grp_text_map:
                                 for gtm in self._grp_text_map:
-                                    if value in gtm.keys():
+                                    if value in list(gtm.keys()):
                                         text = self._get_text(gtm[value], text_keys[axis])
                                         level_1_text.append(text)
-        return map(unicode, level_1_text)
+        return list(map(str, level_1_text))
 
     @staticmethod
     def _unwgt_label(views, base_vk):
@@ -3666,7 +3668,7 @@ class Chain(object):
         tk_transl = tk if tk in self._transl else self._default_text
         base_vk = self._valid_views()[view_idx]
         basetype = base_vk.split('|')[-1]
-        unwgt_label = self._unwgt_label(self._views.keys(), base_vk)
+        unwgt_label = self._unwgt_label(list(self._views.keys()), base_vk)
 
         if unwgt_label:
             if basetype == 'cbase_gross':
@@ -3693,10 +3695,10 @@ class Chain(object):
     def _get_text(self, value, text_key, item_text=False):
         """
         """
-        if value in self._meta['columns'].keys():
+        if value in list(self._meta['columns'].keys()):
             col = self._meta['columns'][value]
             if item_text and col.get('parent'):
-                parent = col['parent'].keys()[0].split('@')[-1]
+                parent = list(col['parent'].keys())[0].split('@')[-1]
                 items = self._meta['masks'][parent]['items']
                 for i in items:
                     if i['source'].split('@')[-1] == value:
@@ -3704,7 +3706,7 @@ class Chain(object):
                         break
             else:
                 obj = col['text']
-        elif value in self._meta['masks'].keys():
+        elif value in list(self._meta['masks'].keys()):
             obj = self._meta['masks'][value]['text']
         elif 'text' in value:
             obj = value['text']
@@ -3738,7 +3740,7 @@ class Chain(object):
             values = self._meta['columns'][column].get('values', [])
         elif column in self._meta['masks']:
             values = self._meta['lib']['values'].get(column, [])
-        if isinstance(values, (str, unicode)):
+        if isinstance(values, str):
             keys = values.split('@')
             values = self._meta[keys.pop(0)]
             while keys:
@@ -3917,7 +3919,7 @@ class Quantity(object):
         self._dataidx = link.get_data().index
         if self._uses_meta:
             self.meta = self._meta
-            if self.meta().values() == [None] * len(self.meta().values()):
+            if list(self.meta().values()) == [None] * len(list(self.meta().values())):
                 self._uses_meta = False
                 self.meta = None
         else:
@@ -3974,10 +3976,10 @@ class Quantity(object):
         """
         if self._uses_meta:
             masks = [self.x, self.y]
-            if any(mask in self.meta()['masks'].keys() for mask in masks):
+            if any(mask in list(self.meta()['masks'].keys()) for mask in masks):
                 mask = {
                     True: self.x,
-                    False: self.y}.get(self.x in self.meta()['masks'].keys())
+                    False: self.y}.get(self.x in list(self.meta()['masks'].keys()))
                 if self.meta()['masks'][mask]['type'] == 'array':
                     if self.x == '@':
                         self.x, self.y = self.y, self.x
@@ -4076,7 +4078,7 @@ class Quantity(object):
         return self
 
     def _reset(self):
-        for prop in self.__dict__.keys():
+        for prop in list(self.__dict__.keys()):
             if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
                         'd', 'idx_map']:
                 pass
@@ -4141,12 +4143,12 @@ class Quantity(object):
         self
         """
         proper_scaling = {old_code: new_code for old_code, new_code
-                         in scaling.items() if old_code in self.xdef}
-        xdef_ref = [proper_scaling[code] if code in proper_scaling.keys()
+                         in list(scaling.items()) if old_code in self.xdef}
+        xdef_ref = [proper_scaling[code] if code in list(proper_scaling.keys())
                     else code for code in self.xdef]
         if drop:
             to_drop = [code for code in self.xdef if code not in
-                       proper_scaling.keys()]
+                       list(proper_scaling.keys())]
             self.exclude(to_drop, axis='x')
         self.xdef = xdef_ref
         return self
@@ -4191,8 +4193,8 @@ class Quantity(object):
             column = self.x
             logic = condition
         else:
-            column = condition.keys()[0]
-            logic = condition.values()[0]
+            column = list(condition.keys())[0]
+            logic = list(condition.values())[0]
         idx, logical_expression = get_logic_index(self.d()[column], logic, self.d())
         logical_expression = logical_expression.split(':')[0]
         if not column == self.x:
@@ -4278,13 +4280,13 @@ class Quantity(object):
                     return missingfied
 
     def _organize_global_missings(self, missings):
-        hidden = [c for c in missings.keys() if missings[c] == 'hidden']
-        excluded = [c for c in missings.keys() if missings[c] == 'excluded']
-        shown = [c for c in missings.keys() if missings[c] == 'shown']
+        hidden = [c for c in list(missings.keys()) if missings[c] == 'hidden']
+        excluded = [c for c in list(missings.keys()) if missings[c] == 'excluded']
+        shown = [c for c in list(missings.keys()) if missings[c] == 'shown']
         return hidden, excluded, shown
 
     def _organize_stats_missings(self, missings):
-        excluded = [c for c in missings.keys()
+        excluded = [c for c in list(missings.keys())
                     if missings[c] in ['d.excluded', 'excluded']]
         return excluded
 
@@ -4434,7 +4436,7 @@ class Quantity(object):
             combined_matrix = combined_matrix.swapaxes(1, 2)
             self._switch_axes()
         # update the sectional information
-        new_sect_def = range(0, combined_matrix.shape[1] - 1)
+        new_sect_def = list(range(0, combined_matrix.shape[1] - 1))
         if axis == 'x':
             self.xdef = new_sect_def
             self._x_indexers = self._get_x_indexers()
@@ -4507,7 +4509,7 @@ class Quantity(object):
                         frame[frame.index([code])] = '-'
         frame = [code for code in frame if not code == '-']
         for code in frame:
-            if code[0] in frame_lookup.keys():
+            if code[0] in list(frame_lookup.keys()):
                frame[frame.index([code[0]])] = frame_lookup[code[0]]
         return frame
 
@@ -4524,17 +4526,17 @@ class Quantity(object):
         if not self._grp_type(grp_def) == 'block':
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
-            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
+            if any(isinstance(val, (tuple, dict)) for val in list(grp.values())):
                 if complete:
                     ni_err = ('Logical expr. unsupported when complete=True. '
                               'Only list-type nets/groups can be completed.')
                     raise NotImplementedError(ni_err)
-                if 'expand' in grp.keys():
+                if 'expand' in list(grp.keys()):
                     del grp['expand']
                 expand = None
                 logical = True
             else:
-                if 'expand' in grp.keys():
+                if 'expand' in list(grp.keys()):
                     grp = copy.deepcopy(grp)
                     expand = grp['expand']
                     if expand is None and complete:
@@ -4543,12 +4545,12 @@ class Quantity(object):
                 else:
                     expand = method_expand
                 logical = False
-            organized_def.append([grp.keys(), grp.values()[0], expand, logical])
+            organized_def.append([list(grp.keys()), list(grp.values())[0], expand, logical])
             if expand:
                 any_extensions = True
             if logical:
                 any_logical = True
-            codes_used.extend(grp.values()[0])
+            codes_used.extend(list(grp.values())[0])
         if not any_logical:
             if len(set(codes_used)) != len(codes_used) and any_extensions:
                 ni_err_extensions = ('Same codes in multiple groups unsupported '
@@ -4651,13 +4653,13 @@ class Quantity(object):
         is_df = self._force_to_nparray()
         has_margin = self._attach_margins()
         values = self.result
-        expr_name = expression.keys()[0]
+        expr_name = list(expression.keys())[0]
         if axis == 'x':
             self.calc_x = expr_name
         else:
             self.calc_y = expr_name
             values = values.T
-        expr = expression.values()[0]
+        expr = list(expression.values())[0]
         v1, op, v2, exp_type, index_codes = self._organize_expr_def(expr, axis)
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
@@ -5104,15 +5106,15 @@ class Quantity(object):
     def _get_y_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
             if self.ydef is not None:
-                idxs = range(1, len(self.ydef)+1)
+                idxs = list(range(1, len(self.ydef)+1))
                 return self._sort_indexer_as_codes(idxs, self.ydef)
             else:
                 return [1]
         else:
             y_indexers = []
             xdef_len = len(self.xdef)
-            zero_based_ys = [idx for idx in xrange(0, xdef_len)]
-            for y_no in xrange(0, len(self.ydef)):
+            zero_based_ys = [idx for idx in range(0, xdef_len)]
+            for y_no in range(0, len(self.ydef)):
                 if y_no == 0:
                     y_indexers.append(zero_based_ys)
                 else:
@@ -5122,7 +5124,7 @@ class Quantity(object):
 
     def _get_x_indexers(self):
         if self._squeezed or self.type in ['simple', 'nested']:
-            idxs = range(1, len(self.xdef)+1)
+            idxs = list(range(1, len(self.xdef)+1))
             return self._sort_indexer_as_codes(idxs, self.xdef)
         else:
             x_indexers = []
@@ -5385,7 +5387,7 @@ class Quantity(object):
             total_mi = pd.MultiIndex.from_product(total_mi_values,
                                                   names=nest_mi.names)
             full_nest_mi = nest_mi.union(total_mi)
-            for lvl, c in zip(range(1, len(full_nest_mi)+1, 2),
+            for lvl, c in zip(list(range(1, len(full_nest_mi)+1, 2)),
                               self.nest_def['level_codes']):
                 full_nest_mi.set_levels(['All'] + c, level=lvl, inplace=True)
             self.result.columns = full_nest_mi
@@ -5787,7 +5789,7 @@ class Test(object):
         decision rules check test-statistic against pre-defined treshholds
         while others check sig. level against p-value.
         """
-        if isinstance(level, (str, unicode)):
+        if isinstance(level, str):
             if level == 'low':
                 if self.mimic == 'Dim':
                     comparevalue = siglevel = 0.10
@@ -5942,7 +5944,7 @@ class Test(object):
         if not self.is_weighted:
             m /= m
         m[m == 0] = np.NaN
-        col_pairs = list(combinations(range(0, m.shape[1]), 2))
+        col_pairs = list(combinations(list(range(0, m.shape[1])), 2))
         if self.parameters['use_ebase'] and self.is_weighted:
             # Overlap computation when effective base is being used
             w_sum_sq = np.array([np.nansum(m[:, [c1]] + m[:, [c2]], axis=0)**2
@@ -5976,14 +5978,14 @@ class Test(object):
     def _output(self, sigs):
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
         test_columns = ['@'] + self.ydef if self.test_total else self.ydef
-        for col, val in sigs.iteritems():
+        for col, val in sigs.items():
             if self._flags_exist():
                 b1ix, b2ix = test_columns.index(col[0]), test_columns.index(col[1])
                 b1_ok = self.flags['flagged_bases'][b1ix] != '**'
                 b2_ok = self.flags['flagged_bases'][b2ix] != '**'
             else:
                 b1_ok, b2_ok = True, True
-            for row, v in val.iteritems():
+            for row, v in val.items():
                 if v > 0:
                     if b2_ok:
                         if col[0] == '@':
@@ -6107,9 +6109,9 @@ class Nest(object):
         for var in self.variables:
             var_valtexts = []
             values = self.meta['columns'][var]['values']
-            all_qtexts.append(self.meta['columns'][var]['text'].values())
+            all_qtexts.append(list(self.meta['columns'][var]['text'].values()))
             for value in values:
-                var_valtexts.append(value['text'].values()[0])
+                var_valtexts.append(list(value['text'].values())[0])
             all_valtexts.append(var_valtexts)
             self.level_codes.append([code['value'] for code in values])
         interlocked_valtexts = list(product(*all_valtexts))
@@ -6247,8 +6249,8 @@ class Reductions(Multivariate):
 
 
         label_map = self._get_point_label_map('CA', point_coords)
-        for axis in label_map.keys():
-            for lab, coord in label_map[axis].items():
+        for axis in list(label_map.keys()):
+            for lab, coord in list(label_map[axis].items()):
                 plt.annotate(lab, coord, ha='left', va='bottom',
                     fontsize=6)
             plt.legend((x, y), (self.x[0], self.y[0]),
@@ -6329,7 +6331,7 @@ class Reductions(Multivariate):
             plt.show()
 
         if diags:
-            _dim = xrange(1, dim+1)
+            _dim = range(1, dim+1)
             chisq_stats = [chisq, 'sig: {}'.format(sig),
                            'dof: {}'.format((obs.shape[0] - 1)*(obs.shape[1] - 1))]
             _chisq = ([np.NaN] * (dim-3)) + chisq_stats
@@ -6349,10 +6351,10 @@ class Reductions(Multivariate):
 
     def _get_point_label_map(self, type, point_coords):
         if type == 'CA':
-            xcoords = zip(point_coords['x'][0],point_coords['x'][1])
+            xcoords = list(zip(point_coords['x'][0],point_coords['x'][1]))
             xlabels = self.crossed_quantities[0].xdef
             x_point_map = {lab: coord for lab, coord in zip(xlabels, xcoords)}
-            ycoords = zip(point_coords['y'][0], point_coords['y'][1])
+            ycoords = list(zip(point_coords['y'][0], point_coords['y'][1]))
             ylabels = self.crossed_quantities[0].ydef
             y_point_map = {lab: coord for lab, coord in zip(ylabels, ycoords)}
             return {'x': x_point_map, 'y': y_point_map}
@@ -6566,7 +6568,7 @@ class LinearModels(Multivariate):
     def _lmg_combs(self):
         full = self.x
         lmg_combs = []
-        for combine_no in xrange(1, len(full)):
+        for combine_no in range(1, len(full)):
             lmg_combs.extend([list(comb) for comb in
                               list(combinations(full, combine_no))])
         lmg_combs.append(full)
@@ -6585,27 +6587,27 @@ class LinearModels(Multivariate):
         self._analysisdata = self._analysisdata.copy().dropna(subset=cols)
         total_rsq = self._rsq_lmg_subset(self.x)
         all_models = self._lmg_models_per_var()
-        model_max_no = len(all_models.keys()) * len(all_models.values()[0])
+        model_max_no = len(list(all_models.keys())) * len(list(all_models.values())[0])
         # print 'LMG analysis on {} models started...'.format(model_max_no)
-        for x, diff_models in all_models.items():
-            group_results = {size: [] for size in xrange(1, full_len + 1)}
+        for x, diff_models in list(all_models.items()):
+            group_results = {size: [] for size in range(1, full_len + 1)}
             for diff_model in diff_models:
                 # sys.stdout.write('|')
                 # sys.stdout.flush()
                 if not diff_model[1]:
-                    if tuple(diff_model[0]) in known_rsq.keys():
+                    if tuple(diff_model[0]) in list(known_rsq.keys()):
                         r1 = known_rsq[tuple(diff_model[0])]
                     else:
                         r1 = self._rsq_lmg_subset(diff_model[0])
                         known_rsq[tuple(diff_model[0])] = r1
                     group_results[len(diff_model[0])].append((r1))
                 else:
-                    if tuple(diff_model[0]) in known_rsq.keys():
+                    if tuple(diff_model[0]) in list(known_rsq.keys()):
                         r1 = known_rsq[tuple(diff_model[0])]
                     else:
                         r1 = self._rsq_lmg_subset(diff_model[0])
                         known_rsq[tuple(diff_model[0])] = r1
-                    if tuple(diff_model[1]) in known_rsq.keys():
+                    if tuple(diff_model[1]) in list(known_rsq.keys()):
                         r2 = known_rsq[tuple(diff_model[1])]
                     else:
                         r2 = self._rsq_lmg_subset(diff_model[1])
@@ -6613,8 +6615,8 @@ class LinearModels(Multivariate):
                     group_results[len(diff_model[0])].append((r1-r2))
             x_results[x] = group_results
         lmgs = []
-        for var, results in x_results.items():
-            res = np.mean([np.mean(val) for val in results.values()])
+        for var, results in list(x_results.items()):
+            res = np.mean([np.mean(val) for val in list(results.values())])
             lmgs.append((var, res))
             labs = ['Variable',
                     'Importance {}'.format('(normalized)' if norm else '')]
@@ -6644,10 +6646,10 @@ class Relations(Multivariate):
             full_range = len(self.x) - 1
         else:
             full_range = len(self.x + self.y) - 1
-        x_range = range(0, len(self.x))
-        y_range = range(x_range[-1] + 1, full_range + 1)
+        x_range = list(range(0, len(self.x)))
+        y_range = list(range(x_range[-1] + 1, full_range + 1))
         if self._has_matrix_structure():
-            return list(product(range(0, full_range+1), repeat=2))
+            return list(product(list(range(0, full_range+1)), repeat=2))
         else:
             return list(product(x_range, y_range))
 
@@ -6929,7 +6931,7 @@ class Cache(defaultdict):
         super(Cache, self).__init__(Cache)
 
     def __reduce__(self):
-        return self.__class__, tuple(), None, None, self.iteritems()
+        return self.__class__, tuple(), None, None, iter(self.items())
 
 
     def set_obj(self, collection, key, obj):
@@ -7035,7 +7037,7 @@ class Link(Quantity, dict):
 #                            len(self.values()))
 
     def describe(self):
-        described = pd.Series(self.keys(), name=self.id)
+        described = pd.Series(list(self.keys()), name=self.id)
         described.index.name = 'views'
         return described
 
@@ -7114,7 +7116,7 @@ class Stack(defaultdict):
                             elif isinstance(views, (list, tuple)):
                                 views = QuantipyViews(views=views)
                             else:
-                                print 'ERROR - VIEWS CRASHED!'
+                                print('ERROR - VIEWS CRASHED!')
                         views._apply_to(l, weights)
                         l._clear()
 
@@ -7125,11 +7127,11 @@ class Stack(defaultdict):
         """
         Return Link from Stack.
         """
-        if ds_key is None and len(self.keys()) > 1:
+        if ds_key is None and len(list(self.keys())) > 1:
             key_err = 'Cannot select from multiple datasets when no key is provided.'
             raise KeyError(key_err)
-        elif ds_key is None and len(self.keys()) == 1:
-            ds_key = self.keys()[0]
+        elif ds_key is None and len(list(self.keys())) == 1:
+            ds_key = list(self.keys())[0]
         if filters is None: filters = 'no_filter'
         if not isinstance(self[ds_key][filters][x][y], Link):
             l = Link(self.ds, filters, x, y)
@@ -7160,7 +7162,7 @@ class Stack(defaultdict):
             DataFrame summing the Stack's structure in terms of Links and Views.
         """
         stack_tree = []
-        for dk in self.keys():
+        for dk in list(self.keys()):
             path_dk = [dk]
             filters = self[dk]
 
@@ -7168,20 +7170,20 @@ class Stack(defaultdict):
 #                 path_fk = path_dk + [fk]
 #                 xs = self[dk][fk]
 
-            for fk in filters.keys():
+            for fk in list(filters.keys()):
                 path_fk = path_dk + [fk]
                 xs = self[dk][fk]
 
-                for sk in xs.keys():
+                for sk in list(xs.keys()):
                     path_sk = path_fk + [sk]
                     ys = self[dk][fk][sk]
 
-                    for tk in ys.keys():
+                    for tk in list(ys.keys()):
                         path_tk = path_sk + [tk]
                         views = self[dk][fk][sk][tk]
 
-                        if views.keys():
-                            for vk in views.keys():
+                        if list(views.keys()):
+                            for vk in list(views.keys()):
                                 path_vk = path_tk + [vk, 1]
                                 stack_tree.append(tuple(path_vk))
                         else:

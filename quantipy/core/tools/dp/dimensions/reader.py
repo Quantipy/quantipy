@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 import warnings
-from StringIO import StringIO
+from io import StringIO
 from lxml import etree
 import sqlite3
 import re
@@ -57,7 +57,7 @@ def ddf_to_pandas(path_ddf):
             if table_name.startswith('L')
         }
         table_info = {}
-        for table_name in sql.keys():
+        for table_name in list(sql.keys()):
             table_info[table_name] = pd.read_sql(
                 "PRAGMA table_info('"+table_name+"');",
                 conn
@@ -131,7 +131,7 @@ def quantipy_clean(ddf):
 
     clean = {}
     data_table_keys = [
-        k for k in ddf.keys()
+        k for k in list(ddf.keys())
         if not k in ['table_info','Levels']
     ]
 
@@ -313,7 +313,7 @@ def get_text_dict(source):
         l.get('{http://www.w3.org/XML/1998/namespace}lang'): l.text
         for l in source
     }
-    for tk in text.keys():
+    for tk in list(text.keys()):
         if text[tk] is None:
             text[tk] = ""
     return text
@@ -415,7 +415,7 @@ def get_meta_values(xml, column, data, map_values=True):
         msg = 'Category values for {} will be taken byProperty using {}.'.format(
                 var_name, byProperty_key)
     else:
-        values = range(1, len(categories)+1)
+        values = list(range(1, len(categories)+1))
         msg = 'Category values for {} will be taken byPosition'.format(var_name)
         warnings.warn(msg)
 
@@ -465,7 +465,7 @@ def remap_values(data, column, value_map):
         missing = [
             value
             for value in data[column['name']].dropna().unique()
-            if value not in value_map.keys()
+            if value not in list(value_map.keys())
             and value not in [-1]]
         if missing:
             msg = (
@@ -481,7 +481,7 @@ def remap_values(data, column, value_map):
     elif column['type'] in ['delimited set']:
         temp = data[column['name']][data[column['name']].notnull()]
         if temp.size>0:
-            value_map = {str(k): str(v) for k, v in value_map.iteritems()}
+            value_map = {str(k): str(v) for k, v in value_map.items()}
             temp = temp.apply(
                 lambda x: map_delimited_values(x, value_map, column['name']))
             data[column['name']].update(temp)
@@ -778,11 +778,11 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
 
     array_masks= {
         k: v
-        for k, v in meta['masks'].iteritems()
+        for k, v in meta['masks'].items()
         if v['type']=='array'
     }
 
-    for k in array_masks.keys():
+    for k in list(array_masks.keys()):
 
         array_set = []
         tmap = k.split('.')
@@ -841,10 +841,10 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
 
                 compound_text = {
                     k: ' - '.join([grid_text[k], l1_element_text[k]])
-                    for k in grid_text.keys()
+                    for k in list(grid_text.keys())
                     if k in l1_element_text
                 }
-                for key in compound_text.keys():
+                for key in list(compound_text.keys()):
                     if compound_text[key] is None:
                         compound_text[key] = ""
                 meta['columns'][full_name]['text'] = compound_text
@@ -900,7 +900,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
             e.get('name') in data.columns
             or any([
                 m.startswith(e.get('name'))
-                for m in meta['masks'].keys()
+                for m in list(meta['masks'].keys())
             ])
         )
     ]
@@ -908,7 +908,7 @@ def mdd_to_quantipy(path_mdd, data, map_values=True):
     for name in design_set:
         if name in data.columns:
             updated_design_set.append('columns@%s' % name)
-        for k in meta['masks'].keys():
+        for k in list(meta['masks'].keys()):
             if k.startswith('%s.' % name):
                 updated_design_set.append('masks@%s' % k)
                 set_items = meta['sets'][k]['items']
@@ -967,13 +967,13 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
         for grid_name in grids:
             if not any(levels['ParentName'].isin([grid_name])):
                 parent_name = levels.loc[grid_name, 'ParentName']
-                if grid_name in ddf.keys():
+                if grid_name in list(ddf.keys()):
                     single_level.append(as_L1(child=ddf[grid_name]))
                 else:
                     empty_grids.append(grid_name)
             else:
                 child_name = levels[levels['ParentName']==grid_name].index[0]
-                if grid_name in ddf.keys():
+                if grid_name in list(ddf.keys()):
                     two_level.append(as_L1(
                         child=ddf[child_name],
                         parent=ddf[grid_name],
@@ -986,11 +986,11 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
         if two_level:
             L1 = L1.join(pd.concat(two_level, axis=1))
         if empty_grids:
-            print '\n*** Empty grids %s ignored ***\n' % (', '.join(empty_grids))
+            print('\n*** Empty grids %s ignored ***\n' % (', '.join(empty_grids)))
 
     meta, ddf = mdd_to_quantipy(path_mdd, data=L1)
 
-    for mask in meta['masks'].keys():
+    for mask in list(meta['masks'].keys()):
         meta['masks'][mask]['items'] = [
             item
             for item in meta['masks'][mask]['items']
@@ -1007,8 +1007,8 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
             for s in meta['sets'][variable]['items']:
                 while s in datafile:
                     datafile.remove(s)
-        elif parents and parents.keys()[0].split('@')[1] in meta['masks']:
-            parent = parents.keys()[0].split('@')[1]
+        elif parents and list(parents.keys())[0].split('@')[1] in meta['masks']:
+            parent = list(parents.keys())[0].split('@')[1]
             if not parent in datafile:
                 idx = datafile.index(item)
                 datafile[idx] = parent
@@ -1017,7 +1017,7 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
     meta['sets']['data file']['items'] = datafile
 
 
-    for key, col in meta['columns'].iteritems():
+    for key, col in meta['columns'].items():
         if col['type']=='string' and key in ddf:
             ddf[key] = ddf[key].apply(qp.core.tools.dp.io.unicoder)
         if col['type']=='int' and key in ddf:
@@ -1034,13 +1034,13 @@ def verify_columns(mdd, ddf):
     """
 
     droplist = []
-    for col in mdd['columns'].keys():
+    for col in list(mdd['columns'].keys()):
         if not col in ddf.columns:
             droplist.append(col)
             del mdd['columns'][col]
 
     if droplist:
-        print 'Found in data, not in meta (columns removed):', droplist
+        print('Found in data, not in meta (columns removed):', droplist)
 
     return mdd, ddf
 
