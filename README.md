@@ -1,4 +1,8 @@
 # Quantipy
+
+### Quantipy for Python 3
+This branch is a port of Quantipy from Python 2.x to Python 3. The tests are not all working, but it can be imported and used for basic exploration such as Dataset.crosstab().
+
 ### Python for people data
 Quantipy is an open-source data processing, analysis and reporting software project that builds on the excellent pandas and numpy libraries. Aimed at people data, Quantipy offers support for native handling of special data types like multiple choice variables, statistical analysis using case or observation weights, DataFrame metadata and pretty data exports.
 
