@@ -150,7 +150,7 @@ def loads_json(json_text, hook=OrderedDict):
 
 def load_csv(path_csv):
 
-    data = pd.DataFrame.from_csv(path_csv)
+    data = pd.read_csv(path_csv)
     return data
 
 def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
