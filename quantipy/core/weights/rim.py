@@ -444,7 +444,7 @@ class Rim:
                             self.name, group, target_col, len(target_codes),
                             len(sample_codes), miss_in_targets)))
 
-                if not np.allclose(np.sum(target_props), 100.0):
+                if not np.allclose(np.sum(list(target_props)), 100.0):
                     raise ValueError(sum_err.format(self.name, group,
                                     target_col, np.sum(target_props)))
 
