@@ -100,7 +100,10 @@ class WeightEngine:
                 else:
                     report['Weight filter'] = filter_def
 
-                filtered_data = data.query(filter_def)
+                if report['Weight filter'] == "None":
+                    filtered_data = data
+                else:
+                    filtered_data = data.query(filter_def)
                 weight_factors = filtered_data[weight_col]
 
                 weight_count = weight_factors.count()
