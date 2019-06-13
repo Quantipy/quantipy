@@ -335,8 +335,8 @@ class TestDataSet(unittest.TestCase):
         # recoded data is correct?
         original_ct =  dataset.crosstab('q5', text=False)
         transposed_ct = dataset.crosstab('q5_trans', text=False)
-        self.assertTrue(np.array_equal(original_ct.drop('All', 1, 1).T.values,
-                        transposed_ct.drop('All', 1, 1).values))
+        self.assertTrue(np.array_equal(original_ct.drop('All', axis=1, level=1).T.values,
+                        transposed_ct.drop('All', axis=1, level=1).values))
 
     def test_reorder_values(self):
         dataset = self._get_dataset()

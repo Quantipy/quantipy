@@ -196,13 +196,8 @@ class WeightEngine:
 
     def add_scheme(self, scheme, key, verbose=True):
         if scheme.name in self.schemes:
-<<<<<<< HEAD
-            print("Overwriting existing scheme '%s'." % scheme.name)
-        self._resolve_filters(scheme)
-=======
-            print "Overwriting existing scheme '%s'." % scheme.name
+            print("Overwriting existing scheme '%s'.").format(scheme.name) 
         self._resolve_filters(scheme, key)
->>>>>>> staging-develop
         self.schemes[scheme.name] = {self._SCHEME: scheme, self._KEY: key}
         scheme._minimize_columns(self._df, key, verbose)
 
