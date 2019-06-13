@@ -565,6 +565,15 @@ class TestDataSet(unittest.TestCase):
         df_comp = dataset.compare(ds)
         self.assertTrue(df.equals(df_comp))
 
+    def test_convert_str_to_delimited_set(self):
+        dataset = self._get_dataset()
+        ds = dataset.clone()
+        ds.add_meta('del_set','string','Delimited set as a string')
+        ds._data['del_set'] = ds._data['q9']
+        ds.convert('del_set',to="delimited set")
+        self.assertEqual(ds.crosstab('q9').iloc[:,0].tolist(),
+                         ds.crosstab('del_set').iloc[:,0].tolist())
+
     def test_uncode(self):
         dataset = self._get_dataset()
         dataset.uncode('q8',{1: 1, 2:2, 5:5}, 'q8', intersect={'gender':1})

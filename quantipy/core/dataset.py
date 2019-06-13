@@ -5051,14 +5051,49 @@ class DataSet(object):
         """
         org_type = self._get_type(name)
         if org_type == 'delimited set': return None
-        valid = ['single']
+        valid = ['single', 'string']
         if not org_type in valid:
             msg = 'Cannot convert variable {} of type {} to delimited set!'
             raise TypeError(msg.format(name, org_type))
-        self._meta['columns'][name]['type'] = 'delimited set'
-        self._data[name] = self._data[name].apply(
-            lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
-        return None
+        if org_type == 'single':
+            self._meta['columns'][name]['type'] = 'delimited set'
+            self._data[name] = self._data[name].apply(
+                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
+            return None
+        elif org_type == 'string':
+            # we assume we have a delimited set in the string variable
+            # delimited with a semicolon agree;disagree;agree
+            original_column = self._data[name]
+            # we encapsulate each line with !; ;! so that the string
+            # replacement works correctly
+            if original_column.dropna().tolist()[0][-1] == ";":
+                original_column = "!;" + original_column + "!"
+            else:
+                original_column = "!;" + original_column + ";!"
+
+            original_column = original_column.replace(pd.np.nan,'')
+            all_values_split = [i.split(";") for i in original_column]
+            flat = [i for sublist in all_values_split for i in sublist]
+            trim = [i.strip() for i in flat]
+            trim = [i for i in trim if len(i)>0]
+            unique = list(set(trim))
+            if "!" in unique:
+                unique.remove("!")
+            unique.sort()
+            value_map = []
+            quantipy_values = []
+            for k,item in enumerate(unique):
+                value_map.append((k,item))
+                quantipy_values.append({'text':{self.meta()['lib']['default text']:item},'value':k})
+                original_column = original_column.str.replace(";" + re.escape(item) + ";",";" + str(k) + ";")
+            original_column = original_column.str.replace("; ",";")
+            # remove the ;! !; we placed at the beginning and end of each string
+            original_column = original_column.str.replace("!;","")
+            original_column = original_column.str.replace("!","")
+            self._meta['columns'][name]['values'] = quantipy_values
+            self._meta['columns'][name]['type'] = 'delimited set'
+            self._data[name] = original_column
+
 
     def _as_single(self, name):
         """
