@@ -2388,6 +2388,27 @@ class DataSet(object):
                     self.set_item_texts(a, rename_items, tk, ed)
         return None
 
+    def _add_secure_variables(self):
+        """ Add variables in the CSV missing from the data-file set """
+        actual = []
+        for item in self._meta['sets']['data file']['items']:
+            key, name = item.split('@')
+            if key == 'columns':
+                actual.append(name)
+            elif key == 'masks':
+                for mitem in self._meta['masks'][name]['items']:
+                    mkey, mname = mitem['source'].split('@')
+                    actual.append(mname)
+
+        expected = self._data.columns.values.tolist()
+
+        for col in expected:
+            if col not in actual and col != '@1':
+                print('Adding {}'.format(col))
+                items = self._meta['sets']['data file']['items']
+                items.append('columns@{}'.format(col))
+        return None
+
     def repair(self):
         """
         Try to fix legacy meta data inconsistencies and badly shaped array /
@@ -2400,6 +2421,7 @@ class DataSet(object):
         self.restore_item_texts()
         self._clean_datafile_set()
         self._prevent_one_cat_set()
+        self._add_secure_variables()
         return None
 
     # ------------------------------------------------------------------------
@@ -7105,7 +7127,7 @@ class DataSet(object):
     def _logic_as_pd_expr(self, logic, prefix='default'):
         """
         """
-        varname = '{}__logic_dummy__'.format(prefix)
+        varname = '{}__logic_dummy__'.format(prefix).replace(' ', '_')
         category = [(1, 'select', logic)]
         meta = (varname, 'single', '', category)
         self.derive(*meta)

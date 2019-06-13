@@ -399,7 +399,7 @@ def remove_newlines_in_string(string):
     """
     """
     s = string.copy()
-    s = s.apply(lambda x: str(x).replace('\n', ''))
+    s = s.apply(lambda x: str(x).replace('\r\n', '').replace('\n', ''))
     return s
 
 def convert_categorical(categorical):
