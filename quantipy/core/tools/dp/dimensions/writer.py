@@ -427,7 +427,7 @@ def convert_categorical(categorical):
     return cat
 
 def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
-                             CRLF="CR", run=True, clean_up=True):
+                             CRLF="CR", run=True, clean_up=True, reuse_mdd=False):
     """
     DESCP
 
@@ -441,7 +441,10 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
     name = path_mdd.split('/')[-1].split('.')[0]
     path =  '/'.join(path_mdd.split('/')[:-1])
     if '/' in path_mdd: path = path + '/'
-    path_mrs = u'{}create_mdd [{}].mrs'.format(path, name)
+    if reuse_mdd:
+        path_mrs = u'{}create_mdd [{}] (MDD WAS REUSED).mrs'.format(path, name)
+    else:
+        path_mrs = u'{}create_mdd [{}].mrs'.format(path, name)
     path_dms = u'{}create_ddf [{}].dms'.format(path, name)
     path_paired_csv = u'{}{}_paired.csv'.format(path, name)
     path_datastore = u'{}{}_datastore.csv'.format(path, name)
@@ -456,9 +459,12 @@ def dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=None,
         from subprocess import check_output, STDOUT, CalledProcessError
         try:
             print 'Converting to .ddf/.mdd...'
-            command = 'mrscriptcl "{}"'.format(path_mrs)
-            check_output(command, stderr=STDOUT, shell=True)
-            print '.mdd file generated successfully.'
+            if reuse_mdd:
+                print '.mdd file was reused: "{}"'.format(path_mdd)
+            else:
+                command = 'mrscriptcl "{}"'.format(path_mrs)
+                check_output(command, stderr=STDOUT, shell=True)
+                print '.mdd file generated successfully.'
             command = 'DMSRun "{}"'.format(path_dms)
             check_output(command, stderr=STDOUT, shell=True)
             print '.ddf file generated successfully.\n'
