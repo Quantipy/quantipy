@@ -1265,9 +1265,7 @@ class Batch(qp.DataSet):
 
         if merge_f:
             ds.merge_filter(f, filters)
-            if not manifest_edits:
-                vlist.append(f)
-        if f and manifest_edits:
+        if f:
             ds.filter(self.name, {f: 0}, True)
             if merge_f:
                 ds.drop(f)
