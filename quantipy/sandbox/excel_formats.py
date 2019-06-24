@@ -33,7 +33,7 @@ class _Format(dict):
 class _ExcelFormats(object):
 
     __default_attributes__ = tuple(_DEFAULT_ATTRIBUTES.keys())
-    __slots__ = __default_attributes__ + ('default_attributes', '_view_or_group')
+    __slots__ = __default_attributes__ + ('default_attributes',)
 
     def __init__(self, views_groups, **kwargs):
         self.default_attributes = dict(_DEFAULT_ATTRIBUTES)

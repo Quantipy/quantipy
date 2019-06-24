@@ -303,8 +303,8 @@ class DataSet(object):
         import sys
         default_stdout = sys.stdout
         default_stderr = sys.stderr
-        importlib.reload(sys)
-        sys.setdefaultencoding(encoding)
+        #importlib.reload(sys)
+        #sys.setdefaultencoding(encoding)
         sys.stdout = default_stdout
         sys.stderr = default_stderr
 
