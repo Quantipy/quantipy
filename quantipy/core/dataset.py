@@ -4333,7 +4333,8 @@ class DataSet(object):
     @modify(to_list=['ignore_items', 'ignore_values'])
     @verify(variables={'name': 'masks'}, text_keys='text_key')
     def transpose(self, name, new_name=None, ignore_items=None,
-                  ignore_values=None, copy_data=True, text_key=None):
+                  ignore_values=None, copy_data=True, text_key=None,
+                  overwrite=False):
         """
         Create a new array mask with transposed items / values structure.
 
@@ -4360,58 +4361,54 @@ class DataSet(object):
         text_key : str
             The text key to be used when generating text objects, i.e.
             item and value labels.
+        overwrite: bool, default False
+            Overwrite variable if `new_name` is already included.
 
         Returns
         -------
         None
             DataSet is modified inplace.
         """
-        org_name = name
-        # Get array item and value structure
-        reg_items_object = self._get_itemmap(name)
-        if ignore_items:
-            reg_items_object = [i for idx, i in
-                                enumerate(reg_items_object, start=1)
-                                if idx not in ignore_items]
-        reg_item_names = [item[0] for item in reg_items_object]
-        reg_item_texts = [item[1] for item in reg_items_object]
-
-        reg_value_object = self._get_valuemap(name)
-        if ignore_values:
-            reg_value_object = [v for v in reg_value_object if v[0]
-                                not in ignore_values]
-        reg_val_codes = [v[0] for v in reg_value_object]
-        reg_val_texts = [v[1] for v in reg_value_object]
-
-        # Transpose the array structure: values --> items, items --> values
-        trans_items = [(code, value) for code, value in
-                       zip(reg_val_codes, reg_val_texts)]
-        trans_values = [(idx, text) for idx, text in
-                        enumerate(reg_item_texts, start=1)]
-        label = self.text(name, False, text_key)
-        # Create the new meta data entry for the transposed array structure
+        if (new_name and self.self._dims_compat_arr_name(new_name) in self and
+            not overwrite):
+            raise ValueError("'{}' is already included.".format(new_name))
         if not new_name:
-            new_name = '{}_trans'.format(self._dims_free_arr_name(name))
-        qtype = 'delimited set'
-        self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
-        # Do the case data transformation by looping through items and
-        # convertig value code entries...
-        new_name = self._dims_compat_arr_name(new_name)
-        trans_items = self._get_itemmap(new_name, 'items')
-        trans_values = self._get_valuemap(new_name, 'codes')
-        for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
-            for reg_val_code, trans_item in zip(reg_val_codes, trans_items):
-                if trans_item not in self._data.columns:
-                    if qtype == 'delimited set':
-                        self[trans_item] = ''
-                    else:
-                        self[trans_item] = np.NaN
-                if copy_data:
-                    slicer = {reg_item_name: [reg_val_code]}
-                    self.recode(trans_item, {new_val_code: slicer},
-                                append=True)
-        if self._verbose_infos:
-            print 'Transposed array: {} into {}'.format(org_name, new_name)
+            new_name = '{}_trans'.format(name)
+        if new_name == name:
+            tname = '{}_trans'.format(new_name)
+        else:
+            tname = new_name
+
+        # input item_map
+        item_map = self._get_itemmap(name)
+        item_labels = [(x, i[1]) for x, i in enumerate(item_map, 1)
+                       if not x in ignore_items]
+        item_vars = [(x, i[0]) for x, i in enumerate(item_map, 1)
+                     if not x in ignore_items]
+        # input value_map
+        value_map = self._get_valuemap(name)
+        value_map = [v for x, v in enumerate(value_map, 1)
+                     if not x in ignore_values]
+        # input label
+        label = self.text(name, False, text_key)
+        # add transposed meta
+        self.add_meta(tname, "delimited set", label, item_labels, value_map, text_key)
+        tname = self._dims_compat_arr_name(tname)
+
+        # transpose the data
+        tsources = self.sources(tname)
+        mapper = {
+            tsource: {} for tsource in tsources
+        }
+        for code, source in zip([val[0] for val in value_map], tsources):
+            mapper = {}
+            for x, item in item_vars:
+                mapper[x] = {item: code}
+            self.recode(source, mapper, append=True)
+        if new_name == name:
+            print("Overwrite '{}'.".format(name))
+            self.drop(name)
+            self.rename(tname, new_name)
 
     @verify(variables={'target': 'columns'})
     def recode(self, target, mapper, default=None, append=False,
