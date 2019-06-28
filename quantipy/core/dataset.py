@@ -3604,6 +3604,12 @@ class DataSet(object):
             If the merge is not applied ``inplace``, a ``DataSet`` instance
             is returned.
         """
+        new_tks = []
+        for d in dataset:
+            for tk in d.valid_tks:
+                if not d in self.valid_tks and not d in new_tks:
+                    new_tks.append(tk)
+        self.extend_valid_tks(new_tks)
         ds_left = (self._meta, self._data)
         ds_right = [(ds._meta, ds._data) for ds in dataset]
         if on is None and right_on in self.columns():
@@ -3625,6 +3631,7 @@ class DataSet(object):
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             return new_dataset
+        return None
 
     def update(self, data, on='identity'):
         """
