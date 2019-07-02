@@ -855,7 +855,7 @@ class Batch(qp.DataSet):
         dupes = [v for v in oe if v in break_by]
         if dupes:
             raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
-        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
+        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite, repl):
             if filter_by:
                 f_name = title if not self.filter else '%s_%s' % (self.filter, title)
                 f_name = self._verify_filter_name(f_name, number=True)
@@ -877,7 +877,7 @@ class Batch(qp.DataSet):
                 'break_by': break_by,
                 'incl_nan': incl_nan,
                 'drop_empty': drop_empty,
-                'replace': replacements}
+                'replace': repl}
             if any(o['title'] == title for o in self.verbatims):
                 for x, o in enumerate(self.verbatims):
                     if o['title'] == title:
@@ -885,6 +885,21 @@ class Batch(qp.DataSet):
             else:
                 self.verbatims.append(oe)
 
+        def _check_replacements(repl):
+            if not repl:
+                return None
+            elif not isinstance(repl, dict):
+                raise ValueError("replacements must be a dict.")
+            else:
+                if all(isinstance(v, dict) for v in repl.values()):
+                    if self.language not in repl:
+                        raise KeyError("batch.language is not included in replacements.")
+                    else:
+                        return repl[self.language]
+                else:
+                    return repl
+
+        repl = _check_replacements(replacements)
         if len(oe) + len(break_by) == 0:
             raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
@@ -893,9 +908,9 @@ class Batch(qp.DataSet):
                 raise ValueError(msg)
             for t, open_end in zip(title, oe):
                 open_end = [open_end]
-                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite)
+                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite, repl)
         else:
-            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite)
+            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite, repl)
         self._update()
         return None
 
