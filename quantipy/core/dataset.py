@@ -4376,7 +4376,7 @@ class DataSet(object):
         None
             DataSet is modified inplace.
         """
-        if (new_name and self.self._dims_compat_arr_name(new_name) in self and
+        if (new_name and self._dims_compat_arr_name(new_name) in self and
             not overwrite):
             raise ValueError("'{}' is already included.".format(new_name))
         if not new_name:
