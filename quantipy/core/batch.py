@@ -1007,7 +1007,7 @@ class Batch(qp.DataSet):
                     self.extend_filter_var(self.filter, log, v)
                 else:
                     f_name = '{}_f'.format(v)
-                    self.add_filter_var(f_name, log)
+                    self.add_filter_var(f_name, logic)
                 self.extended_filters_per_x.update({v: f_name})
         self._update()
         return None
