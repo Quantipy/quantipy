@@ -21,6 +21,7 @@ from quantipy.core.cache import Cache
 from quantipy.core.view import View
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
+from quantipy.core.chainannotations import ChainAnnotations
 from quantipy.core.helpers.functions import emulate_meta
 from quantipy.core.tools.view.logic import (has_any, has_all, has_count,
                                             not_any, not_all, not_count,
@@ -73,7 +74,6 @@ class ChainManager(object):
         self.source = 'native'
         self.build_info = {}
         self._hidden = []
-
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -1622,177 +1622,6 @@ class ChainManager(object):
                 df, name = cluster_spec['df'], cluster_spec['name']
                 self.add(df, meta_from=meta, name=name)
         return None
-
-HEADERS = ['header-title',
-           'header-left',
-           'header-center',
-           'header-right']
-
-FOOTERS = ['footer-title',
-           'footer-left',
-           'footer-center',
-           'footer-right']
-
-VALID_ANNOT_TYPES = HEADERS + FOOTERS + ['notes']
-
-VALID_ANNOT_CATS = ['header', 'footer', 'notes']
-
-VALID_ANNOT_POS = ['title',
-                   'left',
-                   'center',
-                   'right']
-
-
-class ChainAnnotations(dict):
-
-    def __init__(self):
-        super(ChainAnnotations, self).__init__()
-        self.header_title = []
-        self.header_left = []
-        self.header_center = []
-        self.header_right = []
-        self.footer_title = []
-        self.footer_left = []
-        self.footer_center = []
-        self.footer_right = []
-        self.notes = []
-        for v in VALID_ANNOT_TYPES:
-                self[v] = []
-
-    def __setitem__(self, key, value):
-        self._test_valid_key(key)
-        return super(ChainAnnotations, self).__setitem__(key, value)
-
-    def __getitem__(self, key):
-        self._test_valid_key(key)
-        return super(ChainAnnotations, self).__getitem__(key)
-
-    def __repr__(self):
-        headers = [(h.split('-')[1], self[h]) for h in self.populated if
-                    h.split('-')[0] == 'header']
-        footers = [(f.split('-')[1], self[f]) for f in self.populated if
-                    f.split('-')[0] == 'footer']
-        notes = self['notes'] if self['notes'] else []
-        if notes:
-            ar = 'Notes\n'
-            ar += '-{:>16}\n'.format(str(notes))
-        else:
-            ar = 'Notes: None\n'
-        if headers:
-            ar += 'Headers\n'
-            for pos, text in dict(headers).items():
-                ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
-        else:
-            ar += 'Headers: None\n'
-        if footers:
-            ar += 'Footers\n'
-            for pos, text in dict(footers).items():
-                ar += '  {:>5}: {:>5}\n'.format(str(pos), str(text))
-        else:
-            ar += 'Footers: None'
-        return ar
-
-    def _test_valid_key(self, key):
-        """
-        """
-        if key not in VALID_ANNOT_TYPES:
-            splitted = key.split('-')
-            if len(splitted) > 1:
-                acat, apos = splitted[0], splitted[1]
-            else:
-                acat, apos = key, None
-            if apos:
-                if acat == 'notes':
-                    msg = "'{}' annotation type does not support positions!"
-                    msg = msg.format(acat)
-                elif not acat in VALID_ANNOT_CATS and not apos in VALID_ANNOT_POS:
-                    msg = "'{}' is not a valid annotation type!".format(key)
-                elif acat not in VALID_ANNOT_CATS:
-                    msg = "'{}' is not a valid annotation category!".format(acat)
-                elif apos not in VALID_ANNOT_POS:
-                    msg = "'{}' is not a valid annotation position!".format(apos)
-            else:
-                msg = "'{}' is not a valid annotation type!".format(key)
-            raise KeyError(msg)
-
-    @property
-    def header(self):
-        h_dict = {}
-        for h in HEADERS:
-            if self[h]: h_dict[h.split('-')[1]] = self[h]
-        return h_dict
-
-    @property
-    def footer(self):
-        f_dict = {}
-        for f in FOOTERS:
-            if self[f]: f_dict[f.split('-')[1]] = self[f]
-        return f_dict
-
-    @property
-    def populated(self):
-        """
-        The annotation fields that are defined.
-        """
-        return sorted([k for k, v in self.items() if v])
-
-    @staticmethod
-    def _annot_key(a_type, a_pos):
-        if a_pos:
-            return '{}-{}'.format(a_type, a_pos)
-        else:
-            return a_type
-
-    def set(self, text, category='header', position='title'):
-        """
-        Add annotation texts defined by their category and position.
-
-        Parameters
-        ----------
-        category : {'header', 'footer', 'notes'}, default 'header'
-            Defines if the annotation is treated as a *header*, *footer* or
-            *note*.
-        position : {'title', 'left', 'center', 'right'}, default 'title'
-            Sets the placement of the annotation within its category.
-
-        Returns
-        -------
-        None
-        """
-        if not category: category = 'header'
-        if not position and category != 'notes': position = 'title'
-        if category == 'notes': position = None
-        akey = self._annot_key(category, position)
-        self[akey].append(text)
-        self.__dict__[akey.replace('-', '_')].append(text)
-        return None
-
-CELL_DETAILS = {'en-GB': {'cc':    'Cell Contents',
-                          'N':     'Counts',
-                          'c%':    'Column Percentages',
-                          'r%':    'Row Percentages',
-                          'str':   'Statistical Test Results',
-                          'cp':    'Column Proportions',
-                          'cm':    'Means',
-                          'stats': 'Statistics',
-                          'mb':    'Minimum Base',
-                          'sb':	   'Small Base',
-                          'up':    ' indicates result is significantly higher than the result in the Total column',
-                          'down':  ' indicates result is significantly lower than the result in the Total column'
-                          },
-                'fr-FR': {'cc':    'Contenu cellule',
-                          'N':     'Total',
-                          'c%':    'Pourcentage de colonne',
-                          'r%':    'Pourcentage de ligne',
-                          'str':   u'Résultats test statistique',
-                          'cp':    'Proportions de colonne',
-                          'cm':    'Moyennes de colonne',
-                          'stats': 'Statistiques',
-                          'mb':    'Base minimum',
-                          'sb':    'Petite base',
-                          'up':    u' indique que le résultat est significativement supérieur au résultat de la colonne Total',
-                          'down':  u' indique que le résultat est significativement inférieur au résultat de la colonne Total'
-                          }}
 
 class Chain(object):
 

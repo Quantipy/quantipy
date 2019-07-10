@@ -1,16 +1,13 @@
-
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import copy
 import string
 import cPickle
 
 import pandas as pd
 
-from collections import (
-    # defaultdict,
-    # OrderedDict,
-    Counter)
-from quantipy import (
-    Chain)
+from collections import Counter
+from quantipy import Chain
 
 from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.tools.logger import get_logger

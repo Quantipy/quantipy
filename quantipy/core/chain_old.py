@@ -5,6 +5,9 @@ from view import View
 import pandas as pd
 import copy
 
+import warnings
+warnings.simplefilter('module')
+
 class Chain(defaultdict):
     """
     Container class that holds ordered Link defintions and associated Views.
@@ -16,6 +19,8 @@ class Chain(defaultdict):
     """
 
     def __init__(self, name=None):
+        msg = "Please use 'quantipy.core.chain.Chain' instead!"
+        warnings.warn(msg, DeprecationWarning)
         super(Chain, self).__init__(Chain)
         self.name = name
         self.orientation = None

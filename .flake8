@@ -4,5 +4,6 @@ ignore =
     E702
 
 filename =
-    *chainmanager.py
     *cache.py
+    *chainannotations.py
+    *chainmanager.py
