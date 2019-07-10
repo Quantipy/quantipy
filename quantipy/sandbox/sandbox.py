@@ -10,8 +10,6 @@ import quantipy as qp
 
 import string
 import cPickle
-import warnings
-
 
 try:
     import seaborn as sns
@@ -58,6 +56,9 @@ import re
 
 from quantipy.core.rules import Rules
 
+import warnings
+warnings.simplefilter('module')
+
 _TOTAL = '@'
 _AXES = ['x', 'y']
 
@@ -65,11 +66,14 @@ _AXES = ['x', 'y']
 class ChainManager(object):
 
     def __init__(self, stack):
+        msg = "Please use 'quantipy.core.chainmanager.ChainManager' instead!"
+        warnings.warn(msg, DeprecationWarning)
         self.stack = stack
         self.__chains = []
         self.source = 'native'
         self.build_info = {}
         self._hidden = []
+
 
     def __str__(self):
         return '\n'.join([chain.__str__() for chain in self])
@@ -106,6 +110,9 @@ class ChainManager(object):
     next = __next__
 
     def add_chain(self, chain):
+        msg = ("In 'quantipy.core.chainmanager' 'add_chain()' is renamed into "
+               "'add()'!")
+        warnings.warn(msg, DeprecationWarning)
         self.__chains.append(chain)
 
     @property
@@ -179,6 +186,9 @@ class ChainManager(object):
         return [n for n in self._hidden if n in self.folder_names]
 
     def _content_structure(self):
+        msg = ("'_content_structure()' is not available in "
+            "'quantipy.core.chainmanager.ChainManager'!")
+        warnings.warn(msg, DeprecationWarning)
         return ['folder' if isinstance(k, dict) else 'single' for k in self]
 
     def _singles_to_idx(self):
@@ -208,9 +218,15 @@ class ChainManager(object):
         return {n: i for i, n in self._idxs_to_names().items()}
 
     def _name_from_idx(self, name):
+        msg = ("'_name_from_idx()' is not available in "
+            "'quantipy.core.chainmanager.ChainManager'!")
+        warnings.warn(msg, DeprecationWarning)
         return self._idxs_to_names()[name]
 
     def _idx_from_name(self, idx):
+        msg = ("'_idx_from_name()' is not available in "
+            "'quantipy.core.chainmanager.ChainManager'!")
+        warnings.warn(msg, DeprecationWarning)
         return self._names_to_idxs()[idx]
 
     def _is_folder_ref(self, ref):
@@ -244,7 +260,6 @@ class ChainManager(object):
                             self.__chains[p[0]].name = p[1]
         return None
 
-
     def _set_to_folderitems(self, folder):
         """
         Will keep only the ``values()`` ``qp.Chain`` item list from the named
@@ -270,9 +285,11 @@ class ChainManager(object):
         self.__chains[index] = new_folder[0]
         return None
 
-
     @staticmethod
     def _dupes_in_chainref(chain_refs):
+        msg = ("In 'quantipy.core.chainmanager' '_dupes_in_chainref()' is "
+               "renamed into '_verify_dupes_in_ref()'!")
+        warnings.warn(msg, DeprecationWarning)
         return len(set(chain_refs)) != len(chain_refs)
 
     def _check_equality(self, other, return_diffs=True):
@@ -489,6 +506,9 @@ class ChainManager(object):
         ------
         None
         """
+        msg = ("In 'quantipy.core.chainmanager' 'insert()' is renamed into "
+               "'merge()'!")
+        warnings.warn(msg, DeprecationWarning)
         if not isinstance(other_cm, ChainManager):
             raise ValueError("other_cm must be a quantipy.ChainManager instance.")
         if not index == -1:
@@ -524,6 +544,9 @@ class ChainManager(object):
         -------
         None
         """
+        msg = ("In 'quantipy.core.chainmanager' 'merge()' is renamed into "
+               "'unite_folders()'!")
+        warnings.warn(msg, DeprecationWarning)
         if not isinstance(folders, list):
             err = "'folders' must be a list of folder references!"
             raise TypeError(err)
@@ -797,6 +820,116 @@ class ChainManager(object):
         self.chains[0]._custom_views = custom_views
         return None
 
+    @staticmethod
+    def _force_list(obj):
+        if isinstance(obj, (list, tuple)):
+            return obj
+        return [obj]
+
+    def _check_keys(self, data_key, keys):
+        """ Checks given keys exist in meta['columns']
+        """
+        keys = self._force_list(keys)
+
+        meta = self.stack[data_key].meta
+        valid = meta['columns'].keys() + meta['masks'].keys()
+
+        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
+
+        if invalid:
+            raise ValueError("Keys %s do not exist in meta['columns'] or "
+                              "meta['masks']." % ", ".join(invalid))
+
+        return keys
+
+    def add(self, structure, meta_from=None, meta=None, name=None):
+        """ Add a pandas.DataFrame as a Chain.
+
+        Parameters
+        ----------
+        structure : ``pandas.Dataframe``
+            The dataframe to add to the ChainManger
+        meta_from : list, list-like, str, default None
+            The location of the meta in the stack. Either a list-like object with data key and
+            filter key or a str as the data key
+        meta : quantipy meta (dict)
+            External meta used to paint the frame
+        name : ``str``, default None
+            The name to give the resulting chain. If not passed, the name will become
+            the concatenated column names, delimited by a period
+
+        Returns
+        -------
+        appended : ``quantipy.ChainManager``
+        """
+        msg = ("In 'quantipy.core.chainmanager' 'add()' is renamed into "
+               "'add_df()'!")
+        warnings.warn(msg, DeprecationWarning)
+        name = name or '.'.join(structure.columns.tolist())
+
+        chain = Chain(self.stack, name, structure=structure)
+        chain._frame = chain.structure
+        chain._index = chain._frame.index
+        chain._columns = chain._frame.columns
+        chain._frame_values = chain._frame.values
+
+        if meta_from:
+            if isinstance(meta_from, (str, unicode)):
+
+                chain._meta = self.stack[meta_from].meta
+            else:
+                data_key, filter_key = meta_from
+                chain._meta = self.stack[data_key][filter_key].meta
+        elif meta:
+            chain._meta = meta
+
+        self.__chains.append(chain)
+
+        return self
+
+    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
+            rules=True, rules_weight=None, prioritize=True, folder=None):
+        """
+        TODO: Full doc string
+        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
+        Chain.dfs will be concatenated along the provided 'orient'-axis.
+        """
+        # TODO: VERIFY data_key
+        # TODO: VERIFY filter_key
+        # TODO: Add verbose arg to get()
+
+        x_keys = self._check_keys(data_key, x_keys)
+        y_keys = self._check_keys(data_key, y_keys)
+        if folder and not isinstance(folder, (str, unicode)):
+            err = "'folder' must be a name provided as string!"
+            raise ValueError(err)
+        if orient == 'x':
+            it, keys = x_keys, y_keys
+        else:
+            it, keys = y_keys, x_keys
+
+        for key in it:
+            x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
+
+            chain = Chain(self.stack, key)
+
+            chain = chain.get(data_key, filter_key, self._force_list(x_key),
+                              self._force_list(y_key), views, rules=rules,
+                              rules_weight=rules_weight, prioritize=prioritize,
+                              orient=orient)
+
+            folders = self.folder_names
+            if folder in folders:
+                idx = self._idx_from_name(folder)
+                self.__chains[idx][folder].append(chain)
+            else:
+                if folder:
+                    self.__chains.append({folder: [chain]})
+                else:
+                    self.__chains.append(chain)
+
+        return None
+
     def reorder(self, order, folder=None, inplace=True):
         """
         Reorder (folders of) ``qp.Chain`` items by providing a list of new
@@ -891,37 +1024,6 @@ class ChainManager(object):
                     if c.name == old: c.name = new
         return None
 
-    def _native_stat_names(self, idxvals_list, text_key=None):
-        """
-        """
-        if not text_key: text_key = 'en-GB'
-        replacements = {
-                'en-GB': {
-                    'Weighted N': 'Base',                             # Crunch
-                    'N': 'Base',                                      # Crunch
-                    'Mean': 'Mean',                                   # Dims
-                    'StdDev': 'Std. dev',                             # Dims
-                    'StdErr': 'Std. err. of mean',                    # Dims
-                    'SampleVar': 'Sample variance'                    # Dims
-                    },
-                }
-
-        native_stat_names = []
-        for val in idxvals_list:
-            if val in replacements[text_key]:
-                native_stat_names.append(replacements[text_key][val])
-            else:
-                native_stat_names.append(val)
-        return native_stat_names
-
-    def _get_ykey_mapping(self):
-        ys = []
-        letters = string.ascii_uppercase + string.ascii_lowercase
-        for c in self.chains:
-            if c._y_keys not in ys:
-                ys.append(c._y_keys)
-        return zip(ys, letters)
-
     def describe(self, by_folder=False, show_hidden=False):
         """
         Get a structual summary of all ``qp.Chain`` instances found in self.
@@ -1012,6 +1114,82 @@ class ChainManager(object):
             df = df[df['Hidden'] == False][df.columns[:-1]]
         return df
 
+    def _get_ykey_mapping(self):
+        ys = []
+        letters = string.ascii_uppercase + string.ascii_lowercase
+        for c in self.chains:
+            if c._y_keys not in ys:
+                ys.append(c._y_keys)
+        return zip(ys, letters)
+
+    def paint_all(self, *args, **kwargs):
+        """
+        Apply labels, sig. testing conversion and other post-processing to the
+        ``Chain.dataframe`` property.
+
+        Use this to prepare a ``Chain`` for further usage in an Excel or Power-
+        point Build.
+
+        Parameters
+        ----------
+        text_key : str, default meta['lib']['default text']
+            The language version of any variable metadata applied.
+        text_loc_x : str, default None
+            The key in the 'text' to locate the text_key for the
+            ``pandas.DataFrame.index`` labels
+        text_loc_y : str, default None
+            The key in the 'text' to locate the text_key for the
+            ``pandas.DataFrame.columns`` labels
+        display : {'x', 'y', ['x', 'y']}, default None
+            Text
+        axes : {'x', 'y', ['x', 'y']}, default None
+            Text
+        view_level : bool, default False
+            Text
+        transform_tests : {False, 'full', 'cells'}, default cells
+            Text
+        totalize : bool, default False
+            Text
+
+        Returns
+        -------
+        None
+            The ``.dataframe`` is modified inplace.
+        """
+        for chain in self:
+            if isinstance(chain, dict):
+                for c in chain.values()[0]:
+                    c.paint(*args, **kwargs)
+            else:
+                chain.paint(*args, **kwargs)
+        return None
+
+    # Not taken over to core!
+    # -------------------------------------------------------------------------
+
+    def _native_stat_names(self, idxvals_list, text_key=None):
+        """
+        """
+        if not text_key: text_key = 'en-GB'
+        replacements = {
+                'en-GB': {
+                    'Weighted N': 'Base',                             # Crunch
+                    'N': 'Base',                                      # Crunch
+                    'Mean': 'Mean',                                   # Dims
+                    'StdDev': 'Std. dev',                             # Dims
+                    'StdErr': 'Std. err. of mean',                    # Dims
+                    'SampleVar': 'Sample variance'                    # Dims
+                    },
+                }
+
+        native_stat_names = []
+        for val in idxvals_list:
+            if val in replacements[text_key]:
+                native_stat_names.append(replacements[text_key][val])
+            else:
+                native_stat_names.append(val)
+        return native_stat_names
+
     def from_mtd(self, mtd_doc, ignore=None, paint=True, flatten=False):
         """
         Convert a Dimensions table document (.mtd) into a collection of
@@ -1036,6 +1214,10 @@ class ChainManager(object):
             Will consist of Quantipy representations of the pandas-converted
             .mtd file.
         """
+        msg = ("'from_mtd()' is not available in "
+        "'quantipy.core.chainmanager.ChainManager'!")
+        warnings.warn(msg, DeprecationWarning)
+
         def relabel_axes(df, meta, sigtested, labels=True):
             """
             """
@@ -1212,6 +1394,9 @@ class ChainManager(object):
             Will consist of Quantipy representations of the Crunch table
             document.
         """
+        msg = ("'from_cmt()' is not available in "
+        "'quantipy.core.chainmanager.ChainManager'!")
+        warnings.warn(msg, DeprecationWarning)
 
         def cubegroups_to_chain_defs(cubegroups, ci, arr_sum):
             """
@@ -1341,8 +1526,6 @@ class ChainManager(object):
         self.__chains = [to_chain(c_def, meta) for c_def in chain_defs]
         return self
 
-    # ------------------------------------------------------------------------
-
     def from_cluster(self, clusters):
         """
         Create an OrderedDict of ``Cluster`` names storing new ``Chain``\s.
@@ -1356,6 +1539,10 @@ class ChainManager(object):
         new_chain_dict : OrderedDict
             Text ...
         """
+        msg = ("'from_cluster()' is not available in "
+        "'quantipy.core.chainmanager.ChainManager'!")
+        warnings.warn(msg, DeprecationWarning)
+
         self.source = 'native (old qp.Cluster of qp.Chain)'
         qp.set_option('new_chains', True)
         def check_cell_items(views):
@@ -1435,156 +1622,6 @@ class ChainManager(object):
                 df, name = cluster_spec['df'], cluster_spec['name']
                 self.add(df, meta_from=meta, name=name)
         return None
-
-    @staticmethod
-    def _force_list(obj):
-        if isinstance(obj, (list, tuple)):
-            return obj
-        return [obj]
-
-    def _check_keys(self, data_key, keys):
-        """ Checks given keys exist in meta['columns']
-        """
-        keys = self._force_list(keys)
-
-        meta = self.stack[data_key].meta
-        valid = meta['columns'].keys() + meta['masks'].keys()
-
-        invalid = ['"%s"' % _ for _ in keys if _ not in valid and _ != _TOTAL]
-
-        if invalid:
-            raise ValueError("Keys %s do not exist in meta['columns'] or "
-                              "meta['masks']." % ", ".join(invalid))
-
-        return keys
-
-    def add(self, structure, meta_from=None, meta=None, name=None):
-        """ Add a pandas.DataFrame as a Chain.
-
-        Parameters
-        ----------
-        structure : ``pandas.Dataframe``
-            The dataframe to add to the ChainManger
-        meta_from : list, list-like, str, default None
-            The location of the meta in the stack. Either a list-like object with data key and
-            filter key or a str as the data key
-        meta : quantipy meta (dict)
-            External meta used to paint the frame
-        name : ``str``, default None
-            The name to give the resulting chain. If not passed, the name will become
-            the concatenated column names, delimited by a period
-
-        Returns
-        -------
-        appended : ``quantipy.ChainManager``
-        """
-        name = name or '.'.join(structure.columns.tolist())
-
-        chain = Chain(self.stack, name, structure=structure)
-        chain._frame = chain.structure
-        chain._index = chain._frame.index
-        chain._columns = chain._frame.columns
-        chain._frame_values = chain._frame.values
-
-        if meta_from:
-            if isinstance(meta_from, (str, unicode)):
-
-                chain._meta = self.stack[meta_from].meta
-            else:
-                data_key, filter_key = meta_from
-                chain._meta = self.stack[data_key][filter_key].meta
-        elif meta:
-            chain._meta = meta
-
-        self.__chains.append(chain)
-
-        return self
-
-    def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True, folder=None):
-        """
-        TODO: Full doc string
-        Get a (list of) Chain instance(s) in either 'x' or 'y' orientation.
-        Chain.dfs will be concatenated along the provided 'orient'-axis.
-        """
-        # TODO: VERIFY data_key
-        # TODO: VERIFY filter_key
-        # TODO: Add verbose arg to get()
-
-        x_keys = self._check_keys(data_key, x_keys)
-        y_keys = self._check_keys(data_key, y_keys)
-        if folder and not isinstance(folder, (str, unicode)):
-            err = "'folder' must be a name provided as string!"
-            raise ValueError(err)
-        if orient == 'x':
-            it, keys = x_keys, y_keys
-        else:
-            it, keys = y_keys, x_keys
-
-        for key in it:
-            x_key, y_key = (key, keys) if orient == 'x' else (keys, key)
-
-            chain = Chain(self.stack, key)
-
-            chain = chain.get(data_key, filter_key, self._force_list(x_key),
-                              self._force_list(y_key), views, rules=rules,
-                              rules_weight=rules_weight, prioritize=prioritize,
-                              orient=orient)
-
-            folders = self.folder_names
-            if folder in folders:
-                idx = self._idx_from_name(folder)
-                self.__chains[idx][folder].append(chain)
-            else:
-                if folder:
-                    self.__chains.append({folder: [chain]})
-                else:
-                    self.__chains.append(chain)
-
-        return None
-
-    def paint_all(self, *args, **kwargs):
-        """
-        Apply labels, sig. testing conversion and other post-processing to the
-        ``Chain.dataframe`` property.
-
-        Use this to prepare a ``Chain`` for further usage in an Excel or Power-
-        point Build.
-
-        Parameters
-        ----------
-        text_key : str, default meta['lib']['default text']
-            The language version of any variable metadata applied.
-        text_loc_x : str, default None
-            The key in the 'text' to locate the text_key for the
-            ``pandas.DataFrame.index`` labels
-        text_loc_y : str, default None
-            The key in the 'text' to locate the text_key for the
-            ``pandas.DataFrame.columns`` labels
-        display : {'x', 'y', ['x', 'y']}, default None
-            Text
-        axes : {'x', 'y', ['x', 'y']}, default None
-            Text
-        view_level : bool, default False
-            Text
-        transform_tests : {False, 'full', 'cells'}, default cells
-            Text
-        totalize : bool, default False
-            Text
-
-        Returns
-        -------
-        None
-            The ``.dataframe`` is modified inplace.
-        """
-        for chain in self:
-            if isinstance(chain, dict):
-                for c in chain.values()[0]:
-                    c.paint(*args, **kwargs)
-            else:
-                chain.paint(*args, **kwargs)
-        return None
-
 
 HEADERS = ['header-title',
            'header-left',

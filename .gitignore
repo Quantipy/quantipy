@@ -34,6 +34,7 @@ tests/Example Data (A).cache
 docs/API/_static/
 docs/API/_templates/
 
+*debug.log
 *.egg-info
 *.egg
 .eggs/
