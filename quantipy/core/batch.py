@@ -244,10 +244,7 @@ class Batch(qp.DataSet):
             batch_copy.add_filter(b_filter[0], b_filter[1])
         if batch_copy.verbatims and b_filter and not as_addition:
             for oe in batch_copy.verbatims:
-                data = self._data.copy()
-                series_data = data['@1'].copy()[pd.Index(oe['idx'])]
-                slicer, _ = get_logic_index(series_data, b_filter[1], data)
-                oe['idx'] = slicer.tolist()
+                oe["filter"] = b_filter[0]
         if as_addition:
             batch_copy.as_addition(self.name)
         batch_copy._update()
