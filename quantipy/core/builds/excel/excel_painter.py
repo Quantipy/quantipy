@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 from quantipy.core.cluster import Cluster
-from quantipy.core.chain import Chain
+from quantipy.core.chain_old import Chain
 from quantipy.core.helpers import functions as helpers
 from quantipy.core.tools.dp.io import unicoder
 from quantipy.core.builds.excel.formats.xlsx_formats import XlsxFormats

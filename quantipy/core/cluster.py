@@ -1,4 +1,4 @@
-from chain import Chain
+from quantipy.core.chain_old import Chain
 import cPickle
 from collections import OrderedDict
 import pandas as pd
@@ -13,7 +13,7 @@ class Cluster(OrderedDict):
 
     It is possible to interact with individual Chains through the Cluster
     object. Clusters are mainly used to prepare aggregations for an export/
-    build, e.g. MS Excel Workbooks. 
+    build, e.g. MS Excel Workbooks.
     """
 
     def __init__(self, name=""):
@@ -43,22 +43,22 @@ class Cluster(OrderedDict):
                 citext = c['text']
         except:
             return False
-        
+
         if not ctype=='banked-chain':
             return False
         if not isinstance(cname, (str, unicode)):
-            return False        
+            return False
         if not isinstance(ctext, dict):
             return False
         for key, value in ctext.iteritems():
             if not isinstance(key, (str, unicode)):
                 return False
             if not isinstance(value, (str, unicode)):
-                return False            
+                return False
         if not isinstance(citems, list):
             return False
         if not isinstance(cbases, bool):
-            return False            
+            return False
         if not all([isinstance(item['chain'], Chain) for item in citems]):
             return False
         if not all([isinstance(item['text'], dict) for item in citems]):
@@ -71,7 +71,7 @@ class Cluster(OrderedDict):
                     return False
                 if not isinstance(value, (str, unicode)):
                     return False
-                
+
         cview = spec.get('view', None)
         if cview is None:
             for c in citems:
@@ -102,7 +102,7 @@ class Cluster(OrderedDict):
                     raise TypeError(
                         "Your banked-chain definition is not correctly"
                         " formed. Please check it again.")
- 
+
         if isinstance(chains, Chain):
             self[chains.name] = chains
 
@@ -111,7 +111,7 @@ class Cluster(OrderedDict):
 
         elif isinstance(chains, list) and all([
             isinstance(chain, Chain) or \
-            self._verify_banked_chain_spec(chain) 
+            self._verify_banked_chain_spec(chain)
             for chain in chains]):
             # Ensure that all items in chains is of the type Chain.
             for chain in chains:
@@ -122,7 +122,7 @@ class Cluster(OrderedDict):
 
         elif isinstance(chains, pd.DataFrame):
             if any([
-                    isinstance(idx, pd.MultiIndex) 
+                    isinstance(idx, pd.MultiIndex)
                     for idx in [chains.index, chains.columns]]):
                 if isinstance(chains.index, pd.MultiIndex):
                     idxs = '_'.join(chains.index.levels[0].tolist())
@@ -132,7 +132,7 @@ class Cluster(OrderedDict):
                     cols = '_'.join(chains.columns.levels[0].tolist())
                 else:
                     idxs = chains.columns
-                self['_|_'.join([idxs, cols])] = chains                
+                self['_|_'.join([idxs, cols])] = chains
             else:
                 self['_'.join(chains.columns.tolist())] = chains
 
@@ -152,29 +152,29 @@ class Cluster(OrderedDict):
         Parameters
         ----------
         spec : dict
-            The banked chain specification object.  
+            The banked chain specification object.
         text_key : str, default='values'
             Paint the x-axis of the banked chain using the spec provided
-            and this text_key.  
+            and this text_key.
 
         Returns
         -------
         bchain : quantipy.Chain
             The banked chain.
         """
-        
+
         if isinstance(text_key, (str, unicode)):
             text_key = {'x': [text_key]}
-        
+
         chains = [c['chain'] for c in spec['items']]
-        
+
         bchain = chains[0].copy()
 
         dk = bchain.data_key
         fk = bchain.filter
         xk = bchain.source_name
         yks = bchain.content_of_axis
-        
+
         vk = spec.get('view', None)
         if vk is None:
             vk = spec['items'][0]['view']
@@ -183,9 +183,9 @@ class Cluster(OrderedDict):
             for i, item in enumerate(spec['items']):
                 if not 'view' in item:
                     spec['items'][i].update({'view': vk})
-        
+
         vks = list(set([item['view'] for item in spec['items']]))
-        
+
         if len(vks)==1:
             notation = vks[0].split('|')
             notation[-1] = 'banked-{}'.format(spec['name'])
@@ -196,26 +196,26 @@ class Cluster(OrderedDict):
                 vk.split('|')[1]==base_method
                 for vk in vks[1:]])
             if same_method:
-                bvk = 'x|{}||||banked-{}'.format(base_method, spec['name'])                
+                bvk = 'x|{}||||banked-{}'.format(base_method, spec['name'])
             else:
                 bvk = 'x|||||banked-{}'.format(spec['name'])
-        
+
         for yk in bchain[dk][fk][xk].keys():
             bchain[dk][fk][xk][yk][bvk] = bchain[dk][fk][xk][yk].pop(vks[0])
             bchain[dk][fk][xk][yk][bvk].name = bvk
-        
+
         bchain.views = [
             vk_test
             for vk_test in bchain.views
             if 'cbase' in vk_test
         ]
         bchain.views.append(bvk)
-        
+
         # Auto-painting approach
         idx_cbase = pd.MultiIndex.from_tuples([
             (get_text(spec['text'], text_key, 'x'), 'cbase')],
             names=['Question', 'Values'])
-        
+
         # Non-auto-painting approach
 #         idx_cbase = pd.MultiIndex.from_tuples([
 #             (spec['name'], 'cbase')],
@@ -223,7 +223,7 @@ class Cluster(OrderedDict):
 
         idx_banked = []
         banked = {}
-        
+
         for yk in yks:
             banked[yk] = []
             for c, chain in enumerate(chains):
@@ -233,7 +233,7 @@ class Cluster(OrderedDict):
                 df = get_dataframe(chain, keys=[dk, fk, xk, yk, vk_temp])
                 if isinstance(idx_banked, list):
                     idx_banked.extend([
-                        (spec['name'], '{}:{}'.format(xk, value[1])) 
+                        (spec['name'], '{}:{}'.format(xk, value[1]))
                         for value in df.index.values
                     ])
                 banked[yk].append(df)
@@ -246,11 +246,11 @@ class Cluster(OrderedDict):
                         [(spec['name'], '@')],
                         names=['Question', 'Values'])
                 )
-            
+
             xk = bchain.source_name
             if isinstance(idx_banked, list):
                 banked_values_meta = [
-                    {'value': idx[1], 'text': spec['items'][i]['text']} 
+                    {'value': idx[1], 'text': spec['items'][i]['text']}
                     for i, idx in enumerate(idx_banked)]
                 bchain.banked_meta = {
                     'name': spec['name'],
@@ -260,13 +260,13 @@ class Cluster(OrderedDict):
                 }
                 # When switching to non-auto-painting, use this
 #                 idx_banked = pd.MultiIndex.from_tuples(
-#                     idx_banked, 
+#                     idx_banked,
 #                     names=['Question', 'Values'])
                 # Auto-painting
                 question_text = get_text(spec['text'], text_key, 'x')
                 idx_banked = pd.MultiIndex.from_tuples([
-                        (question_text, get_text(value['text'], text_key, 'x')) 
-                        for i, value in enumerate(bchain.banked_meta['values'])], 
+                        (question_text, get_text(value['text'], text_key, 'x'))
+                        for i, value in enumerate(bchain.banked_meta['values'])],
                     names=['Question', 'Values'])
 
             banked[yk].index = idx_banked
@@ -275,20 +275,20 @@ class Cluster(OrderedDict):
 #             bchain[dk][fk][xk][yk][bvk].meta()['shape'] = banked[yk].shape
             bchain[dk][fk][xk][yk][bvk]._x['name'] = spec['name']
             bchain[dk][fk][xk][yk][bvk]._x['size'] = banked[yk].shape[0]
-                
+
         bchain.name = 'banked-{}'.format(bchain.name)
         for yk in yks:
             for vk in bchain[dk][fk][xk][yk].keys():
-                if vk in bchain.views:                    
+                if vk in bchain.views:
                     if 'cbase' in vk:
                         bchain[dk][fk][xk][yk][vk].dataframe.index = idx_cbase
                         bchain[dk][fk][xk][yk][vk]._x['name'] = spec['name']
-                    
+
                 else:
                     del bchain[dk][fk][xk][yk][vk]
-        
+
         bchain[dk][fk][spec['name']] = bchain[dk][fk].pop(xk)
-        
+
         bchain.props_tests = list()
         bchain.props_tests_levels = list()
         bchain.means_tests = list()
@@ -296,14 +296,14 @@ class Cluster(OrderedDict):
         bchain.has_props_tests = False
         bchain.has_means_tests = False
         bchain.annotations = None
-        
+
         bchain.is_banked = True
         bchain.source_name = spec['name']
         bchain.banked_view_key = bvk
         bchain.banked_spec = spec
         for i, item in enumerate(spec['items']):
             bchain.banked_spec['items'][i]['chain'] = item['chain'].name
-                
+
         return bchain
 
     def _build(self, type):

@@ -14,7 +14,7 @@ from os import path
 from collections import OrderedDict
 from pptx import Presentation
 from quantipy.core.cluster import Cluster
-from quantipy.core.chain import Chain
+from quantipy.core.chain_old import Chain
 from quantipy.core.helpers.functions import(
     finish_text_key,
     paint_view)
@@ -523,14 +523,14 @@ def PowerPointPainter(
         # log slide number
         slide_num = len(prs.slides)
 
-        # Get Client and Topic tag from meta    
+        # Get Client and Topic tag from meta
         if isinstance(spec, dict):
-            topic = u"{}".format(spec.get('topic', ""))        
-            client = u"{}".format(spec.get('name', ""))            
+            topic = u"{}".format(spec.get('topic', ""))
+            client = u"{}".format(spec.get('name', ""))
         else:
-            topic = ""        
-            client = ""                    
-        
+            topic = ""
+            client = ""
+
         ############################################################################
         # frontpage title ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ############################################################################
@@ -766,7 +766,7 @@ def PowerPointPainter(
                                             grped_g_meta,
                                             {'is_net' : 'True'},
                                             index_key='label')
-                                            
+
                                 #extract df for chart
                                 df_grid_table = df_meta_filter(
                                     merged_grid_df,
@@ -868,8 +868,8 @@ def PowerPointPainter(
                                                 top = shapes['top']
                                                 left = shapes['left'] + shapes['width']
                                                 width = net_setup_stacked_bar['table_column_width']
-                                                net_table = add_net(slide, df_grid_table_net.T, height=height, width=width, top=top, left=left)                                            
-                                            
+                                                net_table = add_net(slide, df_grid_table_net.T, height=height, width=width, top=top, left=left)
+
                                     ''' chart shape '''
                                     chart_shp = chart_selector(
                                         slide,
@@ -880,7 +880,7 @@ def PowerPointPainter(
 
                                     if include_nets and net_setup:
                                         shape_properties['chart_shape']['stacked_bar']['width'] = save_width
-                                            
+
                                     ''' footer shape '''
                                     if base_text:
                                         base_text_shp = add_textbox(
@@ -966,7 +966,7 @@ def PowerPointPainter(
                             index_key='label')
                             # standardise table values
                             df_table_net = np.round(df_table_net.fillna(0.0) / 100, 4)
-                            
+
                         #extract df for chart
                         df_table = df_meta_filter(
                             grped_df,
@@ -1123,15 +1123,15 @@ def PowerPointPainter(
                                                     df_table_slice = df_table_slice.T
                                                 #df_table_slice.loc[len(df_table_slice)]=0
                                                 df_table_slice = pd.concat([df_table_slice, df_table_net])
-                                                shape_properties['chart_shape']['bar']['separator_color'] = net_setup['separator_color']                                    
-                                    
+                                                shape_properties['chart_shape']['bar']['separator_color'] = net_setup['separator_color']
+
                                 chart = chart_selector(
                                     slide,
                                     df_table_slice,
                                     chart_type=chart_type,
                                      **(shape_properties['chart_shape'][chart_type]
                                         if shape_properties else {}))
-                                
+
                                 ''' footer shape '''
                                 base_text_shp = add_textbox(
                                     slide,

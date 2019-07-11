@@ -6,7 +6,7 @@ from quantipy.core.dataset import DataSet
 from quantipy.core.batch import Batch
 from quantipy.core.link import Link
 from quantipy.core.view import View
-from quantipy.core.chain import Chain
+from quantipy.core.chain_old import Chain
 from quantipy.core.stack import Stack
 from quantipy.core.cluster import Cluster
 from quantipy.core.weights.rim import Rim

@@ -21,6 +21,7 @@ from quantipy.core.cache import Cache
 from quantipy.core.view import View
 from quantipy.core.view_generators.view_mapper import ViewMapper
 from quantipy.core.view_generators.view_maps import QuantipyViews
+from quantipy.core.chain import _TransformedChainDF
 from quantipy.core.chainannotations import ChainAnnotations
 from quantipy.core.helpers.functions import emulate_meta
 from quantipy.core.tools.view.logic import (has_any, has_all, has_count,
@@ -1626,6 +1627,8 @@ class ChainManager(object):
 class Chain(object):
 
     def __init__(self, stack, name, structure=None):
+        msg = "Please use 'quantipy.core.chain.Chain' instead!"
+        warnings.warn(msg, DeprecationWarning)
         self.stack = stack
         self.name = name
         self.structure = structure
@@ -1657,111 +1660,15 @@ class Chain(object):
         self._is_mask_item = False
         self._shapes = None
 
-    class _TransformedChainDF(object):
-        """
-        """
-        def __init__(self, chain):
-            c = chain.clone()
-            self.org_views = c.views
-            self.df = c._frame
-            self._org_idx = self.df.index
-            self._edit_idx = range(0, len(self._org_idx))
-            self._idx_valmap = {n: o for n, o in
-                                zip(self._edit_idx,
-                                    self._org_idx.get_level_values(1))}
-            self.df.index = self._edit_idx
-
-            self._org_col = self.df.columns
-            self._edit_col = range(0, len(self._org_col))
-            self._col_valmap = {n: o for n, o in
-                                zip(self._edit_col,
-                                    self._org_col.get_level_values(1))}
-            self.df.columns = self._edit_col
-            self.array_mi = c._array_style == 0
-            self.nested_y = c._nested_y
-            self._nest_mul = self._nesting_multiplier()
-            return None
-
-        def _nesting_multiplier(self):
-            """
-            """
-            levels = self._org_col.nlevels
-            if levels == 2:
-                return 1
-            else:
-                return (levels / 2) + 1
-
-        def _insert_viewlikes(self, new_index_flat, org_index_mapped):
-            inserts = [new_index_flat.index(val) for val in new_index_flat
-                       if not val in org_index_mapped.values()]
-            flatviews = []
-            for name, no in self.org_views.items():
-                e = [name] * no
-                flatviews.extend(e)
-            for vno, i in enumerate(inserts):
-                flatviews.insert(i, '__viewlike__{}'.format(vno))
-            new_views = OrderedDict()
-            no_of_views = Counter(flatviews)
-            for fv in flatviews:
-                if not fv in new_views: new_views[fv] = no_of_views[fv]
-            return new_views
-
-        def _updated_index_tuples(self, axis):
-            """
-            """
-            if axis == 1:
-                current = self.df.columns.values.tolist()
-                mapped = self._col_valmap
-                org_tuples = self._org_col.tolist()
-            else:
-                current = self.df.index.values.tolist()
-                mapped = self._idx_valmap
-                org_tuples = self._org_idx.tolist()
-            merged = [mapped[val] if val in mapped else val for val in current]
-            # ================================================================
-            if (self.array_mi and axis == 1) or axis == 0:
-                self._transf_views = self._insert_viewlikes(merged, mapped)
-            else:
-                self._transf_views = self.org_views
-            # ================================================================
-            i = d = 0
-            new_tuples = []
-            for merged_val in merged:
-                idx = i-d if i-d != len(org_tuples) else i-d-1
-                if org_tuples[idx][1] == merged_val:
-                    new_tuples.append(org_tuples[idx])
-                else:
-                    empties = ['*'] * self._nest_mul
-                    new_tuple = tuple(empties + [merged_val])
-                    new_tuples.append(new_tuple)
-                    d += 1
-                i += 1
-            return new_tuples
-
-        def _reindex(self):
-            """
-            """
-            y_names = ['Question', 'Values']
-            if not self.array_mi:
-                x_names = y_names
-            else:
-                x_names = ['Array', 'Questions']
-            if self.nested_y: y_names = y_names * (self._nest_mul - 1)
-            tuples = self._updated_index_tuples(axis=1)
-            self.df.columns = pd.MultiIndex.from_tuples(tuples, names=y_names)
-            tuples = self._updated_index_tuples(axis=0)
-            self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
-            return None
-
     def export(self):
         """
         """
-        return self._TransformedChainDF(self)
+        return _TransformedChainDF(self)
 
     def assign(self, transformed_chain_df):
         """
         """
-        if not isinstance(transformed_chain_df, self._TransformedChainDF):
+        if not isinstance(transformed_chain_df, _TransformedChainDF):
             raise ValueError("Must pass an exported ``Chain`` instance!")
         transformed_chain_df._reindex()
         self._frame = transformed_chain_df.df

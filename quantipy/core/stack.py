@@ -12,7 +12,7 @@ import sys
 import warnings
 
 from link import Link
-from chain import Chain
+from quantipy.core.chain_old import Chain
 from view import View
 from helpers import functions
 from view_generators.view_mapper import ViewMapper
