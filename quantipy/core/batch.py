@@ -244,7 +244,7 @@ class Batch(qp.DataSet):
             batch_copy.add_filter(b_filter[0], b_filter[1])
         if batch_copy.verbatims and b_filter and not as_addition:
             for oe in batch_copy.verbatims:
-                oe["filter"] = b_filter[0]
+                oe["filter"] = batch_copy.filter
         if as_addition:
             batch_copy.as_addition(self.name)
         batch_copy._update()
