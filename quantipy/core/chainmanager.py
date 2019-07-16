@@ -7,8 +7,8 @@ import cPickle
 import pandas as pd
 
 from collections import Counter
-from quantipy import Chain
 
+from quantipy.core.chain import Chain
 from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.tools.logger import get_logger
 logger = get_logger(__name__)
@@ -924,8 +924,8 @@ class ChainManager(object):
 
     @modify(to_list=["x_keys", "y_keys", "views"])
     def get(self, data_key, filter_key, x_keys, y_keys, views, orient='x',
-            rules=True, rules_weight=None, prioritize=True, folder=None,
-            index=-1, safe_names=False):
+            rules=True, prioritize=True, folder=None, index=-1,
+            safe_names=False):
         """
         Get chains from stack aggregations and add them to ``self.__chains``.
 
@@ -947,8 +947,6 @@ class ChainManager(object):
         orient: str, {"x", "y"}
         rules: bool, default True
             Apply rules on the aggregation.
-        rules_weight: str, defualt None
-            The weight which is used for the rules.
         prioritize: bool, default True
         folder: str, default None
             If a folder name is added, the chain is added into this folder.
@@ -973,8 +971,8 @@ class ChainManager(object):
             xks, yks = ([key], keys) if orient == 'x' else (keys, [key])
             chain = Chain(self.stack, key)
             chain = chain.get(
-                data_key, filter_key, xks, yks, views, rules, rules_weight,
-                orient, prioritize)
+                data_key, filter_key, xks, yks, views, rules, orient,
+                prioritize)
             chains.append(chain)
         self._add_chains(chains, folder, index, safe_names)
         return None
@@ -990,8 +988,8 @@ class ChainManager(object):
             err = "'{}' is not a valid filter_key!".format(filter_key)
             logger.error(err); raise KeyError(err)
 
-        meta = self.stack[data_key][filter_key].meta
-        valids = meta["columns"].keys() + meta["masks"].keys + ["@"]
+        meta = self.stack[data_key].meta
+        valids = meta["columns"].keys() + meta["masks"].keys() + ["@"]
         if any(k not in valids for k in keys):
             err = "Keys do not exist in meta columns or masks: {}"
             err = err.format([k for k in keys if k not in valids])

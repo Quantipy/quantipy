@@ -38,8 +38,8 @@ import cPickle
 # Compression methods
 import gzip
 
-from quantipy.sandbox.sandbox import Chain as NewChain
-from quantipy.sandbox.sandbox import ChainManager
+# from quantipy.sandbox.sandbox import Chain as NewChain
+# from quantipy.sandbox.sandbox import ChainManager
 
 
 class Stack(defaultdict):

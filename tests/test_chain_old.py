@@ -4,9 +4,9 @@ import test_helper
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from quantipy.core.stack import Stack
-from quantipy.core.chain import Chain
 from quantipy.core.link import Link
+from quantipy.core.stack import Stack
+from quantipy.core.chain_old import Chain
 from quantipy.core.helpers.functions import load_json
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.helpers import functions
@@ -16,7 +16,6 @@ class TestChainObject(unittest.TestCase):
     def setUp(self):
         self.path = './tests/'
         self.path_chain = './temp.chain'.format(self.path)
-#         self.path = ''
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
@@ -27,7 +26,8 @@ class TestChainObject(unittest.TestCase):
         path_meta = '%s%s' % (self.path, name_meta)
         self.example_data_A_meta = load_json(path_meta)
 
-        # The minimum list of variables required to populate a stack with all single*delimited set variations
+        # The minimum list of variables required to populate a stack with all
+        # single*delimited set variations
         self.minimum = ['q2b', 'Wave', 'q2', 'q3', 'q5_1']
 
         self.setup_stack_Example_Data_A()

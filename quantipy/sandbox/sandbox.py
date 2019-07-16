@@ -3626,7 +3626,7 @@ class Chain(object):
 #         super(MTDChain, self).__init__(stack=None, name=name, structure=None)
 #         self.mtd_doc = mtd_doc
 #         self.source = 'Dimensions MTD'
-        self.get = self._get
+#         self.get = self._get
 
 
 #     def _get(self, ignore=None, labels=True):

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import pytest
 import os
@@ -7,7 +9,10 @@ import numpy as np
 import quantipy as qp
 from itertools import count, izip
 
-from quantipy.sandbox.sandbox import ChainManager
+# from quantipy.sandbox.sandbox import ChainManager
+from quantipy.core.chainmanager import ChainManager
+from quantipy.core.options import set_option
+set_option("fast_stack_filters", True)
 
 from pandas.util.testing import assert_frame_equal, assert_index_equal
 
@@ -48,7 +53,6 @@ def basic_chain(stack):
     yield _chain
     del _chain
 
-@pytest.fixture(scope='function')
 def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
                   incl_sum):
     # Custom view methods...
@@ -93,7 +97,7 @@ def unnamed_chain_for_structure(dataset, basic_chain):
     _, data = dataset
     columns = ['record_number', 'age']
     _frame = data.head(1).loc[:, columns]
-    basic_chain.add(_frame, DATA_KEY)
+    basic_chain.add_df(_frame, DATA_KEY)
     yield basic_chain
     del basic_chain
 
@@ -102,11 +106,11 @@ def chain_for_structure(dataset, basic_chain):
     _, data = dataset
     columns = ['record_number', 'age', 'gender', 'q9', 'q9a']
     _frame = data.head(250).loc[:, columns]
-    basic_chain.add(_frame, DATA_KEY, name='open')
+    basic_chain.add_df(_frame, DATA_KEY, name='open')
     yield basic_chain
     del basic_chain
 
-@pytest.fixture(scope='function')
+# @pytest.fixture(scope='function')
 def chain_structure(chain_for_structure, paint=False, sep=None):
     if paint:
         chain_for_structure.paint_all(sep=sep or '. ',
@@ -115,7 +119,7 @@ def chain_structure(chain_for_structure, paint=False, sep=None):
     it = iter(chain_for_structure)
     return next(it)
 
-@pytest.fixture(scope='function')
+# @pytest.fixture(scope='function')
 def expected_structure(values, columns, paint=False):
     _expected = pd.DataFrame(np.array(values).T, columns=columns)
     _expected.iloc[:, 0] = pd.to_numeric(_expected.iloc[:, 0])
@@ -124,13 +128,13 @@ def expected_structure(values, columns, paint=False):
         _expected.iloc[:, 2] = pd.to_numeric(_expected.iloc[:, 2])
     return _expected
 
-@pytest.fixture(scope='function')
+# @pytest.fixture(scope='function')
 def multi_index(tuples):
     names = ['Question', 'Values'] * (len(tuples[0]) / 2)
     _index = pd.MultiIndex.from_tuples(tuples, names=names)
     return _index
 
-@pytest.fixture(scope='function')
+# @pytest.fixture(scope='function')
 def frame(values, index, columns):
     _frame = pd.DataFrame(values, index=index, columns=columns)
     return _frame
@@ -149,16 +153,18 @@ class TestChainConstructor:
         assert len(basic_chain) == 0
 
 class TestChainExceptions:
-    def test_get_non_existent_columns(self, basic_chain):
-        expected = "Expecting ValueError"
-        with pytest.raises(ValueError, message=expected) as excinfo:
+    def test_get_non_existent_columns(self, basic_chain, caplog):
+        caplog.clear()
+        with pytest.raises(KeyError):
             basic_chain.get(data_key=DATA_KEY,
                             filter_key=FILTER_KEY,
                             x_keys=['erdbeer', 'bananana'],
                             y_keys=['@'],
                             views=['cbase', 'counts', 'c%', 'mean', 'median'],
                             orient='x')
-        assert excinfo.match(r'.* "erdbeer", "bananana" .*')
+        expect = ("Keys do not exist in meta columns or masks: "
+                  "['erdbeer', 'bananana']")
+        assert expect == caplog.records[0].message
 
 @pytest.yield_fixture(
     scope='class',
@@ -177,10 +183,10 @@ def params_getx(request):
     return request.param
 
 class TestChainGet:
-    _VIEWS = ('cbase', 'counts', 'c%', 'mean', 'median', 'c%_sum')
+    _VIEWS = ['cbase', 'counts', 'c%', 'mean', 'median', 'c%_sum']
 
-    _VIEW_KEYS = ('x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-                  'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum')
+    _VIEW_KEYS = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
+                  'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum']
 
     _VIEW_SIG_KEYS = ['x|f|x:|||cbase',
                       ('x|f|:|y||c%', 'x|t.props.Dim.80+@|:|||t_p_80'),
@@ -212,29 +218,29 @@ class TestChainGet:
             ### Test Chain.get
             assert_frame_equal(chain.dataframe, expected_dataframe)
 
-            ### Test Chain.paint
-            chain.paint()
-            assert_index_equal(chain.dataframe.index, painted_index)
-            assert_index_equal(chain.dataframe.columns, painted_columns)
+            # ### Test Chain.paint
+            # chain.paint()
+            # assert_index_equal(chain.dataframe.index, painted_index)
+            # assert_index_equal(chain.dataframe.columns, painted_columns)
 
-            ### Test Chain.toggle_labels
-            chain.toggle_labels()
-            assert_frame_equal(chain.dataframe, expected_dataframe)
-            chain.toggle_labels()
-            assert_index_equal(chain.dataframe.index, painted_index)
-            assert_index_equal(chain.dataframe.columns, painted_columns)
+            # ### Test Chain.toggle_labels
+            # chain.toggle_labels()
+            # assert_frame_equal(chain.dataframe, expected_dataframe)
+            # chain.toggle_labels()
+            # assert_index_equal(chain.dataframe.index, painted_index)
+            # assert_index_equal(chain.dataframe.columns, painted_columns)
 
-            ### Test Chain str/ len
-            assert str(chain) == chain_str
+            # ### Test Chain str/ len
+            # assert str(chain) == chain_str
 
-            ### Test Contents
+            # ### Test Contents
             assert chain.contents == parameters.CONTENTS
 
     def test_sig_transformation_simple(self, stack):
         x, y = 'q5_1', ['@', 'gender', 'q4']
         chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
                                'x', incl_tests=True, incl_sum=True)
-        chain_df = (chains[0].transform_tests()
+        chain_df = (chains[0]._transform_tests()
                              .dataframe.replace(np.NaN, 'None')
                    )
         # all tests results converted correctly from numbers to letters?
