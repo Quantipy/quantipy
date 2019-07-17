@@ -975,7 +975,7 @@ class ChainManager(object):
                 prioritize)
             chains.append(chain)
         self._add_chains(chains, folder, index, safe_names)
-        return None
+        return chains
 
     def _check_keys(self, data_key, filter_key, keys):
         """

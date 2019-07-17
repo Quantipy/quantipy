@@ -19,9 +19,12 @@
   "tests/test_chain.py::TestChainAdd::test_str[params_structure1]", 
   "tests/test_chain.py::TestChainAddRepaint::test_str[params_structure0]", 
   "tests/test_chain.py::TestChainAddRepaint::test_str[params_structure1]", 
-  "tests/test_chain_old.py::TestChainObject::test_auto_orientation", 
-  "tests/test_chain_old.py::TestChainObject::test_dervie_attributes", 
-  "tests/test_chain_old.py::TestChainObject::test_describe", 
-  "tests/test_chain_old.py::TestChainObject::test_lazy_name", 
-  "tests/test_chain_old.py::TestChainObject::test_save_chain"
+  "tests/test_stack.py::TestStackObject::test_stack_is_a_subclassed_dict", 
+  "tests/test_stack.py::TestStackObject::test_stack_behaves_like_a_dict", 
+  "tests/test_stack.py::TestStackObject::test_cache_is_created", 
+  "tests/test_stack.py::TestStackObject::test_add_data", 
+  "tests/test_stack.py::TestStackObject::test_add_link_generates_links_and_views", 
+  "tests/test_stack.py::TestStackObject::test_reduce", 
+  "tests/test_stack.py::TestStackObject::test_getting_1D_views", 
+  "tests/test_stack.py::TestStackObject::test_filters"
 ]

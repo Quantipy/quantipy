@@ -1,17 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from .tools.logger import get_logger
+logger = get_logger(__name__)
+
 OPTIONS = {
-    'new_rules': False,
-    'new_chains': False,
-    'short_item_texts': False,
-    'convert_chains': False,
-    'fast_stack_filters': False
+	"modules_old": False
 }
 
 def set_option(option, val):
-    if not option in OPTIONS:
-        err = "'{}' is not a valid option!".format(option)
-        raise ValueError(err)
+    """
+    """
+    if option not in OPTIONS:
+        err = "'{}' is not a valid option".format(option)
+        logger.error(err); ValueError(err)
     OPTIONS[option] = val
     return None

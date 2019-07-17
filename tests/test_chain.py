@@ -1,18 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import pytest
 import os
 import time
-import pandas as pd
+import pytest
+
 import numpy as np
-import quantipy as qp
+import pandas as pd
 from itertools import count, izip
 
-# from quantipy.sandbox.sandbox import ChainManager
+from quantipy.core.stack import Stack
+from quantipy.core.dataset import DataSet
 from quantipy.core.chainmanager import ChainManager
-from quantipy.core.options import set_option
-set_option("fast_stack_filters", True)
+from quantipy.core.view_generators.view_mapper import ViewMapper
 
 from pandas.util.testing import assert_frame_equal, assert_index_equal
 
@@ -33,7 +33,7 @@ FILTER_KEY = 'no_filter'
 
 @pytest.fixture(scope='module')
 def dataset():
-    _dataset = qp.DataSet(NAME_PROJ, dimensions_comp=False)
+    _dataset = DataSet(NAME_PROJ, dimensions_comp=False)
     _dataset.read_quantipy(PATH_META, PATH_DATA)
     yield _dataset.split()
     del _dataset
@@ -41,9 +41,9 @@ def dataset():
 @pytest.fixture(scope='class')
 def stack(dataset):
     meta, data = dataset
-    _stack = qp.Stack(NAME_PROJ,
-                      add_data={DATA_KEY: {'meta': meta,
-                                           'data': data.copy().head(250)}})
+    _stack = Stack(NAME_PROJ,
+                   add_data={DATA_KEY: {'meta': meta,
+                                        'data': data.copy().head(250)}})
     yield _stack
     del _stack
 
@@ -57,12 +57,12 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
                   incl_sum):
     # Custom view methods...
     # ---SIG
-    sigtest_props_l80_total = qp.ViewMapper().make_template('coltests')
+    sigtest_props_l80_total = ViewMapper().make_template('coltests')
     view_name = 't_p_80'
     options = {'level': 0.8, 'metric': 'props', 'test_total': True}
     sigtest_props_l80_total.add_method(view_name, kwargs=options)
 
-    sigtest_means_l80_total = qp.ViewMapper().make_template('coltests')
+    sigtest_means_l80_total = ViewMapper().make_template('coltests')
     view_name = 't_m_80'
     options = {'level': 0.8, 'metric': 'means', 'test_total': True}
     sigtest_means_l80_total.add_method(view_name, kwargs=options)
@@ -141,7 +141,7 @@ def frame(values, index, columns):
 
 class TestChainConstructor:
     def test_init(self, basic_chain):
-        assert isinstance(basic_chain.stack, qp.Stack)
+        assert isinstance(basic_chain.stack, Stack)
 
     def test_str(self, basic_chain):
         assert str(basic_chain) == ""

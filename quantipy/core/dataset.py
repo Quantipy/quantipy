@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
+from .options import OPTIONS
+
 from quantipy.core.tools.dp.io import (
     read_quantipy as r_quantipy,
     read_dimensions as r_dimensions,
@@ -7282,11 +7284,15 @@ class DataSet(object):
         -------
         qp.Stack
         """
+        if OPTIONS["modules_old"]:
+            from .stack_old import Stack
+        else:
+            from .stack import Stack
 
         dk = self.name
         meta = self._meta
         data = self._data
-        stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
+        stack = Stack(name='aggregations', add_data={dk: (data, meta)})
         batches = stack._check_batches(dk, batches)
         for name in batches:
             batch = meta['sets']['batches'][name]

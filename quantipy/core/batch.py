@@ -6,7 +6,8 @@ import quantipy as qp
 
 from collections import OrderedDict
 
-from quantipy.core.tools.qp_decorators import *
+from .dataset import DataSet
+from .tools.qp_decorators import *
 
 import copy as org_copy
 import warnings
@@ -29,7 +30,7 @@ def meta_editor(self, dataset_func):
         if not isinstance(name, list): name = [name]
         # create DataSet clone to leave global meta data untouched
         if self.edits_ds is None:
-            self.edits_ds = qp.DataSet.clone(self)
+            self.edits_ds = DataSet.clone(self)
         ds_clone = self.edits_ds
         var_edits = []
         # args/ kwargs for min_value_count
@@ -96,7 +97,7 @@ def not_implemented(dataset_func):
     return _unallowed_inherited_method
 
 
-class Batch(qp.DataSet):
+class Batch(DataSet):
     """
     A Batch is a container for structuring a Link collection's
     specifications aimed at Excel and/or PPTX build Clusters.
@@ -118,7 +119,7 @@ class Batch(qp.DataSet):
         self._dimensions_comp = dataset._dimensions_comp
 
         # RENAMED DataSet methods
-        self._dsfilter = qp.DataSet.filter.__func__
+        self._dsfilter = DataSet.filter.__func__
 
         if sets['batches'].get(name):
             if self._verbose_infos:
@@ -160,19 +161,19 @@ class Batch(qp.DataSet):
             self._update()
 
         # DECORATED / OVERWRITTEN DataSet methods
-        # self.hide_empty_items = meta_editor(self, qp.DataSet.hide_empty_items.__func__)
-        self.hiding = meta_editor(self, qp.DataSet.hiding.__func__)
-        self.min_value_count = meta_editor(self, qp.DataSet.min_value_count.__func__)
-        self.sorting = meta_editor(self, qp.DataSet.sorting.__func__)
-        self.slicing = meta_editor(self, qp.DataSet.slicing.__func__)
-        self.set_variable_text = meta_editor(self, qp.DataSet.set_variable_text.__func__)
-        self.set_value_texts = meta_editor(self, qp.DataSet.set_value_texts.__func__)
-        self.set_property = meta_editor(self, qp.DataSet.set_property.__func__)
+        # self.hide_empty_items = meta_editor(self, DataSet.hide_empty_items.__func__)
+        self.hiding = meta_editor(self, DataSet.hiding.__func__)
+        self.min_value_count = meta_editor(self, DataSet.min_value_count.__func__)
+        self.sorting = meta_editor(self, DataSet.sorting.__func__)
+        self.slicing = meta_editor(self, DataSet.slicing.__func__)
+        self.set_variable_text = meta_editor(self, DataSet.set_variable_text.__func__)
+        self.set_value_texts = meta_editor(self, DataSet.set_value_texts.__func__)
+        self.set_property = meta_editor(self, DataSet.set_property.__func__)
         # UNALLOWED DataSet methods
-        # self.add_meta = not_implemented(qp.DataSet.add_meta.__func__)
-        self.derive = not_implemented(qp.DataSet.derive.__func__)
-        self.remove_items = not_implemented(qp.DataSet.remove_items.__func__)
-        self.set_missings = not_implemented(qp.DataSet.set_missings.__func__)
+        # self.add_meta = not_implemented(DataSet.add_meta.__func__)
+        self.derive = not_implemented(DataSet.derive.__func__)
+        self.remove_items = not_implemented(DataSet.remove_items.__func__)
+        self.set_missings = not_implemented(DataSet.set_missings.__func__)
 
     def _update(self):
         """
@@ -1271,7 +1272,7 @@ class Batch(qp.DataSet):
                 f = filters[0]
 
         # create ds
-        ds = qp.DataSet(self.name, self._dimensions_comp)
+        ds = DataSet(self.name, self._dimensions_comp)
         ds.from_components(self._data.copy(), org_copy.deepcopy(self._meta),
                            True, self.language)
         for b in ds.batches():

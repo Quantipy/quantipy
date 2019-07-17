@@ -489,13 +489,13 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
         except:
             rules = False
 
-        if not qp.OPTIONS['new_rules']:
-            try:
-                with_weight = rules['sortx']['with_weight']
-            except:
-                with_weight = weight
-        else:
-            with_weight = weight
+        # if not qp.OPTIONS['new_rules']:
+        #     try:
+        #         with_weight = rules['sortx']['with_weight']
+        #     except:
+        #         with_weight = weight
+        # else:
+        with_weight = weight
     else:
         with_weight = weight
 
@@ -507,20 +507,20 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
         **kwargs)
 
     if rules:
-        if not qp.OPTIONS['new_rules']:
-            if transpose:
-                f = f.T
-            rules_slicer = get_rules_slicer(f, rules)
-            f = f.loc[rules_slicer]
-            if transpose:
-                f = f.T
-        else:
-            f = crosstab(
-                meta, data, x, y,
-                weight=with_weight,
-                rules=True,
-                xtotal=False,
-                **kwargs)
+        # if not qp.OPTIONS['new_rules']:
+        #     if transpose:
+        #         f = f.T
+        #     rules_slicer = get_rules_slicer(f, rules)
+        #     f = f.loc[rules_slicer]
+        #     if transpose:
+        #         f = f.T
+        # else:
+        f = crosstab(
+            meta, data, x, y,
+            weight=with_weight,
+            rules=True,
+            xtotal=False,
+            **kwargs)
 
     return f
 
@@ -591,7 +591,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         rules = ['x', 'y']
 
     if rules:
-        if qp.OPTIONS['new_rules']:
+        # if qp.OPTIONS['new_rules']:
             # new rules application
             # ----------------------------------------------------------------
             view = qp.core.view.View(link, vk)
@@ -613,22 +613,22 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
                 else:
                     df_columns = idx.values.tolist()
                 df = df[df_columns]
-        else:
-            # OLD!
-            # ================================================================
-            rules_x = get_rules(meta, x, 'x')
-            if not rules_x is None and 'x' in rules:
-                fx = frequency(meta, data, x=x, weight=weight, rules=True)
-                if q._get_type() == 'array':
-                    df = df.T
-                    df = df.loc[fx.index.values]
-                    df = df.T
-                else:
-                    df = df.loc[fx.index.values]
-            rules_y = get_rules(meta, y, 'y')
-            if not rules_y is None and 'y' in rules:
-                fy = frequency(meta, data, y=y, weight=weight, rules=True)
-                df = df[fy.columns.values]
+        # else:
+        #     # OLD!
+        #     # ================================================================
+        #     rules_x = get_rules(meta, x, 'x')
+        #     if not rules_x is None and 'x' in rules:
+        #         fx = frequency(meta, data, x=x, weight=weight, rules=True)
+        #         if q._get_type() == 'array':
+        #             df = df.T
+        #             df = df.loc[fx.index.values]
+        #             df = df.T
+        #         else:
+        #             df = df.loc[fx.index.values]
+        #     rules_y = get_rules(meta, y, 'y')
+        #     if not rules_y is None and 'y' in rules:
+        #         fy = frequency(meta, data, y=y, weight=weight, rules=True)
+        #         df = df[fy.columns.values]
 
     if show!='values':
         if show=='text':

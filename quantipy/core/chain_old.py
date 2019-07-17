@@ -1,12 +1,18 @@
-import cPickle
-from collections import defaultdict
-from helpers import functions as helpers
-from view import View
-import pandas as pd
-import copy
 
+import copy
+import cPickle
+import pandas as pd
 import warnings
 warnings.simplefilter('module')
+
+from collections import defaultdict
+
+from .view import View
+from .helpers import functions as helpers
+
+from .options import set_option
+set_option("modules_old", True)
+
 
 class Chain(defaultdict):
     """

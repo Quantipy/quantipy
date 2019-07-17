@@ -5,13 +5,13 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
 from quantipy.core.link import Link
-from quantipy.core.stack import Stack
+from quantipy.core.stack_old import Stack
 from quantipy.core.chain_old import Chain
 from quantipy.core.helpers.functions import load_json
 from quantipy.core.view_generators.view_maps import QuantipyViews
 from quantipy.core.helpers import functions
 
-class TestChainObject(unittest.TestCase):
+class TestChainOldObject(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
