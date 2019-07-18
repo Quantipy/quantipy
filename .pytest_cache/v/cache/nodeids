@@ -29,5 +29,16 @@
   "tests/test_stack.py::TestStackObject::test_filters", 
   "tests/test_stack.py::TestStackObject::test_add_link_x_y_equal", 
   "tests/test_stack.py::TestStackObject::test_add_link_lazy", 
-  "tests/test_stack.py::TestStackObject::test_describe"
+  "tests/test_stack.py::TestStackObject::test_describe", 
+  "tests/test_stack.py::TestStackObject::test_refresh", 
+  "tests/test_stack.py::TestStackObject::test_refresh_remove_weight", 
+  "tests/test_stack.py::TestStackObject::test_save_dataset", 
+  "tests/test_stack.py::TestStackObject::test_save_describe", 
+  "tests/test_stack.py::TestStackObject::test_stack_aggregate", 
+  "tests/test_stack.py::TestStackObject::test_cumulative_sum", 
+  "tests/test_stack.py::TestStackObject::test_add_nets", 
+  "tests/test_stack.py::TestStackObject::test_recode_from_net_def", 
+  "tests/test_stack.py::TestStackObject::test_add_stats", 
+  "tests/test_stack.py::TestStackObject::test_recode_from_stat_def", 
+  "tests/test_stack.py::TestStackObject::test_factor_labels"
 ]

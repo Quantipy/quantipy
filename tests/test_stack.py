@@ -374,132 +374,8 @@ class TestStackObject:
         assert all(vk in contents.index.tolist() for vk in [
             DEFAULT, CBASE, COUNTS, RBASE])
 
-#     # def test_get_chain_generates_chains(self):
-#     #     dk = self.stack.name
-#     #     fk = "no_filter"
-#     #     xk = self.single
-#     #     yk = self.delimited_set
-#     #     vk = ["default"]
-#     #     self.setup_stack_Example_Data_A(xk=xk, yk=yk)
-
-#     #     # Test auto-orient_on x
-#     #     for x in xk:
-#     #         chains = self.stack.get_chain(
-#     #             data_key=dk,
-#     #             filter_key=fk,
-#     #             x_keys=x,
-#     #             y_keys=yk,
-#     #             views=["x|default|:|||default"])
-#     #         for chain in chains:
-#     #             self.assertIsInstance(chain, Chain)
-#     #         self.verify_links_and_views_exist_in_nest(chain)
-#     #         # Test the chain contains everything expected and nothing unexpected
-#     #         contents = chain.describe()
-#     #         self.verify_contains_expected_not_unexpected(contents, dk, fk, x, yk, "x|default|:|||default")
-
-#     #     # Test auto-orient_on y
-#     #     for y in yk:
-#     #         chain = self.stack.get_chain(
-#     #             data_key=dk,
-#     #             filter_key=fk,
-#     #             x_keys=xk,
-#     #             y_keys=y,
-#     #             views=["x|default|:|||default"])
-#     #         self.assertIsInstance(chain, Chain)
-#     #         self.verify_links_and_views_exist_in_nest(chain)
-#     #         # Test the chain contains everything expected and nothing unexpected
-#     #         contents = chain.describe()
-#     #         self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, y, "x|default|:|||default")
-
-#     #     # Test orient_on x
-#     #     chains = self.stack.get_chain(
-#     #             data_key=dk,
-#     #             filter_key=fk,
-#     #             x_keys=xk,
-#     #             y_keys=yk,
-#     #             orient="x",
-#     #             views=["x|default|:|||default"])
-#     #     for i, chain in enumerate(chains):
-#     #         self.assertIsInstance(chain, Chain)
-#     #         self.verify_links_and_views_exist_in_nest(chain)
-#     #         # Test the chain contains everything expected and nothing unexpected
-#     #         contents = chain.describe()
-#     #         self.verify_contains_expected_not_unexpected(contents, dk, fk, xk[i], yk, "x|default|:|||default")
-
-#     #     # Test orient_on y
-#     #     chains = self.stack.get_chain(
-#     #             data_key=dk,
-#     #             filter_key=fk,
-#     #             x_keys=xk,
-#     #             y_keys=yk,
-#     #             orient="y",
-#     #             views=["x|default|:|||default"])
-#     #     for i, chain in enumerate(chains):
-#     #         self.assertIsInstance(chain, Chain)
-#     #         self.verify_links_and_views_exist_in_nest(chain)
-#     #         # Test the chain contains everything expected and nothing unexpected
-#     #         contents = chain.describe()
-#     #         self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, yk[i], "x|default|:|||default")
-
-#     # def test_get_chain_orient_on_gives_correct_orientation(self):
-#     #     self.setup_stack_Example_Data_A()
-#     #     dk = self.stack.name
-#     #     fk = "no_filter"
-#     #     xk = self.minimum
-#     #     yk = ["@"] + self.minimum
-#     #     vk = [COUNTS]
-
-#     #     # Test orient_on x
-#     #     chains = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=vk, orient_on="x")
-#     #     for i, chain in enumerate(chains):
-#     #         self.assertEqual(chain.orientation, "x")
-#     #         self.assertEqual(chain.content_of_axis, yk)
-#     #         self.assertEqual(chain.source_name, xk[i])
-
-#     #     # Test orient_on y
-#     #     chains = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=vk, orient_on="y")
-#     #     for i, chain in enumerate(chains):
-#     #         self.assertEqual(chain.orientation, "y")
-#     #         self.assertEqual(chain.content_of_axis, xk)
-#     #         self.assertEqual(chain.source_name, yk[i])
-
-#     # def test_get_chain_preserves_link_orientation(self):
-#     #     self.setup_stack_Example_Data_A()
-#     #     dk = self.stack.name
-#     #     fk = "no_filter"
-#     #     xk = "Wave"
-#     #     yk = ["@", "q2"]
-#     #     vk = DEFAULT
-
-#     #     chain = self.stack.get_chain(data_keys=dk, x=xk, y=yk, views=[DEFAULT])
-#     #     # the index part of the dataframe should be "Wave"
-#     #     self.assertEqual(chain[dk][fk][xk][yk[0]][DEFAULT].dataframe.index[0][0], "Wave")
-
-#     # def test_get_chain_lazy(self):
-#     #     self.setup_stack_Example_Data_A()
-#     #     dk = self.stack.name
-#     #     xk = ["Wave"]
-#     #     vk = [COUNTS]
-
-#     #     # Test lazy y-keys
-#     #     chain = self.stack.get_chain(data_keys=dk, x=xk, views=vk)
-#     #     self.assertIsInstance(chain, Chain)
-#     #     self.assertEqual(chain.name, ".".join([chain.orientation, chain.source_name] + chain.content_of_axis + vk))
-
-#     #     # Test lazy data keys - lazy data keys currently picks up only the last data-key
-#     #     # Intended behaviour for this has not been properly described so although the test
-#     #     # passes, it will remain inactive for now
-#     #     self.stack.add_data(
-#     #         data_key="DK2",
-#     #         meta=self.example_data_A_meta,
-#     #         data=self.example_data_A_data
-#     #     )
-#     #     self.stack.add_link(data_keys=["DK2"], x=self.minimum, y=["@"]+self.minimum)
-#     #     chain = self.stack.get_chain(x=xk, views=vk)
-#     #     self.assertIsInstance(chain, Chain)
-#     #     self.assertEqual(chain.data_key, "DK2")
-
-    def test_refresh(self, stack_empty):
+    def test_refresh(self, stack_empty, example_data):
+        dk = stack_empty.name
         all_filters = ["Wave==1", "no_filter"]
         all_x = ["q1", "q2", "q2b", "q3", "q4"]
         all_y = ["@", "gender", "locality", "ethnicity"]
@@ -526,61 +402,48 @@ class TestStackObject:
         content = stack_empty.describe(columns="data", index="view")
 
         stack_empty.refresh(
-            data_key=stack_empty.name,
+            data_key=dk,
             new_data_key="new_key",
             new_weight="weight_b")
 
         content2 = stack_empty.describe(columns="data", index="view")
         assert content.values.sum() == 85.0
-        assert content2[stack_empty.name].sum() == 85.0
+        assert content2[dk].sum() == 85.0
         assert content2["new_key"].sum() == 130.0
         stack_empty.reduce(data_keys="new_key")
 
-        mod_data = self.example_data_A_data.copy().head(1000)
-        stack.refresh(data_key="old_key", new_data_key="new_key",
-                      new_data=mod_data)
+        mod_data = example_data.copy().head(500)
+        stack_empty.refresh(
+            data_key=dk, new_data_key="new_key", new_data=mod_data)
 
-#         after_refresh = stack.describe(columns="data", index="view")
-#         self.assertTrue(before_refresh.values.sum() == 85.0)
-#         self.assertTrue(after_refresh["old_key"].sum() == 85.0)
-#         self.assertTrue(after_refresh["new_key"].sum() == 85.0)
-#         self.assertTrue(after_refresh.index.tolist() ==
-#                         before_refresh.index.tolist())
+        content3 = stack_empty.describe(columns="data", index="view")
+        assert content.values.sum() == 85.0
+        assert content3[dk].sum() == 85.0
+        assert content3["new_key"].sum() == 85.0
 
-#         stack.reduce(data_keys="new_key")
-#         stack.refresh(data_key="old_key", new_data_key="new_key",
-#                       new_data=mod_data, new_weight="weight_b")
+    def test_refresh_remove_weight(self, stack_empty):
+        fks = ["Wave==1", "no_filter"]
+        xks = ["q1", "q2", "q2b", "q3", "q4"]
+        yks = ["@", "gender", "locality", "ethnicity"]
+        weight = ["weight_a"]
 
-#         after_refresh = stack.describe(columns="data", index="view")
-#         self.assertTrue(before_refresh.values.sum() == 85.0)
-#         self.assertTrue(after_refresh["old_key"].sum() == 85.0)
-#         self.assertTrue(after_refresh["new_key"].sum() == 129.0)
+        stack_empty.add_link(
+            x=xks, y=yks, weights=weight, filters=fks, views=["counts"])
+        stack_empty.add_link(
+            x=["q2"], y=["gender"], weights=None, views=["c%"])
+        stack_empty.add_link(
+            x=["q1", "q3"], y=["@", "locality"], weights="weight_a",
+            filters=["Wave==1"], views=["cbase"])
 
-#     def test_refresh_remove_weight(self):
-#         all_filters = ["Wave==1", "no_filter"]
-#         all_x = ["q1", "q2", "q2b", "q3", "q4"]
-#         all_y = ["@", "gender", "locality", "ethnicity"]
-#         weights = ["weight_a"]
+        content = stack_empty.describe(columns="data", index="view")
 
-#         stack = Stack()
-#         stack.add_data(data_key="old_key", data=self.example_data_A_data,
-#                        meta=self.example_data_A_meta)
-#         stack.add_link(x=all_x, y=all_y, weights=weights, filters=all_filters,
-#                        views=["counts"])
-#         stack.add_link(x=["q2"], y=["gender"], weights=None, views=["c%"])
-#         stack.add_link(x=["q1", "q3"], y=["@", "locality"], weights="weight_a",
-#                        filters=["Wave==1"], views=["cbase"])
+        stack_empty.refresh(
+            data_key=stack_empty.name, new_data_key="new_key", new_weight="")
+        content2 = stack_empty.describe(columns="data", index="view")
 
-#         before_refresh = stack.describe(columns="data", index="view")
-
-#         stack.refresh(data_key="old_key", new_data_key="new_key",
-#                       new_weight="")
-
-#         after_refresh = stack.describe(columns="data", index="view")
-
-#         self.assertTrue(before_refresh.values.sum() == 45.0)
-#         self.assertTrue(after_refresh["old_key"].sum() == 45.0)
-#         self.assertTrue(after_refresh["new_key"].sum() == 89.0)
+        assert content.values.sum() == 45.0
+        assert content2[stack_empty.name].sum() == 45.0
+        assert content2["new_key"].sum() == 89.0
 
 #     def test_save_and_load_with_and_without_cache(self):
 #         """ This tests that the cache is stored and loaded with
@@ -727,19 +590,6 @@ class TestStackObject:
 #             if os.path.exists(path_stack):
 #                 os.remove(path_stack)
 
-# #     def test_load_stack(self):
-# #         key = "Jan"
-# #         data = "tests/example.csv"
-# #         filepath = "./tests/"+self.stack.name+".stack"
-# #         compressiontype = [None, "gzip"]
-# #
-# #         self.stack.link_data(data_key=key, filename=data)
-# #         self.stack.add_link()
-# #         for compression in compressiontype:
-# #             self.stack.save(path="./tests/", compression=compression)
-# #             self.assertTrue(os.path.exists(filepath), msg="File {file} should exist".format(file=filepath))
-# #             new_stack = Stack.load(filepath, compression=compression)
-# #
 #     def test_save_load_stack_improved(self):
 #         # This tests save/load methods using dataframes and
 #         # verifies that the source data is still intact after load
@@ -810,256 +660,254 @@ class TestStackObject:
 #             if os.path.exists(path_stack):
 #                 os.remove(path_stack)
 
-#     def test_save_dataset(self):
-#         # This tests save/load methods using the dataset
-#         # parameter.
 
-#         path_stack = "%s%s.stack" % (self.path, self.stack.name)
-#         self.setup_stack_Example_Data_A()
+    def test_save_dataset(self, stack_empty):
+        """
+        This tests save/load methods using the dataset parameter.
+        """
+        path_stack = "{}{}.stack".format(PATH, FILENAME)
+        stack_empty.save(path_stack=path_stack, dataset=True)
 
-#         self.stack.save(path_stack=path_stack, dataset=True)
+        for key in stack_empty.keys():
+            path_json = path_stack.replace(
+                '.stack',
+                ' [{}].json'.format(key))
+            path_csv = path_stack.replace(
+                '.stack',
+                ' [{}].csv'.format(key))
+            assert os.path.exists(path_json)
+            assert os.path.exists(path_csv)
+            os.remove(path_json)
+            os.remove(path_csv)
+        os.remove(path_stack)
 
-#         for key in self.stack.keys():
-#             path_json = path_stack.replace(
-#                 ".stack",
-#                 " [{}].json".format(key))
-#             path_csv = path_stack.replace(
-#                 ".stack",
-#                 " [{}].csv".format(key))
-#             self.assertTrue(os.path.exists(path_json))
-#             self.assertTrue(os.path.exists(path_csv))
+    def test_save_describe(self, stack_empty):
+        """
+        This tests save/load methods using the describe parameter.
+        """
+        path_stack = "{}{}.stack".format(PATH, FILENAME)
+        stack_empty.save(path_stack=path_stack, describe=True)
+        path_describe = path_stack.replace(".stack", ".xlsx")
+        assert os.path.exists(path_describe)
+        os.remove(path_describe)
+        os.remove(path_stack)
 
-#             os.remove(path_json)
-#             os.remove(path_csv)
+    def test_stack_aggregate(self):
+        b1, ds = _get_batch("test1", full=True)
+        b2, ds = _get_batch("test2", ds, False)
+        b3, ds = _get_batch("test3", ds, False)
+        b1.add_downbreak(["q1", "q6", "age"])
+        b1.add_crossbreak(["gender", "q2"])
+        b1.extend_filter({"q1":{"age": [20, 21, 22]}})
+        b1.set_weights("weight_a")
+        b2.add_downbreak(["q1", "q6"])
+        b2.add_crossbreak(["gender", "q2"])
+        b2.set_weights("weight_b")
+        b2.transpose("q6")
+        b3.add_downbreak(["q1", "q7"])
+        b3.add_crossbreak(["q2b"])
+        b3.add_y_on_y("y_on_y")
+        b3.set_weights(["weight_a", "weight_b"])
+        stack = ds.populate(verbose=False)
+        stack.aggregate(["cbase", "counts", "c%"], True,
+                        "age", ["test1", "test2"], verbose=False)
+        stack.aggregate(["cbase", "counts", "c%", "counts_sum", "c%_sum"],
+                        False, None, ["test3"], verbose=False)
+        index = [
+            "x|f.c:f|x:|y|weight_a|c%_sum",
+            "x|f.c:f|x:|y|weight_b|c%_sum",
+            "x|f.c:f|x:||weight_a|counts_sum",
+            "x|f.c:f|x:||weight_b|counts_sum",
+            "x|f|:|y|weight_a|c%",
+            "x|f|:|y|weight_b|c%",
+            "x|f|:||weight_a|counts",
+            "x|f|:||weight_b|counts",
+            "x|f|x:||weight_a|cbase",
+            "x|f|x:||weight_b|cbase",
+            "x|f|x:|||cbase"]
+        cols = [
+            "@", "age", "q1", "q2b", "q6", u"q6_1", u"q6_2", u"q6_3", u"q7",
+            u"q7_1", u"q7_2", u"q7_3", u"q7_4", u"q7_5", u"q7_6"]
+        values = [  # noqa
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0,2.0, 2.0, 2.0, 2.0, 2.0],
+            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            [1.0, 3.0, 6.0, "NONE", 2.0, 6.0, 6.0, 6.0, "NONE", "NONE", "NONE", "NONE", "NONE", "NONE", "NONE"]]
 
-#     def test_save_describe(self):
-#         # This tests save/load methods using the describe
-#         # parameter.
+        describe = stack.describe("view", "x").replace(np.NaN, "NONE")
+        assert describe.index.tolist() == index
+        assert describe.columns.tolist() == cols
+        assert describe.values.tolist() == values
 
-#         path_stack = "%s%s.stack" % (self.path, self.stack.name)
-#         self.setup_stack_Example_Data_A()
+    def test_cumulative_sum(self):
+        b, ds = _get_batch("test1", full=True)
+        stack = ds.populate(verbose=False)
+        stack.aggregate(
+            ["cbase", "counts", "c%"], batches="all", verbose=False)
+        stack.cumulative_sum(["q1", "q6"], "all", verbose=False)
+        describe = stack.describe("view", "x").replace(np.NaN, "NONE")
+        index = [
+            "x|f.c:f|x++:|y|weight_a|c%_cumsum",
+            "x|f.c:f|x++:||weight_a|counts_cumsum",
+            "x|f|:|y|weight_a|c%",
+            "x|f|:||weight_a|counts",
+            "x|f|x:||weight_a|cbase",
+            "x|f|x:|||cbase"]
+        cols = ["age", "q1", "q2", "q6", u"q6_1", u"q6_2", u"q6_3"]
+        values = [
+            ["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
+            ["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
+            ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
+            ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
+            [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
+        assert describe.index.tolist() == index
+        assert describe.columns.tolist() == cols
+        assert describe.values.tolist() == values
 
-#         self.stack.save(path_stack=path_stack, describe=True)
+    def test_add_nets(self):
+        b, ds = _get_batch("test1", full=True)
+        stack = ds.populate(verbose=False)
+        stack.aggregate(
+            ["cbase", "counts", "c%"], batches="all", verbose=False)
+        calcu = calc((2, "-", 1), "difference", "en-GB")
+        stack.add_nets(
+            ["q1", "q6"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
+            calcu, _batches="all", recode=False, verbose=False)
+        index = [
+            "x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:|y|weight_a|net",
+            "x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:||weight_a|net",
+            "x|f|:|y|weight_a|c%",
+            "x|f|:||weight_a|counts",
+            "x|f|x:||weight_a|cbase",
+            "x|f|x:|||cbase"]
+        cols = ["age", "q1", "q2", "q6", u"q6_1", u"q6_2", u"q6_3"]
+        values = [
+            ["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
+            ["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
+            ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
+            ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
+            [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
+        describe = stack.describe("view", "x").replace(np.NaN, "NONE")
+        assert describe.index.tolist() == index
+        assert describe.columns.tolist() == cols
+        assert describe.values.tolist()== values
 
-#         path_describe = path_stack.replace(".stack", ".xlsx")
-#         self.assertTrue(os.path.exists(path_describe))
-#         os.remove(path_describe)
+    def test_recode_from_net_def(self):
+        b, ds = _get_batch("test1", full=True)
+        stack = ds.populate()
+        stack.add_nets(["q1"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
+                       recode="collect_codes", _batches="all", verbose=False)
+        values = ds["q1_rc"].value_counts().values.tolist()
+        expect = [5297, 2264, 694]
+        assert expect == values
+        stack.add_nets(["q1"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
+                       recode="drop_codes", _batches="all", verbose=False)
+        values = ds["q1_rc"].value_counts().values.tolist()
+        expect = [5297, 694]
+        assert expect == values
+        stack.add_nets(["q1"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
+                       recode="extend_codes", _batches="all", verbose=False)
+        values = ds["q1_rc"].value_counts().values.tolist()
+        expect = [2999, 2298, 894, 477, 397, 369, 297, 194, 131, 104, 91, 4]
+        assert expect == values
+        assert "delimited set" == ds._get_type("q1_rc")
 
-#     def test_stack_aggregate(self):
-#         b1, ds = _get_batch("test1", full=True)
-#         b2, ds = _get_batch("test2", ds, False)
-#         b3, ds = _get_batch("test3", ds, False)
-#         b1.add_downbreak(["q1", "q6", "age"])
-#         b1.add_crossbreak(["gender", "q2"])
-#         b1.extend_filter({"q1":{"age": [20, 21, 22]}})
-#         b1.set_weights("weight_a")
-#         b2.add_downbreak(["q1", "q6"])
-#         b2.add_crossbreak(["gender", "q2"])
-#         b2.set_weights("weight_b")
-#         b2.transpose("q6")
-#         b3.add_downbreak(["q1", "q7"])
-#         b3.add_crossbreak(["q2b"])
-#         b3.add_y_on_y("y_on_y")
-#         b3.set_weights(["weight_a", "weight_b"])
-#         stack = ds.populate(verbose=False)
-#         stack.aggregate(["cbase", "counts", "c%"], True,
-#                         "age", ["test1", "test2"], verbose=False)
-#         stack.aggregate(["cbase", "counts", "c%", "counts_sum", "c%_sum"],
-#                         False, None, ["test3"], verbose=False)
-#         index = ["x|f.c:f|x:|y|weight_a|c%_sum", "x|f.c:f|x:|y|weight_b|c%_sum",
-#                  "x|f.c:f|x:||weight_a|counts_sum", "x|f.c:f|x:||weight_b|counts_sum",
-#                  "x|f|:|y|weight_a|c%", "x|f|:|y|weight_b|c%", "x|f|:||weight_a|counts",
-#                  "x|f|:||weight_b|counts", "x|f|x:||weight_a|cbase",
-#                  "x|f|x:||weight_b|cbase", "x|f|x:|||cbase"]
-#         cols = ["@", "age", "q1", "q2b", "q6", u"q6_1", u"q6_2", u"q6_3", u"q7", u"q7_1",
-#                 u"q7_2", u"q7_3", u"q7_4", u"q7_5", u"q7_6"]
-#         values = [
-#             ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0,2.0, 2.0, 2.0, 2.0, 2.0],
-#             [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-#             [1.0, 3.0, 6.0, "NONE", 2.0, 6.0, 6.0, 6.0, "NONE", "NONE", "NONE", "NONE", "NONE", "NONE", "NONE"]]
+    def test_add_stats(self):
+        b, ds = _get_batch("test1", full=True)
+        stack = ds.populate(verbose=False)
+        stack.aggregate(
+            ["cbase", "counts", "c%"], batches="all", verbose=False)
+        stack.add_stats(
+            "q6", ["mean"], rescale={1:3, 2:2, 3:1}, factor_labels=False,
+            _batches="all", verbose=False)
+        stack.add_stats(
+            "q1", ["mean"], "age", factor_labels=False, verbose=False,
+            _batches="all")
+        index = [
+            "x|d.mean|age:||weight_a|stat",
+            "x|d.mean|x[{3,2,1}]:||weight_a|stat",
+            "x|f|:|y|weight_a|c%",
+            "x|f|:||weight_a|counts",
+            "x|f|x:||weight_a|cbase",
+            "x|f|x:|||cbase"]
+        cols = ["age", "q1", "q2", "q6", u"q6_1", u"q6_2", u"q6_3"]
+        values = [
+            ["NONE", 3.0, "NONE", "NONE", "NONE", "NONE", "NONE"],
+            ["NONE", "NONE", "NONE", 1.0, 3.0, 3.0, 3.0],
+            ["NONE", 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
+            ["NONE", 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
+        describe = stack.describe("view", "x").replace(np.NaN, "NONE")
+        assert describe.index.tolist() == index
+        assert describe.columns.tolist() == cols
+        assert describe.values.tolist() == values
 
-#         describe = stack.describe("view", "x").replace(np.NaN, "NONE")
-#         self.assertEqual(describe.index.tolist(), index)
-#         self.assertEqual(describe.columns.tolist(), cols)
-#         self.assertEqual(describe.values.tolist(), values)
+    def test_recode_from_stat_def(self):
+        b, ds = _get_batch("test1", full=True)
+        stack = ds.populate()
+        stack.add_stats("q6", ["mean"], rescale={1:0, 2:50, 3:100}, factor_labels=False,
+                        _batches="all", verbose=False, recode=True)
+        expect_ind = [0.0, 50.0, 100.0]
+        index = ds["q6_1_rc"].value_counts().index.tolist()
+        expect_val = [3074, 2620, 875]
+        values = ds["q6_1_rc"].value_counts().values.tolist()
+        assert expect_val == values
+        assert expect_ind == index
+        with pytest.raises(ValueError):
+            stack.add_stats("q6", other_source="q1")
 
-#     def test_cumulative_sum(self):
-#         b, ds = _get_batch("test1", full=True)
-#         stack = ds.populate(verbose=False)
-#         stack.aggregate(["cbase", "counts", "c%"], batches="all", verbose=False)
-#         stack.cumulative_sum(["q1", "q6"], "all", verbose=False)
-#         describe = stack.describe("view", "x").replace(np.NaN, "NONE")
-#         index = ["x|f.c:f|x++:|y|weight_a|c%_cumsum", "x|f.c:f|x++:||weight_a|counts_cumsum",
-#                  "x|f|:|y|weight_a|c%", "x|f|:||weight_a|counts", "x|f|x:||weight_a|cbase", "x|f|x:|||cbase"]
-#         cols = ["age", "q1", "q2", "q6", u"q6_1", u"q6_2", u"q6_3"]
-#         values = [["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
-#                   ["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
-#                   ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
-#                   ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
-#                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-#                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
-#         self.assertEqual(describe.index.tolist(), index)
-#         self.assertEqual(describe.columns.tolist(), cols)
-#         self.assertEqual(describe.values.tolist(), values)
+    def test_factor_labels(self):
 
-#     def test_add_nets(self):
-#         b, ds = _get_batch("test1", full=True)
-#         stack = ds.populate(verbose=False)
-#         stack.aggregate(["cbase", "counts", "c%"], batches="all", verbose=False)
-#         calcu = calc((2, "-", 1), "difference", "en-GB")
-#         stack.add_nets(["q1", "q6"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
-#                        calcu, _batches="all", recode=False, verbose=False)
-#         index = ["x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:|y|weight_a|net",
-#                  "x|f.c:f|x[{1,2}+],x[{3,4}+],x[{3,4}-{1,2}]*:||weight_a|net",
-#                  "x|f|:|y|weight_a|c%", "x|f|:||weight_a|counts",
-#                  "x|f|x:||weight_a|cbase", "x|f|x:|||cbase"]
-#         cols = ["age", "q1", "q2", "q6", u"q6_1", u"q6_2", u"q6_3"]
-#         values = [["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
-#                   ["NONE", 3.0, "NONE", 1.0, 3.0, 3.0, 3.0],
-#                   ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
-#                   ["NONE", "NONE", 3.0, "NONE", "NONE", "NONE", "NONE"],
-#                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-#                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
-#         describe = stack.describe("view", "x").replace(np.NaN, "NONE")
-#         self.assertEqual(describe.index.tolist(), index)
-#         self.assertEqual(describe.columns.tolist(), cols)
-#         self.assertEqual(describe.values.tolist(), values)
+        def _factor_on_values(values, axis = "x"):
+            return all(
+                v["text"]["{} edits".format(axis)]["en-GB"].endswith(
+                    "[{}]".format(v["value"]))
+                for v in values)
 
-#     def test_recode_from_net_def(self):
-#         b, ds = _get_batch("test1", full=True)
-#         stack = ds.populate()
-#         stack.add_nets(["q1"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
-#                        recode="collect_codes", _batches="all", verbose=False)
-#         values = ds["q1_rc"].value_counts().values.tolist()
-#         expect = [5297, 2264, 694]
-#         self.assertEqual(expect, values)
-#         stack.add_nets(["q1"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
-#                        recode="drop_codes", _batches="all", verbose=False)
-#         values = ds["q1_rc"].value_counts().values.tolist()
-#         expect = [5297, 694]
-#         self.assertEqual(expect, values)
-#         stack.add_nets(["q1"], [{"Net1": [1, 2]}, {"Net2": [3, 4]}], "after",
-#                        recode="extend_codes", _batches="all", verbose=False)
-#         values = ds["q1_rc"].value_counts().values.tolist()
-#         expect = [2999, 2298, 894, 477, 397, 369, 297, 194, 131, 104, 91, 4]
-#         self.assertEqual(expect, values)
-#         self.assertEqual("delimited set", ds._get_type("q1_rc"))
+        b1, ds = _get_batch("test1", full=True)
+        b1.add_downbreak(["q1", "q2b", "q6"])
+        b1.set_variable_text("q1", "some new text1")
+        b1.set_variable_text("q6", "some new text1")
+        b2, ds = _get_batch("test2", ds, True)
+        b2.add_downbreak(["q1", "q2b", "q6"])
+        b2.set_variable_text("q1", "some new text2")
+        stack = ds.populate()
+        stack.aggregate(["cbase", "counts", "c%"], batches="all")
+        stack.add_stats(["q1", "q2b", "q6"], ["mean"], _batches="all")
+        for dk in stack.keys():
+            meta = stack[dk].meta
+            batches = meta["sets"]["batches"]
+            # q1, both batches have meta_edits
+            values = batches["test1"]["meta_edits"]["q1"]["values"]
+            assert _factor_on_values(values)
+            values = batches["test2"]["meta_edits"]["q1"]["values"]
+            assert _factor_on_values(values)
+            values = meta["columns"]["q1"]["values"]
+            assert all("x_edits" not in v["text"] for v in values)
+            # q2b, no batch has meta_edits
+            values = meta["columns"]["q2b"]["values"]
+            assert _factor_on_values(values)
+            assert all("q2b" not in b["meta_edits"]
+                       for n, b in batches.items())
+            # q6, one batch with meta_edits and one without
+            values = batches["test1"]["meta_edits"]["lib"]["q6"]
+            assert _factor_on_values(values)
+            assert _factor_on_values(values, "y")
+            values = meta["lib"]["values"]["q6"]
+            assert _factor_on_values(values)
+            assert _factor_on_values(values, "y")
+            assert "q6" not in batches["test2"]["meta_edits"]
 
-#     def test_add_stats(self):
-#         b, ds = _get_batch("test1", full=True)
-#         stack = ds.populate(verbose=False)
-#         stack.aggregate(["cbase", "counts", "c%"], batches="all", verbose=False)
-#         stack.add_stats("q6", ["mean"], rescale={1:3, 2:2, 3:1}, factor_labels=False,
-#                         _batches="all", verbose=False)
-#         stack.add_stats("q1", ["mean"], "age", factor_labels=False, verbose=False,
-#                         _batches="all")
-#         index = ["x|d.mean|age:||weight_a|stat", "x|d.mean|x[{3,2,1}]:||weight_a|stat",
-#                  "x|f|:|y|weight_a|c%", "x|f|:||weight_a|counts",
-#                  "x|f|x:||weight_a|cbase", "x|f|x:|||cbase"]
-#         cols = ["age", "q1", "q2", "q6", u"q6_1", u"q6_2", u"q6_3"]
-#         values = [["NONE", 3.0, "NONE", "NONE", "NONE", "NONE", "NONE"],
-#                   ["NONE", "NONE", "NONE", 1.0, 3.0, 3.0, 3.0],
-#                   ["NONE", 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-#                   ["NONE", 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-#                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0],
-#                   [3.0, 3.0, 3.0, 1.0, 3.0, 3.0, 3.0]]
-#         describe = stack.describe("view", "x").replace(np.NaN, "NONE")
-#         self.assertEqual(describe.index.tolist(), index)
-#         self.assertEqual(describe.columns.tolist(), cols)
-#         self.assertEqual(describe.values.tolist(), values)
-
-#     def test_recode_from_stat_def(self):
-#         b, ds = _get_batch("test1", full=True)
-#         stack = ds.populate()
-#         stack.add_stats("q6", ["mean"], rescale={1:0, 2:50, 3:100}, factor_labels=False,
-#                         _batches="all", verbose=False, recode=True)
-#         expect_ind = [0.0, 50.0, 100.0]
-#         index = ds["q6_1_rc"].value_counts().index.tolist()
-#         expect_val = [3074, 2620, 875]
-#         values = ds["q6_1_rc"].value_counts().values.tolist()
-#         self.assertEqual(expect_val, values)
-#         self.assertEqual(expect_ind, index)
-#         self.assertRaises(ValueError, stack.add_stats, "q6", other_source="q1")
-
-
-#     def test_factor_labels(self):
-#         def _factor_on_values(values, axis = "x"):
-#             return all(v["text"]["{} edits".format(axis)]["en-GB"].endswith(
-#                         "[{}]".format(v["value"])) for v in values)
-
-#         b1, ds = _get_batch("test1", full=True)
-#         b1.add_downbreak(["q1", "q2b", "q6"])
-#         b1.set_variable_text("q1", "some new text1")
-#         b1.set_variable_text("q6", "some new text1")
-#         b2, ds = _get_batch("test2", ds, True)
-#         b2.add_downbreak(["q1", "q2b", "q6"])
-#         b2.set_variable_text("q1", "some new text2")
-#         stack = ds.populate(verbose=False)
-#         stack.aggregate(["cbase", "counts", "c%"], batches="all", verbose=False)
-#         stack.add_stats(["q1", "q2b", "q6"], ["mean"], _batches="all", verbose=False)
-#         for dk in stack.keys():
-#             meta = stack[dk].meta
-#             # q1, both batches have meta_edits
-#             values = meta["sets"]["batches"]["test1"]["meta_edits"]["q1"]["values"]
-#             self.assertTrue(_factor_on_values(values))
-#             values = meta["sets"]["batches"]["test2"]["meta_edits"]["q1"]["values"]
-#             self.assertTrue(_factor_on_values(values))
-#             values = meta["columns"]["q1"]["values"]
-#             self.assertTrue(all("x_edits" not in v["text"] for v in values))
-#             # q2b, no batch has meta_edits
-#             values = meta["columns"]["q2b"]["values"]
-#             self.assertTrue(_factor_on_values(values))
-#             self.assertTrue(all("q2b" not in b["meta_edits"]
-#                                 for n, b in meta["sets"]["batches"].items()))
-#             # q6, one batch with meta_edits and one without
-#             values = meta["sets"]["batches"]["test1"]["meta_edits"]["lib"]["q6"]
-#             self.assertTrue(_factor_on_values(values))
-#             self.assertTrue(_factor_on_values(values), "y")
-#             values = meta["lib"]["values"]["q6"]
-#             self.assertTrue(_factor_on_values(values))
-#             self.assertTrue(_factor_on_values(values), "y")
-#             self.assertTrue("q6" not in meta["sets"]["batches"]["test2"]["meta_edits"])
-
-#     @classmethod
-#     def tearDownClass(self):
-#         self.stack = Stack("StackName")
-#         filepath ="./tests/"+self.stack.name+".stack"
-#         if os.path.exists(filepath):
-#             os.remove(filepath)
-
-#     def is_empty(self, any_structure):
-#         if any_structure:
-#             #print("Structure is not empty.")
-#             return False
-#         else:
-#             #print("Structure is empty.")
-#             return True
-
-#     def create_key_stack(self, branch_pos="data"):
-#         """ Creates a dictionary that has the structure of the keys in the Stack
-#             It is used to loop through the stack without affecting it.
-#         """
-#         key_stack = {}
-#         for data_key in self.stack:
-#             key_stack[data_key] = {}
-#             for the_filter in self.stack[data_key][branch_pos]:
-#                 key_stack[data_key][the_filter] = {}
-#                 for x in self.stack[data_key][branch_pos][the_filter]:
-#                     key_stack[data_key][the_filter][x] = []
-#                     for y in self.stack[data_key][branch_pos][the_filter][x]:
-#                         link = self.stack[data_key][branch_pos][the_filter][x][y]
-#                         if not isinstance(link, Link):
-#                             continue
-#                         key_stack[data_key][the_filter][x].append(y)
-#         return key_stack
 
     # =========================================================================
     # helpers
@@ -1125,7 +973,3 @@ class TestStackObject:
             if k1:
                 has_k = contents[k2].unique().tolist()
                 assert all(k in k1 for k in has_k)
-
-# if __name__ == "__main__":
-#     unittest.main()
-
