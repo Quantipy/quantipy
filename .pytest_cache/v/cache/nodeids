@@ -26,5 +26,8 @@
   "tests/test_stack.py::TestStackObject::test_add_link_generates_links_and_views", 
   "tests/test_stack.py::TestStackObject::test_reduce", 
   "tests/test_stack.py::TestStackObject::test_getting_1D_views", 
-  "tests/test_stack.py::TestStackObject::test_filters"
+  "tests/test_stack.py::TestStackObject::test_filters", 
+  "tests/test_stack.py::TestStackObject::test_add_link_x_y_equal", 
+  "tests/test_stack.py::TestStackObject::test_add_link_lazy", 
+  "tests/test_stack.py::TestStackObject::test_describe"
 ]

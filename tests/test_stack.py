@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 import pandas as pd
 import os.path
-from pandas.util.testing import assert_frame_equal
 import test_helper
 import copy
 
@@ -18,12 +17,14 @@ from quantipy.core.view_generators.view_specs import (net, calc)
 from quantipy.core.view import View
 from quantipy.core.helpers import functions
 from quantipy.core.helpers.functions import load_json
+from quantipy.core.tools.qp_decorators import modify
 from quantipy.core.cache import Cache
 
 XKS_MIN = ["q2b", "Wave", "q2", "q3", "q5_1"]
 YKS_MIN = ["@", "q2b", "Wave", "q2", "q3", "q5_1"]
 
 CBASE = "x|f|x:|||cbase"
+RBASE = "x|f|:y|||rbase"
 COUNTS = "x|f|:|||counts"
 DEFAULT = "x|default|:|||default"
 
@@ -256,170 +257,122 @@ class TestStackObject:
             assert df.iloc[(0,0)] == example_data.query(f).shape[0]
 
         # set back stack instance
-        stack.reduce(fk=filters)
+        stack.reduce(filters=filters)
         self.add_link(stack)
 
+    def test_add_link_x_y_equal(self, stack):
+        dk = stack.name
+        fk = "no_filter"
+        vk = "default"
 
-#     def test_add_link_x_y_equal(self):
-#         self.setup_stack_Example_Data_A()
-#         dk = self.stack.name
-#         fk = "no_filter"
-#         vk = "default"
+        # Test that x==y links have populated correctly
+        for xy in XKS_MIN:
+            # Test x==y requests produce Link objects
+            link = stack[dk][fk][xy][xy]
+            assert isinstance(link, Link)
+            # Test x==y requests produce View objects
+            view = link[DEFAULT]
+            assert isinstance(view, View)
+            # Test x==y requests produce dataframes where index and columns are
+            # the same (with the execption of the "All"-margin)
+            df = view.dataframe
+            index = df.index.get_level_values(1).tolist()
+            columns = df.columns.get_level_values(1).tolist()
+            assert index == columns
 
-#         # Test that x==y links have populated correctly
-#         for xy in self.minimum:
-#             # Test x==y requests produce Link objects
-#             link = self.stack[dk][fk][xy][xy]
-#             self.assertIsInstance(link, Link)
-#             # Test x==y requests produce View objects
-#             view = link["x|default|:|||default"]
-#             self.assertIsInstance(view, View)
-#             # Test x==y requests produce dataframes where index and columns are the same
-#             # (with the execption of the "All"-margin)
-#             df = view.dataframe
-#             self.assertTrue(df.index.get_level_values(1).tolist() == df.columns.get_level_values(1).tolist())
+    def test_add_link_lazy(self, stack):
 
-#     def test_add_link_lazy(self):
-#         dk = self.stack.name
-#         fk = "no_filter"
-#         xk = self.single
-#         yk = ["@"] + self.delimited_set
-#         vk = ["default"]
+        views = stack.describe('view').index.tolist()
+        assert views == [DEFAULT]
 
-#         # Test adding new views fills all links
-#         self.setup_stack_Example_Data_A(
-#             xk=xk,
-#             yk=yk,
-#             views=["default"])
+        self.add_link(stack, views=["counts"])
+        views = stack.describe('view').index.tolist()
+        assert views == [DEFAULT, COUNTS]
 
-#         old_contents = self.stack.describe()
-#         old_xk = old_contents["x"].unique()
-#         old_yk = old_contents["y"].unique()
-#         old_vk = old_contents["view"].unique()
+        # Test lazy y-keys when 1 x key is given
+        self.add_link(stack, xk=XKS_MIN[0], views=["cbase"])
+        lazy_y = stack.describe(
+            index=["y"],
+            query="x=='{}' and view=='{}'".format(XKS_MIN[0], CBASE)
+        ).index.tolist()
+        assert all(y in YKS_MIN for y in lazy_y)
 
-#         self.assertEqual(old_vk, ["x|default|:|||default"])
-#         self.stack.add_link(
-#             x=old_xk,
-#             y=old_yk,
-#             views=["counts"])
+        # Test lazy x-keys when 1 y key is given
+        self.add_link(stack, yk=YKS_MIN[0], views=["rbase"])
+        lazy_x = stack.describe(
+            index=["x"],
+            query="y=='{}' and view=='{}'".format(YKS_MIN[0], RBASE)
+        ).index.tolist()
+        assert all(x in XKS_MIN for x in lazy_x)
 
-#         new_vk = self.stack.describe()["view"].unique()
-#         self.assertEqual(new_vk.tolist(), ["x|f|:|||counts", "x|default|:|||default"])
+        # set back stack instance
+        stack.reduce(filters="no_filter")
+        self.add_link(stack)
 
-#         # Test lazy y-keys when 1 x key is given
-#         self.stack.add_link(x=xk[0], views=["cbase"])
-#         lazy_y = self.stack.describe(
-#             index=["y"],
-#             query="x=='%s' and view=='x|f|x:|||cbase'" % xk[0]
-#         ).index.tolist()
-#         self.assertItemsEqual(yk, lazy_y)
+    def test_describe(self, stack_empty):
+        dk = [stack_empty.name]
+        fk = ["no_filter", "Wave == 1"]
+        xk = ['gender', 'locality', 'ethnicity', 'religion', 'q1']
+        yk = ['q2', 'q3', 'q8', 'q9']
+        vk = ["default", "cbase", "rbase", "counts"]
+        vk_notation = [DEFAULT, RBASE, COUNTS, CBASE]
+        self.add_link(stack_empty, fk=fk, xk=xk, yk=yk, views=vk)
 
-#         # Test lazy x-keys when 1 y key is given
-#         self.stack.add_link(y=yk[0], views=["cbase"], weights=["weight_a"])
-#         lazy_x = self.stack.describe(
-#             index=["x"],
-#             query="y=='%s' and view=='x|f|x:||weight_a|cbase'" % yk[0]
-#         ).index.tolist()
-#         self.assertItemsEqual(xk, lazy_x)
+        # Test describe returns a pandas DataFrame
+        contents = stack_empty.describe()
+        assert isinstance(contents, pd.DataFrame)
 
-#         # TO DO (these features are not yet supported)
-#         # - lazy providing only data keys
-#         # - lazy providing only filters
-#         # - lazy providing only x
-#         # - lazy providing only y
+        # Test describe returns df with required columns
+        expected_columns = ["data", "filter", "x", "y", "view", "#"]
+        actual_columns = contents.columns.tolist()
+        assert expected_columns == actual_columns
 
-#     def test_describe(self):
-#         dk = [self.stack.name]
-#         fk = ["no_filter", "Wave == 1"]
-#         xk = self.single
-#         yk = self.delimited_set
-#         vk = ["default", "cbase", "rbase", "counts"]
-#         vk_notation = ["x|default|:|||default", "x|f|:y|||rbase", "x|f|:|||counts",
-#                        "x|f|x:|||cbase"]
-#         self.setup_stack_Example_Data_A(
-#             fk=fk,
-#             xk=xk,
-#             yk=yk,
-#             views=vk)
+        # Test desribe returns df with expected number of rows
+        expected_rows = len(dk) * len(fk) * len(xk) * len(yk) * len(vk)
+        actual_rows = contents.shape[0]
+        assert expected_rows == actual_rows
 
-#         # Test describe returns a pandas DataFrame
-#         contents = self.stack.describe()
-#         self.assertIsInstance(contents, pd.DataFrame)
+        # Test the returned df contains everything expected and nothing
+        # unexpected
+        self.verify_contains_expected_not_unexpected(
+            contents, dk, fk, xk, yk, vk_notation)
 
-#         # Test describe returns df with required columns
-#         expected_columns = ["data", "filter", "x", "y", "view", "#"]
-#         actual_columns = contents.columns.tolist()
-#         self.assertEqual(actual_columns, expected_columns)
+        # Test index & column parameters
+        column_names = ["data", "filter", "x", "y", "view"]
 
-#         # Test desribe returns df with expected number of rows
-#         expected_rows = len(dk) * len(fk) * len(self.single) * len(self.delimited_set) * len(vk)
-#         actual_rows = contents.shape[0]
-#         self.assertEqual(actual_rows, expected_rows)
+        # check index column parameters
+        for column in column_names:
+            described_index = stack_empty.describe(index=[column])
+            described_column = stack_empty.describe(columns=[column])
+            assert column in described_index.index.names
+            assert column in described_column.index.names
 
-#         # Test the returned df contains everything expected and nothing unexpected
-#         self.verify_contains_expected_not_unexpected(contents, dk, fk, xk, yk, vk_notation)
+            for index in column_names:
+                if column == index:
+                    continue
+                content = stack_empty.describe(index=[index], columns=[column])
+                assert index in content.index.names
+                assert column in content.columns.names
 
-#         # Test index & column parameters
-#         column_names = ["data", "filter", "x", "y", "view"]
+        # Test query parameter
+        xk = XKS_MIN[:2]
+        yk = XKS_MIN[-2:]
+        query = "x in {} and y in {} and view=='{}'".format(xk, yk, DEFAULT)
+        contents = stack_empty.describe(query=query)
 
-#         #check index column parameters
-#         for column in column_names:
-#             described_index = self.stack.describe(index=[column])
-#             described_column = self.stack.describe(columns=[column])
-#             self.assertIn(column, described_index.index.names)
-#             self.assertIn(column, described_column.index.names)
+        # Test the returned df contains everything expected and nothing
+        # unexpected
+        self.verify_contains_expected_not_unexpected(contents, xk=xk, yk=yk)
 
-#         for index, column in zip(column_names, column_names):
-#             if index == column:
-#                 pass
-#             else:
-#                 described = self.stack.describe(index=[index], columns=[column])
-#                 self.assertIn(index, described.index.names)
-#                 self.assertIn(column, described.columns.names)
+        # Test that query can be used in conjunction with index
+        contents = stack_empty.describe(index=["view"], query="x=='gender'")
+        assert all(vk in contents.index.tolist() for vk in [
+            DEFAULT, CBASE, COUNTS, RBASE])
 
-#         # Test query parameter
-#         xk = self.single[:2]
-#         yk = self.delimited_set[:2]
-#         query = "x in {x} and y in {y} and view=={v}".format(
-#             x=str(xk),
-#             y=str(yk),
-#             v="'x|default|:|||default'")
-
-#         contents = self.stack.describe(query=query)
-
-#         # Test the returned df contains everything expected and nothing unexpected
-#         self.verify_contains_expected_not_unexpected(contents, xk=xk, yk=yk)
-
-#         # Finally, bulk-test the entire queried result
-#         expected_contents = contents.query(query)
-#         assert_frame_equal(expected_contents, contents)
-
-#         # Test that query can be used in conjunction with index
-#         contents = self.stack.describe(index=["view"], query="x=='gender'")
-#         self.assertItemsEqual(
-#             contents.index.tolist(),
-#             [
-#                 "x|default|:|||default",
-#                 "x|f|x:|||cbase",
-#                 "x|f|:|||counts",
-#                 "x|f|:y|||rbase",
-#             ])
-
-#         # Test that query can be used in conjunction with columns
-#         contents = self.stack.describe(columns=["y"], query="x=='gender'")
-#         self.assertItemsEqual(contents.index.tolist(), ["q2", "q3", "q8", "q9"])
-
-#         # Test that query can be used in conjunction with index AND columns
-#         contents = self.stack.describe(index=["view"], columns=["y"], query="x=='gender'")
-#         self.assertItemsEqual(contents.columns.tolist(), ["q2", "q3", "q8", "q9"])
-#         self.assertItemsEqual(
-#             contents.index.tolist(),
-#             [
-#                 "x|default|:|||default",
-#                 "x|f|x:|||cbase",
-#                 "x|f|:|||counts",
-#                 "x|f|:y|||rbase",
-#             ])
+        # Test that query can be used in conjunction with columns
+        contents = stack_empty.describe(columns=["view"], query="x=='gender'")
+        assert all(vk in contents.index.tolist() for vk in [
+            DEFAULT, CBASE, COUNTS, RBASE])
 
 #     # def test_get_chain_generates_chains(self):
 #     #     dk = self.stack.name
@@ -546,38 +499,46 @@ class TestStackObject:
 #     #     self.assertIsInstance(chain, Chain)
 #     #     self.assertEqual(chain.data_key, "DK2")
 
-#     def test_refresh(self):
-#         all_filters = ["Wave==1", "no_filter"]
-#         all_x = ["q1", "q2", "q2b", "q3", "q4"]
-#         all_y = ["@", "gender", "locality", "ethnicity"]
-#         weights = [None, "weight_a"]
+    def test_refresh(self, stack_empty):
+        all_filters = ["Wave==1", "no_filter"]
+        all_x = ["q1", "q2", "q2b", "q3", "q4"]
+        all_y = ["@", "gender", "locality", "ethnicity"]
+        weights = [None, "weight_a"]
 
-#         stack = Stack()
-#         stack.add_data(data_key="old_key", data=self.example_data_A_data,
-#                        meta=self.example_data_A_meta)
+        stack_empty.add_link(
+            x=all_x,
+            y=all_y,
+            weights=weights,
+            filters=all_filters,
+            views=["counts"])
+        stack_empty.add_link(
+            x=["q2"],
+            y=["gender"],
+            weights=None,
+            views=["c%"])
+        stack_empty.add_link(
+            x=["q1", "q3"],
+            y=["@", "locality"],
+            weights="weight_a",
+            filters=["Wave==1"],
+            views=["cbase"])
 
-#         stack.add_link(x=all_x, y=all_y, weights=weights, filters=all_filters,
-#                        views=["counts"])
-#         stack.add_link(x=["q2"], y=["gender"], weights=None, views=["c%"])
-#         stack.add_link(x=["q1", "q3"], y=["@", "locality"], weights="weight_a",
-#                        filters=["Wave==1"], views=["cbase"])
+        content = stack_empty.describe(columns="data", index="view")
 
-#         before_refresh = stack.describe(columns="data", index="view")
+        stack_empty.refresh(
+            data_key=stack_empty.name,
+            new_data_key="new_key",
+            new_weight="weight_b")
 
-#         stack.refresh(data_key="old_key", new_data_key="new_key",
-#                       new_weight="weight_b")
+        content2 = stack_empty.describe(columns="data", index="view")
+        assert content.values.sum() == 85.0
+        assert content2[stack_empty.name].sum() == 85.0
+        assert content2["new_key"].sum() == 130.0
+        stack_empty.reduce(data_keys="new_key")
 
-#         after_refresh = stack.describe(columns="data", index="view")
-#         self.assertTrue(before_refresh.values.sum() == 85.0)
-#         self.assertTrue(after_refresh["old_key"].sum() == 85.0)
-
-#         self.assertTrue(after_refresh["new_key"].sum() == 130.0)
-
-#         stack.reduce(data_keys="new_key")
-
-#         mod_data = self.example_data_A_data.copy().head(1000)
-#         stack.refresh(data_key="old_key", new_data_key="new_key",
-#                       new_data=mod_data)
+        mod_data = self.example_data_A_data.copy().head(1000)
+        stack.refresh(data_key="old_key", new_data_key="new_key",
+                      new_data=mod_data)
 
 #         after_refresh = stack.describe(columns="data", index="view")
 #         self.assertTrue(before_refresh.values.sum() == 85.0)
@@ -1150,38 +1111,20 @@ class TestStackObject:
                 assert isinstance(view, View)
                 assert isinstance(view.dataframe, pd.DataFrame)
 
-#     def verify_contains_expected_not_unexpected(self, contents, dk=None, fk=None, xk=None, yk=None, vk=None):
-#         """ Verifies that contents (a stack/chain.describe() result) contains all the keys
-#         passed and no keys that weren"t passed.
-#         """
-#         if not dk is None:
-#             has_dks = contents["data"].unique()
-#             if isinstance(dk, (str, unicode)): dk = [dk]
-#             self.assertItemsEqual(has_dks, dk)
-
-#         if not fk is None:
-#             has_fks = contents["filter"].unique()
-#             if isinstance(fk, (str, unicode)): fk = [fk]
-#             self.assertItemsEqual(has_fks, fk)
-
-#         if not xk is None:
-#             has_xks = contents["x"].unique()
-#             if isinstance(xk, (str, unicode)): xk = [xk]
-#             self.assertItemsEqual(has_xks, xk)
-
-#         if not yk is None:
-#             has_yks = contents["y"].unique()
-#             if isinstance(yk, (str, unicode)): yk = [yk]
-#             self.assertItemsEqual(has_yks, yk)
-
-#         if not vk is None:
-#             has_vks = contents["view"].unique()
-#             if isinstance(vk, (str, unicode)): vk = [vk]
-#             self.assertItemsEqual(has_vks, vk)
-
-
-
-
+    @modify(to_list=["dk", "fk", "xk", "yk", "vk"])
+    def verify_contains_expected_not_unexpected(self, contents, dk=None,
+                                                fk=None, xk=None, yk=None,
+                                                vk=None):
+        """
+        Verifies that contents (a stack/chain.describe() result) contains all
+        the keys passed and no keys that weren"t passed.
+        """
+        keys1 = [dk, fk, xk, yk, vk]
+        keys2 = ["data", "filter", "x", "y", 'view']
+        for k1, k2 in zip(keys1, keys2):
+            if k1:
+                has_k = contents[k2].unique().tolist()
+                assert all(k in k1 for k in has_k)
 
 # if __name__ == "__main__":
 #     unittest.main()
