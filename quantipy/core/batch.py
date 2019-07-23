@@ -1253,20 +1253,6 @@ class Batch(qp.DataSet):
         vlist = self.de_duplicate(vlist)
         vlist = self.roll_up(vlist)
 
-        # handle filters
-        merge_f = False
-        f = self.filter
-        if adds:
-            filters = [self.filter] + [batches[add]['filter'] for add in adds]
-            filters = [fi for fi in filters if fi]
-            if len(filters) == 1:
-                f = filters[0]
-            elif not self.compare_filter(filters[0], filters[1:]):
-                f = "merge_filter"
-                merge_f = filters
-            else:
-                f = filters[0]
-
         # create ds
         ds = qp.DataSet(self.name, self._dimensions_comp)
         ds.from_components(self._data.copy(), org_copy.deepcopy(self._meta),
@@ -1275,11 +1261,18 @@ class Batch(qp.DataSet):
             if not (b in adds or b == ds.name):
                 del ds._meta['sets']['batches'][b]
 
-        if merge_f:
-            ds.merge_filter(f, filters)
+        # handle filters
+        f = self.filter
+        filters = list(set([
+            batches[a]['filter'] for a in adds if batches[a]['filter']]))
+        if filters:
+            if not self.is_subfilter(f, filters):
+                f = "merge_filter"
+                filters.append(self.filter)
+                ds.merge_filter(f, filters)
         if f:
             ds.filter(self.name, {f: 0}, True)
-            if merge_f:
+            if f == "merge_filter":
                 ds.drop(f)
 
         ds.create_set(str(self.name), included=vlist, overwrite=True)
