@@ -1243,6 +1243,7 @@ class Batch(qp.DataSet):
                 vlist += self._get_vlist(batches[add], mode)
         if not from_set:
             from_set = vlist
+
         vlist = self.align_order(vlist, from_set, integrate_rc, fix=misc)
         if additions == "sort_within":
             for add in adds:
@@ -1338,7 +1339,14 @@ class Batch(qp.DataSet):
             if key == "oe":
                 oes = []
                 for oe in var[:]:
+<<<<<<< Updated upstream
                     oes += oe["columns"]
+=======
+                    if 'f' in mode:
+                        oes += oe["break_by"] + oe["columns"] + [oe["filter"]]
+                    else:
+                        oes += oe['columns']
+>>>>>>> Stashed changes
                 var = oes
             if key == "f":
                 var = batch["filter_names"] + batch["y_filter_map"].values()
