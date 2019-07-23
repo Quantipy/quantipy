@@ -3555,6 +3555,18 @@ class DataSet(object):
                 equal = False
         return equal
 
+    @modify(to_list=["name2"])
+    def is_subfilter(self, name1, name2):
+        """
+        Verify if index of name2 is part of the index of name1.
+        """
+        idx = self.manifest_filter(name1).tolist()
+        included = True
+        for n in name2:
+            if [i for i in self.manifest_filter(n).tolist() if i not in idx]:
+                included = False
+        return included
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------

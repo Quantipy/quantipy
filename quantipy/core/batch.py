@@ -897,6 +897,7 @@ class Batch(qp.DataSet):
                     return repl
 
         repl = _check_replacements(replacements)
+
         if len(oe) + len(break_by) == 0:
             raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
@@ -1045,6 +1046,8 @@ class Batch(qp.DataSet):
             else:
                 main_filter = 'replace'
         self.y_on_y_filter[name] = (main_filter, y_filter)
+        if name in self.y_filter_map:
+            del self.y_filter_map[name]
         self._update()
         return None
 
@@ -1345,7 +1348,10 @@ class Batch(qp.DataSet):
             if key == "oe":
                 oes = []
                 for oe in var[:]:
-                    oes += oe["columns"]
+                    if 'f' in mode:
+                        oes += oe["columns"] + [oe["filter"]]
+                    else:
+                        oes += oe['columns']
                 var = oes
             if key == "f":
                 var = batch["filter_names"] + batch["y_filter_map"].values()
