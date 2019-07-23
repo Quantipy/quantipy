@@ -1339,14 +1339,10 @@ class Batch(qp.DataSet):
             if key == "oe":
                 oes = []
                 for oe in var[:]:
-<<<<<<< Updated upstream
-                    oes += oe["columns"]
-=======
                     if 'f' in mode:
-                        oes += oe["break_by"] + oe["columns"] + [oe["filter"]]
+                        oes += oe["columns"] + [oe["filter"]]
                     else:
                         oes += oe['columns']
->>>>>>> Stashed changes
                 var = oes
             if key == "f":
                 var = batch["filter_names"] + batch["y_filter_map"].values()
