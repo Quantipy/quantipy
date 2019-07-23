@@ -244,10 +244,7 @@ class Batch(qp.DataSet):
             batch_copy.add_filter(b_filter[0], b_filter[1])
         if batch_copy.verbatims and b_filter and not as_addition:
             for oe in batch_copy.verbatims:
-                data = self._data.copy()
-                series_data = data['@1'].copy()[pd.Index(oe['idx'])]
-                slicer, _ = get_logic_index(series_data, b_filter[1], data)
-                oe['idx'] = slicer.tolist()
+                oe["filter"] = batch_copy.filter
         if as_addition:
             batch_copy.as_addition(self.name)
         batch_copy._update()
@@ -855,7 +852,7 @@ class Batch(qp.DataSet):
         dupes = [v for v in oe if v in break_by]
         if dupes:
             raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
-        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
+        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite, repl):
             if filter_by:
                 f_name = title if not self.filter else '%s_%s' % (self.filter, title)
                 f_name = self._verify_filter_name(f_name, number=True)
@@ -877,13 +874,29 @@ class Batch(qp.DataSet):
                 'break_by': break_by,
                 'incl_nan': incl_nan,
                 'drop_empty': drop_empty,
-                'replace': replacements}
+                'replace': repl}
             if any(o['title'] == title for o in self.verbatims):
                 for x, o in enumerate(self.verbatims):
                     if o['title'] == title:
                         self.verbatims[x] = oe
             else:
                 self.verbatims.append(oe)
+
+        def _check_replacements(repl):
+            if not repl:
+                return None
+            elif not isinstance(repl, dict):
+                raise ValueError("replacements must be a dict.")
+            else:
+                if all(isinstance(v, dict) for v in repl.values()):
+                    if self.language not in repl:
+                        raise KeyError("batch.language is not included in replacements.")
+                    else:
+                        return repl[self.language]
+                else:
+                    return repl
+
+        repl = _check_replacements(replacements)
 
         if len(oe) + len(break_by) == 0:
             raise ValueError("Please add any variables as 'oe' or 'break_by'.")
@@ -893,9 +906,9 @@ class Batch(qp.DataSet):
                 raise ValueError(msg)
             for t, open_end in zip(title, oe):
                 open_end = [open_end]
-                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite)
+                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite, repl)
         else:
-            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite)
+            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite, repl)
         self._update()
         return None
 
@@ -992,7 +1005,7 @@ class Batch(qp.DataSet):
                     self.extend_filter_var(self.filter, log, v)
                 else:
                     f_name = '{}_f'.format(v)
-                    self.add_filter_var(f_name, log)
+                    self.add_filter_var(f_name, logic)
                 self.extended_filters_per_x.update({v: f_name})
         self._update()
         return None
@@ -1335,7 +1348,7 @@ class Batch(qp.DataSet):
             if key == "oe":
                 oes = []
                 for oe in var[:]:
-                   if 'f' in mode:
+                    if 'f' in mode:
                         oes += oe["columns"] + [oe["filter"]]
                     else:
                         oes += oe['columns']
