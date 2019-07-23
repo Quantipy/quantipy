@@ -244,7 +244,10 @@ class Batch(qp.DataSet):
             batch_copy.add_filter(b_filter[0], b_filter[1])
         if batch_copy.verbatims and b_filter and not as_addition:
             for oe in batch_copy.verbatims:
-                oe["filter"] = batch_copy.filter
+                data = self._data.copy()
+                series_data = data['@1'].copy()[pd.Index(oe['idx'])]
+                slicer, _ = get_logic_index(series_data, b_filter[1], data)
+                oe['idx'] = slicer.tolist()
         if as_addition:
             batch_copy.as_addition(self.name)
         batch_copy._update()
@@ -852,7 +855,7 @@ class Batch(qp.DataSet):
         dupes = [v for v in oe if v in break_by]
         if dupes:
             raise ValueError("'{}' included in oe and break_by.".format("', '".join(dupes)))
-        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite, repl):
+        def _add_oe(oe, break_by, title, drop_empty, incl_nan, filter_by, overwrite):
             if filter_by:
                 f_name = title if not self.filter else '%s_%s' % (self.filter, title)
                 f_name = self._verify_filter_name(f_name, number=True)
@@ -874,7 +877,7 @@ class Batch(qp.DataSet):
                 'break_by': break_by,
                 'incl_nan': incl_nan,
                 'drop_empty': drop_empty,
-                'replace': repl}
+                'replace': replacements}
             if any(o['title'] == title for o in self.verbatims):
                 for x, o in enumerate(self.verbatims):
                     if o['title'] == title:
@@ -882,21 +885,6 @@ class Batch(qp.DataSet):
             else:
                 self.verbatims.append(oe)
 
-        def _check_replacements(repl):
-            if not repl:
-                return None
-            elif not isinstance(repl, dict):
-                raise ValueError("replacements must be a dict.")
-            else:
-                if all(isinstance(v, dict) for v in repl.values()):
-                    if self.language not in repl:
-                        raise KeyError("batch.language is not included in replacements.")
-                    else:
-                        return repl[self.language]
-                else:
-                    return repl
-
-        repl = _check_replacements(replacements)
         if len(oe) + len(break_by) == 0:
             raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
@@ -905,9 +893,9 @@ class Batch(qp.DataSet):
                 raise ValueError(msg)
             for t, open_end in zip(title, oe):
                 open_end = [open_end]
-                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite, repl)
+                _add_oe(open_end, break_by, t, drop_empty, incl_nan, filter_by, overwrite)
         else:
-            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite, repl)
+            _add_oe(oe, break_by, title[0], drop_empty, incl_nan, filter_by, overwrite)
         self._update()
         return None
 
@@ -1004,7 +992,7 @@ class Batch(qp.DataSet):
                     self.extend_filter_var(self.filter, log, v)
                 else:
                     f_name = '{}_f'.format(v)
-                    self.add_filter_var(f_name, logic)
+                    self.add_filter_var(f_name, log)
                 self.extended_filters_per_x.update({v: f_name})
         self._update()
         return None
@@ -1045,6 +1033,8 @@ class Batch(qp.DataSet):
             else:
                 main_filter = 'replace'
         self.y_on_y_filter[name] = (main_filter, y_filter)
+        if name in self.y_filter_map:
+            del self.y_filter_map[name]
         self._update()
         return None
 
@@ -1243,7 +1233,6 @@ class Batch(qp.DataSet):
                 vlist += self._get_vlist(batches[add], mode)
         if not from_set:
             from_set = vlist
-
         vlist = self.align_order(vlist, from_set, integrate_rc, fix=misc)
         if additions == "sort_within":
             for add in adds:
@@ -1254,6 +1243,20 @@ class Batch(qp.DataSet):
         vlist = self.de_duplicate(vlist)
         vlist = self.roll_up(vlist)
 
+        # handle filters
+        merge_f = False
+        f = self.filter
+        if adds:
+            filters = [self.filter] + [batches[add]['filter'] for add in adds]
+            filters = [fi for fi in filters if fi]
+            if len(filters) == 1:
+                f = filters[0]
+            elif not self.compare_filter(filters[0], filters[1:]):
+                f = "merge_filter"
+                merge_f = filters
+            else:
+                f = filters[0]
+
         # create ds
         ds = qp.DataSet(self.name, self._dimensions_comp)
         ds.from_components(self._data.copy(), org_copy.deepcopy(self._meta),
@@ -1262,18 +1265,11 @@ class Batch(qp.DataSet):
             if not (b in adds or b == ds.name):
                 del ds._meta['sets']['batches'][b]
 
-        # handle filters
-        f = self.filter
-        filters = list(set([
-            batches[a]['filter'] for a in adds if batches[a]['filter']]))
-        if filters:
-            if not self.is_subfilter(f, filters):
-                f = "merge_filter"
-                filters.append(self.filter)
-                ds.merge_filter(f, filters)
+        if merge_f:
+            ds.merge_filter(f, filters)
         if f:
             ds.filter(self.name, {f: 0}, True)
-            if f == "merge_filter":
+            if merge_f:
                 ds.drop(f)
 
         ds.create_set(str(self.name), included=vlist, overwrite=True)
@@ -1339,14 +1335,7 @@ class Batch(qp.DataSet):
             if key == "oe":
                 oes = []
                 for oe in var[:]:
-<<<<<<< Updated upstream
-                    oes += oe["columns"]
-=======
-                    if 'f' in mode:
-                        oes += oe["break_by"] + oe["columns"] + [oe["filter"]]
-                    else:
-                        oes += oe['columns']
->>>>>>> Stashed changes
+                    oes += oe["break_by"] + oe["columns"] + [oe["filter"]]
                 var = oes
             if key == "f":
                 var = batch["filter_names"] + batch["y_filter_map"].values()
