@@ -3804,7 +3804,7 @@ class DataSet(object):
         """
         if sort_by:
             self._data.sort(sort_by, inplace=True)
-            self._data.reset_index(inplace=True)
+            self._data.reset_index(drop=True, inplace=True)
         if self.duplicates(unique_id):
             cases_before = self._data.shape[0]
             self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
