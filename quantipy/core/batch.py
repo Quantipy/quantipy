@@ -1332,6 +1332,9 @@ class Batch(qp.DataSet):
                                     ds._meta['masks'][v].pop('rules')
                                 else:
                                     ds._meta['columns'][v].pop('rules')
+        self.set_text_key(self.language)
+        if "oe" in mode:
+            self._apply_oe_replacements(ds)
         return ds
 
     def _get_vlist(self, batch, mode):
@@ -1361,3 +1364,17 @@ class Batch(qp.DataSet):
                 if v and v in self and v not in vlist:
                     vlist.append(v)
         return vlist
+
+    def _apply_oe_replacements(self, dataset):
+        for oe in self.verbatims:
+            if oe['replace']:
+                for target, repl in oe['replace'].items():
+                    if not repl:
+                        repl = np.NaN
+                    dataset._data.replace(target, repl, inplace=True)
+            if oe['drop_empty']:
+                dataset._data.dropna(
+                    subset=oe['columns'], how='all', inplace=True)
+            if not oe['incl_nan']:
+                for col in oe['columns']:
+                    dataset._data[col].replace(np.NaN, '', inplace=True)
