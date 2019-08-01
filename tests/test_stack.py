@@ -475,6 +475,67 @@ class TestStackObject:
         os.remove(path_describe)
         os.remove(path_stack)
 
+    def test_save_and_load_with_and_without_cache(self, stack):
+        """
+        This tests that the cache is stored and loaded with and without cache
+        """
+        path_stack = "{}{}.stack".format(PATH, FILENAME)
+        path_cache = "{}{}.cache".format(PATH, FILENAME)
+        compressiontype = [None, "gzip"]
+
+        if os.path.exists(path_stack):
+            os.remove(path_stack)
+        if os.path.exists(path_cache):
+            os.remove(path_cache)
+
+        caches = {}
+        for key in stack.keys():
+            assert "cache" in stack[key].__dict__.keys()
+            assert isinstance(stack[key].cache, Cache)
+            assert not stack[key].cache == Cache()
+            caches[key] = stack[key].cache
+
+        for compression in compressiontype:
+            # Save the stack WITHOUT the cache
+            stack.save(path_stack, compression, store_cache=False)
+            assert os.path.exists(path_stack)
+            assert not os.path.exists(path_cache)
+
+            new_stack = Stack.load(path_stack, compression=compression)
+            for k in stack.keys():
+                assert k in new_stack
+
+            # Ensure that there is NO cache
+            for key in new_stack.keys():
+                assert Cache() == new_stack[key].cache
+
+            # Save the stack WITH the cache
+            stack.save(path_stack, compression, store_cache=True)
+            assert os.path.exists(path_stack)
+            assert os.path.exists(path_cache)
+
+            new_stack = Stack.load(path_stack, compression=compression, load_cache=True)
+            for k in stack.keys():
+                assert k in new_stack
+
+            # Ensure that there IS a cache
+            for key, value in caches.items():
+                assert "matrices" in value.keys()
+                assert "weight_vectors" in value.keys()
+                for sect_def in value["matrices"]:
+                    mat1, codes1 = value["matrices"][sect_def]
+                    mat2, codes2 = new_stack[key].cache["matrices"][sect_def]
+                    assert isinstance(mat1, np.ndarray)
+                    assert isinstance(mat2, np.ndarray)
+                    assert np.array_equal(mat1, mat2)
+                    assert isinstance(codes1, list)
+                    assert isinstance(codes2, list)
+                    assert np.array_equal(codes1, codes2)
+
+                assert not id(caches[key]) == id(new_stack[key].cache)
+            os.remove(path_stack)
+            os.remove(path_cache)
+
     def test_stack_aggregate(self):
         b1, ds = _get_batch("test1", full=True)
         b2, ds = _get_batch("test2", ds, False)
