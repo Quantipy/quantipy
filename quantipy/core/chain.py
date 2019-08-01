@@ -661,6 +661,10 @@ class Chain(object):
             # Re-build the full column index (labels + letter row)
             if self.sig_test_letters and add_test_ids:
                 self._frame = self._apply_letter_header(self._frame)
+        self._painted_index = self.index
+        self._painted_columns = self.columns
+        if self.structure is not None:
+            self._painted_frame_values = self.frame_values
         self.painted = True
         return None
 
@@ -1930,27 +1934,21 @@ class Chain(object):
         return pd.MultiIndex.from_tuples(axis_tuples, names=names)
 
     def toggle_labels(self):
-        """ Restore the unpainted/ painted Index, Columns appearance.
+        """
+        Restore the unpainted/ painted Index, Columns appearance.
         """
         if self.painted:
+            self._frame.index = self._org_index
+            self._frame.columns = self._org_columns
+            if self.structure is not None:
+                self._frame.loc[:, :] = self._org_frame_values
             self.painted = False
         else:
+            self._frame.index = self._painted_index
+            self._frame.columns = self._painted_columns
+            if self.structure is not None:
+                self._frame.loc[:, :] = self._painted_frame_values
             self.painted = True
-
-        attrs = ["index", "columns"]
-        if self.structure is not None:
-            attrs.append("_frame_values")
-        for attr in attrs:
-            vals = attr[6:] if attr.startswith("_frame") else attr
-            frame_val = getattr(self._frame, vals)
-            setattr(self._frame, attr, getattr(self, attr))
-            setattr(self, attr, frame_val)
-
-        if self.structure is not None:
-            values = self._frame.values
-            self._frame.loc[:, :] = self.frame_values
-            self.frame_values = values
-
         return self
 
     @staticmethod

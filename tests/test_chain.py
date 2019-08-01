@@ -239,11 +239,11 @@ class TestChainGet:
             assert_index_equal(chain.dataframe.columns, painted_columns)
 
             # Test Chain.toggle_labels
-            # chain.toggle_labels()
-            # assert_frame_equal(chain.dataframe, expected_dataframe)
-            # chain.toggle_labels()
-            # assert_index_equal(chain.dataframe.index, painted_index)
-            # assert_index_equal(chain.dataframe.columns, painted_columns)
+            chain.toggle_labels()
+            assert_frame_equal(chain.dataframe, expected_dataframe)
+            chain.toggle_labels()
+            assert_index_equal(chain.dataframe.index, painted_index)
+            assert_index_equal(chain.dataframe.columns, painted_columns)
 
             # Test Chain str/ len
             assert str(chain) == chain_str
