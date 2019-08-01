@@ -195,13 +195,18 @@ def params_getx(request):
 class TestChainGet:
     _VIEWS = ['cbase', 'counts', 'c%', 'mean', 'median', 'c%_sum']
 
-    _VIEW_KEYS = ['x|f|x:|||cbase', 'x|f|:|||counts', 'x|d.mean|x:|||mean',
-                  'x|d.median|x:|||median', 'x|f.c:f|x:|||counts_sum']
+    _VIEW_KEYS = [
+        'x|f|x:|||cbase',
+        'x|f|:|||counts',
+        'x|d.mean|x:|||mean',
+        'x|d.median|x:|||median',
+         'x|f.c:f|x:|||counts_sum']
 
-    _VIEW_SIG_KEYS = ['x|f|x:|||cbase',
-                      ('x|f|:|y||c%', 'x|t.props.Dim.80+@|:|||t_p_80'),
-                      ('x|d.mean|x:|||mean', 'x|t.means.Dim.80+@|x:|||t_m_80'),
-                       'x|f.c:f|x:|y||c%_sum']
+    _VIEW_SIG_KEYS = [
+        'x|f|x:|||cbase',
+        ('x|f|:|y||c%', 'x|t.props.Dim.80+@|:|||t_p_80'),
+        ('x|d.mean|x:|||mean', 'x|t.means.Dim.80+@|x:|||t_m_80'),
+        'x|f.c:f|x:|y||c%_sum']
 
     def test_get_x_orientation(self, stack, params_getx):
         x, y, expected = params_getx
@@ -219,40 +224,39 @@ class TestChainGet:
             painted_index = multi_index(pindex)
             painted_columns = multi_index(pcolumns)
 
-            ### Test Chain.dataframe is Chain._frame
+            # Test Chain.dataframe is Chain._frame
             assert chain.dataframe is chain._frame
 
-            ### Test Chain attributes
-            assert chain.orientation is 'x'
+            # Test Chain attributes
+            assert chain.orientation == 'x'
 
-            ### Test Chain.get
+            # Test Chain.get
             assert_frame_equal(chain.dataframe, expected_dataframe)
 
-            # ### Test Chain.paint
-            # chain.paint()
-            # assert_index_equal(chain.dataframe.index, painted_index)
-            # assert_index_equal(chain.dataframe.columns, painted_columns)
+            # Test Chain.paint
+            chain.paint()
+            assert_index_equal(chain.dataframe.index, painted_index)
+            assert_index_equal(chain.dataframe.columns, painted_columns)
 
-            # ### Test Chain.toggle_labels
+            # Test Chain.toggle_labels
             # chain.toggle_labels()
             # assert_frame_equal(chain.dataframe, expected_dataframe)
             # chain.toggle_labels()
             # assert_index_equal(chain.dataframe.index, painted_index)
             # assert_index_equal(chain.dataframe.columns, painted_columns)
 
-            # ### Test Chain str/ len
-            # assert str(chain) == chain_str
+            # Test Chain str/ len
+            assert str(chain) == chain_str
 
-            # ### Test Contents
+            # Test Contents
             assert chain.contents == parameters.CONTENTS
 
     def test_sig_transformation_simple(self, stack):
         x, y = 'q5_1', ['@', 'gender', 'q4']
         chains = complex_chain(stack, x, y, self._VIEWS, self._VIEW_SIG_KEYS,
                                'x', incl_tests=True, incl_sum=True)
-        chain_df = (chains[0]._transform_tests()
-                             .dataframe.replace(np.NaN, 'None')
-                   )
+        chain_df = chains[0]._transform_tests().dataframe.replace(np.NaN,
+                                                                  'None')
         # all tests results converted correctly from numbers to letters?
         actual_vals = pd.DataFrame(chain_df.values.tolist())
         expected_vals = pd.DataFrame(parameters.X5_SIG_SIMPLE[0])
@@ -282,14 +286,15 @@ class TestChainGet:
         annot.set('notes', 'notes', None)
         # are all attributes populated correctly...?
         # (text, as list, props & dict)
-        assert annot.header_title == ['header-title'] == annot.header['title']
-        assert annot.header_left == ['header-left'] == annot.header['left']
-        assert annot.header_center == ['header-center'] == annot.header['center']
-        assert annot.header_right == ['header-right'] == annot.header['right']
-        assert annot.footer_title == ['footer-title'] == annot.footer['title']
-        assert annot.footer_left == ['footer-left'] == annot.footer['left']
-        assert annot.footer_center == ['footer-center'] == annot.footer['center']
-        assert annot.footer_right == ['footer-right'] == annot.footer['right']
+        ann = {
+            "header": ["title", "left", "center", "right"],
+            "footer": ["title", "left", "center", "right"]}
+        for k, val in ann.items():
+            attr1 = getattr(annot, k)
+            for v in val:
+                kv = "{}_{}".format(k, v)
+                attr2 = getattr(annot, kv)
+                assert attr2 == [kv.replace('_', '-')] == attr1[v]
         assert annot.notes == ['notes'] == annot.notes
 
     def test_annotations_populated(self, stack):
