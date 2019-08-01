@@ -245,10 +245,7 @@ class Batch(DataSet):
             batch_copy.add_filter(b_filter[0], b_filter[1])
         if batch_copy.verbatims and b_filter and not as_addition:
             for oe in batch_copy.verbatims:
-                data = self._data.copy()
-                series_data = data['@1'].copy()[pd.Index(oe['idx'])]
-                slicer, _ = get_logic_index(series_data, b_filter[1], data)
-                oe['idx'] = slicer.tolist()
+                oe["filter"] = batch_copy.filter
         if as_addition:
             batch_copy.as_addition(self.name)
         batch_copy._update()
@@ -901,6 +898,7 @@ class Batch(DataSet):
                     return repl
 
         repl = _check_replacements(replacements)
+
         if len(oe) + len(break_by) == 0:
             raise ValueError("Please add any variables as 'oe' or 'break_by'.")
         if split:
@@ -1008,7 +1006,7 @@ class Batch(DataSet):
                     self.extend_filter_var(self.filter, log, v)
                 else:
                     f_name = '{}_f'.format(v)
-                    self.add_filter_var(f_name, log)
+                    self.add_filter_var(f_name, logic)
                 self.extended_filters_per_x.update({v: f_name})
         self._update()
         return None
@@ -1049,6 +1047,8 @@ class Batch(DataSet):
             else:
                 main_filter = 'replace'
         self.y_on_y_filter[name] = (main_filter, y_filter)
+        if name in self.y_filter_map:
+            del self.y_filter_map[name]
         self._update()
         return None
 
@@ -1332,6 +1332,9 @@ class Batch(DataSet):
                                     ds._meta['masks'][v].pop('rules')
                                 else:
                                     ds._meta['columns'][v].pop('rules')
+        self.set_text_key(self.language)
+        if "oe" in mode:
+            self._apply_oe_replacements(ds)
         return ds
 
     def _get_vlist(self, batch, mode):
@@ -1349,7 +1352,10 @@ class Batch(DataSet):
             if key == "oe":
                 oes = []
                 for oe in var[:]:
-                    oes += oe["columns"]
+                    if 'f' in mode:
+                        oes += oe["columns"] + [oe["filter"]]
+                    else:
+                        oes += oe['columns']
                 var = oes
             if key == "f":
                 var = batch["filter_names"] + batch["y_filter_map"].values()
@@ -1358,3 +1364,17 @@ class Batch(DataSet):
                 if v and v in self and v not in vlist:
                     vlist.append(v)
         return vlist
+
+    def _apply_oe_replacements(self, dataset):
+        for oe in self.verbatims:
+            if oe['replace']:
+                for target, repl in oe['replace'].items():
+                    if not repl:
+                        repl = np.NaN
+                    dataset._data.replace(target, repl, inplace=True)
+            if oe['drop_empty']:
+                dataset._data.dropna(
+                    subset=oe['columns'], how='all', inplace=True)
+            if not oe['incl_nan']:
+                for col in oe['columns']:
+                    dataset._data[col].replace(np.NaN, '', inplace=True)

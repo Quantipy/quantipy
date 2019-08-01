@@ -3557,6 +3557,18 @@ class DataSet(object):
                 equal = False
         return equal
 
+    @modify(to_list=["name2"])
+    def is_subfilter(self, name1, name2):
+        """
+        Verify if index of name2 is part of the index of name1.
+        """
+        idx = self.manifest_filter(name1).tolist()
+        included = True
+        for n in name2:
+            if [i for i in self.manifest_filter(n).tolist() if i not in idx]:
+                included = False
+        return included
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
@@ -3777,7 +3789,8 @@ class DataSet(object):
             vals = [int(i) for i in vals]
         return vals
 
-    def drop_duplicates(self, unique_id='identity', keep='first'):
+    @verify(variables={'sort_by': 'columns'})
+    def drop_duplicates(self, unique_id='identity', keep='first', sort_by=None):
         """
         Drop duplicated cases from self._data.
 
@@ -3787,7 +3800,13 @@ class DataSet(object):
             Variable name that gets scanned for duplicates.
         keep : str, {'first', 'last'}
             Keep first or last of the duplicates.
+        sort_by : str
+            Name of a variable to sort the data by, for example "endtime".
+            It is a helper to specify `keep`.
         """
+        if sort_by:
+            self._data.sort(sort_by, inplace=True)
+            self._data.reset_index(drop=True, inplace=True)
         if self.duplicates(unique_id):
             cases_before = self._data.shape[0]
             self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
