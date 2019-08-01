@@ -59,14 +59,14 @@ def get_values(column, values, paint=False):
             return values[column['parent'].keys()[0].split('@')[1]]
         return column['values']
     if paint:
-        return [u'%s' % item['text']['en-GB'] for item in _get_values()]
+        return [u'{}'.format(item['text']['en-GB']) for item in _get_values()]
     return [long(item['value']) for item in _get_values()]
 
 
 def get_label(column, paint=False):
     if paint:
-        return u'%s. %s' % (column['name'], column['text']['en-GB'])
-    return u'%s' % column['name']
+        return u'{}. {}'.format(column['name'], column['text']['en-GB'])
+    return u'{}'.format(column['name'])
 
 
 def build_x_index(column, lib_values, paint=False):
