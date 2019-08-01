@@ -1,24 +1,20 @@
 
+import os
 import pytest
 import numpy as np
 import pandas as pd
-import os.path
-import test_helper
-import copy
 
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 from .test_batch import _get_batch
-from quantipy.core.stack import Stack
-from quantipy.core.chain import Chain
+
 from quantipy.core.link import Link
-from quantipy.core.view_generators.view_mapper import ViewMapper
-from quantipy.core.view_generators.view_maps import QuantipyViews
-from quantipy.core.view_generators.view_specs import (net, calc)
 from quantipy.core.view import View
-from quantipy.core.helpers import functions
+from quantipy.core.stack import Stack
+from quantipy.core.cache import Cache
 from quantipy.core.helpers.functions import load_json
 from quantipy.core.tools.qp_decorators import modify
-from quantipy.core.cache import Cache
+from quantipy.core.view_generators.view_maps import QuantipyViews
+from quantipy.core.view_generators.view_specs import calc
 
 XKS_MIN = ["q2b", "Wave", "q2", "q3", "q5_1"]
 YKS_MIN = ["@", "q2b", "Wave", "q2", "q3", "q5_1"]
@@ -31,15 +27,18 @@ DEFAULT = "x|default|:|||default"
 PATH = "./tests/"
 FILENAME = "Example Data (A)"
 
+
 @pytest.fixture(scope="module")
 def example_meta():
     path_meta = "{}{}.json".format(PATH, FILENAME)
     return load_json(path_meta)
 
+
 @pytest.fixture(scope="module")
 def example_data():
     path_data = "{}{}.csv".format(PATH, FILENAME)
     return pd.DataFrame.from_csv(path_data)
+
 
 @pytest.fixture(scope="module")
 def stack(example_meta, example_data):
@@ -56,6 +55,7 @@ def stack(example_meta, example_data):
         views=QuantipyViews(["default"]),
         weights=[None])
     return stack
+
 
 @pytest.fixture(scope="function")
 def stack_empty(example_meta, example_data):
@@ -250,11 +250,11 @@ class TestStackObject:
         # Test the filters have calculated correctly
         # no_filter
         df = stack[stack.name]["no_filter"]["Wave"]["@"][DEFAULT].dataframe
-        assert df.iloc[(0,0)] == example_data.shape[0]
+        assert df.iloc[(0, 0)] == example_data.shape[0]
         # Other filters
         for f in filters[1:]:
             df = stack[stack.name][f]["Wave"]["@"][DEFAULT].dataframe
-            assert df.iloc[(0,0)] == example_data.query(f).shape[0]
+            assert df.iloc[(0, 0)] == example_data.query(f).shape[0]
 
         # set back stack instance
         stack.reduce(filters=filters)
@@ -263,7 +263,6 @@ class TestStackObject:
     def test_add_link_x_y_equal(self, stack):
         dk = stack.name
         fk = "no_filter"
-        vk = "default"
 
         # Test that x==y links have populated correctly
         for xy in XKS_MIN:
@@ -445,222 +444,6 @@ class TestStackObject:
         assert content2[stack_empty.name].sum() == 45.0
         assert content2["new_key"].sum() == 89.0
 
-#     def test_save_and_load_with_and_without_cache(self):
-#         """ This tests that the cache is stored and loaded with
-#             and without the cache
-#         """
-#         key = "Example Data (A)"
-#         path_stack = "%s%s.stack" % (self.path, self.stack.name)
-#         path_cache = "%s%s.cache" % (self.path, self.stack.name)
-#         compressiontype = [None, "gzip"]
-
-#         if os.path.exists(path_stack):
-#             os.remove(path_stack)
-#         if os.path.exists(path_cache):
-#             os.remove(path_cache)
-
-#         self.assertFalse(os.path.exists(path_stack), msg="Saved stack exists but should NOT have been created yet")
-#         self.assertFalse(os.path.exists(path_cache), msg="Saved cache exists but should NOT have been created yet")
-#         self.setup_stack_Example_Data_A()
-
-#         caches = {}
-#         for key in self.stack.keys():
-#             self.assertIn("cache", self.stack[key].__dict__.keys())
-#             self.assertIsInstance(self.stack[key].cache, Cache)
-#             self.assertNotEqual(Cache(), self.stack[key].cache)
-#             caches[key] = self.stack[key].cache
-
-#         for compression in compressiontype:
-#             # Save the stack WITHOUT the cache
-#             self.stack.save(path_stack=path_stack, compression=compression, store_cache=False)
-#             self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
-#             self.assertFalse(os.path.exists(path_cache), msg="File {file} should NOT exist".format(file=path_cache))
-
-#             new_stack = Stack.load(path_stack, compression=compression)
-#             err_msg = "Stack should have key {data_key}, but has {stack_key}"
-#             self.assertTrue(key in new_stack, msg=err_msg.format(data_key=key, stack_key=self.stack.keys()))
-
-#             # Ensure that there is NO cache
-#             for key in new_stack.keys():
-#                 self.assertDictEqual(Cache(), new_stack[key].cache)
-
-#             self.stack.save(path_stack=path_stack, compression=compression, store_cache=True)
-#             self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
-#             self.assertTrue(os.path.exists(path_cache), msg="File {file} should exist".format(file=path_cache))
-
-#             new_stack = Stack.load(path_stack, compression=compression, load_cache=True)
-#             err_msg = "Stack should have key {data_key}, but has {stack_key}"
-#             self.assertTrue(key in new_stack, msg=err_msg.format(data_key=key, stack_key=self.stack.keys()))
-
-#             # Ensure that there IS a cache
-#             for key in caches:
-#                 self.assertIn(key, new_stack)
-#                 self.assertTrue("matrices" in caches[key].keys())
-#                 self.assertTrue("weight_vectors" in caches[key].keys())
-#                 for sect_def in caches[key]["matrices"]:
-#                     mat1, codes1 = caches[key]["matrices"][sect_def]
-#                     mat2, codes2 = new_stack[key].cache["matrices"][sect_def]
-#                     self.assertIsInstance(mat1, np.ndarray)
-#                     self.assertIsInstance(mat2, np.ndarray)
-#                     self.assertTrue(np.array_equal(mat1, mat2))
-#                     self.assertIsInstance(codes1, list)
-#                     self.assertIsInstance(codes2, list)
-#                     self.assertTrue(np.array_equal(codes1, codes2))
-#                 self.assertNotEqual(id(caches[key]), id(new_stack[key].cache), msg="The matrix cache should be equal but not the same.")
-#             if os.path.exists(path_stack):
-#                 os.remove(path_stack)
-#             if os.path.exists(path_cache):
-#                 os.remove(path_cache)
-
-#     def test_save_and_load_stack_path_expectations(self):
-#         """ This tests makes sure the path expectations for
-#         stack.save() and stack.load() are working and are
-#         triggering the in-built user feedback when ignored.
-#         """
-#         name_stack = "%s.stack" % (self.stack.name)
-#         path_stack = "%s%s" % (self.path, name_stack)
-
-#         if os.path.exists(path_stack):
-#             os.remove(path_stack)
-
-#         self.assertFalse(os.path.exists(path_stack), msg="Saved stack exists but should not have been created yet")
-#         self.setup_stack_Example_Data_A()
-
-#         with self.assertRaises(ValueError):
-#             # Test fails when a folder path is given
-#             self.stack.save(path_stack="./tests/")
-#             # Test fails when the path doesn"t end with ".stack"
-#             self.stack.save(path_stack=path_stack.replace(".stack", ""))
-#             # Test fails when the path is truncated at all
-#             self.stack.save(path_stack=path_stack[:-1])
-
-#         # This should not cause any errors
-#         self.stack.save(path_stack=path_stack)
-
-#         with self.assertRaises(ValueError):
-#             # Test fails when a folder path is given
-#             self.stack = Stack.load(path_stack="./tests/")
-#             # Test fails when the path doesn"t end with ".stack"
-#             self.stack = Stack.load(path_stack=path_stack.replace(".stack", ""))
-#             # Test fails when the path is truncated at all
-#             self.stack = Stack.load(path_stack=path_stack[:-1])
-
-#         # This should not cause any errors
-#         self.stack = Stack.load(path_stack=path_stack)
-
-#         if os.path.exists(path_stack):
-#             os.remove(path_stack)
-
-#     def test_save_and_load_stack(self):
-#         """ This tests saves the stack and loads it,
-#             then it does the checks
-#         """
-#         key = "Example Data (A)"
-#         path_stack = "%s%s.stack" % (self.path, self.stack.name)
-#         compressiontype = [None, "gzip"]
-
-#         if os.path.exists(path_stack):
-#             os.remove(path_stack)
-
-#         self.assertFalse(os.path.exists(path_stack), msg="Saved stack exists but should not have been created yet")
-#         self.setup_stack_Example_Data_A()
-
-#         for compression in compressiontype:
-#             self.stack.save(path_stack=path_stack, compression=compression)
-#             self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
-#             new_stack = Stack.load(path_stack, compression=compression)
-
-#             err_msg = "Stack should have key {data_key}, but has {stack_key}"
-#             self.assertTrue(key in new_stack, msg=err_msg.format(data_key=key, stack_key=self.stack.keys()))
-
-#             for key in new_stack.keys():
-#                 # Verify that the x Variables are the same in the loaded file and the original stack
-#                 self.assertItemsEqual(new_stack[key].keys(), self.stack[key].keys())
-#                 for a_filter in new_stack[key].keys():
-#                     for x in new_stack[key][a_filter]:
-#                         # Verify that the y Variables are the same in the loaded file and the original stack
-#                         self.assertItemsEqual(new_stack[key][a_filter][x].keys(), self.stack[key][a_filter][x].keys())
-#                         for y in new_stack[key][a_filter][x]:
-#                             self.assertItemsEqual(new_stack[key][a_filter][x][y].keys(), self.stack[key][a_filter][x][y].keys())
-#                             for view in new_stack[key][a_filter][x][y]:
-#                             # Verify that the content of the dataframes is the same
-#                                 self.assertTrue(new_stack[key][a_filter][x][y][view].dataframe.equals(self.stack[key][a_filter][x][y][view].dataframe),
-#                                                 "FATAL ERROR: A data-frame in the loaded stack is not the same as the one in the created stack.")
-#             # Cleanup for next compressiontype
-#             if os.path.exists(path_stack):
-#                 os.remove(path_stack)
-
-#     def test_save_load_stack_improved(self):
-#         # This tests save/load methods using dataframes and
-#         # verifies that the source data is still intact after load
-#         # and that the structure, meta and data attributes and views are intact.
-
-#         path_stack = "%s%s.stack" % (self.path, self.stack.name)
-#         self.setup_stack_Example_Data_A()
-
-#         # Ensure that the stack has the correct structure, attributes
-#         # and views.
-#         for data_key in self.stack.keys():
-#             # Does the loaded stack actually have the data and meta attributes
-#             self.assertTrue(hasattr(self.stack[data_key], "data"))
-#             self.assertTrue(hasattr(self.stack[data_key], "meta"))
-
-#             # Is the attribute a Pandas DataFrame ?
-#             self.assertIsInstance(self.stack[data_key].data, pd.DataFrame)
-
-#         # Save and load the stack and test that everything is still available,
-#         # the loaded stack has the same views, attributes as the generated one
-#         compressiontype = [None, "gzip"]
-#         for compression in compressiontype:
-#             if os.path.exists(path_stack):
-#                 os.remove(path_stack)
-
-#             self.assertFalse(os.path.exists(path_stack), msg="File {file} should NOT exist".format(file=path_stack))
-#             self.stack.save(path_stack=path_stack, compression=compression)
-#             self.assertTrue(os.path.exists(path_stack), msg="File {file} should exist".format(file=path_stack))
-#             loaded_stack = Stack.load(path_stack, compression=compression)
-
-#             # Ensure that it is not the same stack (in memory)
-#             self.assertFalse(id(loaded_stack) == id(self.stack), msg="The stacks must not be in the same memory location")
-
-#             # Test all of the keys in the loaded stack
-#             for data_key in loaded_stack:
-#                 # Does the loaded stack actually have the data and meta attributes
-#                 self.assertTrue(hasattr(loaded_stack[data_key], "data"))
-#                 self.assertTrue(hasattr(loaded_stack[data_key], "meta"))
-
-#                 # Is the attribute a Pandas DataFrame ?
-#                 self.assertIsInstance(loaded_stack[data_key].data, pd.DataFrame)
-
-#                 # Verify that the metadata is also loaded
-#                 self.assertEqual(loaded_stack[data_key].meta, self.stack[data_key].meta)
-#                 self.assertFalse(id(loaded_stack[data_key].meta) == id(self.stack[data_key].meta),
-#                                  msg="The meta must not be in the same memory location")
-
-#                 for the_filter in loaded_stack[data_key]:
-#                     for x in loaded_stack[data_key][the_filter]:
-#                         for y in loaded_stack[data_key][the_filter][x]:
-#                             for view in loaded_stack[data_key][the_filter][x][y]:
-#                                 result_origin = self.stack[data_key][the_filter][x][y][view]
-#                                 result_loaded = loaded_stack[data_key][the_filter][x][y][view]
-
-#                                 self.assertEqual(type(result_origin), type(result_loaded))
-
-#                                 if isinstance(result_loaded, Link):
-#                                     # Does the Link have the "dataframe" attributre
-#                                     self.assertTrue(hasattr(loaded_stack[data_key], "dataframe"))
-
-#                                     # Is the attribute a Pandas DataFrame ?
-#                                     self.assertIsInstance(result_loaded.dataframe, pd.DataFrame)
-
-#                                     # Verify that it is the same after the load
-#                                     self.assertEqual(result_loaded.dataframe, result_origin.dataframe)
-#                                     self.assertFalse(id(result_loaded.dataframe) == id(result_origin.dataframe),
-#                                                      msg="The dataframes must not be in the same memory location")
-#             if os.path.exists(path_stack):
-#                 os.remove(path_stack)
-
-
     def test_save_dataset(self, stack_empty):
         """
         This tests save/load methods using the dataset parameter.
@@ -698,7 +481,7 @@ class TestStackObject:
         b3, ds = _get_batch("test3", ds, False)
         b1.add_downbreak(["q1", "q6", "age"])
         b1.add_crossbreak(["gender", "q2"])
-        b1.extend_filter({"q1":{"age": [20, 21, 22]}})
+        b1.extend_filter({"q1": {"age": [20, 21, 22]}})
         b1.set_weights("weight_a")
         b2.add_downbreak(["q1", "q6"])
         b2.add_crossbreak(["gender", "q2"])
@@ -728,18 +511,29 @@ class TestStackObject:
         cols = [
             "@", "age", "q1", "q2b", "q6", u"q6_1", u"q6_2", u"q6_3", u"q7",
             u"q7_1", u"q7_2", u"q7_3", u"q7_4", u"q7_5", u"q7_6"]
-        values = [  # noqa
-            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0,2.0, 2.0, 2.0, 2.0, 2.0],
-            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
-            [1.0, 3.0, 6.0, "NONE", 2.0, 6.0, 6.0, 6.0, "NONE", "NONE", "NONE", "NONE", "NONE", "NONE", "NONE"]]
+        values = [
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0,
+                2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0,
+                2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0,
+                2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", "NONE", 2.0, 2.0, "NONE", "NONE", "NONE", "NONE", 1.0,
+                2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0,
+                2.0, 2.0, 2.0],
+            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0,
+                2.0, 2.0, 2.0],
+            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0,
+                2.0, 2.0, 2.0],
+            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0,
+                2.0, 2.0, 2.0],
+            ["NONE", 3.0, 5.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0,
+                2.0, 2.0, 2.0],
+            [1.0, "NONE", 4.0, 2.0, 1.0, 3.0, 3.0, 3.0, 1.0, 2.0, 2.0, 2.0,
+                2.0, 2.0, 2.0],
+            [1.0, 3.0, 6.0, "NONE", 2.0, 6.0, 6.0, 6.0, "NONE", "NONE", "NONE",
+                "NONE", "NONE", "NONE", "NONE"]]
 
         describe = stack.describe("view", "x").replace(np.NaN, "NONE")
         assert describe.index.tolist() == index
@@ -799,7 +593,7 @@ class TestStackObject:
         describe = stack.describe("view", "x").replace(np.NaN, "NONE")
         assert describe.index.tolist() == index
         assert describe.columns.tolist() == cols
-        assert describe.values.tolist()== values
+        assert describe.values.tolist() == values
 
     def test_recode_from_net_def(self):
         b, ds = _get_batch("test1", full=True)
@@ -827,7 +621,7 @@ class TestStackObject:
         stack.aggregate(
             ["cbase", "counts", "c%"], batches="all", verbose=False)
         stack.add_stats(
-            "q6", ["mean"], rescale={1:3, 2:2, 3:1}, factor_labels=False,
+            "q6", ["mean"], rescale={1: 3, 2: 2, 3: 1}, factor_labels=False,
             _batches="all", verbose=False)
         stack.add_stats(
             "q1", ["mean"], "age", factor_labels=False, verbose=False,
@@ -855,8 +649,9 @@ class TestStackObject:
     def test_recode_from_stat_def(self):
         b, ds = _get_batch("test1", full=True)
         stack = ds.populate()
-        stack.add_stats("q6", ["mean"], rescale={1:0, 2:50, 3:100}, factor_labels=False,
-                        _batches="all", verbose=False, recode=True)
+        stack.add_stats(
+            "q6", ["mean"], rescale={1: 0, 2: 50, 3: 100}, factor_labels=False,
+            _batches="all", verbose=False, recode=True)
         expect_ind = [0.0, 50.0, 100.0]
         index = ds["q6_1_rc"].value_counts().index.tolist()
         expect_val = [3074, 2620, 875]
@@ -868,7 +663,7 @@ class TestStackObject:
 
     def test_factor_labels(self):
 
-        def _factor_on_values(values, axis = "x"):
+        def _factor_on_values(values, axis="x"):
             return all(
                 v["text"]["{} edits".format(axis)]["en-GB"].endswith(
                     "[{}]".format(v["value"]))
@@ -908,10 +703,10 @@ class TestStackObject:
             assert _factor_on_values(values, "y")
             assert "q6" not in batches["test2"]["meta_edits"]
 
-
     # =========================================================================
     # helpers
     # =========================================================================
+
     def add_link(self, stack_inst, fk=None, xk=None, yk=None, views=None,
                  weights=None):
         if not fk:
