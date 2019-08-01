@@ -38,6 +38,7 @@ def dataset():
     yield _dataset.split()
     del _dataset
 
+
 @pytest.fixture(scope='class')
 def stack(dataset):
     meta, data = dataset
@@ -47,11 +48,13 @@ def stack(dataset):
     yield _stack
     del _stack
 
+
 @pytest.fixture(scope='class')
 def basic_chain(stack):
     _chain = ChainManager(stack)
     yield _chain
     del _chain
+
 
 def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
                   incl_sum):
@@ -88,9 +91,8 @@ def complex_chain(stack, x_keys, y_keys, views, view_keys, orient, incl_tests,
                views=view_keys,
                orient=orient)
     _chains = _chain
-    # if isinstance(_chains, Chain): # single chain
-    #     _chains = [_chains]
     return _chains
+
 
 @pytest.fixture(scope='class')
 def unnamed_chain_for_structure(dataset, basic_chain):
@@ -101,6 +103,7 @@ def unnamed_chain_for_structure(dataset, basic_chain):
     yield basic_chain
     del basic_chain
 
+
 @pytest.fixture(scope='class')
 def chain_for_structure(dataset, basic_chain):
     _, data = dataset
@@ -109,6 +112,7 @@ def chain_for_structure(dataset, basic_chain):
     basic_chain.add_df(_frame, DATA_KEY, name='open')
     yield basic_chain
     del basic_chain
+
 
 # @pytest.fixture(scope='function')
 def chain_structure(chain_for_structure, paint=False, sep=None):
@@ -119,6 +123,7 @@ def chain_structure(chain_for_structure, paint=False, sep=None):
     it = iter(chain_for_structure)
     return next(it)
 
+
 # @pytest.fixture(scope='function')
 def expected_structure(values, columns, paint=False):
     _expected = pd.DataFrame(np.array(values).T, columns=columns)
@@ -128,16 +133,19 @@ def expected_structure(values, columns, paint=False):
         _expected.iloc[:, 2] = pd.to_numeric(_expected.iloc[:, 2])
     return _expected
 
+
 # @pytest.fixture(scope='function')
 def multi_index(tuples):
     names = ['Question', 'Values'] * (len(tuples[0]) / 2)
     _index = pd.MultiIndex.from_tuples(tuples, names=names)
     return _index
 
+
 # @pytest.fixture(scope='function')
 def frame(values, index, columns):
     _frame = pd.DataFrame(values, index=index, columns=columns)
     return _frame
+
 
 class TestChainConstructor:
     def test_init(self, basic_chain):
@@ -151,6 +159,7 @@ class TestChainConstructor:
 
     def test_len(self, basic_chain):
         assert len(basic_chain) == 0
+
 
 class TestChainExceptions:
     def test_get_non_existent_columns(self, basic_chain, caplog):
@@ -181,6 +190,7 @@ class TestChainExceptions:
 )
 def params_getx(request):
     return request.param
+
 
 class TestChainGet:
     _VIEWS = ['cbase', 'counts', 'c%', 'mean', 'median', 'c%_sum']
@@ -313,6 +323,7 @@ class TestChainGet:
     def test_sig_transformation_large(self, stack):
         pass
 
+
 @pytest.yield_fixture(
     scope='class',
     params=[
@@ -335,10 +346,12 @@ class TestChainGet:
 def params_structure(request):
     return request.param
 
+
 class TestChainUnnamedAdd:
     def test_unnamed(self, unnamed_chain_for_structure):
         _chain = chain_structure(unnamed_chain_for_structure)
         assert _chain.name == 'record_number.age'
+
 
 class TestChainAdd:
     def test_named(self, chain_for_structure):
@@ -352,6 +365,7 @@ class TestChainAdd:
         _expected_structure = expected_structure(values, columns, paint=paint)
 
         assert_frame_equal(_chain.structure.fillna('*'), _expected_structure)
+
 
 class TestChainAddRepaint:
     def test_str(self, chain_for_structure, params_structure):
@@ -367,4 +381,3 @@ class TestChainAddRepaint:
 
             assert_frame_equal(_chain.structure.fillna('*'),
                                _expected_structure)
-
