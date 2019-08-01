@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import os
-import time
 import pytest
 
 import numpy as np
 import pandas as pd
-from itertools import count, izip
+from itertools import izip
 
 from quantipy.core.stack import Stack
 from quantipy.core.dataset import DataSet
@@ -114,7 +113,6 @@ def chain_for_structure(dataset, basic_chain):
     del basic_chain
 
 
-# @pytest.fixture(scope='function')
 def chain_structure(chain_for_structure, paint=False, sep=None):
     if paint:
         chain_for_structure.paint_all(sep=sep or '. ',
@@ -124,7 +122,6 @@ def chain_structure(chain_for_structure, paint=False, sep=None):
     return next(it)
 
 
-# @pytest.fixture(scope='function')
 def expected_structure(values, columns, paint=False):
     _expected = pd.DataFrame(np.array(values).T, columns=columns)
     _expected.iloc[:, 0] = pd.to_numeric(_expected.iloc[:, 0])
@@ -134,14 +131,12 @@ def expected_structure(values, columns, paint=False):
     return _expected
 
 
-# @pytest.fixture(scope='function')
 def multi_index(tuples):
     names = ['Question', 'Values'] * (len(tuples[0]) / 2)
     _index = pd.MultiIndex.from_tuples(tuples, names=names)
     return _index
 
 
-# @pytest.fixture(scope='function')
 def frame(values, index, columns):
     _frame = pd.DataFrame(values, index=index, columns=columns)
     return _frame
@@ -175,6 +170,7 @@ class TestChainExceptions:
                   "['erdbeer', 'bananana']")
         assert expect == caplog.records[0].message
 
+
 @pytest.yield_fixture(
     scope='class',
     params=[
@@ -200,7 +196,7 @@ class TestChainGet:
         'x|f|:|||counts',
         'x|d.mean|x:|||mean',
         'x|d.median|x:|||median',
-         'x|f.c:f|x:|||counts_sum']
+        'x|f.c:f|x:|||counts_sum']
 
     _VIEW_SIG_KEYS = [
         'x|f|x:|||cbase',
@@ -215,6 +211,7 @@ class TestChainGet:
                                incl_tests=False, incl_sum=False)
 
         for chain, args in izip(chains, expected):
+            print args
 
             values, index, columns, pindex, pcolumns, chain_str = args
 
