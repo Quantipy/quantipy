@@ -514,7 +514,7 @@ class TestStackObject:
             assert os.path.exists(path_stack)
             assert os.path.exists(path_cache)
 
-            new_stack = Stack.load(path_stack, compression=compression, load_cache=True)
+            new_stack = Stack.load(path_stack, compression, load_cache=True)
             for k in stack.keys():
                 assert k in new_stack
 
@@ -535,6 +535,55 @@ class TestStackObject:
                 assert not id(caches[key]) == id(new_stack[key].cache)
             os.remove(path_stack)
             os.remove(path_cache)
+
+    def test_save_load_stack_improved(self, stack):
+        """
+        This tests save/load methods using dataframes and
+        verifies that the source data is still intact after load
+        and that the structure, meta and data attributes and views are intact.
+        """
+        path_stack = "{}{}.stack".format(PATH, FILENAME)
+        compressiontype = [None, "gzip"]
+
+        # Ensure that the stack has the correct structure, attributes
+        # and views.
+        for dk in stack.keys():
+            # Does the loaded stack actually have the data and meta attributes
+            assert hasattr(stack[dk], "data")
+            assert hasattr(stack[dk], "meta")
+            assert isinstance(stack[dk].data, pd.DataFrame)
+
+        # Save and load the stack and test that everything is still available,
+        # the loaded stack has the same views, attributes as the generated one
+        for compression in compressiontype:
+            if os.path.exists(path_stack):
+                os.remove(path_stack)
+            assert not os.path.exists(path_stack)
+            stack.save(path_stack=path_stack, compression=compression)
+            assert os.path.exists(path_stack)
+            loaded_stack = Stack.load(path_stack, compression=compression)
+            # Ensure that it is not the same stack (in memory)
+            assert not id(loaded_stack) == id(stack)
+            # Test all of the keys in the loaded stack
+            for dk in loaded_stack:
+                # Does the loaded stack actually have the data and meta attr
+                assert hasattr(loaded_stack[dk], "data")
+                assert hasattr(loaded_stack[dk], "meta")
+                assert isinstance(loaded_stack[dk].data, pd.DataFrame)
+
+                # Verify that the metadata is also loaded
+                assert loaded_stack[dk].meta == stack[dk].meta
+                assert not id(loaded_stack[dk].meta) == (stack[dk].meta)
+
+                for fk in loaded_stack[dk]:
+                    for x in loaded_stack[dk][fk]:
+                        for y in loaded_stack[dk][fk][x]:
+                            for view in loaded_stack[dk][fk][x][y]:
+                                v1 = stack[dk][fk][x][y][view]
+                                v2 = loaded_stack[dk][fk][x][y][view]
+                                assert type(v1) == type(v2)
+            if os.path.exists(path_stack):
+                os.remove(path_stack)
 
     def test_stack_aggregate(self):
         b1, ds = _get_batch("test1", full=True)

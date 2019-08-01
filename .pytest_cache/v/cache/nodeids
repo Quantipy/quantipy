@@ -35,6 +35,7 @@
   "tests/test_stack.py::TestStackObject::test_save_dataset", 
   "tests/test_stack.py::TestStackObject::test_save_describe", 
   "tests/test_stack.py::TestStackObject::test_save_and_load_with_and_without_cache", 
+  "tests/test_stack.py::TestStackObject::test_save_load_stack_improved", 
   "tests/test_stack.py::TestStackObject::test_stack_aggregate", 
   "tests/test_stack.py::TestStackObject::test_cumulative_sum", 
   "tests/test_stack.py::TestStackObject::test_add_nets", 
