@@ -886,68 +886,6 @@ class Relations(Multivariate):
         final.index.name = 'Correlation'
         return final
 
-##############################################################################
-
-class Link(Quantity, dict):
-    def __init__(self, ds, filters=None, x=None, y=None, views=None):
-        self.ds_key = ds.name
-        self.filters = filters
-        self.x = x
-        self.y = y
-        self.id = '[{}][{}][{}][{}]'.format(self.ds_key, self.filters, self.x,
-                                            self.y)
-        self.stack_connection = False
-        self.quantified = False
-        self._quantify(ds)
-        #---------------------------------------------------------------------
-
-    def _clear(self):
-        ds_key, filters, x, y = self.ds_key, self.filters, self.x, self.y
-        _id, stack_connection = self.id, self.stack_connection
-        dataset, data, meta, cache = self.dataset, self.data, self.meta, self.cache
-        self.__dict__.clear()
-        self.ds_key, self.filters, self.x, self.y = ds_key, filters, x, y
-        self.id, self.stack_connection = _id, stack_connection
-        return None
-
-    def _quantify(self, ds):
-        # Establish connection to source dataset components when in Stack-mode
-        def dataset():
-            """
-            Ensure a Link is able to track back to its orignating dataset.
-            """
-            return ds
-        def data():
-            """
-            Ensure a Link is able to track back to its orignating case data.
-            """
-            return ds.data()
-        def meta():
-            """
-            Ensure a Link is able to track back to its orignating meta data.
-            """
-            return ds.meta()
-        def cache():
-            """
-            Ensure a Link is able to track back to its cached data vectors.
-            """
-            return ds.cache()
-        self.dataset = dataset
-        self.data = data
-        self.meta = meta
-        self.cache = cache
-        Quantity.__init__(self, self)
-        return None
-
-#     def __repr__(self):
-#         info = 'Link - id: {}\nquantified: {} | stack connected: {} | views: {}'
-#         return info.format(self.id, self.quantified, self.stack_connection,
-#                            len(self.values()))
-
-    def describe(self):
-        described = pd.Series(self.keys(), name=self.id)
-        described.index.name = 'views'
-        return described
 
 ##############################################################################
 
