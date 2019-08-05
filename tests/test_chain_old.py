@@ -15,7 +15,7 @@ class TestChainOldObject(unittest.TestCase):
 
     def setUp(self):
         self.path = './tests/'
-        self.path_chain = './temp.chain'.format(self.path)
+        self.path_chain = './tests/temp.chain'.format(self.path)
         project_name = 'Example Data (A)'
 
         # Load Example Data (A) data and meta into self
