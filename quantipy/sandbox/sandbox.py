@@ -83,54 +83,6 @@ class Chain(ChainCore):
         warnings.warn(msg, DeprecationWarning)
         super(Chain, self).__init__(stack, name, structure=None)
 
-
-
-# class MTDChain(Chain):
-#     def __init__(self, mtd_doc, name=None):
-#         super(MTDChain, self).__init__(stack=None, name=name, structure=None)
-#         self.mtd_doc = mtd_doc
-#         self.source = 'Dimensions MTD'
-#         self.get = self._get
-
-
-#     def _get(self, ignore=None, labels=True):
-#         per_folder = OrderedDict()
-#         failed = []
-#         unsupported = []
-#         for name, tab_def in self.mtd_doc.items():
-#             try:
-#                 if isinstance(tab_def.values()[0], dict):
-#                     unsupported.append(name)
-#                 else:
-#                     tabs = split_tab(tab_def)
-#                     chain_dfs = []
-#                     for tab in tabs:
-#                         df, meta = tab[0], tab[1]
-#                         # SOME DFs HAVE TOO MANY / UNUSED LEVELS...
-#                         if len(df.columns.levels) > 2:
-#                             df.columns = df.columns.droplevel(0)
-#                         x, y = _get_axis_vars(df)
-#                         df.replace('-', np.NaN, inplace=True)
-#                         relabel_axes(df, meta, labels=labels)
-#                         df = df.drop('Base', axis=1, level=1)
-#                         try:
-#                             df = df.applymap(lambda x: float(x.replace(',', '.')
-#                                              if isinstance(x, (str, unicode)) else x))
-#                         except:
-#                             msg = "Could not convert df values to float for table '{}'!"
-#                             # warnings.warn(msg.format(name))
-#                         chain_dfs.append(to_chain((df, x, y), meta))
-#                     per_folder[name] = chain_dfs
-#             except:
-#                 failed.append(name)
-#         print 'Conversion failed for:\n{}\n'.format(failed)
-#         print 'Subfolder conversion unsupported for:\n{}'.format(unsupported)
-#         return per_folder
-
-
-
-
-
 ##############################################################################
 
 class Quantity(object):
