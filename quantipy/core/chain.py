@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import re
 import copy
 import string
 
 import numpy as np
 import pandas as pd
 
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 from quantipy.core.chainannotations import ChainAnnotations
 from quantipy.core.rules import Rules
@@ -1473,8 +1474,9 @@ class Chain(object):
                         colpcts = colpcts + ["__viewlike__"]
                         rowpcts = rowpcts + ["__viewlike__"]
                 dims = self._frame.shape
+                is_counts_colpct = ci in ["counts_colpct", "colpct_counts"]
                 for row in range(0, dims[0]):
-                    if ci in ["counts_colpct", "colpct_counts"] and self._grouping:
+                    if is_counts_colpct and self._grouping:
                         if row % 2 == 0:
                             if self._counts_first():
                                 vc = counts
@@ -1510,7 +1512,8 @@ class Chain(object):
                 if isinstance(v, tuple):
                     new_v = list(new_v)
                 if new_v:
-                    if len(new_v) == 1: new_v = new_v[0]
+                    if len(new_v) == 1:
+                        new_v = new_v[0]
                     if not flat:
                         clean_view_list.append(new_v)
                     else:
@@ -1544,7 +1547,7 @@ class Chain(object):
                     is_c_pct_cumsum=self._is_c_pct_cumsum(parts),
                     is_net=self._is_net(parts),
                     is_block=self._is_block(parts),
-                    is_calc_only = self._is_calc_only(parts),
+                    is_calc_only=self._is_calc_only(parts),
                     is_mean=self._is_mean(parts),
                     is_stddev=self._is_stddev(parts),
                     is_min=self._is_min(parts),
@@ -1574,10 +1577,12 @@ class Chain(object):
         repeat = self.ci_count
         return (start, repeat)
 
-    def _view_idxs(self, view_tags, keep_tests=True, keep_bases=True, names=False, ci=None):
+    def _view_idxs(self, view_tags, keep_tests=True, keep_bases=True,
+                   names=False, ci=None):
         """
         """
-        if not isinstance(view_tags, list): view_tags = [view_tags]
+        if not isinstance(view_tags, list):
+            view_tags = [view_tags]
         rowmeta = self.named_rowmeta
         nested = self.array_style == 0
         if nested:
@@ -1612,7 +1617,8 @@ class Chain(object):
         order = []
         for i, row in enumerate(rows):
             if any([invalid in row[1] for invalid in invalids]):
-                if not (row[0] == "All" and keep_bases): continue
+                if not (row[0] == "All" and keep_bases):
+                    continue
             if row[0] in view_tags:
                 order.append(view_tags.index(row[0]))
                 idxs.append(i)
@@ -1622,12 +1628,12 @@ class Chain(object):
                     names.append(self._views_per_rows[i])
         return (idxs, order) if not names else (idxs, names, order)
 
-
     @staticmethod
     def _remove_grouped_blanks(viewindex_labs):
         """
         """
         full = []
+        last = None
         for v in viewindex_labs:
             if v == "":
                 full.append(last)
@@ -1635,19 +1641,6 @@ class Chain(object):
                 last = v
                 full.append(last)
         return full
-
-    def _slice_edited_index(self, axis, positions):
-        """
-        """
-        l_zero = axis.get_level_values(0).values.tolist()[0]
-        l_one = axis.get_level_values(1).values.tolist()
-        l_one = [l_one[p] for p in positions]
-        axis_tuples = [(l_zero, lab) for lab in l_one]
-        if self.array_style == 0:
-            names = ["Array", "Questions"]
-        else:
-            names = ["Question", "Values"]
-        return pd.MultiIndex.from_tuples(axis_tuples, names=names)
 
     def _non_grouped_axis(self):
         """
@@ -1677,9 +1670,9 @@ class Chain(object):
             n = self._frame.index.get_level_values(1).values.tolist()
             n = self._remove_grouped_blanks(n)
             mapped = zip(n, d)
-        if not self.painted: self.toggle_labels()
+        if not self.painted:
+            self.toggle_labels()
         return mapped
-
 
     def _is_default(self, parts):
         return parts[-1] == "default"
@@ -1697,10 +1690,11 @@ class Chain(object):
         return parts[-1] == "cbase_gross"
 
     def _is_base(self, parts):
-        return (self._is_c_base(parts) or
-                self._is_c_base_gross(parts) or
-                self._is_e_base(parts) or
-                self._is_r_base(parts))
+        return any([
+            self._is_c_base(parts),
+            self._is_c_base_gross(parts),
+            self._is_e_base(parts),
+            self._is_r_base(parts)])
 
     def _is_counts(self, parts):
         return parts[1].startswith("f") and parts[3] == ""
@@ -1715,14 +1709,18 @@ class Chain(object):
         return parts[-1] == "res_c%"
 
     def _is_net(self, parts):
-        return parts[1].startswith(("f", "f.c:f", "t.props")) and \
-               len(parts[2]) > 3 and not parts[2] == "x++"
+        cond1 = parts[1].startswith(("f", "f.c:f", "t.props"))
+        cond2 = len(parts[2]) > 3
+        cond3 = not parts[2] == "x++"
+        return cond1 and cond2 and cond3
 
     def _is_calc_only(self, parts):
         if self._is_net(parts) and not self._is_block(parts):
-            return ((self.__has_freq_calc(parts) or
-                     self.__is_calc_only_propstest(parts)) and not
-                    (self._is_counts_sum(parts) or self._is_c_pct_sum(parts)))
+            cond1 = self.__has_freq_calc(parts)
+            cond2 = self.__is_calc_only_propstest(parts)
+            cond3 = self._is_counts_sum(parts)
+            cond4 = self._is_c_pct_sum(parts)
+            return ((cond1 or cond2) and not (cond3 or cond4))
         else:
             return False
 
@@ -1751,7 +1749,8 @@ class Chain(object):
     def __has_operator_expr(self, parts):
         e = parts[2]
         for syntax in ["]*:", "[+{", "}+"]:
-            if syntax in e: e = e.replace(syntax, "")
+            if syntax in e:
+                e = e.replace(syntax, "")
         ops = ["+", "-", "*", "/"]
         return any(len(e.split(op)) > 1 for op in ops)
 
@@ -1844,9 +1843,14 @@ class Chain(object):
         else:
             idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        block_net_vk = [v for v in vpr if len(v.split("|")[2].split("["))>2 or
-                        "[+{" in v.split("|")[2] or "}+]" in v.split("|")[2]]
-        has_calc = any([v.split("|")[1].startswith("f.c") for v in block_net_vk])
+        block_net_vk = [
+            v for v in vpr
+            if any([
+                len(v.split("|")[2].split("[")) > 2,
+                "[+{" in v.split("|")[2],
+                "}+]" in v.split("|")[2]])]
+        has_calc = any([
+            v.split("|")[1].startswith("f.c") for v in block_net_vk])
         is_tested = any(v.split("|")[1].startswith("t.props") for v in vpr)
         if block_net_vk:
             expr = block_net_vk[0].split("|")[2]
@@ -1855,12 +1859,14 @@ class Chain(object):
             expanded_codes = []
         for idx, m in enumerate(idx_view_map):
             if idx_view_map[idx][0] == "":
-                idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
+                idx_view_map[idx] = (
+                    idx_view_map[idx - 1][0], idx_view_map[idx][1])
         for idx, row in enumerate(description):
-            if not "is_block" in row:
+            if "is_block" not in row:
                 idx_view_map[idx] = None
         blocks_len = len(expr.split("],")) * (self.ci_count + is_tested)
-        if has_calc: blocks_len -= (self.ci_count + is_tested)
+        if has_calc:
+            blocks_len -= (self.ci_count + is_tested)
         block_net_def = []
         described_nets = 0
         for e in idx_view_map:
@@ -1879,7 +1885,8 @@ class Chain(object):
                         block_net_def.append("normal")
             else:
                 block_net_def.append(e)
-        if repaint: self.toggle_labels()
+        if repaint:
+            self.toggle_labels()
         return block_net_def
 
     def _toggle_bases(self, keep_weighted=True):
@@ -1907,12 +1914,14 @@ class Chain(object):
         df = self._frame
 
         if is_array:
-            cols = [col for x, col in enumerate(df.columns.tolist())
-                    if not x in drop_rows]
+            cols = [
+                col for x, col in enumerate(df.columns.tolist())
+                if x not in drop_rows]
             df = df.loc[:, cols]
         else:
-            rows = [row for x, row in enumerate(df.index.tolist())
-                    if not x in drop_rows]
+            rows = [
+                row for x, row in enumerate(df.index.tolist())
+                if x not in drop_rows]
             df = df.loc[rows, :]
 
         self._frame = df
@@ -1957,6 +1966,7 @@ class Chain(object):
             return obj
         return [obj]
 
+
 class _TransformedChainDF(object):
 
     def __init__(self, chain):
@@ -1989,8 +1999,9 @@ class _TransformedChainDF(object):
             return (levels / 2) + 1
 
     def _insert_viewlikes(self, new_index_flat, org_index_mapped):
-        inserts = [new_index_flat.index(val) for val in new_index_flat
-                   if not val in org_index_mapped.values()]
+        inserts = [
+            new_index_flat.index(val) for val in new_index_flat
+            if val not in org_index_mapped.values()]
         flatviews = []
         for name, no in self.org_views.items():
             e = [name] * no
@@ -2000,7 +2011,8 @@ class _TransformedChainDF(object):
         new_views = OrderedDict()
         no_of_views = Counter(flatviews)
         for fv in flatviews:
-            if not fv in new_views: new_views[fv] = no_of_views[fv]
+            if fv not in new_views:
+                new_views[fv] = no_of_views[fv]
         return new_views
 
     def _updated_index_tuples(self, axis):
@@ -2024,7 +2036,9 @@ class _TransformedChainDF(object):
         i = d = 0
         new_tuples = []
         for merged_val in merged:
-            idx = i-d if i-d != len(org_tuples) else i-d-1
+            idx = i - d
+            if not idx == len(org_tuples):
+                idx -= 1
             if org_tuples[idx][1] == merged_val:
                 new_tuples.append(org_tuples[idx])
             else:
