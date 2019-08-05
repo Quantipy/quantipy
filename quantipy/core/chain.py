@@ -214,7 +214,7 @@ class Chain(object):
             axis = int(self.orientation == "x")
             self._frame = pd.concat(self._pad(x_frames), axis=axis)
 
-            if self._group_style == "reduced" and self.array_style >- 1:
+            if self._group_style == "reduced" and self.array_style > -1:
                 scan_views = [v if isinstance(v, (tuple, list)) else [v]
                               for v in self._given_views]
                 scan_views = [v for v in scan_views if len(v) > 1]
@@ -351,7 +351,7 @@ class Chain(object):
                     self._text_map[name] = name
                     if view._custom_txt:
                         statname = agg["fullname"].split("|")[1].split(".")[1]
-                        if not statname in self._custom_texts:
+                        if statname not in self._custom_texts:
                             self._custom_texts[statname] = []
                         self._custom_texts[statname].append(view._custom_txt)
                 if agg["text"]:
@@ -407,7 +407,7 @@ class Chain(object):
         for i in index_order:
             grouped_df = gb_df.get_group(i)
             if group_type == "reduced":
-                grouped_df = self._reduce_grouped_index(grouped_df, length-1)
+                grouped_df = self._reduce_grouped_index(grouped_df, length - 1)
             grouped_frame.append(grouped_df)
         grouped_frame = pd.concat(grouped_frame, verify_integrity=False)
         return grouped_frame
@@ -425,7 +425,7 @@ class Chain(object):
             indexed = []
             val = idx.get_level_values(1).tolist()
             for v in val:
-                if not v in indexed or v == "All":
+                if v not in indexed or v == "All":
                     grp_vals.append(v)
                     indexed.append(v)
                 else:
@@ -453,14 +453,15 @@ class Chain(object):
         return self._pad_id
 
     def _pad_frames(self, frames):
-        empty_frame = lambda f: pd.DataFrame(index=f.index, columns=f.columns)
+        def _empty_frame(f):
+            return pd.DataFrame(index=f.index, columns=f.columns)
 
         max_lab = max(f.axes[self.array_style].size for f in frames)
 
         for e, f in enumerate(frames):
             size = f.axes[self.array_style].size
             if size < max_lab:
-                f = pd.concat([f, empty_frame(f)], axis=self.array_style)
+                f = pd.concat([f, _empty_frame(f)], axis=self.array_style)
                 order = [None] * (size * 2)
                 order[::2] = list(xrange(size))
                 order[1::2] = list(xrange(size, size * 2))
@@ -722,19 +723,19 @@ class Chain(object):
                     }
                     series = self.structure[col]
                     try:
-                        series = (series.str.split(";")
-                            .apply(pd.Series, 1)
-                            .stack(dropna=False)
-                            .map(value_mapper.get)
-                            .unstack())
+                        series = series.str.split(";")
+                        series = series.apply(pd.Series, 1)
+                        series = series.stack(dropna=False)
+                        series = series.map(value_mapper.get)
+                        series = series.unstack()
                         first = series[series.columns[0]]
                         rest = [series[c] for c in series.columns[1:]]
-                        self.structure[col] = (first
-                            .str.cat(rest, sep=", ", na_rep="")
-                            .str.slice(0, -2)
-                            .replace(to_replace=pattern, value="", regex=True)
-                            .replace(to_replace="", value=na_rep)
-                        )
+                        first = first.str.cat(rest, sep=", ", na_rep="")
+                        first = first.str.slice(0, -2)
+                        first = first.replace(
+                            to_replace=pattern, value="", regex=True)
+                        first = first.replace(to_replace="", value=na_rep)
+                        self.structure[col] = first
                     except AttributeError, e:
                         logger.debug(e)
                         continue
@@ -743,8 +744,9 @@ class Chain(object):
                         item["value"]: item["text"][text_key]
                         for item in values
                     }
-                    self.structure[col] = (self.structure[col]
-                        .map(value_mapper.get, na_action="ignore"))
+                    self.structure[col] = (
+                        self.structure[col].map(
+                            value_mapper.get, na_action="ignore"))
             self.structure[col].fillna(na_rep, inplace=True)
         self.structure.rename(columns=mapper, inplace=True)
 
@@ -769,9 +771,9 @@ class Chain(object):
             char_repr = "upper"
         has_total = "@" in self._y_keys
         if self._nested_y:
-            df, questions = self._temp_nest_index(df)
-        else:
-            questions = self._y_keys
+            df, _ = self._temp_nest_index(df)
+        # else:
+        #     questions = self._y_keys
         all_num = number_codes if not has_total else [0] + number_codes[1:]
 
         # Set the new column header (ABC, ...)
@@ -789,7 +791,8 @@ class Chain(object):
                 question = col[1]
             else:
                 question = col[0]
-            if not question in test_dict: test_dict[question] = {}
+            if question not in test_dict:
+                test_dict[question] = {}
             number = all_num[num_idx]
             letter = col[1]
             test_dict[question][number] = letter
@@ -828,14 +831,14 @@ class Chain(object):
         i = -1
         for col in df.columns.values:
             flat_col_lab = "".join(str(col[:-1])).strip()
-            if not flat_col_lab in flat_cols:
+            if flat_col_lab not in flat_cols:
                 i += 1
                 order_idx.append(i)
                 flat_cols.append(flat_col_lab)
             else:
                 order_idx.append(i)
         # Drop unwanted levels (keep last Values Index-level in that process)
-        levels = list(range(0, df.columns.nlevels-1))
+        levels = list(range(0, df.columns.nlevels - 1))
         drop_levels = levels[:-2] + [levels[-1]]
         df.columns = df.columns.droplevel(drop_levels)
         # Apply the new flat labels and resort the columns
@@ -857,7 +860,7 @@ class Chain(object):
                 extend_abc = ["{}{}".format(letter, l) for l in abc]
                 letters.extend(extend_abc)
         if incl_total:
-            letters = ["@"] + letters[:no_of_cols-1]
+            letters = ["@"] + letters[:no_of_cols - 1]
         else:
             letters = letters[:no_of_cols]
         return letters
@@ -865,13 +868,12 @@ class Chain(object):
     @staticmethod
     def _replace_test_results(df, replacement_map, char_repr):
         """
-        Swap all digit-based results with letters referencing the column header.
+        Swap all digit-based results with letters referencing the column header
 
         .. note:: The modified df will be stripped of all indexing on both rows
         and columns.
         """
-        all_dfs  = []
-        ignore = False
+        all_dfs = []
         for col in replacement_map.keys():
             target_col = df.columns[0] if col == "@" else col
             value_df = df[[target_col]].copy()
@@ -893,9 +895,11 @@ class Chain(object):
                         else:
                             case = "up"
                     for no, l in sorted(r.items(), reverse=True):
-                        v = [char.replace(str(no), l if case == "up" else l.lower())
-                             if isinstance(char, (str, unicode))
-                             else char for char in v]
+                        v = [
+                            char.replace(
+                                str(no), l if case == "up" else l.lower())
+                            if isinstance(char, (str, unicode))
+                            else char for char in v]
 
                     new_values.append(v)
                 else:
@@ -906,16 +910,19 @@ class Chain(object):
         # Clean it up
         letter_df.replace("-", np.NaN, inplace=True)
         for signs in [("[", ""), ("]", ""), (", ", ".")]:
-            letter_df = letter_df.applymap(lambda x: x.replace(signs[0], signs[1])
-                                           if isinstance(x, (str, unicode)) else x)
+            letter_df = letter_df.applymap(
+                lambda x:
+                    x.replace(signs[0], signs[1])
+                    if isinstance(x, (str, unicode)) else x)
         return letter_df
 
     def _siglevel_on_row(self):
         vpr = self._views_per_rows
         tests = [(no, v) for no, v in enumerate(vpr)
                  if v.split("|")[1].startswith("t.")]
-        s = [(t[0],
-              float(int(t[1].split("|")[1].split(".")[3].split("+")[0]))/100.0)
+        s = [(
+            t[0], float(
+                int(t[1].split("|")[1].split(".")[3].split("+")[0])) / 100.0)
              for t in tests]
         return s
 
@@ -925,7 +932,7 @@ class Chain(object):
         idx = df.columns
         for i, l in zip(idx, self.sig_test_letters):
             new_tuples.append(i + (l, ))
-        if not "Test-IDs" in org_names:
+        if "Test-IDs" not in org_names:
             org_names.append("Test-IDs")
         mi = pd.MultiIndex.from_tuples(new_tuples, names=org_names)
         df.columns = mi
@@ -956,8 +963,6 @@ class Chain(object):
         """
         Paint the Chain.dataframe.index1
         """
-        error = "No text keys from {} found in {}"
-        level_0_text, level_1_text = [], []
         nlevels = index.nlevels
 
         if nlevels > 2:
@@ -996,7 +1001,8 @@ class Chain(object):
                 if value in self._text_map.keys():
                     value = self._text_map[value]
                 else:
-                    text = self._get_text(value, text_keys[axis], exclude_mask_text)
+                    text = self._get_text(
+                        value, text_keys[axis], exclude_mask_text)
                     if axis in display:
                         if transform_column_names:
                             value = transform_column_names.get(value, value)
@@ -1115,8 +1121,8 @@ class Chain(object):
                 base_value = self._transl[tk_transl]["gross All"]
             elif basetype == "ebase":
                 base_value = "Effective base"
-            elif not bases or (bases == "simple-no-items" and
-                               self._is_mask_item):
+            elif not bases or all([bases == "simple-no-items",
+                                   self._is_mask_item]):
                 base_value = self._transl[tk_transl]["All"]
             else:
                 key = tk
@@ -1195,12 +1201,12 @@ class Chain(object):
         levels = [t.split("|")[1].split(".")[3] for t in sigs]
         sig_levels = {}
         for m in zip(tests, levels):
-            l = ".{}".format(m[1])
+            le = ".{}".format(m[1])
             t = m[0]
             if t in sig_levels:
-                sig_levels[t].append(l)
+                sig_levels[t].append(le)
             else:
-                sig_levels[t] = [l]
+                sig_levels[t] = [le]
         return sig_levels
 
     @property
@@ -1216,18 +1222,24 @@ class Chain(object):
                         del check_views[v]
 
             non_freqs = ("d.", "t.")
-            c = any(v.split("|")[3] == "" and
-                    not v.split("|")[1].startswith(non_freqs) and
-                    not v.split("|")[-1].startswith("cbase")
-                    for v in check_views)
-            col_pct = any(v.split("|")[3] == "y" and
-                          not v.split("|")[1].startswith(non_freqs) and
-                          not v.split("|")[-1].startswith("cbase")
-                          for v in check_views)
-            row_pct = any(v.split("|")[3] == "x" and
-                          not v.split("|")[1].startswith(non_freqs) and
-                          not v.split("|")[-1].startswith("cbase")
-                          for v in check_views)
+            c = any(
+                all([
+                    v.split("|")[3] == "",
+                    not v.split("|")[1].startswith(non_freqs),
+                    not v.split("|")[-1].startswith("cbase")])
+                for v in check_views)
+            col_pct = any(
+                all([
+                    v.split("|")[3] == "y",
+                    not v.split("|")[1].startswith(non_freqs),
+                    not v.split("|")[-1].startswith("cbase")])
+                for v in check_views)
+            row_pct = any(
+                all([
+                    v.split("|")[3] == "x",
+                    not v.split("|")[1].startswith(non_freqs),
+                    not v.split("|")[-1].startswith("cbase")])
+                for v in check_views)
             c_colpct = c and col_pct
             c_rowpct = c and row_pct
             c_colrow_pct = c_colpct and c_rowpct
@@ -1337,17 +1349,21 @@ class Chain(object):
                     if "+@" in level:
                         level = level.split("+@")[0]
                         against_total = True
-                    l = "{}%".format(int(100. - float(level.split(".")[1])))
-                    if l not in levels:
-                        levels.append(l)
+                    le = "{}%".format(int(100. - float(level.split(".")[1])))
+                    if le not in levels:
+                        levels.append(le)
 
-            cd_str = cd_str[:-1] + ", " + cd["str"] +"), "
-            cd_str += "%s (%s, (%s): %s" % (cd["stats"], test_types, ", ".join(levels), mapped)
+            cd_str = cd_str[:-1] + ", " + cd["str"] + "), "
+            cd_str += "{} ({}, ({}): {}".format(
+                cd["stats"], test_types, ", ".join(levels), mapped)
             if self._flag_bases:
                 flags = ([], [])
-                [(flags[0].append(min), flags[1].append(small)) for min, small in self._flag_bases]
-                cd_str += ", %s: %s (**), %s: %s (*)" % (cd["mb"], ", ".join(map(str, flags[0])),
-                                                         cd["sb"], ", ".join(map(str, flags[1])))
+                for m, small in self._flag_bases:
+                    flags[0].append(m)
+                    flags[1].append(small)
+                cd_str += ", {}: {} (**), {}: {} (*)".format(
+                    cd["mb"], ", ".join(map(str, flags[0])),
+                    cd["sb"], ", ".join(map(str, flags[1])))
             cd_str += ")"
 
         cd_str = [cd_str]
@@ -1360,8 +1376,9 @@ class Chain(object):
         def _describe(cell_defs, row_id):
             descr = []
             for r, m in cell_defs.items():
-                descr.append(
-                    [k if isinstance(v, bool) else v for k, v in m.items() if v])
+                descr.append([
+                    k if isinstance(v, bool) else v
+                    for k, v in m.items() if v])
             if any("is_block" in d for d in descr):
                 blocks = self._describe_block(descr, row_id)
                 calc = "calc" in blocks
@@ -1370,7 +1387,8 @@ class Chain(object):
                         d.append(b) if not calc else d.extend([b, "has_calc"])
             return descr
         if self._array_style == 0:
-            description = {k: _describe(v, k) for k, v in self.contents.items()}
+            description = {
+                k: _describe(v, k) for k, v in self.contents.items()}
         else:
             description = _describe(self.contents, None)
         return description
@@ -1454,21 +1472,21 @@ class Chain(object):
                                 metrics.extend(view * size)
             else:
                 counts = []
-                colpcts =  []
+                colpcts = []
                 rowpcts = []
                 metrics = []
                 ci = self.cell_items
                 for v in self.views.keys():
                     if not v.startswith("__viewlike__"):
                         parts = v.split("|")
-                        is_completed = "]*:" in v
                         if not self._is_c_pct(parts):
-                            counts.extend([v]*self.views[v])
+                            counts.extend([v] * self.views[v])
                         if self._is_r_pct(parts):
-                            rowpcts.extend([v]*self.views[v])
-                        if (self._is_c_pct(parts) or self._is_base(parts) or
-                            self._is_stat(parts)):
-                            colpcts.extend([v]*self.views[v])
+                            rowpcts.extend([v] * self.views[v])
+                        if any([self._is_c_pct(parts),
+                                self._is_base(parts),
+                                self._is_stat(parts)]):
+                            colpcts.extend([v] * self.views[v])
                     else:
                         counts = counts + ["__viewlike__"]
                         colpcts = colpcts + ["__viewlike__"]
