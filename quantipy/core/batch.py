@@ -1372,9 +1372,6 @@ class Batch(DataSet):
                     if not repl:
                         repl = np.NaN
                     dataset._data.replace(target, repl, inplace=True)
-            if oe['drop_empty']:
-                dataset._data.dropna(
-                    subset=oe['columns'], how='all', inplace=True)
             if not oe['incl_nan']:
                 for col in oe['columns']:
                     dataset._data[col].replace(np.NaN, '', inplace=True)
