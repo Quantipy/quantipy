@@ -2389,9 +2389,12 @@ class DataSet(object):
 
     def _add_secure_variables(self):
         """ Add variables in the CSV missing from the data-file set """
+        ignore = ['@1', "id_L1"]
         actual = []
         for item in self._meta['sets']['data file']['items']:
             key, name = item.split('@')
+            if name in ignore:
+                continue
             if key == 'columns':
                 actual.append(name)
             elif key == 'masks':
@@ -2402,7 +2405,9 @@ class DataSet(object):
         expected = self._data.columns.values.tolist()
 
         for col in expected:
-            if col not in actual and col != '@1':
+            if col in ignore:
+                continue
+            if col not in actual:
                 print('Adding {}'.format(col))
                 items = self._meta['sets']['data file']['items']
                 items.append('columns@{}'.format(col))
