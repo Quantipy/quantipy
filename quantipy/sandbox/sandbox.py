@@ -1800,6 +1800,7 @@ class Chain(object):
             self.df = c._frame
             self._org_idx = self.df.index
             self._edit_idx = range(0, len(self._org_idx))
+            self._painted_idx = c.index
             self._idx_valmap = {n: o for n, o in
                                 zip(self._edit_idx,
                                     self._org_idx.get_level_values(1))}
@@ -1807,6 +1808,7 @@ class Chain(object):
 
             self._org_col = self.df.columns
             self._edit_col = range(0, len(self._org_col))
+            self._painted_col = c.columns
             self._col_valmap = {n: o for n, o in
                                 zip(self._edit_col,
                                     self._org_col.get_level_values(1))}
@@ -1847,10 +1849,12 @@ class Chain(object):
                 current = self.df.columns.values.tolist()
                 mapped = self._col_valmap
                 org_tuples = self._org_col.tolist()
+                painted_tuples = self._painted_col.tolist()
             else:
                 current = self.df.index.values.tolist()
                 mapped = self._idx_valmap
                 org_tuples = self._org_idx.tolist()
+                painted_tuples = self._painted_idx.tolist()
             merged = [mapped[val] if val in mapped else val for val in current]
             # ================================================================
             if (self.array_mi and axis == 1) or axis == 0:
@@ -1860,19 +1864,22 @@ class Chain(object):
             # ================================================================
             i = d = 0
             new_tuples = []
+            new_painted_tuples = []
             for merged_val in merged:
                 idx = i-d if i-d != len(org_tuples) else i-d-1
                 if org_tuples[idx][1] == merged_val:
                     new_tuples.append(org_tuples[idx])
+                    new_painted_tuples.append(painted_tuples[idx])
                 else:
                     empties = ['*'] * self._nest_mul
                     new_tuple = tuple(empties + [merged_val])
                     new_tuples.append(new_tuple)
+                    new_painted_tuples.append(new_tuple)
                     d += 1
                 i += 1
-            return new_tuples
+            return new_tuples, new_painted_tuples
 
-        def _reindex(self):
+        def _reindex(self, chain):
             """
             """
             y_names = ['Question', 'Values']
@@ -1881,10 +1888,12 @@ class Chain(object):
             else:
                 x_names = ['Array', 'Questions']
             if self.nested_y: y_names = y_names * (self._nest_mul - 1)
-            tuples = self._updated_index_tuples(axis=1)
+            tuples, p_tuples = self._updated_index_tuples(axis=1)
             self.df.columns = pd.MultiIndex.from_tuples(tuples, names=y_names)
-            tuples = self._updated_index_tuples(axis=0)
+            chain.columns = pd.MultiIndex.from_tuples(p_tuples, names=y_names)
+            tuples, p_tuples = self._updated_index_tuples(axis=0)
             self.df.index = pd.MultiIndex.from_tuples(tuples, names=x_names)
+            chain.index = pd.MultiIndex.from_tuples(p_tuples, names=x_names)
             return None
 
     def export(self):
@@ -1897,7 +1906,7 @@ class Chain(object):
         """
         if not isinstance(transformed_chain_df, self._TransformedChainDF):
             raise ValueError("Must pass an exported ``Chain`` instance!")
-        transformed_chain_df._reindex()
+        transformed_chain_df._reindex(self)
         self._frame = transformed_chain_df.df
         self.views = transformed_chain_df._transf_views
         return None
@@ -2695,10 +2704,16 @@ class Chain(object):
         else:
             idx = self.dataframe.index.get_level_values(1).tolist()
         idx_view_map = zip(idx, vpr)
-        block_net_vk = [v for v in vpr if len(v.split('|')[2].split('['))>2 or
-                        '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2]]
+
+        block_net_vk = [
+            v for v in vpr
+            if not v == "__viewlike__" and (
+                len(v.split('|')[2].split('['))>2 or
+                    '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2])]
+
         has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])
-        is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr)
+        is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr
+                        if not v == "__viewlike__" )
         if block_net_vk:
             expr = block_net_vk[0].split('|')[2]
             expanded_codes = set(map(int, re.findall(r'\d+', expr)))
@@ -3775,7 +3790,6 @@ class Chain(object):
             values = self._frame.values
             self._frame.loc[:, :] = self.frame_values
             self.frame_values = values
-
         return self
 
     @staticmethod
