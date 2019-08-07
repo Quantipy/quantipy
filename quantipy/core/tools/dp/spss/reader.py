@@ -203,6 +203,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             'name': mrset,
             'type': 'delimited set',
             'text': {text_key: metadata.multRespDefs[mrset]['label']},
+            'properties': {},
             'parent': {},
             'values': values}
         # Add the new delimited set to the 'data file' set
