@@ -12,7 +12,7 @@ from quantipy.core.cluster import Cluster
 from quantipy.core.chain_old import Chain
 from quantipy.core.helpers import functions as helpers
 from quantipy.core.tools.dp.io import unicoder
-from quantipy.core.builds.excel.formats.xlsx_formats import XlsxFormats
+from .formats.xlsx_formats import XlsxFormats
 import quantipy.core.cluster
 from xlsxwriter import Workbook
 from xlsxwriter.utility import xl_rowcol_to_cell

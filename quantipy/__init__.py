@@ -25,8 +25,8 @@ from quantipy.core.tools.dp.io import (
 
 from quantipy.core.quantify.engine import Quantity, Test
 
-from quantipy.core.builds.excel.excel_painter import ExcelPainter
+# from quantipy.core.builds.excel.excel_painter import ExcelPainter
 
-from quantipy.core.builds.powerpoint.pptx_painter import PowerPointPainter
+# from quantipy.core.builds.powerpoint.pptx_painter import PowerPointPainter
 
 from quantipy.version import version as __version__

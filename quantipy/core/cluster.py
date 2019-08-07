@@ -227,6 +227,9 @@ class Cluster(OrderedDict):
         for yk in yks:
             banked[yk] = []
             for c, chain in enumerate(chains):
+                print '*'*60
+                print chain
+                print chain.views
                 xk = chain.source_name
                 vk_temp = spec['items'][c]['view']
 #                 print xk, yk, vk_temp
