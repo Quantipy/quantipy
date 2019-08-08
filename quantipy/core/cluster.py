@@ -1,3 +1,8 @@
+
+###############################################################################
+# THIS MODULE WILL BE DEPRECATED SOON !
+###############################################################################
+
 from quantipy.core.chain_old import Chain
 import cPickle
 from collections import OrderedDict

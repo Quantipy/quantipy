@@ -9,3 +9,4 @@ filename =
     *chainannotations.py
     *chainmanager.py
     *stack.py
+    *view.py
