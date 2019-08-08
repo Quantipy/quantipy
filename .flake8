@@ -8,5 +8,6 @@ filename =
     *chain.py
     *chainannotations.py
     *chainmanager.py
+    *link.py
     *stack.py
     *view.py
