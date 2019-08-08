@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import quantipy as qp
 import copy
 import re
 import warnings
@@ -570,10 +569,10 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
     df : pandas.DataFrame
         The crosstab as a pandas DataFrame.
     """
-    stack = qp.Stack(name='ct', add_data={'ct': {'meta': meta, 'data': data}})
+    stack = Stack(name='ct', add_data={'ct': {'meta': meta, 'data': data}})
     stack.add_link(x=x, y=y)
     link = stack['ct']['no_filter'][x][y]
-    q = qp.Quantity(link, weight=weight).count()
+    q = Quantity(link, weight=weight).count()
     weight_notation = '' if weight is None else weight
     if get=='count':
         df = q.result
@@ -594,7 +593,7 @@ def crosstab(meta, data, x, y, get='count', decimals=1, weight=None,
         # if qp.OPTIONS['new_rules']:
             # new rules application
             # ----------------------------------------------------------------
-            view = qp.core.view.View(link, vk)
+            view = View(link, vk)
             view.dataframe = df
             link[vk] = view
             rulesobj = Rules(link, vk, axes=rules)

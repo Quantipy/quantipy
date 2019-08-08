@@ -1,5 +1,4 @@
 import pandas as pd
-import quantipy as qp
 import re
 
 def get_views(qp_structure):

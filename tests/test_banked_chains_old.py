@@ -290,7 +290,6 @@ class TestBankedChains(unittest.TestCase):
         os.remove(path_excel)
 
     def test_banked_chain_structure_unweighted(self):
-
         ################## Unweighted
         weight = None
         views_ref, chains = get_q5_chains(
