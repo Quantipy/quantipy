@@ -1332,7 +1332,7 @@ class Batch(DataSet):
                                     ds._meta['masks'][v].pop('rules')
                                 else:
                                     ds._meta['columns'][v].pop('rules')
-        self.set_text_key(self.language)
+        ds.set_text_key(self.language)
         if "oe" in mode:
             self._apply_oe_replacements(ds)
         return ds
