@@ -1,7 +1,7 @@
 #  -*- coding: utf-8 -*-
 
-from quantipy.core.chain import Chain as ChainCore
-from quantipy.core.chainmanager import ChainManager as ChainManagerCore
+from ..core.chain import Chain as ChainCore
+from ..core.chainmanager import ChainManager as ChainManagerCore
 import warnings
 warnings.simplefilter('always')
 

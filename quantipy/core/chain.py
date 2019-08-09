@@ -112,7 +112,7 @@ class Chain(object):
             raise ValueError("Must pass an exported ``Chain`` instance!")
         transformed_chain_df._reindex()
         self._frame = transformed_chain_df.df
-        self.views = transformed_chain_df._transf_views
+        self._views = transformed_chain_df._transf_views
         return None
 
     def __str__(self):
@@ -197,7 +197,7 @@ class Chain(object):
                     continue
                 if prioritize:
                     link = self._drop_substituted_views(link)
-                found_views, y_frames = self._concat_views(link, views)
+                found_views, y_frames = self._concat_views(link, views, None)
                 found.append(found_views)
 
                 if self.array_style > -1:
@@ -268,16 +268,17 @@ class Chain(object):
                 # get array style for the link
                 view_meta = [v.meta() for v in link.values()]
                 if any(vm["x"]["is_array"] for vm in view_meta):
-                    array_style = 0
-                elif any(vm["y"]["is_array"] for vm in view_meta):
-                    array_style = 1
-                else:
-                    array_style = -1
-                self._array_style = array_style
-                if self._meta["columns"][xk].get("parent"):
-                    self._is_mask_item = True
-                else:
+                    self._array_style = 0
                     self._is_mask_item = False
+                elif any(vm["y"]["is_array"] for vm in view_meta):
+                    self._array_style = 1
+                    self._is_mask_item = False
+                else:
+                    self._array_style = -1
+                    if self._meta["columns"][xk].get("parent"):
+                        self._is_mask_item = True
+                    else:
+                        self._is_mask_item = False
                 return link
             yks.remove(yk)
             msg = "Remove key '{}'. It's not valid for stack['{}']['{}']['{}']"
@@ -313,11 +314,14 @@ class Chain(object):
         else:
             return link
 
-    def _concat_views(self, link, views, found=OrderedDict()):
+    def _concat_views(self, link, views, found=None):
         """
         Concatenates the Views of a Chain.
         """
+        if not found:
+            found = OrderedDict()
         frames = []
+
         for v in views:
             if isinstance(v, (list, tuple)):
                 if not self._grouping:

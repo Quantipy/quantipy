@@ -1,4 +1,9 @@
 
+
+###############################################################################
+# THIS MODULE WILL BE DEPRECATED SOON !
+###############################################################################
+
 import cPickle
 from itertools import chain, combinations
 

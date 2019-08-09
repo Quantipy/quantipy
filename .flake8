@@ -8,6 +8,9 @@ filename =
     *chain.py
     *chainannotations.py
     *chainmanager.py
+    *excel.py
+    *excel_formats.py
+    *excel_formats_constants.py
     *link.py
     *stack.py
     *view.py

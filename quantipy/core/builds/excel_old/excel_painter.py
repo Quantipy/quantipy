@@ -5,6 +5,10 @@ Created on 19 Nov 2014
 @author: alasdaire
 '''
 
+###############################################################################
+# THIS MODULE WILL BE DEPRECATED SOON !
+###############################################################################
+
 import numpy as np
 import pandas as pd
 import quantipy as qp

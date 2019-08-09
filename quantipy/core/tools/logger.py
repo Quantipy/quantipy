@@ -9,7 +9,7 @@ SH_str = "%(levelname)s : %(name)s %(funcName)s --> %(message)s"
 SH_formatter = logging.Formatter(SH_str)
 
 
-def get_logger(name, path=None, level=logging.DEBUG, stream_handler=True):
+def get_logger(name, path=None, level=logging.INFO, stream_handler=True):
     """
     Get a logger with agreed formats.
 

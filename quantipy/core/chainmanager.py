@@ -162,6 +162,7 @@ class ChainManager(object):
             x: c.keys()[0] if isinstance(c, dict) else c.name
             for x, c in enumerate(self)}
 
+    @property
     def _names_to_idxs(self):
         return {n: i for i, n in self._idxs_to_names().items()}
 
@@ -811,7 +812,7 @@ class ChainManager(object):
             if folder in self.folder_names:
                 self[folder].extend(chains)
                 return None
-            chains = {folder: chains}
+            chains = [{folder: chains}]
         if not index == -1:
             before_c = self.__chains[:index + 1]
             after_c = self.__chains[index + 1:]

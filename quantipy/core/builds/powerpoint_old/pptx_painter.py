@@ -4,6 +4,10 @@
 @author: Majeed.sahebzadha
 '''
 
+###############################################################################
+# THIS MODULE WILL BE DEPRECATED SOON !
+###############################################################################
+
 from __future__ import unicode_literals
 import copy
 import time

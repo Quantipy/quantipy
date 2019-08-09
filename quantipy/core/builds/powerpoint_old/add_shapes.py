@@ -4,6 +4,10 @@
 @author: Majeed.sahebzadha
 '''
 
+###############################################################################
+# THIS MODULE WILL BE DEPRECATED SOON !
+###############################################################################
+
 from __future__ import unicode_literals
 from os import path
 import pandas as pd
@@ -508,7 +512,7 @@ def add_bar_chart(
 
                 #Excel table
                 excel_num_format='0.00%',
-                
+
                 #Color for separator
                 separator_color=(255,255,255)
                 ):
@@ -756,7 +760,7 @@ def add_bar_chart(
                 point_label.font.italic = data_labels_font_italic
                 point_label.font.color.rgb = RGBColor(*data_labels_font_color)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
+
     if series_color_order and len(dataframe.columns) > 1:
         ser_colors_list = color_setter(len(dataframe.columns), series_color_order)
 
