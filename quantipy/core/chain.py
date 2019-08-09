@@ -506,7 +506,7 @@ class Chain(object):
         names[0:0] = names[:2] * pad
 
         arrays = self._lzip(index.values)
-        arrays[0:0] = [tuple("#pad-%s" % pid for _ in arrays[i])
+        arrays[0:0] = [tuple("#pad-{}".format(pid) for _ in arrays[i])
                        for i in xrange(pad + fill)] * pad
 
         return pd.MultiIndex.from_arrays(arrays, names=names)
@@ -1097,8 +1097,8 @@ class Chain(object):
             else:
                 bt_by_key = bt
             if bt_by_key:
-                if bt_by_key.startswith("%s:" % base_val):
-                    bt_by_key = bt_by_key.replace("%s:" % base_val, "")
+                if bt_by_key.startswith("{}:".format(base_val)):
+                    bt_by_key = bt_by_key.replace("{}:".format(base_val), "")
                 return "{}: {}".format(base_val, bt_by_key)
             else:
                 return base_val

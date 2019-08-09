@@ -1210,7 +1210,7 @@ class DataSet(object):
                          u'They have been renamed by adding "_" as prefix')
         blacklist_var = []
         for var in BLACKLIST_VARIABLES:
-            n_var = '_%s' % var
+            n_var = '_{}'.format(var)
             if var in self and not n_var in self:
                 self.rename(var, u'_{}'.format(var))
                 blacklist_var.append(var)
@@ -1428,7 +1428,7 @@ class DataSet(object):
         if var is not None:
             return self._get_meta(var, only_type, text_key, axis_edit)
         if self._meta['columns'] is None:
-            return 'No meta attached to data_key: %s' %(data_key)
+            return 'No meta attached to data_key: {}'.format(data_key)
         else:
             types = {
                 'int': [],
@@ -3813,8 +3813,8 @@ class DataSet(object):
             if self._verbose_infos:
                 cases_after = self._data.shape[0]
                 droped_cases = cases_before - cases_after
-                msg = '%s duplicated case(s) dropped, %s cases remaining'
-                print msg % (droped_cases, cases_after)
+                msg = '{} duplicated case(s) dropped, {} cases remaining'
+                print msg.format(droped_cases, cases_after)
         return None
 
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
@@ -4569,7 +4569,7 @@ class DataSet(object):
                 raise ValueError("'mapper' must be a dictionary.")
 
             if not (default is None or default in meta['columns']):
-                raise ValueError("'%s' not found in meta['columns']." % (default))
+                raise ValueError("'{}' not found in meta['columns'].".format(default))
 
             index_map = index_mapper(meta, data, mapper, default, intersect)
 
