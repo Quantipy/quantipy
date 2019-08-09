@@ -330,7 +330,10 @@ class TestExcel:
     def cleandir():
         for x in ('./tmp.xlsx', './qplogo_invert.png'):
             if os.path.exists(x):
-                os.remove(x)
+                try:
+                    os.remove(x)
+                except:
+                    pass
 
     @classmethod
     def setup_class(cls):
