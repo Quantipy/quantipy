@@ -1367,12 +1367,13 @@ class Batch(qp.DataSet):
     def _apply_oe_replacements(self, dataset):
         numerical = ["int", "single", "is_delimited_set"]
         for oe in self.verbatims:
-            data = dataset._data[oe["columns"]]
             if oe['replace']:
+                data = dataset._data[oe["columns"]].copy()
                 for target, repl in oe['replace'].items():
                     if not repl:
                         repl = np.NaN
                     data.replace(target, repl, inplace=True)
+                dataset._data[oe["columns"]] = data
             if not oe['incl_nan']:
                 for col in oe['columns']:
                     if col not in numerical:
