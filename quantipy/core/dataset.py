@@ -4071,11 +4071,11 @@ class DataSet(object):
         values = self.values(name)
         if others:
             o_name = '{}_{}'.format(name, others)
-            o_label = '{}_{}'.format(self.text(name), others)
+            o_label = '{} ({})'.format(self.text(name), others)
             self.add_meta(o_name, 'delimited set', o_label, values)
         for n in frange('1-{}'.format(n_first)):
             n_name = '{}_{}'.format(name, n)
-            n_label = '{}_{}'.format(self.text(name), n)
+            n_label = '{} ({})'.format(self.text(name), n)
             self.add_meta(n_name, 'single', n_label, values)
             n_vector = self[name].str.split(';', n=n, expand=True)[n-1]
             self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
