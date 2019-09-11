@@ -4080,7 +4080,7 @@ class DataSet(object):
             n_vector = self[name].str.split(';', n=n, expand=True)[n-1]
             self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
             if reduce_values:
-                existing_codes = dataset.codes_in_data(n_name)
+                existing_codes = self.codes_in_data(n_name)
                 reduce_codes = [value[0] for value in values
                                 if value[0] not in existing_codes]
                 self.remove_values(n_name, reduce_codes)
@@ -4088,7 +4088,7 @@ class DataSet(object):
             o_string = self[name].str.split(';', n=n, expand=True)[n_first]
             self[o_name] = o_string.replace(('', None), np.NaN)
             if reduce_values:
-                existing_codes = dataset.codes_in_data(o_name)
+                existing_codes = self.codes_in_data(o_name)
                 reduce_codes = [value[0] for value in values
                                 if value[0] not in existing_codes]
                 self.remove_values(o_name, reduce_codes)
