@@ -4063,6 +4063,37 @@ class DataSet(object):
             self.drop(name)
         return None
 
+    def nfirst(self, name, n_first=3, others='others', reduce_values=False):
+        """
+        """
+        self[name] = self[name].apply(lambda x: str(x) + ';'
+                                  if not str(x).endswith(';') else x)
+        values = self.values(name)
+        if others:
+            o_name = '{}_{}'.format(name, others)
+            o_label = '{}_{}'.format(self.text(name), others)
+            self.add_meta(o_name, 'delimited set', o_label, values)
+        for n in frange('1-{}'.format(n_first)):
+            n_name = '{}_{}'.format(name, n)
+            n_label = '{}_{}'.format(self.text(name), n)
+            self.add_meta(n_name, 'single', n_label, values)
+            n_vector = self[name].str.split(';', n=n, expand=True)[n-1]
+            self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
+            if reduce_values:
+                existing_codes = dataset.codes_in_data(n_name)
+                reduce_codes = [value[0] for value in values
+                                if value[0] not in existing_codes]
+                self.remove_values(n_name, reduce_codes)
+        if others:
+            o_string = self[name].str.split(';', n=n, expand=True)[n_first]
+            self[o_name] = o_string.replace(('', None), np.NaN)
+            if reduce_values:
+                existing_codes = dataset.codes_in_data(o_name)
+                reduce_codes = [value[0] for value in values
+                                if value[0] not in existing_codes]
+                self.remove_values(o_name, reduce_codes)
+        return None
+
     @modify(to_list='codes')
     @verify(variables={'name': 'masks'}, text_keys='text_key')
     def flatten(self, name, codes, new_name=None, text_key=None):
