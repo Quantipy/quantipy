@@ -4066,8 +4066,6 @@ class DataSet(object):
     def first_responses(self, name, n=3, others='others', reduce_values=False):
         """
         """
-        self[name] = self[name].apply(lambda x: str(x) + ';'
-                                  if not str(x).endswith(';') else x)
         created = []
         values = self.values(name)
         for _n in frange('1-{}'.format(n)):
