@@ -4063,35 +4063,32 @@ class DataSet(object):
             self.drop(name)
         return None
 
-    def nfirst(self, name, n_first=3, others='others', reduce_values=False):
+    def first_responses(self, name, n=3, others='others', reduce_values=False):
         """
         """
         self[name] = self[name].apply(lambda x: str(x) + ';'
                                   if not str(x).endswith(';') else x)
+        created = []
         values = self.values(name)
+        for _n in frange('1-{}'.format(n)):
+            n_name = '{}_{}'.format(name, _n)
+            n_label = '{} ({})'.format(self.text(name), _n)
+            self.add_meta(n_name, 'single', n_label, values)
+            n_vector = self[name].str.split(';', n=_n, expand=True)[_n-1]
+            self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
+            created.append(n_name)
         if others:
             o_name = '{}_{}'.format(name, others)
             o_label = '{} ({})'.format(self.text(name), others)
             self.add_meta(o_name, 'delimited set', o_label, values)
-        for n in frange('1-{}'.format(n_first)):
-            n_name = '{}_{}'.format(name, n)
-            n_label = '{} ({})'.format(self.text(name), n)
-            self.add_meta(n_name, 'single', n_label, values)
-            n_vector = self[name].str.split(';', n=n, expand=True)[n-1]
-            self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
-            if reduce_values:
-                existing_codes = self.codes_in_data(n_name)
-                reduce_codes = [value[0] for value in values
-                                if value[0] not in existing_codes]
-                self.remove_values(n_name, reduce_codes)
-        if others:
-            o_string = self[name].str.split(';', n=n, expand=True)[n_first]
+            o_string = self[name].str.split(';', n=n, expand=True)[n]
             self[o_name] = o_string.replace(('', None), np.NaN)
-            if reduce_values:
-                existing_codes = self.codes_in_data(o_name)
+            created.append(o_name)
+        if reduce_values:
+            for v in created:
                 reduce_codes = [value[0] for value in values
-                                if value[0] not in existing_codes]
-                self.remove_values(o_name, reduce_codes)
+                                if value[0] not in self.codes_in_data(v)]
+                self.remove_values(v, reduce_codes)
         return None
 
     @modify(to_list='codes')
