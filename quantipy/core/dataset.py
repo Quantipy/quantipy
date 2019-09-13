@@ -4063,9 +4063,36 @@ class DataSet(object):
             self.drop(name)
         return None
 
+    @verify(variables={'name': 'columns'})
     def first_responses(self, name, n=3, others='others', reduce_values=False):
         """
+        Create n-first mentions from the set of responses of a delimited set.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name of a delimited set keyed in
+            ``meta['columns']``.
+        n : int, default 3
+            The number of mentions that will be turned into single-type
+            variables, i.e. 1st mention, 2nd mention, 3rd mention, 4th mention,
+            etc.
+        others : None or str, default 'others'
+            If provided, all remaining values will end up in a new delimited
+            set variable reduced by the responses transferred to the single
+            mention variables.
+        reduce_values : bool, default False
+            If True, each new variable will only list the categorical value
+            metadata for the codes found in the respective data vector, i.e.
+            not the initial full codeframe.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
         """
+        if self._get_type(name) != 'delimited set':
+            return None
         created = []
         values = self.values(name)
         for _n in frange('1-{}'.format(n)):
