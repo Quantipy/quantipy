@@ -1857,10 +1857,9 @@ class Chain(object):
                 painted_tuples = self._painted_idx.tolist()
             merged = [mapped[val] if val in mapped else val for val in current]
             # ================================================================
-            if (self.array_mi and axis == 1) or axis == 0:
-                self._transf_views = self._insert_viewlikes(merged, mapped)
-            else:
-                self._transf_views = self.org_views
+            if not hasattr(self, '_transf_views'):
+                if (self.array_mi and axis == 1) or axis == 0:
+                    self._transf_views = self._insert_viewlikes(merged, mapped)
             # ================================================================
             i = d = 0
             new_tuples = []
