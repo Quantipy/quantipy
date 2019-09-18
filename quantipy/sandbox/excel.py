@@ -392,10 +392,10 @@ class Excel(Workbook):
     def image(self):
         if self._image:
             image = Image.open(self._image['img_url'])
-            image.thumbnail(self._image.get('img_size',
-                                            self.sheet_properties['img_size']),
-                            Image.ANTIALIAS)
-            image.save(basename(self._image['img_url']))
+            image.thumbnail(
+                self._image.get('img_size', self.sheet_properties['img_size']),
+                Image.ANTIALIAS)
+            image.save(self._image['img_name'])
         return self._image
 
     @lazy_property
@@ -655,13 +655,14 @@ class _Sheet(Worksheet):
                                   format_, cds[2], format_)
 
         if self.image:
-            self.insert_image(self.image.get('img_insert_x', self.img_insert_x),
-                              self.image.get('img_insert_y', self.img_insert_y),
-                              self.image['img_url'],
-                              dict(x_offset=self.image.get('img_x_offset',
-                                                           self.img_x_offset),
-                                   y_offset=self.image.get('img_y_offset',
-                                                           self.img_y_offset)))
+            self.insert_image(
+                self.image.get('img_insert_x', self.img_insert_x),
+                self.image.get('img_insert_y', self.img_insert_y),
+                self.image['img_name'],
+                dict(
+                    x_offset=self.image.get('img_x_offset', self.img_x_offset),
+                    y_offset=self.image.get('img_y_offset', self.img_y_offset))
+            )
 
         if self.column_width_specific:
             for column, width in self.column_width_specific.iteritems():
@@ -1150,7 +1151,7 @@ class _Box(object):
                 name = 'counts'
             else:
                 name = self._row_format_name(**x_contents)
-            
+
             if rel_y == 0:
                 sig_level_row = data != '' and name in ['propstest', 'meanstest']
                 if data == '' or sig_level_row:
