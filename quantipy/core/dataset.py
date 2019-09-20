@@ -7291,8 +7291,8 @@ class DataSet(object):
             Name of existing Batch instance.
         """
         batches = self._meta['sets'].get('batches', {})
-        if batches.get(name.decode('utf8')):
-            b = name.decode('utf8')
+        if batches.get(name):
+            b = name
         elif batches.get(name):
             b = name
         else:

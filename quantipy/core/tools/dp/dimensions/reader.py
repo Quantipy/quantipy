@@ -162,10 +162,10 @@ def quantipy_clean(ddf):
             # table id and sort the index
             ddf[n_tab].columns = p_cols + ['LevelId_'+n_tab] + np_cols
             ddf[n_tab].set_index([p_cols[-1]], drop=False, inplace=True)
-            if pd.__version__ == '0.19.2':
-                ddf[n_tab].sort_index()
-            else:
-                ddf[n_tab].sort()
+            #if pd.__version__ == '0.19.2':
+            ddf[n_tab].sort_index()
+            #else:
+            #ddf[n_tab].sort()
 
             # Generate Dimensions type to Quantipy type reference
             # dataframe
@@ -438,7 +438,7 @@ def get_meta_values(xml, column, data, map_values=True):
         value['text'] = get_text_dict(xml.xpath(xpath_category_label_text))
         value['properties'] = get_meta_properties(xml, xpath_category)
 
-        cat_name_lower = cat_name.encode('utf-8').lower().decode('utf-8')
+        cat_name_lower = cat_name.lower()
         xpath_categoryid_lower = (
             XPATH_CATEGORYMAP+"//categoryid[@name='"+cat_name_lower+"']")
         xpath_categoryid = (
@@ -536,11 +536,11 @@ def begin_column(xml, col_name, data):
     column = {}
 
     xpath_var = XPATH_DEFINITION+"//variable[@name='"+col_name+"']"
-    var = xml.xpath(xpath_var.decode('utf-8'))[0]
+    var = xml.xpath(xpath_var)[0]
     column['name'] = col_name
     column['properties'] = get_meta_properties(xml, xpath_var)
     xpath__col_text = xpath_var+"//labels"
-    column['text'] = get_text_dict(xml.xpath(xpath__col_text.decode('utf-8'))[0].getchildren())
+    column['text'] = get_text_dict(xml.xpath(xpath__col_text)[0].getchildren())
     column['parent'] = {}
     column['type'] = get_var_type(var)
     if column['type'] in ['delimited set']:
@@ -566,7 +566,7 @@ def get_meta_properties(xml, xpath_var, exclude=None):
     try:
         properties = {
             e.get('name'): e.get('value')
-            for e in xml.xpath(xpath_var+"//properties".decode('utf-8'))[0]
+            for e in xml.xpath(xpath_var+"//properties")[0]
             if not e.get('name') in exclude
         }
     except IndexError:
@@ -624,10 +624,11 @@ def map_cols_from_grid(xml, data):
 
 def get_mdd_xml(path_mdd):
 
-    with open(path_mdd, 'r+') as f:
-        xml_text = f.read()
-    recovering_parser = etree.XMLParser(recover=True)
-    xml = etree.parse(StringIO(xml_text), parser=recovering_parser)
+    #with open(path_mdd, 'r+') as f:
+    #    xml = etree.parse(f)
+    xml = etree.parse(path_mdd, parser=etree.XMLParser(recover=True))
+        #xml_text = f.read()
+    #xml = etree.XML(xml_text)
 
     return xml
 
@@ -1061,5 +1062,5 @@ def order_by_meta(data, columns, masks):
         return result
     new_order = ["id_L1"]
     new_order.extend(_get_column_items(columns, masks))
-    data = data.ix[:, new_order]
+    #data = data.ix[:, new_order]
     return data
