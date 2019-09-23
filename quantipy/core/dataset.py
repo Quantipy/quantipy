@@ -5094,6 +5094,9 @@ class DataSet(object):
                 original_column = "!;" + original_column + ";!"
 
             original_column = original_column.replace(pd.np.nan,'')
+            original_column = original_column.str.replace("; ",";")
+            original_column = original_column.str.replace(" ;",";")
+
             all_values_split = [i.split(";") for i in original_column]
             flat = [i for sublist in all_values_split for i in sublist]
             trim = [i.strip() for i in flat]
