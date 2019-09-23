@@ -14,7 +14,10 @@ Quantipy is an open-source data processing, analysis and reporting software proj
 
 #### Contributors
 - Alexander Buchhammer, Alasdair Eaglestone, James Griffiths, Kerstin Müller : https://yougov.co.uk
-- Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.io/
+- Datasmoothie’s Birgir Hrafn Sigurðsson and Geir Freysson: http://datasmoothie.com/
+
+### Python 3 compatability
+Efforts are underway to port Quantipy to Python 3 in a [seperate repository](https://www.github.com/quantipy/quantipy3).
 
 ## Docs
 [View the documentation at readthedocs.org](http://quantipy.readthedocs.io/)
