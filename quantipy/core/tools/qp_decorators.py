@@ -35,7 +35,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
                 collection = ['columns', 'masks']
             else:
                 collection = [collection]
-            c = [key for col in collection for key in list(ds._meta[col].keys())]
+            c = [key for col in collection for key in list(list(ds._meta[col].keys()))]
             # get the variable argument to check
             v_index = all_args.index(variable)
             var = kwargs.get(variable, args[v_index])
