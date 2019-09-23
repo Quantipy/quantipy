@@ -20,7 +20,7 @@ def ChartData_from_DataFrame(df, number_format="0%", xl_number_format='0.00%'):
         """
 
         for subcat in sub_categories:
-            if subcat.name == line[pos]:
+            if subcat.label == line[pos]:
                 return subcat
 
 
@@ -31,7 +31,7 @@ def ChartData_from_DataFrame(df, number_format="0%", xl_number_format='0.00%'):
         for line in df.index.unique().tolist():
             for l, lvl in enumerate(line):
                 if l == 0:
-                    if not any([lvl == cat.name for cat in cats]):
+                    if not any([lvl == cat.label for cat in cats]):
                         cats.append(cd.add_category(lvl))
                 else:
                     parent = get_parent(cats, line, 0)
@@ -39,7 +39,7 @@ def ChartData_from_DataFrame(df, number_format="0%", xl_number_format='0.00%'):
                         for i in range(1, l):
                             parent = get_parent(parent.sub_categories, line, i)
                     sub_categories = parent.sub_categories
-                    seen = [lvl == subcat.name for subcat in sub_categories]
+                    seen = [lvl == subcat.label for subcat in sub_categories]
                     if not any(seen):
                         parent.add_sub_category(lvl)
     else:
@@ -51,7 +51,11 @@ def ChartData_from_DataFrame(df, number_format="0%", xl_number_format='0.00%'):
             value if value==value else None
             for value in df[col].values.tolist()
         ]
-        series = (col, tuple(values))
+        if isinstance(col,tuple):
+            series = (" - ".join(col), tuple(values))
+        else:
+            series = (col, tuple(values))
+
         cd.add_series(*series, number_format=xl_number_format)
 
     return cd
@@ -90,7 +94,7 @@ def get_category_tuples(categories):
 
         if sub_categories:
             for sub_category in sub_categories:
-                sub_record = record[:] + [sub_category.name]
+                sub_record = record[:] + [sub_category.label]
                 sub_sub_categories = sub_category.sub_categories
                 get_sub_category_tuples(sub_sub_categories, records, sub_record)
         else:
@@ -98,7 +102,7 @@ def get_category_tuples(categories):
 
     records = []
     for category in categories:
-        record = [category.name]
+        record = [category.label]
         get_sub_category_tuples(category.sub_categories, records, record)
 
     if all([len(record) == 1 for record in records]):
