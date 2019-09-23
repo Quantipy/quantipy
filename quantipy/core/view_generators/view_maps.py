@@ -588,7 +588,9 @@ class QuantipyViews(ViewMapper):
         w = weights if weights is not None else ''
         view_name_list = cache.get_obj(get+'_view_names', w+'_names')
         if view_name_list is None:
-            allviews = stack.describe(columns='view').index.tolist()
+            # this change works, but it looks worrying, this line used to be
+            #allviews = stack.describe(columns='view').index.tolist()
+            allviews = stack.describe(index='view').index.tolist()
             if get == 'count':
                 ignorenames = ['cbase', 'rbase', 'ebase', 'counts_sum',
                                'c%_sum', 'cbase_gross']
