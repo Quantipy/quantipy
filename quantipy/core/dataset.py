@@ -203,7 +203,7 @@ class DataSet(object):
         return self._by_property('recoded_net')
 
     def _by_property(self, prop):
-        return [v for v in self.variables() if self.get_property(v, prop)]
+        return [v for v in self.variables() if self._get_property(v, prop)]
 
     @verify(variables={'name': 'both'})
     def missings(self, name=None):
@@ -2387,6 +2387,32 @@ class DataSet(object):
                     self.set_item_texts(a, rename_items, tk, ed)
         return None
 
+    def _add_secure_variables(self):
+        """ Add variables in the CSV missing from the data-file set """
+        ignore = ['@1', "id_L1"]
+        actual = []
+        for item in self._meta['sets']['data file']['items']:
+            key, name = item.split('@')
+            if name in ignore:
+                continue
+            if key == 'columns':
+                actual.append(name)
+            elif key == 'masks':
+                for mitem in self._meta['masks'][name]['items']:
+                    mkey, mname = mitem['source'].split('@')
+                    actual.append(mname)
+
+        expected = self._data.columns.values.tolist()
+
+        for col in expected:
+            if col in ignore:
+                continue
+            if col not in actual:
+                print('Adding {}'.format(col))
+                items = self._meta['sets']['data file']['items']
+                items.append('columns@{}'.format(col))
+        return None
+
     def repair(self):
         """
         Try to fix legacy meta data inconsistencies and badly shaped array /
@@ -2399,6 +2425,7 @@ class DataSet(object):
         self.restore_item_texts()
         self._clean_datafile_set()
         self._prevent_one_cat_set()
+        self._add_secure_variables()
         return None
 
     # ------------------------------------------------------------------------
@@ -3533,6 +3560,18 @@ class DataSet(object):
                 equal = False
         return equal
 
+    @modify(to_list=["name2"])
+    def is_subfilter(self, name1, name2):
+        """
+        Verify if index of name2 is part of the index of name1.
+        """
+        idx = self.manifest_filter(name1).tolist()
+        included = True
+        for n in name2:
+            if [i for i in self.manifest_filter(n).tolist() if i not in idx]:
+                included = False
+        return included
+
     # ------------------------------------------------------------------------
     # extending / merging
     # ------------------------------------------------------------------------
@@ -3582,6 +3621,12 @@ class DataSet(object):
             If the merge is not applied ``inplace``, a ``DataSet`` instance
             is returned.
         """
+        new_tks = []
+        for d in dataset:
+            for tk in d.valid_tks:
+                if not d in self.valid_tks and not d in new_tks:
+                    new_tks.append(tk)
+        self.extend_valid_tks(new_tks)
         ds_left = (self._meta, self._data)
         ds_right = [(ds._meta, ds._data) for ds in dataset]
         if on is None and right_on in self.columns():
@@ -3603,6 +3648,7 @@ class DataSet(object):
             new_dataset._data = merged_data
             new_dataset._meta = merged_meta
             return new_dataset
+        return None
 
     def update(self, data, on='identity'):
         """
@@ -3746,7 +3792,8 @@ class DataSet(object):
             vals = [int(i) for i in vals]
         return vals
 
-    def drop_duplicates(self, unique_id='identity', keep='first'):
+    @verify(variables={'sort_by': 'columns'})
+    def drop_duplicates(self, unique_id='identity', keep='first', sort_by=None):
         """
         Drop duplicated cases from self._data.
 
@@ -3756,7 +3803,13 @@ class DataSet(object):
             Variable name that gets scanned for duplicates.
         keep : str, {'first', 'last'}
             Keep first or last of the duplicates.
+        sort_by : str
+            Name of a variable to sort the data by, for example "endtime".
+            It is a helper to specify `keep`.
         """
+        if sort_by:
+            self._data.sort(sort_by, inplace=True)
+            self._data.reset_index(drop=True, inplace=True)
         if self.duplicates(unique_id):
             cases_before = self._data.shape[0]
             self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
@@ -4008,6 +4061,59 @@ class DataSet(object):
             new_order = {name: new_vars}
             self.order(reposition=new_order)
             self.drop(name)
+        return None
+
+    @verify(variables={'name': 'columns'})
+    def first_responses(self, name, n=3, others='others', reduce_values=False):
+        """
+        Create n-first mentions from the set of responses of a delimited set.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name of a delimited set keyed in
+            ``meta['columns']``.
+        n : int, default 3
+            The number of mentions that will be turned into single-type
+            variables, i.e. 1st mention, 2nd mention, 3rd mention, 4th mention,
+            etc.
+        others : None or str, default 'others'
+            If provided, all remaining values will end up in a new delimited
+            set variable reduced by the responses transferred to the single
+            mention variables.
+        reduce_values : bool, default False
+            If True, each new variable will only list the categorical value
+            metadata for the codes found in the respective data vector, i.e.
+            not the initial full codeframe.
+
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        if self._get_type(name) != 'delimited set':
+            return None
+        created = []
+        values = self.values(name)
+        for _n in frange('1-{}'.format(n)):
+            n_name = '{}_{}'.format(name, _n)
+            n_label = '{} ({})'.format(self.text(name), _n)
+            self.add_meta(n_name, 'single', n_label, values)
+            n_vector = self[name].str.split(';', n=_n, expand=True)[_n-1]
+            self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
+            created.append(n_name)
+        if others:
+            o_name = '{}_{}'.format(name, others)
+            o_label = '{} ({})'.format(self.text(name), others)
+            self.add_meta(o_name, 'delimited set', o_label, values)
+            o_string = self[name].str.split(';', n=n, expand=True)[n]
+            self[o_name] = o_string.replace(('', None), np.NaN)
+            created.append(o_name)
+        if reduce_values:
+            for v in created:
+                reduce_codes = [value[0] for value in values
+                                if value[0] not in self.codes_in_data(v)]
+                self.remove_values(v, reduce_codes)
         return None
 
     @modify(to_list='codes')
@@ -4311,7 +4417,8 @@ class DataSet(object):
     @modify(to_list=['ignore_items', 'ignore_values'])
     @verify(variables={'name': 'masks'}, text_keys='text_key')
     def transpose(self, name, new_name=None, ignore_items=None,
-                  ignore_values=None, copy_data=True, text_key=None):
+                  ignore_values=None, copy_data=True, text_key=None,
+                  overwrite=False):
         """
         Create a new array mask with transposed items / values structure.
 
@@ -4338,58 +4445,54 @@ class DataSet(object):
         text_key : str
             The text key to be used when generating text objects, i.e.
             item and value labels.
+        overwrite: bool, default False
+            Overwrite variable if `new_name` is already included.
 
         Returns
         -------
         None
             DataSet is modified inplace.
         """
-        org_name = name
-        # Get array item and value structure
-        reg_items_object = self._get_itemmap(name)
-        if ignore_items:
-            reg_items_object = [i for idx, i in
-                                enumerate(reg_items_object, start=1)
-                                if idx not in ignore_items]
-        reg_item_names = [item[0] for item in reg_items_object]
-        reg_item_texts = [item[1] for item in reg_items_object]
-
-        reg_value_object = self._get_valuemap(name)
-        if ignore_values:
-            reg_value_object = [v for v in reg_value_object if v[0]
-                                not in ignore_values]
-        reg_val_codes = [v[0] for v in reg_value_object]
-        reg_val_texts = [v[1] for v in reg_value_object]
-
-        # Transpose the array structure: values --> items, items --> values
-        trans_items = [(code, value) for code, value in
-                       zip(reg_val_codes, reg_val_texts)]
-        trans_values = [(idx, text) for idx, text in
-                        enumerate(reg_item_texts, start=1)]
-        label = self.text(name, False, text_key)
-        # Create the new meta data entry for the transposed array structure
+        if (new_name and self._dims_compat_arr_name(new_name) in self and
+            not overwrite):
+            raise ValueError("'{}' is already included.".format(new_name))
         if not new_name:
-            new_name = '{}_trans'.format(self._dims_free_arr_name(name))
-        qtype = 'delimited set'
-        self.add_meta(new_name, qtype, label, trans_values, trans_items, text_key)
-        # Do the case data transformation by looping through items and
-        # convertig value code entries...
-        new_name = self._dims_compat_arr_name(new_name)
-        trans_items = self._get_itemmap(new_name, 'items')
-        trans_values = self._get_valuemap(new_name, 'codes')
-        for reg_item_name, new_val_code in zip(reg_item_names, trans_values):
-            for reg_val_code, trans_item in zip(reg_val_codes, trans_items):
-                if trans_item not in self._data.columns:
-                    if qtype == 'delimited set':
-                        self[trans_item] = ''
-                    else:
-                        self[trans_item] = np.NaN
-                if copy_data:
-                    slicer = {reg_item_name: [reg_val_code]}
-                    self.recode(trans_item, {new_val_code: slicer},
-                                append=True)
-        if self._verbose_infos:
-            print 'Transposed array: {} into {}'.format(org_name, new_name)
+            new_name = '{}_trans'.format(name)
+        if new_name == name:
+            tname = '{}_trans'.format(new_name)
+        else:
+            tname = new_name
+
+        # input item_map
+        item_map = self._get_itemmap(name)
+        item_labels = [(x, i[1]) for x, i in enumerate(item_map, 1)
+                       if not x in ignore_items]
+        item_vars = [(x, i[0]) for x, i in enumerate(item_map, 1)
+                     if not x in ignore_items]
+        # input value_map
+        value_map = self._get_valuemap(name)
+        value_map = [v for x, v in enumerate(value_map, 1)
+                     if not x in ignore_values]
+        # input label
+        label = self.text(name, False, text_key)
+        # add transposed meta
+        self.add_meta(tname, "delimited set", label, item_labels, value_map, text_key)
+        tname = self._dims_compat_arr_name(tname)
+
+        # transpose the data
+        tsources = self.sources(tname)
+        mapper = {
+            tsource: {} for tsource in tsources
+        }
+        for code, source in zip([val[0] for val in value_map], tsources):
+            mapper = {}
+            for x, item in item_vars:
+                mapper[x] = {item: code}
+            self.recode(source, mapper, append=True)
+        if new_name == name:
+            print("Overwrite '{}'.".format(name))
+            self.drop(name)
+            self.rename(tname, new_name)
 
     @verify(variables={'target': 'columns'})
     def recode(self, target, mapper, default=None, append=False,
@@ -6399,14 +6502,20 @@ class DataSet(object):
     def get_property(self, name, prop_name, text_key=None):
         """
         """
-        mask_ref = self._meta['masks']
-        col_ref = self._meta['columns']
-        if not text_key: text_key = self.text_key
         valid_props = ['base_text', 'created', 'recoded_net', 'recoded_stat',
                        'recoded_filter', '_no_valid_items', '_no_valid_values',
                        'simple_org_expr', 'level']
         if prop_name not in valid_props:
             raise ValueError("'prop_name' must be one of {}".format(valid_props))
+        return self._get_property(name, prop_name, text_key)
+
+    @verify(variables={'name': 'both'})
+    def _get_property(self, name, prop_name, text_key=None):
+        """
+        """
+        mask_ref = self._meta['masks']
+        col_ref = self._meta['columns']
+        if not text_key: text_key = self.text_key
         has_props = False
         if self.is_array(name):
             if 'properties' in mask_ref[name]:
@@ -7063,7 +7172,7 @@ class DataSet(object):
     def _logic_as_pd_expr(self, logic, prefix='default'):
         """
         """
-        varname = '{}__logic_dummy__'.format(prefix)
+        varname = '{}__logic_dummy__'.format(prefix).replace(' ', '_')
         category = [(1, 'select', logic)]
         meta = (varname, 'single', '', category)
         self.derive(*meta)
