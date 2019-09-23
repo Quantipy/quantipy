@@ -361,7 +361,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
     # Remove columns from data not found in meta
     known_columns = list_known_columns(meta, from_set)
     for col in data.columns:
-        if col not in known_columns:
+        if col not in known_columns and col:
             if col != '@1':
                 if verbose:
                     print((
@@ -369,7 +369,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
                         " the '{}' set, it will be excluded"
                         " from the SAV file."
                     ).format(col, from_set))
-            data.drop(col, axis=1, inplace=True)
+            data.drop(columns=col, axis=1, inplace=True)
 
     # Remove columns from meta not found in data
     for col in known_columns:
@@ -438,10 +438,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
             dichot.loc[no_responses, :] = np.NaN
 
         dichot.columns = dichot.columns.astype(int)
-        if pd.__version__ == '0.19.2':
-            dichot.sort_index(axis=1, inplace=True)
-        else:
-            dichot.sort(axis=1, inplace=True)
+        dichot.sort_index(axis=1, inplace=True)
         dsNames = ['%s%s%s' % (ds_name, mrset_tag_style, val) for val in values]
         ds_index = varNames.index(ds_name)
         varNames[ds_index+1:ds_index+1] = dsNames
@@ -477,7 +474,7 @@ def save_sav(path_sav, meta, data, index=False, text_key=None,
 
         # Add the savWriter-required definition of the mrset
         varLabel = fix_label(meta['columns'][ds_name]['text'].get(text_key, ''))
-        if varLabel > 120:
+        if len(varLabel) > 120:
             varLabel = varLabel[:120]
         multRespDefs[ds_name] = {
             'varNames': dsNames,
