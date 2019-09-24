@@ -4091,7 +4091,7 @@ class DataSet(object):
         None
             DataSet is modified inplace.
         """
-        if self._get_type(name) != 'delimited set' or self.empty(name):
+        if self._get_type(name) != 'delimited set':
             return None
         created = []
         values = self.values(name)
