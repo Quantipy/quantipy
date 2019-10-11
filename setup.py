@@ -30,20 +30,23 @@ libs = ['numpy',
         'functools32']
 
 def version_libs(libs, precisions, versions):
-    return [lib + precisions[lib] + versions[lib]
-            if lib in versions.keys() else lib
-            for lib in libs]
+    return [
+        lib + precisions[lib] + versions[lib]
+        if lib in versions.keys() else lib
+        for lib in libs
+    ]
 
 if sys.platform == 'win32':
     INSTALL_REQUIRES = version_libs(libs[2:], precisions, versions)
 else:
     INSTALL_REQUIRES = version_libs(libs, precisions, versions)
 
-setup(name='quantipy',
-      version='0.1.1',
-      # author='',
-      # author_email='',
-      packages=find_packages(exclude=['tests']),
-      include_package_data=True,
-      install_requires=INSTALL_REQUIRES,
-      )
+setup(
+    name='quantipy',
+    version='1.0.0',
+    author='TechOps Yougov',
+    author_email='tech_ops@yougov.com',
+    packages=find_packages(exclude=['tests']),
+    include_package_data=True,
+    install_requires=INSTALL_REQUIRES
+)

@@ -11,10 +11,10 @@ from quantipy.core.weights.weight_engine import WeightEngine
 class TestEngine(unittest.TestCase):
 
     def setUp(self):
-        ''' Simple engine without meta - engine_A
+        '''
+        Simple engine without meta - engine_A
         '''
         self.path = './tests/'
-#         self.path = ''
 
         name_data_A = 'engine_A'
         self.path_data_A = '{}{}_data.csv'.format(self.path, name_data_A)

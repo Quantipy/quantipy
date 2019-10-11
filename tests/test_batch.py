@@ -62,14 +62,14 @@ class TestBatch(unittest.TestCase):
 		b = ds.get_batch('test')
 		attr = [
 			'xks', 'yks', '_variables', 'filter', 'filter_names',
-             'x_y_map', 'x_filter_map', 'y_on_y', 'y_on_y_filter',
-             'forced_names', 'transposed', 'leveled', 'verbatims',
-             'extended_yks_per_x',
-             'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
-             'cell_items', 'weights', 'sigproperties', 'additional',
-             'sample_size', 'language', 'name', 'skip_items', 'total',
-             'unwgt_counts', 'y_filter_map', 'build_info',
-             '_section_starts']
+			'x_y_map', 'x_filter_map', 'y_on_y', 'y_on_y_filter',
+			'forced_names', 'transposed', 'leveled', 'verbatims',
+			'extended_yks_per_x',
+			'exclusive_yks_per_x', 'extended_filters_per_x', 'meta_edits',
+			'cell_items', 'weights', 'sigproperties', 'additional',
+			'sample_size', 'language', 'name', 'skip_items', 'total',
+			'unwgt_counts', 'y_filter_map', 'build_info',
+			'_section_starts']
 		for a in attr:
 			self.assertEqual(batch.__dict__[a], b.__dict__[a])
 

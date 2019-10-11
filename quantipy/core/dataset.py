@@ -4,18 +4,16 @@ import numpy as np
 import pandas as pd
 import quantipy as qp
 
-from quantipy.core.tools.dp.io import (
-    read_quantipy as r_quantipy,
-    read_dimensions as r_dimensions,
-    read_decipher as r_decipher,
-    read_spss as r_spss,
-    read_ascribe as r_ascribe,
-    write_spss as w_spss,
-    write_quantipy as w_quantipy,
-    write_dimensions as w_dimensions)
+from .options import OPTIONS
 
+from .io import (
+    quantipy_from_dimensions,
+    quantipy_from_ascribe,
+    parse_sav_file,
+    dimensions_from_quantipy,
+    save_sav
+)
 from quantipy.core.helpers.functions import (
-    filtered_set,
     emulate_meta)
 
 from quantipy.core.tools.qp_decorators import *
@@ -498,11 +496,16 @@ class DataSet(object):
             The ``DataSet`` is modified inplace, connected to Quantipy native
             data and meta components.
         """
-        if path_meta.endswith('.json'): path_meta = path_meta.replace('.json', '')
-        if path_data.endswith('.csv'): path_data = path_data.replace('.csv', '')
-        self._meta, self._data = r_quantipy(path_meta+'.json', path_data+'.csv')
+        if not path_meta.endswith('.json'):
+            path_meta = path_meta + '.json'
+        if not path_data.endswith('.csv'):
+            path_data = path_data + '.csv'
+        self._meta = load_json(path_json)
+        self._data = load_csv(path_csv)
         self._set_file_info(path_data, path_meta, reset=reset)
         for col in self.columns():
+            if self._meta['columns'][col]['type'] == 'date':
+                self._data[col] = pd.to_datetime(self._data[col])
             if self._dims_compat_arr_name(col) in self.masks():
                 renamed = '{}_{}'.format(col, self._get_type(col).replace(' ', '_'))
                 msg = ("*** WARNING ***: Found {}-type variable name also in "
@@ -540,7 +543,7 @@ class DataSet(object):
         """
         if path_meta.endswith('.mdd'): path_meta = path_meta.replace('.mdd', '')
         if path_data.endswith('.ddf'): path_data = path_data.replace('.ddf', '')
-        self._meta, self._data = r_dimensions(path_meta+'.mdd', path_data+'.ddf')
+        self._meta, self._data = quantipy_from_dimensions(path_meta+'.mdd', path_data+'.ddf')
         self._set_file_info(path_data, path_meta)
         if not self._dimensions_comp == 'ignore':
             d_comp = self._dimensions_comp
@@ -574,7 +577,7 @@ class DataSet(object):
         """
         if path_meta.endswith('.xml'): path_meta = path_meta.replace('.xml', '')
         if path_data.endswith('.txt'): path_data = path_data.replace('.txt', '')
-        self._meta, self._data = r_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
+        self._meta, self._data = quantipy_from_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
         self._set_file_info(path_data, path_meta)
         self._rename_blacklist_vars()
         return None
@@ -597,7 +600,7 @@ class DataSet(object):
             source file.
         """
         if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
-        self._meta, self._data = r_spss(path_sav+'.sav', **kwargs)
+        self._meta, self._data = parse_sav_file(path_sav+'.sav', **kwargs)
         self._set_file_info(path_sav)
         self._rename_blacklist_vars()
         return None
@@ -664,7 +667,7 @@ class DataSet(object):
             raise ValueError(msg)
         path_mdd = path_mdd.replace('//', '/')
         path_ddf = path_ddf.replace('//', '/')
-        w_dimensions(meta, data, path_mdd, path_ddf, text_key=text_key,
+        dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=text_key,
                      run=run, clean_up=clean_up)
         file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
         print file_msg
@@ -707,7 +710,8 @@ class DataSet(object):
         else:
             msg = "Must either specify or omit both 'path_meta' and 'path_data'!"
             raise ValueError(msg)
-        w_quantipy(meta, data, path_meta, path_data)
+        save_json(meta, path_json)
+        data.to_csv(path_csv)
         return None
 
     @verify(text_keys='text_key')
@@ -750,13 +754,14 @@ class DataSet(object):
         """
         self.set_encoding('cp1252')
         meta, data = self._meta, self._data
-        if not text_key: text_key = self.text_key
+        if not text_key:
+            text_key = self.text_key
         if not path_sav:
             path_sav = os.path.join(self.path, ''.join([self.name, '.sav']))
         else:
             if not path_sav.endswith('.sav'):
                 path_sav = ''.join([path_sav, '.sav'])
-        w_spss(path_sav, meta, data, index=index, text_key=text_key,
+        save_sav(path_sav, meta, data, index=index, text_key=text_key,
                mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
                from_set=from_set, verbose=verbose)
         self.set_encoding('utf-8')
@@ -1208,7 +1213,7 @@ class DataSet(object):
                          u'They have been renamed by adding "_" as prefix')
         blacklist_var = []
         for var in BLACKLIST_VARIABLES:
-            n_var = '_%s' % var
+            n_var = '_{}'.format(var)
             if var in self and not n_var in self:
                 self.rename(var, u'_{}'.format(var))
                 blacklist_var.append(var)
@@ -1426,7 +1431,7 @@ class DataSet(object):
         if var is not None:
             return self._get_meta(var, only_type, text_key, axis_edit)
         if self._meta['columns'] is None:
-            return 'No meta attached to data_key: %s' %(data_key)
+            return 'No meta attached to data_key: {}'.format(data_key)
         else:
             types = {
                 'int': [],
@@ -3271,6 +3276,91 @@ class DataSet(object):
         self._apply_order(new_order)
         return None
 
+    def _filtered_set(self, based_on, masks=True, included=None, excluded=None,
+                 strings=None):
+    if included is None and excluded is None:
+        included = []
+        for set_item in self._meta['sets'][based_on]['items']:
+            name = set_item.split('@')[-1]
+            if name in self._meta['columns']:
+                included.append(name)
+            elif name in self._meta['masks']:
+                for mask_item in self._meta['masks'][name]['items']:
+                    included.append(mask_item['source'].split('@')[1])
+
+    if included is None:
+        included = []
+    elif isinstance(included, (str, str)):
+        included = [included]
+    if not isinstance(included, (list, tuple, set)):
+        raise ValueError (
+            "'included' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    if excluded is None:
+        excluded = []
+    elif isinstance(excluded, (str, str)):
+        excluded = [excluded]
+    elif not isinstance(excluded, (list, tuple, set)):
+        raise ValueError (
+            "'excluded' must be either a string or a list, tuple or"
+            " set of strings."
+        )
+
+    if strings is None:
+        strings = 'keep'
+    else:
+        if not strings in ['keep', 'drop', 'only']:
+            raise ValueError (
+                "'strings' must be either None, 'keep', 'drop' or"
+                "'only'."
+            )
+
+    pattern = "\[(.*?)\]"
+
+    items = []
+    for item in set(included) - set(excluded) - set(['@']):
+        # Account for special strings instruction
+        if strings=='keep':
+            allow = True
+        elif item in self._meta['columns']:
+            is_string = self._meta['columns'][item]['type']=='string'
+            if not is_string and not strings=='only':
+                allow = True
+            elif not is_string and strings=='only':
+                allow = False
+            elif is_string and strings=='drop':
+                allow = False
+            elif is_string and strings=='only':
+                allow = True
+
+        if not allow:
+            continue
+
+        if 'columns@{}'.format(item) in self._meta['sets'][based_on]['items']:
+            items.append('columns@{}'.format(item))
+        elif 'masks@{}'.format(item) in self._meta['sets'][based_on]['items']:
+            items.append('masks@{}'.format(item))
+        # what is this else-branch supposed to achieve?
+        else:
+            try:
+                if item in self._meta['columns'] and self._meta['columns'][item]['parent']:
+                    items.append(list(self._meta['columns'][item]['parent'].keys())[0])
+            except:
+                if 'masks@{}'.format(re.sub(pattern, '', item)) in self._meta['sets'][based_on]['items']:
+                    items.append('masks@{}'.format(re.sub(pattern, '', item)))
+
+    fset = {'items': []}
+    for item in self._meta['sets'][based_on]['items']:
+        if item in items:
+            if item.startswith('masks') and not masks:
+                for mask_item in self._meta['masks'][item.split('@')[1]]['items']:
+                    fset['items'].append(mask_item['source'])
+            else:
+                fset['items'].append(item)
+    return fset
+
     @modify(to_list=['included', 'excluded'])
     @verify(variables={'included': 'both', 'excluded': 'both'})
     def create_set(self, setname='new_set', based_on='data file', included=None,
@@ -3339,16 +3429,6 @@ class DataSet(object):
                      included=included,
                      excluded=excluded,
                      strings=strings)
-
-        # if arrays=='both':
-        #     new_items = []
-        #     items = fset['items']
-        #     for item in items:
-        #         new_items.append(item)
-        #         if item.split('@')[0]=='masks':
-        #             for i in meta['masks'][item.split('@')[-1]]['items']:
-        #                 new_items.append(i['source'])
-        #     fset['items'] = new_items
 
         if replace:
             new_items = fset['items']
@@ -3816,8 +3896,8 @@ class DataSet(object):
             if self._verbose_infos:
                 cases_after = self._data.shape[0]
                 droped_cases = cases_before - cases_after
-                msg = '%s duplicated case(s) dropped, %s cases remaining'
-                print msg % (droped_cases, cases_after)
+                msg = '{} duplicated case(s) dropped, {} cases remaining'
+                print msg.format(droped_cases, cases_after)
         return None
 
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
@@ -4625,7 +4705,7 @@ class DataSet(object):
                 raise ValueError("'mapper' must be a dictionary.")
 
             if not (default is None or default in meta['columns']):
-                raise ValueError("'%s' not found in meta['columns']." % (default))
+                raise ValueError("'{}' not found in meta['columns'].".format(default))
 
             index_map = index_mapper(meta, data, mapper, default, intersect)
 
@@ -7306,19 +7386,6 @@ class DataSet(object):
             return None
 
     # ------------------------------------------------------------------------
-    # LINK OBJECT CONVERSION & HANDLERS
-    # ------------------------------------------------------------------------
-
-    def link(self, filters=None, x=None, y=None, views=None):
-        """
-        Create a Link instance from the DataSet.
-        """
-        #raise NotImplementedError('Links from DataSet currently not supported!')
-        if filters is None: filters = 'no_filter'
-        l = qp.sandbox.Link(self, filters, x, y)
-        return l
-
-    # ------------------------------------------------------------------------
     # BATCH HANDLERS
     # ------------------------------------------------------------------------
 
@@ -7359,11 +7426,15 @@ class DataSet(object):
         -------
         qp.Stack
         """
+        if OPTIONS["modules_old"]:
+            from .stack_old import Stack
+        else:
+            from .stack import Stack
 
         dk = self.name
         meta = self._meta
         data = self._data
-        stack = qp.Stack(name='aggregations', add_data={dk: (data, meta)})
+        stack = Stack(name='aggregations', add_data={dk: (data, meta)})
         batches = stack._check_batches(dk, batches)
         for name in batches:
             batch = meta['sets']['batches'][name]

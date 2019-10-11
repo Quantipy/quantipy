@@ -1,6 +1,7 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
 import numpy as np
-from view_generators.view_maps import QuantipyViews as View
+from .view_generators.view_maps import QuantipyViews as View
 
 
 class Link(dict):
@@ -8,15 +9,8 @@ class Link(dict):
     The Link object is a subclassed dictionary that generates an instance of
     Pandas.DataFrame for every view method applied
     """
-    def __init__(self,
-                 the_filter,
-                 y,
-                 x,
-                 data_key,
-                 stack,
-                 views=None,
-                 store_view=False,
-                 create_views=True):
+    def __init__(self, the_filter, y, x, data_key, stack, views=None,
+                 store_view=False, create_views=True):
 
         self.filter = the_filter
         self.y = y
@@ -41,7 +35,7 @@ class Link(dict):
         if create_views:
             if '@1' not in data.keys():
                 data['@1'] = np.ones(len(data.index))
-            views._apply_to(self, weights)
+            views._apply_to(self, None)
 
     def get_meta(self):
         stack = self.stack
@@ -66,7 +60,7 @@ class Link(dict):
             views = link.keys()
 
         for vk in views:
-            if overwrite or not vk in self:
+            if overwrite or vk not in self:
                 self[vk] = link.pop(vk)
 
     def __getitem__(self, key):

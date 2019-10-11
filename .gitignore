@@ -1,27 +1,17 @@
+
 *.pyc
-/tests/*.pyc
 /quantipy/*.pyc
-/tests/StackName.stack
-/tests/ChainName.chain
-/tests/ClusterName.cluster
-dist/
 
 .coverage
-htmlcov/
 
-1.*.stack
+*.stack
 README.html
 
 *.sav
 run.py
 
 .DS_Store
-core/ExcelPainter_old.py
-core/ExcelPainter_old2.py
-core/ExcelPainter_latest.py
-qplogo_invert_lg.png
-temp.chain
-tests/Example Data (A).cache
+
 *.css
 *.ttf
 *.js
@@ -29,14 +19,20 @@ tests/Example Data (A).cache
 *.svg
 *.woff
 
-*.js
-
 docs/API/_static/
 docs/API/_templates/
 
+*debug.log
 *.egg-info
 *.egg
 .eggs/
-.cache
-.pytest_cache/*
-build
+
+tests/Example Data (A).cache
+/tests/*.pyc
+
+*/nodeids
+.pytest_cache
+.pytest_cache/v/cache/nodeids
+
+build/
+dist/

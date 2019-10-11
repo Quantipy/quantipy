@@ -6,6 +6,13 @@ from inspect import getargspec
 # decorators
 # ------------------------------------------------------------------------
 
+def _tolist(obj):
+    if not obj:
+        obj = []
+    elif not isinstance(obj, list):
+        obj = [obj]
+    return obj
+
 def lazy_property(func):
     """Decorator that makes a property lazy-evaluated.
     """
@@ -17,7 +24,8 @@ def lazy_property(func):
         return getattr(self, attr_name)
     return _lazy_property
 
-def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=None):
+def verify(variables=None, categorical=None, text_keys=None, axis=None,
+           is_str=None):
     """
     Decorator to verify arguments.
     """
@@ -41,8 +49,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             var = kwargs.get(variable, args[v_index])
             if var is None:
                 return func(*args, **kwargs)
-            if not isinstance(var, list):
-                var = [var]
+            var = _tolist(var)
             if nested:
                 valid = []
                 for v in var:
@@ -57,7 +64,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             if not_valid:
                 msg = "'{}' argument for {}() must be in {}.\n"
                 msg += '{} is not in {}.'
-                msg = msg.format(variable, func.func_name, collection,
+                msg = msg.format(variable, func.__name__, collection,
                                  not_valid, collection)
                 raise KeyError(msg)
         return func(*args, **kwargs)
@@ -71,7 +78,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             v_index = all_args.index(cat)
             var = kwargs.get(cat, args[v_index])
             if var is None: return func(*args, **kwargs)
-            if not isinstance(var, list): var = [var]
+            var = _tolist(var)
             valid = []
             for v in var:
                 if ' > ' in v:
@@ -83,7 +90,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             if not_cat:
                 msg = "'{}' argument for {}() must reference categorical "
                 msg += 'variable.\n {} is not categorical.'
-                msg = msg.format(cat, func.func_name, not_cat)
+                msg = msg.format(cat, func.__name__, not_cat)
                 raise ValueError(msg)
         return func(*args, **kwargs)
 
@@ -95,8 +102,9 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             # get the text_key argument to check
             tk_index = all_args.index(text_key)
             tks = kwargs.get(text_key, args[tk_index])
-            if tks is None: return func(*args, **kwargs)
-            if not isinstance(tks, list): tks = [tks]
+            if tks is None:
+                return func(*args, **kwargs)
+            tks = _tolist(tks)
             # ckeck the text_key
             valid_tks = ds.valid_tks
             not_supported = [tk for tk in tks if not tk in valid_tks]
@@ -112,7 +120,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
         ax_index = all_args.index(axis)
         a_edit = kwargs.get(axis, args[ax_index])
         if a_edit is None: return func(*args, **kwargs)
-        if not isinstance(a_edit, list): a_edit = [a_edit]
+        a_edit = _tolist(a_edit)
         # ckeck the axis
         valid_ax = ['x', 'y']
         not_supported = [ax for ax in a_edit if not ax in valid_ax]
@@ -128,8 +136,8 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             # get the arguments to modify
             val_index = all_args.index(val)
             v = kwargs.get(val, args[val_index])
-            if not isinstance(v, (list, tuple)): v = [v]
-            if not all(isinstance(text, (str, unicode)) for text in v):
+            v = _tolist(v)
+            if not all(isinstance(text, (str)) for text in v):
                 raise ValueError('Included value must be str or list of str.')
         return func(*args, **kwargs)
 
@@ -142,10 +150,9 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None, is_str=N
             func = dec(func)
         return func(*args, **kwargs)
 
-    if categorical and not isinstance(categorical, list): categorical = [categorical]
-    if text_keys and not isinstance(text_keys, list): text_keys = [text_keys]
-    if is_str and not isinstance(is_str, list): is_str = [is_str]
-
+    categorical = _tolist(categorical)
+    text_keys = _tolist(text_keys)
+    is_str = _tolist(is_str)
     return _deco
 
 def modify(to_list=None):
@@ -159,15 +166,14 @@ def modify(to_list=None):
             # get the arguments to modify
             val_index = all_args.index(val)
             v = kwargs.get(val, args[val_index])
-            if v is None: v = []
-            if not isinstance(v, list): v = [v]
+            v = _tolist(v)
             if kwargs.get(val):
                 kwargs[val] = v
             else:
-                args = tuple(a if not x == val_index else v
-                             for x, a in enumerate(args))
+                args = tuple(
+                    a if not x == val_index else v for x, a in enumerate(args))
         return func(*args, **kwargs)
 
     if to_list:
-        if not isinstance(to_list, list): to_list = [to_list]
+        to_list = _tolist(to_list)
         return _to_list

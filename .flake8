@@ -1,0 +1,19 @@
+[flake8]
+ignore =
+    # E702 multiple statements on one line (semicolon)
+    E702
+    # F405 'xyz' may be undefined, or defined from star imports
+    F405
+
+filename =
+    *audit.py
+    *cache.py
+    *chain.py
+    *chainannotations.py
+    *chainmanager.py
+    *excel.py
+    *excel_formats.py
+    *excel_formats_constants.py
+    *link.py
+    *stack.py
+    *view.py

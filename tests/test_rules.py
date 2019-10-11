@@ -36,6 +36,150 @@ from quantipy.core.dataset import DataSet
 EXTENDED_TESTS = False
 COUNTER = 0
 
+def get_dataframe(obj, described=None, loc=None, keys=None,
+                  show='values', rules=False, verbose=False):
+    """
+    Convenience function for extracting a single dataframe from a stack.
+
+    This function either uses a string of keys sliced out of
+    obj.describe() or the result of same, or a string of keys provided
+    by the user, to return a single, targeted dataframe from obj.
+    Optionally, the exact keys used in the extraction can be printed to
+    the output window for verification.
+
+    Parameters
+    ----------
+    obj : quantipy.Stack or quantipy.Chain
+        The stack or chain from which the dataframe should be extracted.
+    described : pandas.DataFrame, default=None
+        If given, this will be used with loc to identify the string of
+        targeted keys. This parameter is provided to reduce repeated
+        calls to obj.describe() when this function is being used in a
+        loop.
+    loc : int, default=None
+        The .loc[] indexer that can be used on described or
+        obj.describe() to isolate the targeted dataframe.
+    keys : list-like, default=None
+        A list of five keys (dk, fk, xk, yk, vk) that can be used on obj
+        to isolate the targeted dataframe.
+    show : str, default='values'
+        How the index and columns should be displayed. 'values' returns
+        the raw value indexes. 'text' returns the text associated with
+        each value, according to the text key
+        meta['lib']['default text']. Any other str value is assumed to
+        be a non-default text_key.
+    rules : bool, default=False
+        Should any applicable rules (slicex, sortx, dropx) be applied to
+        the dataframe before it is returned?
+    full : bool, default=False
+        If True, the returned dataframe will have a full index applied.
+        Note that rules=True requires a full index be applied and so
+        makes this argument redundant.
+    verbose : bool, default=False
+        If True, the keys used in the extraction will be printed to the
+        output window.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The targeted dataframe.
+    """
+
+    # Error handling for both loc and keys being None
+    if all([arg is None for arg in [loc, keys]]):
+        raise ValueError (
+            "You must provide a value for either loc or keys."
+        )
+    if not described is None:
+        if not isinstance(described, pd.DataFrame):
+            raise TypeError (
+                "The describe argument must be a pandas.DataFrame."
+            )
+    # Error handling for both loc and keys being provided
+    if all([not arg is None for arg in [loc, keys]]):
+        raise ValueError (
+            "You should not provide values for both loc and keys."
+        )
+
+    if not loc is None:
+        # Use loc to generate keys
+        if described is None:
+            described = obj.describe()
+        keys = described.loc[loc]
+
+    # Split out pathway to the target dataframe
+    dk = keys[0]
+    fk = keys[1]
+    xk = keys[2]
+    yk = keys[3]
+    vk = keys[4]
+
+    if verbose:
+        print 'dk:\t', dk
+        print 'fk:\t', fk
+        print 'xk:\t', xk
+        print 'yk:\t', yk
+        print 'vk:\t', vk
+        print ''
+
+    if not dk in obj.keys():
+        raise KeyError('dk not found: {}'.format(dk))
+    if not fk in obj[dk].keys():
+        raise KeyError('fk not found: {}'.format(fk))
+    if not xk in obj[dk][fk].keys():
+        raise KeyError('xk not found: {}'.format(xk))
+    if not yk in obj[dk][fk][xk].keys():
+        raise KeyError('yk not found: {}'.format(yk))
+    if not vk in obj[dk][fk][xk][yk].keys():
+        raise KeyError('vk not found: {}'.format(vk))
+
+    try:
+        df = obj[dk][fk][xk][yk][vk].dataframe.copy()
+        x_is_block = len(vk.split("|")[2].split(":")[0].split("x"))>1
+        x_is_descriptive = vk.split("|")[1].startswith('d.')
+        y_is_condensed = vk.split("|")[2].split(":")[1].startswith('y')
+    except:
+        raise AttributeError (
+            "The aggregation for this view must have failed,"
+            " expected View instance under a view key that"
+            " did already exist but found a Stack instead."
+        )
+
+    if isinstance(obj, Chain):
+
+        return df
+
+    elif isinstance(obj, Stack):
+
+        meta = obj[dk].meta
+        data = obj[dk][fk].data
+        weight_notation = vk.split('|')[4]
+        weight = None if weight_notation=='' else weight_notation
+        if rules:
+            if isinstance(rules, bool):
+                rules = ['x', 'y']
+
+            rules_weight = None
+            link = obj[dk][fk][xk][yk]
+            rules = Rules(link, vk, rules)
+            # print rules.show_rules()
+            # rules.get_slicer()
+            # print rules.show_slicers()
+            rules.apply()
+            df = rules.rules_df()
+
+        if show!='values':
+            if show=='text':
+                text_key = meta['lib']['default text']
+            else:
+                text_key = show
+            text_key = {'x': [text_key], 'y': [text_key]}
+            df = paint_dataframe(meta, df, text_key)
+
+        return df
+
+
+
 class TestRules(unittest.TestCase):
 
     def setUp(self):
