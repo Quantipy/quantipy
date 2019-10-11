@@ -13,8 +13,6 @@ import numpy as np
 
 from collections import defaultdict, OrderedDict
 
-from .link import Link
-from .cache import Cache
 from .dataset import DataSet
 from .helpers import functions
 from .chainmanager import ChainManager
@@ -2496,3 +2494,134 @@ class Stack(defaultdict):
                                 del self[dk][fk][xk][yk][vk]
                                 del self[dk][fk][xk][yk][vk]
         return None
+
+
+class Link(dict):
+    """
+    The Link object is a subclassed dictionary that generates an instance of
+    Pandas.DataFrame for every view method applied
+    """
+    def __init__(self, the_filter, y, x, data_key, stack, views=None,
+                 store_view=False, create_views=True):
+
+        self.filter = the_filter
+        self.y = y
+        self.x = x
+        self.data_key = data_key
+        self.stack = stack
+
+        # If this variable is set to true, then the view will be transposed.
+        self.transpose = False
+
+        if isinstance(views, str):
+            views = View(views)
+        elif isinstance(views, list):
+            views = View(*views)
+        elif views is None:
+            views = View()
+
+        if store_view:
+            self.view = views
+
+        data = stack[data_key].data
+        if create_views:
+            if '@1' not in data.keys():
+                data['@1'] = np.ones(len(data.index))
+            views._apply_to(self, None)
+
+    def get_meta(self):
+        stack = self.stack
+        data_key = self.data_key
+        return stack[data_key].meta
+
+    def get_data(self):
+        stack = self.stack
+        data_key = self.data_key
+        filter_def = self.filter
+        return stack[data_key][filter_def].data
+
+    def get_cache(self):
+        return self.stack[self.data_key].cache
+
+    def merge(self, link, views=None, overwrite=False):
+        """
+        Merge the views from link into self.
+        """
+
+        if views is None:
+            views = link.keys()
+
+        for vk in views:
+            if overwrite or vk not in self:
+                self[vk] = link.pop(vk)
+
+    def __getitem__(self, key):
+        """ The 'get' method for the Link(dict)
+
+            If the 'transpose' variable is set to True THEN this method tries
+            to transpose the result.
+
+            Note: Only the numpy.T method has been implemented.
+        """
+        val = dict.__getitem__(self, key)
+
+        if self.transpose:
+            if "T" in dir(val):
+                return val.T
+            else:
+                return val
+        else:
+            return val
+
+
+class Cache(defaultdict):
+
+    def __init__(self):
+        super(Cache, self).__init__(Cache)
+
+    def __reduce__(self):
+        return self.__class__, tuple(), None, None, self.iteritems()
+
+    def set_obj(self, collection, key, obj):
+        """
+        Save a Quantipy resource inside the cache.
+
+        Parameters
+        ----------
+        collection : {
+            "matrices", "weight_vectors", "quantities", "mean_view_names",
+            "count_view_names"}
+            The key of the collection the object should be placed in.
+        key : str
+            The reference key for the object.
+        obj : Specific Quantipy or arbitrary Python object.
+            The object to store inside the cache.
+        """
+        self[collection][key] = obj
+
+    def get_obj(self, collection, key):
+        """
+        Look up if an object exists in the cache and return it.
+
+        Parameters
+        ----------
+        collection : {
+            "matrices", "weight_vectors", "quantities", "mean_view_names",
+            "count_view_names"}
+            The key of the collection to look into.
+        key : str
+            The reference key for the object.
+
+        Returns
+        -------
+        obj : Specific Quantipy or arbitrary Python object.
+            The cached object mapped to the passed key.
+        """
+        if key in self[collection]:
+            return self[collection][key]
+        elif collection == "matrices":
+            return (None, None)
+        elif collection == "squeezed":
+            return (None, None, None, None, None, None, None)
+        else:
+            return None

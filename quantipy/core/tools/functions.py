@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import sys
+import json
+import pickle
+import pandas as pd
 
 def set_encoding(encoding):
     """
@@ -51,7 +55,7 @@ def cpickle_copy(obj):
 
 def load_json(path_json, hook=OrderedDict):
     with open(path_json) as f:
-        obj = unicoder(json.load(f, object_pairs_hook=hook))
+        obj = json.load(f, object_pairs_hook=hook)
         return obj
 
 

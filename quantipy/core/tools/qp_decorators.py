@@ -2,16 +2,12 @@
 from decorator import decorator
 from inspect import getargspec
 
+from .functions import (
+    ensure_list)
+
 # ------------------------------------------------------------------------
 # decorators
 # ------------------------------------------------------------------------
-
-def _tolist(obj):
-    if not obj:
-        obj = []
-    elif not isinstance(obj, list):
-        obj = [obj]
-    return obj
 
 def lazy_property(func):
     """Decorator that makes a property lazy-evaluated.
@@ -49,7 +45,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None,
             var = kwargs.get(variable, args[v_index])
             if var is None:
                 return func(*args, **kwargs)
-            var = _tolist(var)
+            var = ensure_list(var)
             if nested:
                 valid = []
                 for v in var:
@@ -78,7 +74,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None,
             v_index = all_args.index(cat)
             var = kwargs.get(cat, args[v_index])
             if var is None: return func(*args, **kwargs)
-            var = _tolist(var)
+            var = ensure_list(var)
             valid = []
             for v in var:
                 if ' > ' in v:
@@ -104,7 +100,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None,
             tks = kwargs.get(text_key, args[tk_index])
             if tks is None:
                 return func(*args, **kwargs)
-            tks = _tolist(tks)
+            tks = ensure_list(tks)
             # ckeck the text_key
             valid_tks = ds.valid_tks
             not_supported = [tk for tk in tks if not tk in valid_tks]
@@ -120,7 +116,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None,
         ax_index = all_args.index(axis)
         a_edit = kwargs.get(axis, args[ax_index])
         if a_edit is None: return func(*args, **kwargs)
-        a_edit = _tolist(a_edit)
+        a_edit = ensure_list(a_edit)
         # ckeck the axis
         valid_ax = ['x', 'y']
         not_supported = [ax for ax in a_edit if not ax in valid_ax]
@@ -136,7 +132,7 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None,
             # get the arguments to modify
             val_index = all_args.index(val)
             v = kwargs.get(val, args[val_index])
-            v = _tolist(v)
+            v = ensure_list(v)
             if not all(isinstance(text, (str)) for text in v):
                 raise ValueError('Included value must be str or list of str.')
         return func(*args, **kwargs)
@@ -150,9 +146,9 @@ def verify(variables=None, categorical=None, text_keys=None, axis=None,
             func = dec(func)
         return func(*args, **kwargs)
 
-    categorical = _tolist(categorical)
-    text_keys = _tolist(text_keys)
-    is_str = _tolist(is_str)
+    categorical = ensure_list(categorical)
+    text_keys = ensure_list(text_keys)
+    is_str = ensure_list(is_str)
     return _deco
 
 def modify(to_list=None):
@@ -166,7 +162,7 @@ def modify(to_list=None):
             # get the arguments to modify
             val_index = all_args.index(val)
             v = kwargs.get(val, args[val_index])
-            v = _tolist(v)
+            v = ensure_list(v)
             if kwargs.get(val):
                 kwargs[val] = v
             else:
@@ -175,5 +171,5 @@ def modify(to_list=None):
         return func(*args, **kwargs)
 
     if to_list:
-        to_list = _tolist(to_list)
+        to_list = ensure_list(to_list)
         return _to_list
