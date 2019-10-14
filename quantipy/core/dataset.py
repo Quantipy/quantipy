@@ -26,15 +26,25 @@ class DataSet(object):
     """
     A set of casedata ``pandas.DataFrame`` and meta data ``qp.Meta``.
     """
-    def __init__(self, name):
+    def __init__(self, name, meta, data):
         self.name = name
-        self.path = None
-        self._data = None
-        self._meta = None
-        self.text_key = None
-        self.valid_tks = VALID_TKS
-        self._dimensions_comp = False
-        self._dimensions_suffix = '_grid'
+        self.path = "."
+        if not data:
+            data = pd.DataFrame()
+        self._data = data
+        if not meta:
+            meta = Meta()
+        self._meta = meta
+        self._inherit_meta_properties()
+        self._inherit_meta_functions()
+
+        # default fixes
+        self._repair_date_columns()
+        self._repair_default_var()
+        self._repair_secure_vars()
+        self._rename_blacklist_vars()
+        self._rename_weak_dupes()
+        self.reset_index()
 
     def __contains__(self, name):
         return self._meta.var_exists(name)
@@ -77,136 +87,136 @@ class DataSet(object):
         else:
             self._data[name] = val
 
-    # ------------------------------------------------------------------------
-    # meta properties
-    # ------------------------------------------------------------------------
-    @property
-    def meta(self):
-        return self._meta
-
-    @meta.setter
-    def meta(self, obj):
-        if not isinstance(obj, Meta):
-            err = "Only qp.Meta instances are supported."
-            logger.error(err); raise TypeError(err)
-        self._meta = obj
+    def _inherit_meta_properties(self):
         self.text_key = self._meta.text_key
         self.valid_tks = self._meta.valid_tks
-        self._dimensions_comp = self._meta.dimensions_comp
-        self._dimensions_suffix = self._meta.dimensions_suffix
+        self.dimensions_comp = self._meta.dimensions_comp
+        self.dimensions_suffix = self._meta.dimensions_suffix
 
-    @property
-    def columns(self):
-        return self._meta.columns
+        self.masks = self._meta.masks
+        self.columns = self._meta.columns
 
-    @property
-    def masks(self):
-        return self._meta.masks
+        self.singles = self._meta.singles
+        self.delimited_sets = self._meta.delimited_sets
+        self.ints = self._meta.ints
+        self.floats = self._meta.floats
+        self.dates = self._meta.dates
+        self.strings = self._meta.strings
 
-    @property
-    def sets(self):
-        return self._meta.sets
+        self.filters = self._meta.filters
 
-    @property
-    def singles(self)
-        return self._meta.singles
+        self.sets = self._meta.sets
+        self.batches = self._meta.batches
 
-    @property
-    def delimited_sets(self):
-        return self._meta.delimited_sets
+    def _inherit_meta_functions(self):
+        self.is_single = self._meta.is_single
+        self.is_delimited_set = self._meta.is_delimited_set
+        self.is_int = self._meta.is_int
+        self.is_float = self._meta.is_float
+        self.is_date = self._meta.is_date
+        self.is_array = self._meta.is_array
+        self.is_array_item = self._meta.is_array_item
+        self.is_numeric = self._meta.is_numeric
+        self.is_filter = self._meta.is_filter
+        self.is_categorical = self._meta.is_categorical
 
-    @property
-    def ints(self):
-        return self._meta.ints
+        self.describe = self._meta.describe
+        self.variables = self._meta.variables
+        self.variables_from_set = self._meta.variables_from_set
+        self.by_type = self._meta.by_type
+        self.by_property = self._meta.by_property
 
-    @property
-    def floats(self):
-        return self._meta.floats
+        self.find = self._meta.find
+        self.names = self._meta.names
+        self.valid_var_name = self._meta.valid_var_name
 
-    @property
-    def dates(self):
-        return self._meta.dates
+        self.get_type = self._meta.get_type
+        self.get_subtype = self._meta.get_subtype
+        self.get_property = self._meta.get_property
+        self.get_missings = self._meta.get_missings
+        self.get_rules = self._meta.get_rules
+        self.get_text = self._meta.get_text
+        self.get_values = self._meta.get_values
+        self.get_value_texts = self._meta.get_value_texts
+        self.get_codes = self._meta.get_codes
+        self.get_codes_from_label = self._meta.get_codes_from_label
+        self.get_factors = self._meta.get_factors
+        self.get_items = self._meta.get_items
+        self.get_item_no = self._meta.get_item_no
+        self.get_item_texts = self._meta.get_item_texts
+        self.get_sources = self._meta.get_sources
+        self.get_parent = self._meta.get_parent
+        self.get_weak_dupes = self._meta.get_weak_dupes
 
-    @property
-    def strings(self):
-        return self._meta.strings
-
-    @property
-    def filters(self):
-        return self._meta.filters
-
-    @property
-    def batches(self):
-        return self._meta.batches
-
-    def set_dim_comp(self, value):
-        self._meta.dimensions_comp = value
-
-    def set_dim_suffix(self, suffix=None):
-        self._meta.dimensions_suffix = suffix
-
-    def get_type(self, name):
-        return self._meta.get_type(name)
-
-    def get_subtype(self, name):
-        return self._meta.get_subtype(name)
+        self.create_set = self._meta.create_set
+        self.extend_set = self._meta.extend_set
+        self.roll_up = self._meta.roll_up
+        self.unroll = self._meta.unroll
 
     # ------------------------------------------------------------------------
-    # is .../ has ...
+    # inspect
     # ------------------------------------------------------------------------
-    def is_single(self, name):
-        return self._meta.is_single(name)
-
-    def is_delimited_set(self, name):
-        return self._meta.is_delimited_set(name)
-
-    def is_int(self, name):
-        return self._meta.is_int(name)
-
-    def is_float(self, name):
-        return self._meta.is_float(name)
-
-    def is_string(self, name):
-        return self._meta.is_string(name)
-
-    def is_date(self, name):
-        return self._meta.is_date(name)
-
-    def is_array(self, name):
-        return self._meta.is_array(name)
-
-    def is_array_item(self, name):
-        return self._meta.is_array_item(name)
-
-    def is_numeric(self, name):
-        return self._meta.is_numeric(name)
-
     def is_like_numeric(self, name):
         """
         Test if a ``string``-typed variable can be expressed numerically.
         """
-        if self.is_array(name):
-            err = "Cannot test array masks for numeric likeness!"
-            logger.error(err); raise TypeError(err)
         if not self.is_string(name):
-            err = "'{}' is not of type string (but {}).".format(
-                name, self.get_type(name))
-        s = self._data[name].copy()
+            if self.is_array(name)
+                qtype = self.get_subtype(name)
+            else.
+                qtype = self.get_type(name)
+            err = "'{}' is not of type string (but {}).".format(name, qtype)
         try:
-            s.apply(lambda x: float(x))
+            self[self.unroll(name)].astype(float)
             return True
-        except:
+        except ValueError:
             return False
 
-    def is_filter(self, name):
-        return self._meta.is_filter(name)
-
-    def is_categorical(self, name):
-        return self._meta.is_categorical(name)
+    def get_codes_in_data(self, name):
+        """
+        Get a list of codes that exist in data.
+        """
+        if not self.is_categorical(name):
+            err = "Can only find codes in data for categorical variables."
+            logger.error(err); raise ValueError(err)
+        s = self._data[name]
+        if self.is_delimited_set(name):
+            if not s.dropna().empty:
+                data_codes = s.str.get_dummies(';').columns.tolist()
+                data_codes = [int(c) for c in data_codes]
+            else:
+                data_codes = []
+        else:
+            data_codes = pd.get_dummies(s).columns.tolist()
+        return data_codes
 
     # -------------------------------------------------------------------------
-    # file i/o / conversions
+    # repair
     # -------------------------------------------------------------------------
+    def _rename_blacklist_vars(self):
+        blacklist_var = []
+        for var in BLACKLIST_VARIABLES:
+            n_var = self.valid_var_name(var)
+            if not var == n_var:
+                self.rename(var, n_var)
+                blacklist_var.append([var, n_var])
+        if blacklist_var:
+            msg = "Renamed blacklist variables:\n{}".format(
+                "\n".join(["-->".join(renamed) for renamed in blacklist_var]))
+            logger.info(msg)
+
+    def _rename_weak_dupes(self):
+        dupes = self.names(as_df=False)
+        renamed_wd = []
+        if isinstance(dupes, dict):
+            for var in list(dupes.values())[1:]
+                n_var = self.valid_var_name(var)
+                self.rename(var, n_var)
+                renamed_wd.append([var, n_var])
+        if renamed_wd:
+            msg = "Renamed weak duplicates:\n{}".format(
+                "\n".join(["-->".join(renamed) for renamed in renamed_wd]))
+            logger.info(msg)
 
     def _repair_date_columns(self):
         for col in self.dates:
@@ -215,13 +225,83 @@ class DataSet(object):
     def _repair_default_var(self):
         self.add_meta("@1", "int", "")
         self._data['@1'] = np.ones(len(self._data))
+        for var in INVALID_VARS:
+            if var in self._data.columns:
+                self._data.drop(var, axis=1, inplace=True)
+            if var in self:
+                self._meta.drop(var)
 
-    def _reset_index(self):
+    def _repair_secure_vars(self):
+        """
+        Add variables in the CSV missing from the data-file set
+        """
+        ignore = ['@1']
+        actual = self.unroll(self.variables_from_set())
+        expected = self._data.columns.values.tolist()
+        missing = [col for col in expected if not col in actual + ignore]
+        if missing:
+            self.extend_set("data file", missing)
+
+    def reset_index(self):
         self._data.index = list(xrange(0, len(self._data.index)))
 
+    # -------------------------------------------------------------------------
+    # file i/o / conversions
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def _verbose_io(name, path, software, load=True):
+        if load:
+            msg = "Load qp.DataSet from '{}' data: '{}' ('{}')"
+        else:
+            msg = "Save qp.DataSet as '{}' data: '{}' ('{}')"
+        logger.info(msg.format(software, name, path))
+
+    def clone(self):
+        """
+        Get a deep copy of the ``DataSet`` instance.
+        """
+        return copy.deepcopy(self)
+
+    def filter(self, condition, inplace=False):
+        """
+        Filter the instance's data.
+
+        Parameters
+        ----------
+        condition : str or qp.Logic
+            Name of a filter variable or logic, which is used to slice the data
+        inplace : bool, default False
+            Return a new instance or modify the instance inplace.
+        """
+        ds = self if inplace else self.clone()
+        slicer = ds.take(condition)
+        ds._data = ds._data.iloc[slicer, :]
+        if not inplace:
+            return ds
+
+    def subset(self, variables=None, from_set=None, inplace=False):
+        """
+        Create a version of self with a reduced collection of variables.
+
+        Parameters
+        ----------
+        variables : str or list of str, default None
+            A list of variable names to include in the new DataSet instance.
+        from_set : str
+            The name of an already existing set to base the new DataSet on.
+        inplace : bool, default False
+            Return a new instance or modify the instance inplace.
+        """
+        ds = self if inplace else self.clone()
+        ds._meta.subset(variables, from_set, inplace=True)
+        keep = ds.variables_from_set("data file")
+        drop = ds.unroll([col for col in ds._data.columns if col not in keep])
+        ds._data.drop(drop, 1, inplace=True)
+        if not inplace:
+            return ds
 
     @classmethod
-    def from_quantipy(cls, name, path, reset=True):
+    def from_quantipy(cls, name, path=".", reset=True):
         """
         Load Quantipy .csv/.json files, connecting as data and meta components.
 
@@ -232,35 +312,72 @@ class DataSet(object):
         path : str
             The path, where the csv and json files are located.
         reset : bool, default True
-            Clean the `'lib'` and ``'sets'`` metadata collections from non-native
-            entries, e.g. user-defined information or helper metadata.
+            Clean the `'lib'` and ``'sets'`` metadata collections from
+            non-native entries.
 
         Example:
         ```
         dataset = qp.DataSet.from_quantipy(
-            "Example Data (A)",
-            "../tests/data/",
+            name="Example Data (A)",
+            path="../tests/data/",
             reset=True)
         ```
         """
-        dataset = cls(name)
-        dataset.path = path
-        path_meta = os.path.join(path, u"{}.json".format(name))
-        meta = Meta.load(path_meta)
-        dataset.meta = meta
+        path_json = os.path.join(path, u"{}.json".format(name))
+        meta = Meta.from_json(path_json, reset)
         path_csv = os.path.join(path, u"{}.csv".format(name))
-        dataset._data = load_csv(path_csv)
-
-        # repair
-        dataset._repair_date_columns()
-        dataset._repair_default_var()
-        if reset:
-            dataset._reset_index()
-            dataset._meta._clean_custom_sets_and_libs()
+        data = load_csv(path_csv)
+        dataset = cls(name, meta, data)
+        dataset.path = path
+        self._verbose_io(name, path, "quantipy")
         return dataset
 
     @classmethod
-    def from_dimensions(cls, name, path):
+    def from_components(cls, name, data, meta=None, text_key=None):
+        """
+        Attach data and meta directly to the ``DataSet`` instance.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            A DataFrame that contains case data entries for the ``DataSet``.
+        meta: qp.Meta instance, default None
+            A qp.Meta instance that stores meta data describing the columns of
+            the dataframe.
+        text_key : str, default None
+            The text_key to be used. If not provided, it will be attempted to
+            use the 'default text' from the ``meta['lib']`` definition.
+        """
+        if not isinstance(data, pd.DataFrame):
+            err = "'data' must be a pandas.DataFrame."
+            logger.error(err); raise TypeError(err)
+        if meta and not isinstance(meta, Meta):
+            err = "'meta' must be qp.Meta."
+            logger.error(err); raise TypeError(err)
+        elif not meta:
+            meta = Meta.inferred_from_df(data, text_key)
+        dataset = cls(name, meta, data)
+        return dataset
+
+    @classmethod
+    def from_stack(cls, stack, fk="no_filter"):
+        """
+        Use ``qp.Stack`` data and meta to create a ``DataSet`` instance.
+
+        Parameters
+        ----------
+        stack : qp.Stack
+            The Stack instance to convert.
+        fk: string
+            Filter name if the stack contains more than one filters.
+        """
+        name = stack.name
+        meta = stack[name].meta
+        data = stack[name][fk].data
+        return cls.from_components(name, data, meta)
+
+    @classmethod
+    def from_dimensions(cls, name, path="."):
         """
         Load Dimensions .ddf/.mdd files, connecting as data and meta components
 
@@ -279,73 +396,86 @@ class DataSet(object):
             reset=True)
         ```
         """
-        dataset = cls(name)
+        path_mdd = os.path.join(path, u"{}.mdd".format(name))
+        path_ddf = os.path.join(path, u"{}.ddf".format(name))
+        meta, data = quantipy_from_dimensions(path_mdd, path_ddf)
+        dataset = cls(name, meta, data)
         dataset.path = path
-        self._meta, self._data = quantipy_from_dimensions(path_meta+'.mdd', path_data+'.ddf')
-        self._set_file_info(path_data, path_meta)
-        if not self._dimensions_comp == 'ignore':
-            d_comp = self._dimensions_comp
-            self._meta['info']['dimensions_comp'] = d_comp
-            self.set_dim_suffix()
-            self.undimensionize()
-        if d_comp is True: self.dimensionize()
-        self._rename_blacklist_vars()
-        return None
+        self._verbose_io(name, path, "dimensions")
+        return dataset
 
-    @verify(text_keys='text_key')
-    def read_ascribe(self, path_meta, path_data, text_key):
+    @classmethod
+    def from_ascribe(cls, name, path="."):
         """
-        Load Dimensions .xml/.txt files, connecting as data and meta components.
+        Load Ascribe .xml/.txt files, connecting as data and meta components.
 
         Parameters
         ----------
-        path_meta : str
-            The full path (optionally with extension ``'.xml'``, otherwise
-            assumed as such) to the meta data defining ``'.xml'`` file.
-        path_data : str
-            The full path (optionally with extension ``'.txt'``, otherwise
-            assumed as such) to the case data defining ``'.txt'`` file.
+        name : str
+            The name (without suffix) of the xml and txt files to load.
+        path : str
+            The path, where the xml and txt files are located.
 
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace, connected to Quantipy data
-            and meta components that have been converted from their Ascribe
-            source files.
+        Note:
+            The files expect the following naming convention:
+            "{name}.codebooks.xml" and "{name}_tabdelimited.txt"
         """
-        if path_meta.endswith('.xml'): path_meta = path_meta.replace('.xml', '')
-        if path_data.endswith('.txt'): path_data = path_data.replace('.txt', '')
-        self._meta, self._data = quantipy_from_ascribe(path_meta+'.xml', path_data+'.txt', text_key)
-        self._set_file_info(path_data, path_meta)
-        self._rename_blacklist_vars()
-        return None
+        path_xml = os.path.join(path, u"{}.codebooks.xml".format(name))
+        path_txt = os.path.join(path, u"{}_tabdelimited.txt".format(name))
+        meta, data = quantipy_from_ascribe(path_mdd, path_ddf)
+        dataset = cls(name, meta, data)
+        dataset.path = path
+        self._verbose_io(name, path, "ascribe")
+        return dataset
 
-    def read_spss(self, path_sav, **kwargs):
+    @classmethod
+    def from_spss(cls, name, path="."):
         """
-        Load SPSS Statistics .sav files, converting and connecting data/meta.
+        Load SPSS Statistics .sav files, connecting as data and meta components
 
         Parameters
         ----------
-        path_sav : str
-            The full path (optionally with extension ``'.sav'``, otherwise
-            assumed as such) to the ``'.sav'`` file.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace, connected to Quantipy data
-            and meta components that have been converted from the SPSS
-            source file.
+        name : str
+            The name (without suffix) of the sav file to load.
+        path : str
+            The path, where the sav file is located.
         """
-        if path_sav.endswith('.sav'): path_sav = path_sav.replace('.sav', '')
-        self._meta, self._data = parse_sav_file(path_sav+'.sav', **kwargs)
-        self._set_file_info(path_sav)
-        self._rename_blacklist_vars()
-        return None
+        path_sav = os.path.join(path, u"{}.sav".format(name))
+        meta, data = parse_sav_file(path_mdd, path_ddf)
+        dataset = cls(name, meta, data)
+        dataset.path = path
+        self._verbose_io(name, path, "SPSS")
+        return dataset
+
+    def to_quantipy(self, name=None, path=None):
+        """
+        Write the data and meta components to .csv/.json files.
+
+        Parameters
+        ----------
+        name : str
+            The name (without suffix) of the csv and json files to save.
+            If None is provided, the instance's name is taken.
+        path : str
+            The path, where the csv and json files are saved.
+            If None is provided, the instance's path is taken.
+        """
+        path = path or self.path
+        name = name or self.name
+        path_json = os.path.join(path, u"{}.json".format(name))
+        path_csv = os.path.join(path, u"{}.csv".format(name))
+        self._meta.to_json(path_json)
+        self._data.to_csv(path_csv)
+        self._verbose_io(name, path, "quantipy", False)
+
+    def to_components(self):
+        """
+        Return the ``meta`` and ``data`` components of the DataSet instance.
+        """
+        return = self._meta, self._data
 
     @verify(text_keys='text_key')
-    def write_dimensions(self, path_mdd=None, path_ddf=None, text_key=None,
-                         run=True, clean_up=True):
+    def to_dimensions(self, name=None, path=None, **kwargs):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -355,1191 +485,93 @@ class DataSet(object):
 
         Parameters
         ----------
-        path_mdd : str, default None
-            The full path (optionally with extension ``'.mdd'``, otherwise
-            assumed as such) for the saved the DataSet._meta component.
-            If not provided, the instance's ``name`` and ```path`` attributes
-            will be used to determine the file location.
-        path_ddf : str, default None
-            The full path (optionally with extension ``'.ddf'``, otherwise
-            assumed as such) for the saved DataSet._data component.
-            If not provided, the instance's ``name`` and ```path`` attributes
-            will be used to determine the file location.
-        text_key : str, default None
-            The desired ``text_key`` for all ``text`` label information. Uses
-            the ``DataSet.text_key`` information if not provided.
-        run : bool, default True
-            If True, the method will try to run the metadata creating .mrs
-            script and execute a DMSRun for the case data transformation in
-            the .dms file.
-        clean_up : bool, default True
-            By default, all helper files from the conversion (.dms, .mrs,
-            paired .csv files, etc.) will be deleted after the process has
-            finished.
-
-        Returns
-        -------
-        A .ddf/.mdd pair is saved at the provided path location.
+        name : str
+            The name (without suffix) of the mdd and ddf files to save.
+            If None is provided, the instance's name is taken.
+        path : str
+            The path, where the mdd and ddf files are saved.
+            If None is provided, the instance's path is taken.
+        kwargs : dict
+            See ``qp.core.io.dimensions.writer.dimensions_from_quantipy()``
         """
-        ds_clone = self.clone()
-        if not text_key: text_key = ds_clone.text_key
-        if ds_clone._dimensions_comp:
-            ds_clone.undimensionize()
-        # check against weak dupes and rename automatically
-        ds_clone._rename_weak_dupes()
-        # naming rules for Dimensions are applied
-        ds_clone.dimensionize()
-        meta, data = ds_clone._meta, ds_clone._data
-        if path_ddf is None and path_mdd is None:
-            path = ds_clone.path
-            name = ds_clone.name
-            path_mdd = os.path.join(path, ''.join([name, '.mdd']))
-            path_ddf = os.path.join(path, ''.join([name, '.ddf']))
-        elif path_ddf is not None and path_mdd is not None:
-            if not path_mdd.endswith('.mdd'):
-                path_mdd = ''.join([path_mdd, '.mdd'])
-            if not path_ddf.endswith('.ddf'):
-                path_ddf = ''.join([path_ddf, '.ddf'])
-        else:
-            msg = "Must either specify or omit both 'path_mdd' and 'path_ddf'!"
-            raise ValueError(msg)
-        path_mdd = path_mdd.replace('//', '/')
-        path_ddf = path_ddf.replace('//', '/')
-        dimensions_from_quantipy(meta, data, path_mdd, path_ddf, text_key=text_key,
-                     run=run, clean_up=clean_up)
-        file_msg = u"\nSaved files to:\n{} and\n{}".format(path_mdd, path_ddf)
-        print file_msg
-        return None
-
-    def write_quantipy(self, path_meta=None, path_data=None):
-        """
-        Write the data and meta components to .csv/.json files.
-
-        The resulting files are well-defined native Quantipy source files.
-
-        Parameters
-        ----------
-        path_meta : str, default None
-            The full path (optionally with extension ``'.json'``, otherwise
-            assumed as such) for the saved the DataSet._meta component.
-            If not provided, the instance's ``name`` and ```path`` attributes
-            will be used to determine the file location.
-        path_data : str, default None
-            The full path (optionally with extension ``'.csv'``, otherwise
-            assumed as such) for the saved DataSet._data component.
-            If not provided, the instance's ``name`` and ```path`` attributes
-            will be used to determine the file location.
-
-        Returns
-        -------
-        A .csv/.json pair is saved at the provided path location.
-        """
-        meta, data = self._meta, self._data
-        if path_data is None and path_meta is None:
-            path = self.path
-            name = self.name
-            path_meta = os.path.join(path, ''.join([name, '.json']))
-            path_data = os.path.join(path, ''.join([name, '.csv']))
-        elif path_data is not None and path_meta is not None:
-            if not path_meta.endswith('.json'):
-                path_meta = ''.join([path_meta, '.json'])
-            if not path_data.endswith('.csv'):
-                path_data = ''.join([path_data, '.csv'])
-        else:
-            msg = "Must either specify or omit both 'path_meta' and 'path_data'!"
-            raise ValueError(msg)
-        save_json(meta, path_json)
-        data.to_csv(path_csv)
-        return None
+        path = path or self.path
+        name = name or self.name
+        path_mdd = os.path.join(path, u"{}.mdd".format(name))
+        path_ddf = os.path.join(path, u"{}.ddf".format(name))
+        ds = self.clone()
+        if not ds.dimensions_comp:
+            ds.dimensionize()
+        dimensions_from_quantipy(
+            ds._meta, ds._data, path_mdd, path_ddf, text_key)
+        self._verbose_io(name, path, "dimensions", False)
 
     @verify(text_keys='text_key')
-    def write_spss(self, path_sav=None, index=True, text_key=None,
-                   mrset_tag_style='__', drop_delimited=True, from_set=None,
-                   verbose=True):
+    def to_spss(self, name=None, path=None, **kwargs):
         """
         Convert the Quantipy DataSet into a SPSS .sav data file.
 
         Parameters
         ----------
-        path_sav : str, default None
-            The full path (optionally with extension ``'.json'``, otherwise
-            assumed as such) for the saved the DataSet._meta component.
-            If not provided, the instance's ``name`` and ```path`` attributes
-            will be used to determine the file location.
-        index : bool, default False
-            Should the index be inserted into the dataframe before the
-            conversion happens?
-        text_key : str, default None
-            The text_key that should be used when taking labels from the
-            source meta. If the given text_key is not found for any
-            particular text object, the ``DataSet.text_key`` will be used
-            instead.
-        mrset_tag_style : str, default '__'
-            The delimiting character/string to use when naming dichotomous
-            set variables. The mrset_tag_style will appear between the
-            name of the variable and the dichotomous variable's value name,
-            as taken from the delimited set value that dichotomous
-            variable represents.
-        drop_delimited : bool, default True
-            Should Quantipy's delimited set variables be dropped from
-            the export after being converted to dichotomous sets/mrsets?
-        from_set : str
-            The set name from which the export should be drawn.
-
-        Returns
-        -------
-        A SPSS .sav file is saved at the provided path location.
+        name : str
+            The name (without suffix) of the sav file to save.
+            If None is provided, the instance's name is taken.
+        path : str
+            The path, where the sav file is saved.
+            If None is provided, the instance's path is taken.
+        kwargs : dict
+            See ``qp.core.io.spss.writer.save_sav()``
         """
-        self.set_encoding('cp1252')
-        meta, data = self._meta, self._data
-        if not text_key:
-            text_key = self.text_key
-        if not path_sav:
-            path_sav = os.path.join(self.path, ''.join([self.name, '.sav']))
-        else:
-            if not path_sav.endswith('.sav'):
-                path_sav = ''.join([path_sav, '.sav'])
-        save_sav(path_sav, meta, data, index=index, text_key=text_key,
-               mrset_tag_style=mrset_tag_style, drop_delimited=drop_delimited,
-               from_set=from_set, verbose=verbose)
-        self.set_encoding('utf-8')
-        return None
-
-    @verify(variables={'key': 'both'})
-    def meta_to_json(self, key=None, collection=None):
-        """
-        Save a meta object as json file.
-
-        Parameters
-        ----------
-        key: str, default None
-            Name of the variable whose metadata is saved, if key is not
-            provided included collection or the whole meta is saved.
-        collection: str {'columns', 'masks', 'sets', 'lib'}, default None
-            The meta object is taken from this collection.
-
-        Returns
-        -------
-        None
-        """
-        meta = self._meta
-        if key: k = '@{}'.format(key)
-        col = {'columns': 'columns{}'.format(k if key else ''),
-               'masks':   'masks{}'.format(k if key else ''),
-               'sets':    'sets{}'.format(k if key else ''),
-               'lib':     'lib@values{}'.format(k if key else '')}
-        if collection and not collection in col.keys():
-            raise ValueError('collection must be one of {}'.format(col.keys()))
-        if key and not collection:
-            collection = 'masks' if key in self.masks() else 'columns'
-        if not (key or collection):
-            obj = meta
-            name = 'meta'
-        else:
-            obj_p = col[collection].split('@')
-            obj = meta[obj_p.pop(0)]
-            while obj_p:
-                obj = obj[obj_p.pop(0)]
-            name = '{}{}'.format(collection, '_{}'.format(key.split('.')[0])
-                                 if key else '')
-        ds_path = '../' if self.path == '/' else self.path
-        path = os.path.join(ds_path, ''.json([self.name, '_', name, '.json']))
-        with open(path, 'w') as file:
-            json.dump(obj, file)
-        print u'create: {}'.format(path)
-        return None
-
-    @verify(text_keys='text_key')
-    def from_components(self, data_df, meta_dict=None, reset=True, text_key=None):
-        """
-        Attach data and meta directly to the ``DataSet`` instance.
-
-        .. note:: Except testing for appropriate object types, this method
-            offers no additional safeguards or consistency/compability checks
-            with regard to the passed data and meta documents!
-
-        Parameters
-        ----------
-        data_df : pandas.DataFrame
-            A DataFrame that contains case data entries for the ``DataSet``.
-        meta_dict: dict, default None
-            A dict that stores meta data describing the columns of the data_df.
-            It is assumed to be well-formed following the Quantipy meta data
-            structure.
-        reset : bool, default True
-            Clean the `'lib'` and ``'sets'`` metadata collections from non-native
-            entries, e.g. user-defined information or helper metadata.
-        text_key : str, default None
-            The text_key to be used. If not provided, it will be attempted to
-            use the 'default text' from the ``meta['lib']`` definition.
-
-        Returns
-        -------
-        None
-        """
-        if not isinstance(data_df, pd.DataFrame):
-            msg = 'data_df must be a pandas.DataFrame, passed {}.'
-            raise TypeError(msg.format(type(data_df)))
-        if meta_dict and not isinstance(meta_dict, dict):
-            msg = 'meta_dict must be of type dict, passed {}.'
-            raise TypeError(msg.format(type(meta_dict)))
-        self._data = data_df
-        if 'id_L1' in self._data.columns:
-            self._data.drop('id_L1', axis=1, inplace=True)
-        if 'id_L1.1' in self._data.columns:
-            self._data.drop('id_L1.1', axis=1, inplace=True)
-        if meta_dict:
-            self._meta = meta_dict
-        else:
-            if not text_key: text_key = 'en-GB'
-            self._add_inferred_meta(text_key)
-        if not text_key:
-            try:
-                self.text_key = self._meta['lib']['default text']
-            except (KeyError, TypeError):
-                warning = "No 'text_key' provided and unable to derive"
-                warning = warning + " 'text_key' information from passed meta!"
-                warning = warning + " 'DataSet._meta might be corrupt!"
-                warnings.warn(warning)
-                self.text_key = None
-        self.set_verbose_infomsg(False)
-        self._set_file_info('', reset=reset)
-        self.set_dim_suffix()
-        self._rename_blacklist_vars()
-        return None
-
-    def from_stack(self, stack, data_key=None, dk_filter=None, reset=True):
-        """
-        Use ``quantipy.Stack`` data and meta to create a ``DataSet`` instance.
-
-        Parameters
-        ----------
-        stack : quantipy.Stack
-            The Stack instance to convert.
-        data_key : str
-            The reference name where meta and data information are stored.
-        dk_filter: string, default None
-            Filter name if the stack contains more than one filters. If None
-            'no_filter' will be used.
-        reset : bool, default True
-            Clean the `'lib'` and ``'sets'`` metadata collections from non-native
-            entries, e.g. user-defined information or helper metadata.
-
-        Returns
-        -------
-        None
-        """
-        if data_key is None and len(stack.keys()) > 1:
-            msg = 'Please specify a data_key, the Stack contains more than one.'
-            raise ValueError(msg)
-        elif data_key is None:
-            data_key = stack.keys()[0]
-        elif not data_key in stack.keys():
-            msg = "data_key '{}' does not exist.".format(data_key)
-            raise KeyError(msg)
-
-        if not dk_filter:
-            dk_f = 'no_filter'
-        elif dk_filter in stack[data_key].keys():
-            msg = 'Please pass an existing filter of the Stack:\n{}'.format(
-                stack[data_key].keys())
-            raise KeyError(msg)
-
-        meta = stack[data_key].meta
-        data = stack[data_key][dk_f].data
-        self.name = data_key
-        self.from_components(data, meta, reset=reset)
-
-        return None
-
-    def _vars_from_batch(self, batchdef, mode='batch-full'):
-        """
-        """
-        xs = self.roll_up(batchdef['xks'])
-        ys = batchdef['yks']
-        for add_y_coll in ['extended_yks_per_x', 'exclusive_yks_per_x']:
-            if batchdef[add_y_coll]:
-                for y in batchdef[add_y_coll].values:
-                    if not y in ys: ys.append(y)
-        if '@' in ys: ys.remove('@')
-        oe = []
-        for verbatim in batchdef['verbatims']:
-            oe += verbatim['columns']
-        oe = list(set(oe))
-        w = batchdef['weights']
-        if None in w:
-            w.remove(None)
-        if mode in ['batch-full', 'batch-x']:
-            batch_vars = xs
-            if mode == 'batch-full':
-                for y in ys:
-                    if not y in batch_vars: batch_vars.append(y)
-                for verbatim in oe:
-                    if not oe in batch_vars:
-                        batch_vars.append(verbatim)
-        if w: batch_vars.extend(w)
-        return batch_vars
-
-    @modify(to_list=['text_key', 'include'])
-    @verify(text_keys='text_key', variables={'include': 'both'})
-    def _from_batch(self, batch_name, include='identity', text_key=[],
-                    apply_edits=True, additions='variables'):
-        """
-        """
-        # get the main batch definition to construct a dataset from...
-        batch_def = self._meta['sets']['batches'][batch_name]
-        # filter it if needed:
-        f = batch_def['filter']
-        if f is None:
-            b_ds = self.clone()
-        elif isinstance(f, basestring):
-            b_ds = self.filter(batch_name, {f: 0})
-        else:
-            b_ds = self.filter(batch_name, f.values()[0])
-        # build the variable collection based in Batch setup & requirements:
-        main_variables = b_ds._vars_from_batch(batch_def, 'batch-full')
-        if additions in ['full', 'filters']:
-            if batch_def['additions']:
-                for add_batch in batch_def['additions']:
-                    f = add_batch['filter']
-                    if not f is None and isinstance(f, basestring):
-                        if not f in main_variables:
-                            main_variables.append(f)
-        if additions in ['full', 'variables']:
-            if batch_def['additions']:
-                for add_batch in batch_def['additions']:
-                    add_batch_def = b_ds._meta['sets']['batches'][add_batch]
-                    add_vars = b_ds._vars_from_batch(add_batch_def)
-                    add_vars = [v for v in add_vars if not v in main_variables]
-                    main_variables.extend(add_vars)
-        # add any custom variables...
-        if include:
-            include = [v for v in include if not v in main_variables]
-            main_variables = include + main_variables
-        # subset the dataset variables...
-        b_ds.subset(main_variables, inplace=True)
-        b_ds.order(main_variables)
-        self._rename_blacklist_vars()
-        return b_ds
-
-    @modify(to_list=['text_key', 'include'])
-    @verify(text_keys='text_key', variables={'include': 'both'})
-    def from_batch(self, batch_name, include='identity', text_key=[],
-                   apply_edits=True, additions='variables'):
-        """
-        Get a filtered subset of the DataSet using qp.Batch definitions.
-
-        Parameters
-        ----------
-        batch_name: str
-            Name of a Batch included in the DataSet.
-        include: str/ list of str
-            Name of variables that get included even if they are not in Batch.
-        text_key: str/ list of str, default None
-            Take over all texts of the included text_key(s), if None is provided
-            all included text_keys are taken.
-        apply_edits: bool, default True
-            meta_edits and rules are used as/ applied on global meta of the
-            new DataSet instance.
-        additions: {'variables', 'filters', 'full', None}
-            Extend included variables by the xks, yks and weights of the
-            additional batches if set to 'variables', 'filters' will create
-            new 1/0-coded variables that reflect any filters defined. Selecting
-            'full' will do both, ``None`` will ignore additional Batches completely.
-
-        Returns
-        -------
-        b_ds : ``quantipy.DataSet``
-        """
-        def _apply_edits_rules(ds, name, b_meta):
-            if ds.is_array(name) and b_meta.get(name):
-                ds._meta['masks'][name] = b_meta[name]
-                try:
-                    ds._meta['lib']['values'][name] = b_meta['lib'][name]
-                except:
-                    pass
-            elif b_meta.get(name):
-                ds._meta['columns'][name] = b_meta[name]
-            if not ds._is_array_item(name):
-                for axis in ['x', 'y']:
-                    if all(rule in ds._get_rules(name, axis) for rule in ['dropx', 'slicex']):
-                        drops = ds._get_rules(name, axis)['dropx']['values']
-                        slicer = ds._get_rules(name, axis)['slicex']['values']
-                    elif 'dropx' in ds._get_rules(name, axis):
-                        drops = ds._get_rules(name, axis)['dropx']['values']
-                        slicer = ds.codes(name)
-                    elif 'slicex' in ds._get_rules(name, axis):
-                        drops = []
-                        slicer = ds._get_rules(name, axis)['slicex']['values']
-                    else:
-                        drops = slicer = []
-                    if drops or slicer:
-                        if not all(isinstance(c, int) for c in drops):
-                            item_no = [ds.item_no(v) for v in drops]
-                            ds.remove_items(name, item_no)
-                        else:
-                            codes = ds.codes(name)
-                            n_codes = [c for c in slicer if not c in drops]
-                            if not len(n_codes) == len(codes):
-                                remove = [c for c in codes if not c in n_codes]
-                                ds.remove_values(name, remove)
-                            ds.reorder_values(name, n_codes)
-                            if ds.is_array(name):
-                                ds._meta['masks'][name].pop('rules')
-                            else:
-                                ds._meta['columns'][name].pop('rules')
-                        return None
-
-        batches = self._meta['sets'].get('batches', {})
-        if not batch_name in batches:
-            msg = 'No Batch named "{}" is included in DataSet.'
-            raise KeyError(msg.format(batch_name))
-        else:
-            batch = batches[batch_name]
-        if not text_key: text_key = self.valid_tks
-        if not batch['language'] in text_key:
-            msg = 'Batch-textkey {} is not included in {}.'
-            raise ValueError(msg.format(batch['language'], text_key))
-        # Create a new instance by filtering or cloning
-        f = batch['filter']
-        if f is None:
-            b_ds = self.clone()
-        elif isinstance(f, basestring):
-            b_ds = self.filter(batch_name, {f: 0})
-        else:
-            b_ds = self.filter(batch_name, f.values()[0])
-
-        # Get a subset of variables (xks, yks, oe, weights)
-        variables = ['@1'] + include[:]
-        adds = batch['additions'] if additions in ['full', 'variables'] else []
-        for b_name, ba in batches.items():
-            if not b_name in [batch_name] + adds: continue
-            variables += ba['xks'] + ba['yks'] + ba['_variables']
-            for oe in ba['verbatims']:
-                variables += oe['columns']
-            variables += ba['weights']
-            for yks in ba['extended_yks_per_x'].values() + ba['exclusive_yks_per_x'].values():
-                variables += yks
-            if additions in ['full', 'filters']:
-                variables += ba['filter_names']
-        variables = list(set([v for v in variables if not v in ['@', None]]))
-        variables = b_ds.roll_up(variables)
-        b_ds.subset(variables, inplace=True)
-        # Modify meta of new instance
-        b_ds.name = b_ds._meta['info']['name'] = batch_name
-        b_ds.set_text_key(batch['language'])
-        for b in b_ds._meta['sets']['batches'].keys():
-            if not b in [batch_name] + adds: b_ds._meta['sets']['batches'].pop(b)
-        # apply edits
-        if apply_edits:
-            b_edits = b_ds._meta['sets']['batches'][batch_name]['meta_edits']
-            for var in b_ds.variables():
-                if b_ds.var_exists(var):
-                    _apply_edits_rules(b_ds, var, b_edits)
-        # select text_keys
-        if text_key:
-            b_ds.select_text_keys(text_key)
-        self._rename_blacklist_vars()
-        return b_ds
-
-    @verify(variables={'unique_key': 'columns'})
-    def from_excel(self, path_xlsx, merge=True, unique_key='identity'):
-        """
-        Converts excel files to a dataset or/and merges variables.
-
-        Parameters
-        ----------
-        path_xlsx : str
-            Path where the excel file is stored. The file must have exactly
-            one sheet with data.
-        merge : bool
-            If True the new data from the excel file will be merged on the
-            dataset.
-        unique_key : str
-            If ``merge=True`` an hmerge is done on this variable.
-
-        Returns
-        -------
-        new_dataset : ``quantipy.DataSet``
-            Contains only the data from excel.
-            If ``merge=True`` dataset is modified inplace.
-        """
-
-        xlsx = pd.read_excel(path_xlsx, sheetname=None)
-
-        if not len(xlsx.keys()) == 1:
-            raise KeyError("The XLSX must have exactly 1 sheet.")
-        key = xlsx.keys()[0]
-        sheet = xlsx[key]
-        if merge and not unique_key in sheet.columns:
-            raise KeyError(
-            "The coding sheet must a column named '{}'.".format(unique_key))
-
-        new_ds = qp.DataSet('excel_data')
-        new_ds._data = pd.DataFrame()
-        new_ds._meta = new_ds.start_meta()
-        for col in sheet.columns.tolist():
-            new_ds.add_meta(col, 'int', col)
-        new_ds._data = sheet
-
-        if merge:
-            self.hmerge(new_ds, on=unique_key, verbose=False)
-        self._rename_blacklist_vars()
-        return new_ds
-
-    def _set_file_info(self, path_data, path_meta=None, reset=True):
-        self._data['@1'] = np.ones(len(self._data))
-        self._meta['columns']['@1'] = {'type': 'int'}
-        self._data.index = list(xrange(0, len(self._data.index)))
-        if self._verbose_infos: self._show_file_info()
-        if reset:
-            # drop user-defined / unknown 'sets' & 'lib' entries:
-            valid_sets = self.masks() + ['data file', 'batches']
-            found_sets = self._meta['sets'].keys()
-            valid_libs = ['default text', 'valid text', 'values']
-            found_libs = self._meta['lib'].keys()
-            for set_def in found_sets:
-                if set_def not in valid_sets:
-                    del self._meta['sets'][set_def]
-            for lib_def in found_libs:
-                if lib_def not in valid_libs:
-                    del self._meta['lib'][lib_def]
-        return None
-
-    def _show_file_info(self):
-        file_spec = (u'DataSet: {}\nrows: {} - columns: {}\n'
-                     u'Dimensions compatibility mode: {}')
-        if not self.path: self.path = '/'
-        file_name = os.path.join(self.path, self.name)
-        print file_spec.format(
-            file_name,
-            len(self._data.index),
-            len(self._data.columns)-1,
-            self._dimensions_comp
-        ).encode('utf-8')
-        return None
-
-    def _rename_weak_dupes(self):
-        dupes = self.names()
-        if isinstance(dupes, pd.DataFrame):
-            if len(dupes.index) > 2:
-                msg = 'More than two weak duplicates found for a variable. '
-                msg += 'Auto-rename not possible. Please rename manually!\n'
-                dupes = '\n'.join([
-                    '{}: {}'.format(col, [c for c in dupes[col] if c])
-                    for col in dupes
-                ])
-                msg += dupes
-                raise ValueError(msg)
-            for col in dupes:
-                first_d = dupes[col].values.tolist()[0]
-                new_name = '_{}'.format(first_d)
-                if self.resolve_name(new_name):
-                    msg = 'Auto rename not possible: {} is already included!'
-                    raise KeyError(msg.format(new_name))
-                self.rename(first_d, new_name)
-                print "A weak duplicate has been renamed: '{}' to '{}'".format(first_d, new_name)
-            print ''
-        return None
-
-    def _rename_blacklist_vars(self):
-        blacklist_txt = (u'Variables identified as part of a blacklist: {}. \n'
-                         u'They have been renamed by adding "_" as prefix')
-        blacklist_var = []
-        for var in BLACKLIST_VARIABLES:
-            n_var = '_{}'.format(var)
-            if var in self and not n_var in self:
-                self.rename(var, u'_{}'.format(var))
-                blacklist_var.append(var)
-            elif var in self:
-                w = "{} cannot be renamed because {} is already used".format(var, n_var)
-                warnings.warn(w)
-        if blacklist_var:
-            print blacklist_txt.format(blacklist_var).encode('utf-8')
-        return None
+        set_encoding('cp1252')
+        text_key = text_key or self.text_key
+        path = path or self.path
+        name = name or self.name
+        path_sav = os.path.join(path, u"{}.sav".format(name))
+        save_sav(path_sav, self._meta, self._data, text_key=text_key,
+                 mrset_tag_style=mrset_tag_style)
+        set_encoding('utf-8')
 
     # ------------------------------------------------------------------------
-    # Inspecting
+    # DP
     # ------------------------------------------------------------------------
-
-    @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
-    def meta(self, name=None, text_key=None, axis_edit=None):
+    def crosstab(self, x, y="@", f=None, **kwargs):
         """
-        Provide a *pretty* summary for variable meta given as per ``name``.
+        Return a type-appropriate crosstab of x and y.
 
         Parameters
         ----------
-        name : str, default None
-            The variable name keyed in ``_meta['columns']`` or ``_meta['masks']``.
-            If None, the entire ``meta`` component of the ``DataSet`` instance
-            will be returned.
-        text_key : str, default None
-            The text_key that should be used when taking labels from the
-            source meta.
-        axis_edit : {'x', 'y'}, default None
-            If provided the text_key is taken from the x/y edits dict.
-
-        Returns
-        ------
-        meta : dict or pandas.DataFrame
-            Either a DataFrame that sums up the meta information on a ``mask``
-            or ``column`` or the meta dict as a whole is
-        """
-        if not name:
-            return self._meta
-        else:
-            return self.describe(name, text_key=text_key, axis_edit=axis_edit)
-
-    def variables(self, **kwargs):
-        """
-        View all DataSet variables listed in their global order.
+        x : str
+            The variable that should be placed into the x-position.
+        y : str, default "@" (Total)
+            The variable that should be placed into the y-position.
+        w : str, default None
+            The name of the weight variable that should be used on the data.
+        f : str or qp.Logic, default None
+            The name of a filter variable or a qp.Logic, to slice the data.
+        pct : bool, default False
+            Control the type of data that is returned (pct or counts).
+        decimals : int, default 1
+            Control the number of decimals in the returned dataframe.
+        text : bool, default True
+            Control the index and columns (texts or codes)
+        rules : bool, default False
+            If True then all rules that are found will be applied. If
+            list-like then rules with those keys will be applied.
+        xtotal : bool, default False
+            If True, the first column of the returned dataframe will be the
+            regular frequency of the x column.
 
         Note:
-            See ``qp.Meta.variables()``
+            See ``qp.Stack.crosstab()``
         """
-        return self._meta.variables(**kwargs)
-
-    def by_property(self, prop, **kwargs):
-        """
-        View all DataSet variables that own the requested property.
-
-        Note:
-            The list can be additionally filtered by adding kwargs for
-            ``Meta.variables()``.
-        """
-        return self._meta.by_property(prop, **kwargs)
-
-
-    def _variables_from_set(self, setname):
-        """
-        Return the variables registered under the provided ``meta['sets']`` key.
-
-        Parameters
-        ----------
-        setname : str
-            The name of the set to query.
-
-        Returns
-        -------
-        set_vars : list of str
-            The list of variable names belonging to the set.
-        """
-        sets = self._meta['sets']
-        if not setname in sets:
-            err = "'{}' is no valid set name.".format(setname)
-            raise KeyError(err)
-        else:
-            set_items = sets[setname]['items']
-        set_vars = [v.split('@')[-1] for v in set_items]
-        return set_vars
-
-    def by_type(self, types=None):
-        """
-        Get an overview of all the variables ordered by their type.
-
-        Parameters
-        ----------
-        types : str or list of str, default None
-            Restrict the overview to these data types.
-
-        Returns
-        -------
-        overview : pandas.DataFrame
-            The variables per data type inside the ``DataSet``.
-        """
-        return self.describe(only_type=types)
-
-    def find(self, str_tags=None, suffixed=False):
-        """
-        Find variables by searching their names for substrings.
-
-        Parameters
-        ----------
-        str_tags : (list of) str
-            The strings tags to look for in the variable names. If not provided,
-            the modules' default global list of substrings from VAR_SUFFIXES
-            will be used.
-        suffixed : bool, default False
-            If set to True, only variable names that end with a given string
-            sequence will qualify.
-
-        Returns
-        -------
-        found : list
-            The list of matching variable names.
-        """
-        if not str_tags:
-            str_tags = VAR_SUFFIXES
-        else:
-            if not isinstance(str_tags, list): str_tags = [str_tags]
-        found = []
-        variables = self.variables()
-        for v in variables:
-            for str_tag in str_tags:
-                if suffixed:
-                    if v.endswith(str_tag): found.append(v)
-                else:
-                    if str_tag in v: found.append(v)
-        return found
-
-    def names(self, ignore_items=True):
-        """
-        Find all weak-duplicate variable names that are different only by case.
-
-        .. note:: Will return self.variables() if no weak-duplicates are found.
-
-        Returns
-        -------
-        weak_dupes : pd.DataFrame
-            An overview of case-sensitive spelling differences in otherwise
-            equal variable names.
-        """
-        all_names = self.variables()
-        if not ignore_items:
-            all_names = self.unroll(all_names, both='all')
-        lower_names = [n.lower() for n in all_names]
-        multiple_names = [k for k, v in Counter(lower_names).items() if v > 1]
-        if not multiple_names: return self.variables()
-        weak_dupes = OrderedDict()
-        for name in all_names:
-            if name.lower() in multiple_names:
-                if not name.lower() in weak_dupes:
-                    weak_dupes[name.lower()] = [name]
-                elif not name in weak_dupes[name.lower()]:
-                    weak_dupes[name.lower()].append(name)
-        max_wd = max(len(v) for v in weak_dupes.values())
-        for k, v in weak_dupes.items():
-            while not len(v) == max_wd:
-                v.append(None)
-            weak_dupes[k] = v
-
-        return pd.DataFrame(weak_dupes)
-
-    def resolve_name(self, name):
-        """
-        """
-        multiples = isinstance(self.names(), pd.DataFrame)
-        in_multiples = multiples and name in self.names().keys()
-        if not name in self or in_multiples:
-            all_names = self.variables()
-            lowered = [v.lower() for v in all_names]
-            resolved = []
-            if name.lower() in lowered:
-                offset = 0
-                while name.lower() in lowered:
-                    pos = lowered.index(name.lower(), offset)
-                    lowered.pop(pos)
-                    resolved.append(all_names[pos + offset])
-                    offset += 1
-                return resolved if len(resolved) > 1 else resolved[0]
-            else:
-                return None
-        else:
-            return name
-
-    def describe(self, var=None, only_type=None, text_key=None, axis_edit=None):
-        """
-        Inspect the DataSet's global or variable level structure.
-        """
-        if text_key is None: text_key = self.text_key
-        if var is not None:
-            return self._get_meta(var, only_type, text_key, axis_edit)
-        if self._meta['columns'] is None:
-            return 'No meta attached to data_key: {}'.format(data_key)
-        else:
-            types = {
-                'int': [],
-                'float': [],
-                'single': [],
-                'delimited set': [],
-                'string': [],
-                'date': [],
-                'time': [],
-                'array': [],
-                'N/A': []
-            }
-            not_found = []
-            for col in self._data.columns:
-                if not col in ['@1', 'id_L1', 'id_L1.1']:
-                    try:
-                        types[
-                              self._meta['columns'][col]['type']
-                             ].append(col)
-                    except:
-                        types['N/A'].append(col)
-            for mask in self._meta['masks'].keys():
-                types[self._meta['masks'][mask]['type']].append(mask)
-            idx_len = max([len(t) for t in types.values()])
-            for t in types.keys():
-                typ_padded = types[t] + [''] * (idx_len - len(types[t]))
-                types[t] = typ_padded
-            types = pd.DataFrame(types)
-            if only_type:
-                if not isinstance(only_type, list): only_type = [only_type]
-                types = types[only_type]
-                types = types.replace('', np.NaN).dropna(how='all')
-            else:
-                types =  types[['single', 'delimited set', 'array', 'int',
-                                'float', 'string', 'date', 'time', 'N/A']]
-            types.columns.name = 'size: {}'.format(len(self._data))
-            return types
-
-    @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
-    def text(self, name, shorten=True, text_key=None, axis_edit=None):
-        """
-        Return the variables text label information.
-
-        Parameters
-        ----------
-        name : str, default None
-            The variable name keyed in ``_meta['columns']`` or ``_meta['masks']``.
-        shorten : bool, default True
-            If True, ``text`` label meta from array items will not report
-            the parent mask's ``text``. Setting it to False will show the
-            "full" label.
-        text_key : str, default None
-            The default text key to be set into the new meta document.
-        axis_edit : {'x', 'y'}, default None
-            If provided the text_key is taken from the x/y edits dict.
-
-        Returns
-        -------
-        text : str
-            The text metadata.
-        """
-        def _text_from_textobj(textobj, text_key, axis_edit):
-            if axis_edit:
-                a_edit = '{} edits'.format(axis_edit)
-                return textobj.get(a_edit, {}).get(text_key, '')
-            else:
-                return textobj.get(text_key, '')
-
-        if text_key is None: text_key = self.text_key
-        shorten = False if not self._is_array_item(name) else shorten
-        collection = 'masks' if self.is_array(name) else 'columns'
-        if not shorten:
-            return _text_from_textobj(self._meta[collection][name]['text'],
-                                      text_key, axis_edit)
-        else:
-            parent = self._maskname_from_item(name)
-            item_no = self.item_no(name)
-            item_texts = self._meta['masks'][parent]['items'][item_no-1]['text']
-            return _text_from_textobj(item_texts, text_key, axis_edit)
-
-    @verify(variables={'name': 'both'}, categorical='name',
-            text_keys='text_key', axis='axis_edit')
-    def values(self, name, text_key=None, axis_edit=None):
-        """
-        Get categorical data's paired code and texts information from the meta.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        text_key : str, default None
-            The text_key that should be used when taking labels from the
-            source meta.
-        axis_edit : {'x', 'y'}, default None
-            If provided the text_key is taken from the x/y edits dict.
-
-        Returns
-        -------
-        values : list of tuples
-            The list of the numerical category codes and their ``texts``
-            packed as tuples.
-        """
-        return self._get_valuemap(name, text_key=text_key, axis_edit=axis_edit)
-
-    @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
-    def value_texts(self, name, text_key=None, axis_edit=None):
-        """
-        Get categorical data's text information.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']``.
-        text_key : str, default None
-            The text_key that should be used when taking labels from the
-            source meta.
-        axis_edit : {'x', 'y'}, default None
-            If provided the text_key is taken from the x/y edits dict.
-
-        Returns
-        -------
-        texts : list
-            The list of category texts.
-        """
-        return self._get_valuemap(name, 'texts', text_key, axis_edit)
-
-    @verify(variables={'name': 'both'})
-    def codes(self, name):
-        """
-        Get categorical data's numerical code values.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']``.
-
-        Returns
-        -------
-        codes : list
-            The list of category codes.
-        """
-        return self._get_valuemap(name, non_mapped='codes')
-
-    @verify(variables={'name': 'both'})
-    def factors(self, name):
-        """
-        Get categorical data's stat. factor values.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-
-        Returns
-        -------
-        factors : OrderedDict
-            A ``{value: factor}`` mapping.
-        """
-        val_loc = self._get_value_loc(name)
-        factors = OrderedDict()
-        for val in val_loc:
-            f = val.get('factor', None)
-            if f: factors[val['value']] = f
-        return factors
-
-    @verify(variables={'name': 'columns'}, categorical='name')
-    def codes_in_data(self, name):
-        """
-        Get a list of codes that exist in data.
-        """
-        if self.is_delimited_set(name):
-            if not self._data[name].dropna().empty:
-                data_codes = self._data[name].str.get_dummies(';').columns.tolist()
-                data_codes = [int(c) for c in data_codes]
-            else:
-                data_codes = []
-        else:
-            data_codes = pd.get_dummies(self._data[name]).columns.tolist()
-        return data_codes
-
-    @modify(to_list='text_label')
-    @verify(variables={'name': 'both'}, text_keys='text_key')
-    def code_from_label(self, name, text_label, text_key=None, exact=True,
-                        flat=True):
-        """
-        Return the code belonging to the passed ``text`` label (if present).
-
-        Parameters
-        ----------
-        name : str
-            The originating variable name keyed in ``meta['columns']``
-            or ``meta['masks']``.
-        text_label : str or list of str
-            The value text(s) to search for.
-        text_key : str, default None
-            The desired ``text_key`` to search through. Uses the
-            ``DataSet.text_key`` information if not provided.
-        exact : bool, default True
-            ``text_label`` must exactly match a categorical value's ``text``.
-            If False, it is enough that the category *contains* the ``text_label``.
-        flat : If a list is passed for ``text_label``, return all found codes
-            as a regular list. If False, return a list of lists matching the order
-            of the ``text_label`` list.
-
-        Returns
-        -------
-        codes : list
-            The list of value codes found for the passed label ``text``.
-        """
-        vals= self.values(name, text_key=text_key)
-        codes = []
-        for text in text_label:
-            sub_codes = []
-            for c, l in vals:
-                if l and text in l and not exact:
-                    sub_codes.append(c)
-                elif l == text:
-                    sub_codes.append(c)
-            codes.extend(sub_codes) if flat else codes.append(sub_codes)
-        if not codes:
-            return None
-        else:
-            if isinstance(codes[0], list) and len(codes) == 1: codes = codes[0]
-            return codes
-
-    @verify(variables={'name': 'both'}, text_keys='text_key')
-    def find_duplicate_texts(self, name, text_key=None):
-        """
-        Collect values that share the same text information to find duplicates.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's ``text_key`` property information if not
-            provided.
-        """
-        if not text_key: text_key = self.text_key
-        values = self._get_valuemap(name, text_key=text_key)
-        dupes_check = []
-        text_dupes = []
-        for value in values:
-            if value[1] in dupes_check:
-                text_dupes.append(value[1])
-            dupes_check.append(value[1])
-        text_dupes = list(set(text_dupes))
-        dupes = []
-        for value in values:
-            if value[1] in text_dupes:
-                dupes.append(value)
-        dupes = list(sorted(dupes, key=lambda x: x[1]))
-        return dupes
-
-    @verify(variables={'name': 'masks'}, text_keys='text_key', axis='axis_edit')
-    def items(self, name, text_key=None, axis_edit=None):
-        """
-        Get the array's paired item names and texts information from the meta.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['masks']``.
-        text_key : str, default None
-            The text_key that should be used when taking labels from the
-            source meta.
-        axis_edit : {'x', 'y'}, default None
-            If provided the text_key is taken from the x/y edits dict.
-
-        Returns
-        -------
-        items : list of tuples
-            The list of source item names (from ``_meta['columns']``) and their
-            ``text`` information packed as tuples.
-        """
-        return self._get_itemmap(name, text_key=text_key, axis_edit=axis_edit)
-
-    @verify(variables={'name': 'columns'})
-    def item_no(self, name):
-        """
-        Return the order/position number of passed array item variable name.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']``.
-
-        Returns
-        -------
-        no : int
-            The positional index of the item (starting from 1).
-        """
-        sources = self.sources(self._maskname_from_item(name))
-        return sources.index(name) + 1
-
-    @verify(variables={'name': 'masks'}, text_keys='text_key', axis='axis_edit')
-    def item_texts(self, name, text_key=None, axis_edit=None):
-        """
-        Get the ``text`` meta data for the items of the passed array mask name.
-
-        Parameters
-        ----------
-        name : str
-            The mask variable name keyed in ``_meta['masks']``.
-        text_key : str, default None
-            The text_key that should be used when taking labels from the
-            source meta.
-        axis_edit : {'x', 'y'}, default None
-            If provided the text_key is taken from the x/y edits dict.
-
-        Returns
-        -------
-        texts : list
-            The list of item texts for the array elements.
-        """
-        return self._get_itemmap(name, 'texts', text_key, axis_edit)
-
-    @verify(variables={'name': 'both'})
-    def sources(self, name):
-        """
-        Get the ``_meta['columns']`` elements for the passed array mask name.
-
-        Parameters
-        ----------
-        name : str
-            The mask variable name keyed in ``_meta['masks']``.
-
-        Returns
-        -------
-        sources : list
-            The list of source elements from the array definition.
-        """
-        if not self.is_array(name):
-            return []
-        else:
-            return self._get_itemmap(name, non_mapped='items')
-
-    @verify(variables={'name': 'both'})
-    def parents(self, name):
-        """
-        Get the ``parent`` meta information for masks-structured column elements.
-
-        Parameters
-        ----------
-        name : str
-            The mask variable name keyed in ``_meta['columns']``.
-
-        Returns
-        -------
-        parents : list
-            The list of parents the ``_meta['columns']`` variable is attached to.
-        """
-        if not self._is_array_item(name):
-            return []
-        else:
-            return [parent for parent in self._meta['columns'][name]['parent']]
-
-    def crosstab(self, x, y=None, w=None, pct=False, decimals=1, text=True,
-                 rules=False, xtotal=False, f=None):
-        """
-        """
-        meta, data = self.split()
-        if f:
-            slicer = self.take(f)
-            data = data.copy().iloc[slicer]
-        y = '@' if not y else y
-        get = 'count' if not pct else 'normalize'
-        show = 'values' if not text else 'text'
-        return ct(org_copy.deepcopy(meta), data, x=x, y=y, get=get, weight=w,
-                  show=show, rules=rules, xtotal=xtotal, decimals=decimals)
-
-    def data(self):
-        """
-        Return the ``data`` component of the ``DataSet`` instance.
-        """
-        return self._data
+        ds = self.filter(f)
+        stack = Stack(
+            name="ct",
+            add_data={"ct": {"meta": ds._meta, "data": ds._data}})
+        return stack.crosstab(x, y, f, **kwargs)
 
     # ------------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------------
-
-    @staticmethod
-    def de_duplicate(seq):
-        unique = []
-        for x in seq:
-            if x in unique:
-                continue
-            unique.append(x)
-        return unique
-
     @staticmethod
     def _is_all_ints(s):
         try:
@@ -1550,54 +582,6 @@ class DataSet(object):
     def _all_str_are_int(self, s):
         temp_s = s.apply(lambda x: float(x)).dropna()
         return self._is_all_ints(temp_s)
-
-    def _get_pd_dtype(self, s):
-        if self._is_all_ints(s):
-            return 'int'
-        else:
-            return str(s.dtype)
-
-    def _add_inferred_meta(self, tk):
-        self._data.reset_index(inplace=True)
-        if 'index' in self._data.columns:
-            self._data.drop('index', axis=1, inplace=True)
-        msg = "Inferring meta data from pd.DataFrame.columns ({})..."
-        msg = msg.format(len(self._data.columns))
-        print msg
-        self._meta = self.start_meta(tk)
-        self.text_key = tk
-        for col in self._data.columns:
-            name = col
-            pdtype = self._get_pd_dtype(self._data[col])
-            if 'int' in pdtype:
-                qptype = 'int'
-            elif 'float' in pdtype:
-                qptype = 'float'
-            elif pdtype == 'object':
-                qptype = 'string'
-            else:
-                qptype = None
-            if not qptype:
-                if self._verbose_infos:
-                    msg = "Could not infer type for {} (dtype: {})!"
-                    print msg.format(name, pdtype)
-                    self._data.drop(col, axis=1, inplace=True)
-            else:
-                if self._verbose_infos:
-                    msg = "{}: dtype: {} - converted: {}"
-                    print msg.format(name, pdtype, qptype)
-                self.add_meta(name, qptype, '', replace=False)
-        msg = "Converted {} columns!"
-        msg = msg.format(len(self._data.columns))
-        print msg
-        return None
-
-    def _variables_to_set_format(self, variables):
-        """
-        """
-        set_formatted = ['masks@{}'.format(v) if self.is_array(v)
-                         else 'columns@{}'.format(v) for v in variables]
-        return set_formatted
 
     def _check_and_update_element_def(self, element_def):
         all_int = all(isinstance(v, int) for v in element_def)
@@ -1654,24 +638,6 @@ class DataSet(object):
         mapper[old.decode('utf8')] = new
         return mapper
 
-    @classmethod
-    def _dims_free_arr_item_name(cls, item_name):
-        if '[' in item_name:
-            return item_name.split('[{')[1].split('}]')[0]
-        else:
-            return item_name
-
-    @classmethod
-    def _dims_free_arr_name(cls, arr_name):
-        return arr_name.split('.')[0]
-
-    def _dims_compat_arr_name(self, arr_name):
-        arr_name = self._dims_free_arr_name(arr_name)
-        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
-            return '{}.{}{}'.format(arr_name, arr_name, self._dimensions_suffix)
-        else:
-            return arr_name
-
     @modify(to_list='name')
     @verify(variables={'name': 'both'})
     def _prevent_one_cat_set(self, name=None):
@@ -1692,30 +658,6 @@ class DataSet(object):
             w = "weak duplicate is created, {} found in DataSet. Please rename."
             warnings.warn(w.format(included))
 
-    def _verify_variable_meta_not_exist(self, name, is_array):
-        """
-        """
-        if not name in self: return None
-        if name in self.columns() or self._is_array_item(name):
-            if not is_array and self._verbose_infos:
-                print "Overwriting meta for '{}', column already exists!".format(name)
-            elif is_array:
-                raise ValueError("{} already exists as column.".format(name))
-        elif name in self.masks():
-            if is_array and self._verbose_infos:
-                print "Overwriting meta for '{}', mask already exists!".format(name)
-            elif not is_array:
-                raise ValueError("{} already exists as mask.".format(name))
-
-    @staticmethod
-    def _in_blacklist(name):
-        """
-        """
-        if name in BLACKLIST_VARIABLES:
-            msg = "Invalid variable name. '{}' is in the blacklist. "
-            msg += "Please consider another variable name"
-            raise ValueError(msg.format(name))
-
     def _clean_codes_against_meta(self, name, codes):
         valid = [c for c in codes if c in self._get_valuemap(name, 'codes')]
         deduped_valid = []
@@ -1725,13 +667,6 @@ class DataSet(object):
 
     def _clean_items_against_meta(self, name, items):
         return [i for i in items if i in self.sources(name)]
-
-    @staticmethod
-    def _item(item_name, text_key, text):
-        """
-        """
-        return {'source': 'columns@{}'.format(item_name),
-                'text': {text_key: text}}
 
     @staticmethod
     def _value(value, text_key, text):
@@ -1853,19 +788,6 @@ class DataSet(object):
             raise ValueError('Please review your data processing!')
         return None
 
-    def _get_rules(self, var, axis='x'):
-        if self.is_array(var):
-            rules = self._meta['masks'][var].get('rules', {}).get(axis, {})
-        else:
-            rules = self._meta['columns'][var].get('rules', {}).get(axis, {})
-        return rules
-
-    def _get_meta_loc(self, var):
-        if self.is_array(var):
-            return self._meta['lib']['values']
-        else:
-            return self._meta['columns']
-
     def _get_value_loc(self, var):
         if self._is_numeric(var):
             raise TypeError("Numerical columns do not have 'values' meta.")
@@ -1930,67 +852,6 @@ class DataSet(object):
         else:
             return []
 
-    def _get_meta(self, var, type=None, text_key=None, axis_edit=None):
-        if text_key is None: text_key = self.text_key
-        is_array = self.is_array(var)
-        if is_array:
-            var_type = self._meta['masks'][var]['subtype']
-        else:
-            var_type = self._get_type(var)
-        label = self.text(var, False, text_key, axis_edit)
-        missings = self._get_missing_map(var)
-        make_fame = self._has_categorical_data(var) or self.is_array(var)
-        if make_fame:
-            if self._has_categorical_data(var):
-                codes, texts = self._get_valuemap(var, 'lists', text_key, axis_edit)
-                if missings:
-                    codes_copy = codes[:]
-                    for miss_types, miss_codes in missings.items():
-                        for code in miss_codes:
-                            codes_copy[codes_copy.index(code)] = miss_types
-                    missings = [c  if isinstance(c, (str, unicode)) else None
-                                for c in codes_copy]
-                else:
-                    missings = [None] * len(codes)
-            else:
-                codes = texts = []
-                missings = []
-            if is_array:
-                items, items_texts = self._get_itemmap(var, 'lists',
-                                                       text_key, axis_edit)
-                idx_len = max((len(codes), len(items)))
-                if len(codes) > len(items):
-                    pad = (len(codes) - len(items))
-                    items = self._pad_meta_list(items, pad)
-                    items_texts = self._pad_meta_list(items_texts, pad)
-                elif len(codes) < len(items):
-                    pad = (len(items) - len(codes))
-                    codes = self._pad_meta_list(codes, pad)
-                    texts = self._pad_meta_list(texts, pad)
-                    missings = self._pad_meta_list(missings, pad)
-                elements = [items, items_texts, codes, texts, missings]
-                columns = ['items', 'item texts', 'codes', 'texts', 'missing']
-            else:
-                idx_len = len(codes)
-                elements = [codes, texts, missings]
-                columns = ['codes', 'texts', 'missing']
-            meta_s = [pd.Series(element, index=range(0, idx_len))
-                      for element in elements]
-            meta_df = pd.concat(meta_s, axis=1)
-            meta_df.columns = columns
-            meta_df.columns.name = var_type
-            meta_df.index = xrange(1, len(meta_df.index) + 1)
-            meta_df.index.name = '{}: {}'.format(var, label)
-        else:
-            meta_df = pd.DataFrame(['N/A'])
-            meta_df.columns = [var_type]
-            meta_df.index = ['{}: {}'.format(var, label)]
-        return meta_df
-
-    @staticmethod
-    def _pad_meta_list(meta_list, pad_to_len):
-        return meta_list + ([''] * pad_to_len)
-
     def enumerator(self, name):
         x = 1
         n = name
@@ -2002,77 +863,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # fix/ repair meta data
     # ------------------------------------------------------------------------
-
-    def _fix_array_meta(self):
-        """
-        Update array meta. Workaround for badly converted meta.
-        """
-        # insert 'parent' entry
-        for c in self.columns():
-            if not 'parent' in self._meta['columns'][c]:
-                self._meta['columns'][c]['parent'] = {}
-        for mask in self.masks():
-            # fix 'subtype' property
-            if not 'subtype' in self._meta['masks'][mask]:
-                subtype = self._get_type(self.sources(mask)[0])
-                self._meta['masks'][mask]['subtype'] = subtype
-            # fix 'parent' meta on arrays
-            parent_def = {'masks@{}'.format(mask): {'type': 'array'}}
-            for s in self.sources(mask):
-                if self._meta['columns'][s]['parent'] == {}:
-                    self._meta['columns'][s]['parent'] = parent_def
-
-    def _fix_array_item_vals(self):
-        """
-        Update value meta for array items. Workaround for badly converted meta.
-        """
-        for m in self.masks():
-            if self._has_categorical_data(m):
-                lib_vals = 'lib@values@{}'.format(m)
-                self._meta['masks'][m]['values'] = lib_vals
-                for s in self.sources(m):
-                    self._meta['columns'][s]['values'] = lib_vals
-        return None
-
-    def _clean_datafile_set(self):
-        """
-        Drop references from ['sets']['data file']['items'] if they do not exist
-        in the ``DataSet`` columns or masks definitions.
-        """
-        file_list = self._meta['sets']['data file']['items']
-        for item in file_list[:]:
-            collection = item.split('@')[0]
-            variable = item.split('@')[1]
-            if not variable in self:
-                file_list.remove(item)
-            elif collection == 'masks':
-                for s in self._get_source_ref(variable):
-                    while s in file_list:
-                        file_list.remove(s)
-            elif self._is_array_item(variable):
-                parent = self.parents(variable)[0]
-                if not parent in file_list:
-                    idx = file_list.index(item)
-                    file_list[idx] = parent
-                while item in file_list:
-                    file_list.remove(item)
-        f_list = []
-        for item in file_list:
-            if not item in f_list: f_list.append(item)
-        self._meta['sets']['data file']['items'] = f_list
-        return None
-
-    def _fix_varnames(self):
-        """
-        """
-        masks = self._meta['masks']
-        cols = self._meta['columns']
-        for name, meta in masks.items():
-            meta['name'] = name
-        for name, meta in cols.items():
-            meta['name'] = name
-        return None
-
     @modify(to_list='arrays')
     @verify(variables={'arrays': 'masks'})
     def restore_item_texts(self, arrays=None):
@@ -2132,9 +922,6 @@ class DataSet(object):
         Try to fix legacy meta data inconsistencies and badly shaped array /
         datafile items ``'sets'`` meta definitions.
         """
-        self._fix_varnames()
-        self._fix_array_meta()
-        self._fix_array_item_vals()
         self.repair_text_edits()
         self.restore_item_texts()
         self._clean_datafile_set()
@@ -2145,72 +932,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # Misc
     # ------------------------------------------------------------------------
-
-    @staticmethod
-    def start_meta(text_key='main'):
-        """
-        Starts a new/empty Quantipy meta document.
-
-        Parameters
-        ----------
-        text_key : str, default None
-            The default text key to be set into the new meta document.
-
-        Returns
-        -------
-        meta : dict
-            Quantipy meta object
-        """
-        meta = {
-            'info': {
-                'text': ''
-            },
-            'lib': {
-                'default text': text_key,
-                'values': {}
-            },
-            'columns': {},
-            'masks': {},
-            'sets': {
-                'data file': {
-                    'text': {text_key: 'Variable order in source file'},
-                    'items': []
-                }
-            },
-            'type': 'pandas.DataFrame'
-        }
-        return meta
-
-    def clone(self):
-        """
-        Get a deep copy of the ``DataSet`` instance.
-        """
-        cloned = org_copy.deepcopy(self)
-        return cloned
-
-    def split(self, save=False):
-        """
-        Return the ``meta`` and ``data`` components of the DataSet instance.
-
-        Parameters
-        ----------
-        save : bool, default False
-            If True, the ``meta`` and ``data`` objects will be saved to disk,
-            using the instance's ``name`` and ``path`` attributes to determine
-            the file location.
-
-        Returns
-        -------
-        meta, data : dict, pandas.DataFrame
-            The meta dict and the case data DataFrame as separate objects.
-        """
-        meta, data = self._meta, self._data
-        if save:
-            path = self.path
-            name = self.name
-            w_quantipy(meta, data, path+name+'.json', path+name+'.csv')
-        return meta, data
-
     @modify(to_list=['count_only', 'count_not'])
     @verify(variables={'name': 'both'}, categorical='name')
     def code_count(self, name, count_only=None, count_not=None):
@@ -2656,25 +1377,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
-
-    def roll_up(self, varlist, ignore_arrays=None):
-        """
-        Replace any array items with their parent mask variable definition name.
-
-        Note:
-            See ``qp.Meta.roll_up()``
-        """
-        return self._meta.roll_up(varlist=varlist, ignore_arrays=ignore_arrays)
-
-    def unroll(self, varlist, keep=None, both=None):
-        """
-        Replace mask with its items, optionally excluding/keeping certain ones.
-
-        Note:
-            See ``qp.Meta.unroll()``
-        """
-        return self._meta.unroll(varlist=varlist, keep=keep, both=both)
-
     def _apply_order(self, variables):
         # set order of 'data file' items listing
         datafile_items = self._variables_to_set_format(variables)
@@ -2866,175 +1568,6 @@ class DataSet(object):
                     new_order.remove(repos_var)
                     new_order.insert(idx, repos_var)
         self._apply_order(new_order)
-        return None
-
-    def _filtered_set(self, based_on, masks=True, included=None, excluded=None,
-                 strings=None):
-    if included is None and excluded is None:
-        included = []
-        for set_item in self._meta['sets'][based_on]['items']:
-            name = set_item.split('@')[-1]
-            if name in self._meta['columns']:
-                included.append(name)
-            elif name in self._meta['masks']:
-                for mask_item in self._meta['masks'][name]['items']:
-                    included.append(mask_item['source'].split('@')[1])
-
-    if included is None:
-        included = []
-    elif isinstance(included, (str, str)):
-        included = [included]
-    if not isinstance(included, (list, tuple, set)):
-        raise ValueError (
-            "'included' must be either a string or a list, tuple or"
-            " set of strings."
-        )
-
-    if excluded is None:
-        excluded = []
-    elif isinstance(excluded, (str, str)):
-        excluded = [excluded]
-    elif not isinstance(excluded, (list, tuple, set)):
-        raise ValueError (
-            "'excluded' must be either a string or a list, tuple or"
-            " set of strings."
-        )
-
-    if strings is None:
-        strings = 'keep'
-    else:
-        if not strings in ['keep', 'drop', 'only']:
-            raise ValueError (
-                "'strings' must be either None, 'keep', 'drop' or"
-                "'only'."
-            )
-
-    pattern = "\[(.*?)\]"
-
-    items = []
-    for item in set(included) - set(excluded) - set(['@']):
-        # Account for special strings instruction
-        if strings=='keep':
-            allow = True
-        elif item in self._meta['columns']:
-            is_string = self._meta['columns'][item]['type']=='string'
-            if not is_string and not strings=='only':
-                allow = True
-            elif not is_string and strings=='only':
-                allow = False
-            elif is_string and strings=='drop':
-                allow = False
-            elif is_string and strings=='only':
-                allow = True
-
-        if not allow:
-            continue
-
-        if 'columns@{}'.format(item) in self._meta['sets'][based_on]['items']:
-            items.append('columns@{}'.format(item))
-        elif 'masks@{}'.format(item) in self._meta['sets'][based_on]['items']:
-            items.append('masks@{}'.format(item))
-        # what is this else-branch supposed to achieve?
-        else:
-            try:
-                if item in self._meta['columns'] and self._meta['columns'][item]['parent']:
-                    items.append(list(self._meta['columns'][item]['parent'].keys())[0])
-            except:
-                if 'masks@{}'.format(re.sub(pattern, '', item)) in self._meta['sets'][based_on]['items']:
-                    items.append('masks@{}'.format(re.sub(pattern, '', item)))
-
-    fset = {'items': []}
-    for item in self._meta['sets'][based_on]['items']:
-        if item in items:
-            if item.startswith('masks') and not masks:
-                for mask_item in self._meta['masks'][item.split('@')[1]]['items']:
-                    fset['items'].append(mask_item['source'])
-            else:
-                fset['items'].append(item)
-    return fset
-
-    @modify(to_list=['included', 'excluded'])
-    @verify(variables={'included': 'both', 'excluded': 'both'})
-    def create_set(self, setname='new_set', based_on='data file', included=None,
-                   excluded=None, strings='keep', arrays='masks', replace=None,
-                   overwrite=False):
-        """
-        Create a new set in ``dataset._meta['sets']``.
-
-        Parameters
-        ----------
-        setname : str, default 'new_set'
-            Name of the new set.
-        based_on : str, default 'data file'
-            Name of set that can be reduced or expanded.
-        included : str or list/set/tuple of str
-            Names of the variables to be included in the new set. If None all
-            variables in ``based_on`` are taken.
-        excluded : str or list/set/tuple of str
-            Names of the variables to be excluded in the new set.
-        strings : {'keep', 'drop', 'only'}, default 'keep'
-            Keep, drop or only include string variables.
-        arrays : {'masks', 'columns'}, default masks
-            For arrays add ``masks@varname`` or ``columns@varname``.
-        replace : dict
-            Replace a variable in the set with an other.
-            Example: {'q1': 'q1_rec'}, 'q1' and 'q1_rec' must be included in
-            ``based_on``. 'q1' will be removed and 'q1_rec' will be
-            moved to this position.
-        overwrite : bool, default False
-            Overwrite if ``meta['sets'][name]`` already exist.
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        meta = self._meta
-        sets = meta['sets']
-        # prove setname
-        if not isinstance(setname, str):
-            raise TypeError("'setname' must be a str.")
-        if setname in sets and not overwrite:
-            raise KeyError("{} is already in `meta['sets'].`".format(setname))
-        # prove based_on
-        if not based_on in sets:
-            raise KeyError("based_on set '{}' is not in meta['sets'].".format(based_on))
-        # prove included
-        if not included: included = [var.split('@')[-1] for var in sets[based_on]['items']]
-
-        # prove replace
-        if not replace: replace = {}
-        elif not isinstance(replace, dict):
-            raise TypeError("'replace' must be a dict.")
-        else:
-            for var in replace.keys() + replace.values():
-                if var not in included:
-                    raise KeyError("{} is not in 'included'".format(var))
-
-        # prove arrays
-        if not arrays in ['masks', 'columns']:
-            raise ValueError (
-                "'arrays' must be either 'masks' or 'columns'.")
-        # filter set and create new set
-        fset = filtered_set(meta=meta,
-                     based_on=based_on,
-                     masks=True if arrays == 'masks' else False,
-                     included=included,
-                     excluded=excluded,
-                     strings=strings)
-
-        if replace:
-            new_items = fset['items']
-            for k, v in replace.items():
-                for x, item in enumerate(new_items):
-                    if v == item.split('@')[-1]: posv, move = x, item
-                    if k == item.split('@')[-1]: posk = x
-                new_items[posk] = move
-                new_items.pop(posv)
-            fset['items'] = new_items
-
-        add = {setname: fset}
-        sets.update(add)
-
         return None
 
     @modify(to_list=['logic'])
@@ -3535,131 +2068,44 @@ class DataSet(object):
     # Recoding
     # ------------------------------------------------------------------------
 
+    def _add_data_column(self, name, qtype, replace=True):
+        if replace or name not in self._data.columns:
+            if qtype == "delimited set":
+                self._data[name] = ''
+            else:
+                self._data[name] = np.NaN
+
     @modify(to_list=['categories', 'items'])
-    @verify(text_keys='text_key')
     def add_meta(self, name, qtype, label, categories=None, items=None,
         text_key=None, replace=True):
         """
-        Create and insert a well-formed meta object into the existing meta document.
+        Create and insert a well-formed meta object.
 
         Parameters
         ----------
         name : str
-            The column variable name keyed in ``meta['columns']``.
+            The variable name.
         qtype : {'int', 'float', 'single', 'delimited set', 'date', 'string'}
             The structural type of the data the meta describes.
-        label : str
+        label : str, default ""
             The ``text`` label information.
-        categories : list of str, int, or tuples in form of (int, str), default None
-            When a list of str is given, the categorical values will simply be
-            enumerated and mapped to the category labels. If only int are
-            provided, text labels are assumed to be an empty str ('') and a
-            warning is triggered. Alternatively, codes can be mapped to categorical
-            labels, e.g.: ``[(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]``
-        items : list of str, int, or tuples in form of (int, str), default None
-            If provided will automatically create an array type mask.
-            When a list of str is given, the item number will simply be
-            enumerated and mapped to the category labels. If only int are
-            provided, item text labels are assumed to be an empty str ('') and
-            a warning is triggered. Alternatively, numerical values can be
-            mapped explicitly to items labels, e.g.:
-            ``[(1 'The first item'), (2, 'The second item'), (99, 'Last item')]``
+        categories : list of str, int, or tuples in form of (int, str)
+            Example:
+            ``[(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]``
+        items : list of str or tuples in form of (int, str)
+            Example:
+            ``[(1 'The 1st item'), (2, 'The 2nd item'), (99, 'Last item')]``
         text_key : str, default None
-            Text key for text-based label information. Uses the
-            ``DataSet.text_key`` information if not provided.
+            Text key for text-based label information.
         replace : bool, default True
             If True, an already existing corresponding ``pd.DataFrame``
             column in the case data component will be overwritten with a
             new (empty) one.
-
-        Returns
-        -------
-        None
-            ``DataSet`` is modified inplace, meta data and ``_data`` columns
-            will be added
         """
-        # verify name
-        self._in_blacklist(name)
-        make_array_mask = True if items else False
-        self._verify_variable_meta_not_exist(name, make_array_mask)
-
-        # verify qtype
-        valid = ['delimited set', 'single', 'float', 'int', 'date', 'string']
-        categorical = ['delimited set', 'single']
-        numerical = ['int', 'float']
-        if not qtype in valid:
-            raise NotImplementedError('Type {} data unsupported'.format(qtype))
-        elif qtype in categorical and not categories:
-            val_err = "Must provide 'categories' when requesting data of type {}."
-            raise ValueError(val_err.format(qtype))
-        elif qtype == 'delimited set' and len(categories) == 1:
-            qtype = 'single'
-            print 'Only one category is given, qtype is switched to single.'
-        elif qtype in numerical and categories:
-            val_err = "Numerical data of type {} does not accept 'categories'."
-            raise ValueError(val_err.format(qtype))
-
-        if not text_key: text_key = self.text_key
-        if make_array_mask:
-            self._add_array(name, qtype, label, items, categories, text_key)
-            return None
-
-        new_meta = {'text': {text_key: label},
-                    'type': qtype,
-                    'name': name,
-                    'parent': {},
-                    'properties': {'created': True}}
-        if categories:
-            new_meta['values'] = self._make_values_list(categories, text_key)
-        self._meta['columns'][name] = new_meta
-        datafile_setname = 'columns@{}'.format(name)
-        if datafile_setname not in self._meta['sets']['data file']['items']:
-            self._meta['sets']['data file']['items'].append(datafile_setname)
-        if replace or not name in self._data.columns:
-            self._data[name] = '' if qtype == 'delimited set' else np.NaN
-        return None
-
-    def _add_array(self, name, qtype, label, items, categories, text_key):
-        """
-        """
-        item_objects = []
-        array_name = name
-        items = self._check_and_update_element_def(items)
-        if isinstance(items[0], (str, unicode)):
-            items = [(idx, txt) for idx, txt in enumerate(items, start=1)]
-        value_ref = 'lib@values@{}'.format(array_name)
-        values = None
-        for i in items:
-            item_no = i[0]
-            item_lab = i[1]
-            item_name = '{}_{}'.format(self._dims_free_arr_name(name), item_no)
-            item_objects.append(self._item(item_name, text_key, item_lab))
-            column_lab = '{} - {}'.format(label, item_lab)
-            # add array items to 'columns' meta
-            self.add_meta(name=item_name, qtype=qtype, label=column_lab,
-                          categories=categories, items=None, text_key=text_key)
-            # update the items' values objects
-            if not values and categories:
-                values = self._meta['columns'][item_name]['values']
-            self._meta['columns'][item_name]['values'] = value_ref
-             # apply the 'parent' spec meta to the items
-            parent_spec = {'masks@{}'.format(name) : {'type': 'array'}}
-            self._meta['columns'][item_name]['parent'] = parent_spec
-            # remove 'columns'-referencing 'sets' meta
-            self._meta['sets']['data file']['items'].remove('columns@{}'.format(item_name))
-        # generate the 'masks' meta
-        mask_meta = {'items': item_objects, 'type': 'array', 'subtype': qtype,
-                     'values': value_ref, 'text': {text_key: label},
-                     'name': array_name}
-        self._meta['lib']['values'][array_name] = values
-        self._meta['masks'][array_name] = mask_meta
-        datafile_setname = 'masks@{}'.format(array_name)
-        if datafile_setname not in self._meta['sets']['data file']['items']:
-            self._meta['sets']['data file']['items'].append(datafile_setname)
-        self._meta['sets'][array_name] = {'items': [i['source'] for i in item_objects]}
-        if self._dimensions_comp and not self._dimensions_comp == 'ignore':
-            self.dimensionize(name)
-        return None
+        self._meta.add_meta(name, qtype, label, categories, items, text_key)
+        name = self.unroll(name)
+        for n in name:
+            self._add_data_column(name, qtype, replace)
 
     @verify(variables={'name': 'columns'})
     def categorize(self, name, categorized_name=None):
@@ -4009,43 +2455,6 @@ class DataSet(object):
                     self._data.loc[mask, t] = self._data.loc[mask, s]
                 else:
                     self[t] = self[s]
-        return None
-
-    def unify_values(self, name, code_map, slicer=None, exclusive=False):
-        """
-        Use a mapping of old to new codes to replace code values in ``_data``.
-
-        .. note:: Experimental! Check results carefully!
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-        code_map : dict
-            A mapping of ``{old: new}``; ``old`` and ``new`` must be the
-            int-type code values from the column meta data.
-        slicer : Quantipy logic statement, default None
-            If provided, the values will only be unified for cases where the
-            condition holds.
-        exclusive : bool, default False
-            If True, the recoded unified value will replace whatever is already
-            found in the ``_data`` column, ignoring ``delimited set`` typed data
-            to which normally would get appended to.
-
-        Returns
-        -------
-        None
-        """
-        append = self.is_delimited_set(name)
-        if exclusive: append = False
-        for old_code, new_code in code_map.items():
-            self.recode(name, {new_code: {name: [old_code]}},
-                        append=append, intersect=slicer)
-            if not slicer:
-                self.remove_values(name, old_code)
-            else:
-                msg = "Unified {} >> {} on data slice. Remove values meta if needed!"
-                print msg.format(old_code, new_code)
         return None
 
     @modify(to_list=['ignore_items', 'ignore_values'])
@@ -5517,7 +3926,6 @@ class DataSet(object):
 
     # text_keys and texts manipulation
     # ------------------------------------------------------------------------
-
     @verify(text_keys='text_key')
     def set_text_key(self, text_key):
         """
@@ -6132,15 +4540,6 @@ class DataSet(object):
 
     # rules and properties
     # ------------------------------------------------------------------------
-    def get_property(self, name, prop):
-        return self._meta.get_property(name=name, prop=prop)
-
-    def get_basetext(self, name, text_key=None):
-        return self._meta.get_basetext(name=name, text_key=text_key)
-
-    def get_missings(self, name):
-        return self._meta.get_missings(name=name)
-
 
     @modify(to_list='name')
     @verify(variables={'name': 'both'})
@@ -6851,62 +5250,6 @@ class DataSet(object):
             else:
                 return dummy_data.values, codes, items
 
-    def filter(self, alias, condition, inplace=False):
-        """
-        Filter the DataSet using a Quantipy logical expression.
-        """
-        data = self._data.copy()
-        data.index = pd.Index(range(0, len(data.index)))
-        filter_idx, _ = get_logic_index(pd.Series(data.index), condition, data)
-        filtered_data = data.iloc[filter_idx, :]
-        if inplace:
-            self._data = filtered_data
-        else:
-            new_ds = self.clone()
-            new_ds._data = filtered_data
-            return new_ds
-
-    @modify(to_list=['variables'])
-    def subset(self, variables=None, from_set=None, inplace=False):
-        """
-        Create a cloned version of self with a reduced collection of variables.
-
-        Parameters
-        ----------
-        variables : str or list of str, default None
-            A list of variable names to include in the new DataSet instance.
-        from_set : str
-            The name of an already existing set to base the new DataSet on.
-
-        Returns
-        -------
-        subset_ds : qp.DataSet
-            The new reduced version of the DataSet.
-        """
-        if not (variables or from_set) or (variables and from_set):
-            err = "Must pass either 'variables' or 'from_set'!"
-            raise ValueError(err)
-        subset_ds = self.clone() if not inplace else self
-        sets = subset_ds._meta['sets']
-        if variables:
-            from_set = 'subset'
-            subset_ds.create_set(setname='subset', included=variables)
-        else:
-            if not from_set in sets:
-                err = "'{}' not found in meta 'sets' collection!"
-                raise KeyError(err.format(from_set))
-            variables = [v.split('@')[-1] for v in sets[from_set]['items']]
-        all_vars = subset_ds.columns() + subset_ds.masks()
-        for var in all_vars:
-            if not var in variables:
-                if not self._is_array_item(var): subset_ds.drop(var)
-        sets['data file']['items'] = sets[from_set]['items']
-        del subset_ds._meta['sets'][from_set]
-
-        if not inplace:
-            return subset_ds
-        else:
-            return None
 
     # ------------------------------------------------------------------------
     # BATCH HANDLERS
@@ -6928,7 +5271,7 @@ class DataSet(object):
     def add_batch(self, name, ci=['c', 'p'], weights=None, tests=None):
         return qp.Batch(self, name, ci, weights, tests)
 
-    def get_batch(self, name):
+    def get_batch(self, name=None):
         """
         Get existing Batch instance from DataSet meta information.
 
@@ -6937,14 +5280,13 @@ class DataSet(object):
         name: str
             Name of existing Batch instance.
         """
-        batches = self._meta['sets'].get('batches', {})
-        if batches.get(name.decode('utf8')):
-            b = name.decode('utf8')
-        elif batches.get(name):
-            b = name
+        if not name:
+            return [qp.Batch(self, b) for b in self.batches]
+        elif name in self.batches:
+            return qp.Batch(self, name)
         else:
-            raise KeyError('No Batch found named {}.'.format(name))
-        return qp.Batch(self, b)
+            err = "'{}' is not a valid batch.".format(name)
+            logger.error(err); raise KeyError(name)
 
     @modify(to_list='batches')
     def populate(self, batches='all', verbose=True):
@@ -6961,11 +5303,6 @@ class DataSet(object):
         -------
         qp.Stack
         """
-        if OPTIONS["modules_old"]:
-            from .stack_old import Stack
-        else:
-            from .stack import Stack
-
         dk = self.name
         meta = self._meta
         data = self._data
