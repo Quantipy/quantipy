@@ -16,8 +16,7 @@ INVALID_CHARS_IN_NAMES = [' ', '~', '(', ')', '&']
 
 # variable types
 QP_TYPES = [
-    "single", "delimited set", "array", "int", "float", "string", "date",
-    "time"]
+    "single", "delimited set", "array", "int", "float", "string", "date"]
 
 NUMERIC = ["int", "float"]
 
@@ -29,3 +28,18 @@ BOOLEAN = ["boolean"]
 
 CATEGORICAL = ["single", "delimited set"]
 
+# key can be converted into values (astype/ categorized)
+COMPATIBLE_TYPES = {
+    "single":
+        ["single", "delimited set", "int", "float", "string"],
+    "delimited set":
+        ["delimited set", "single", "string"],
+    "int":
+        ["int", "single", "float", "string"],
+    "float":
+        ["float", "single", "int", "string"],
+    "string":
+        ["string", "single"],
+    "date":
+        ["date", "single", "string"]
+}

@@ -706,6 +706,17 @@ class Meta(dict):
         if self.is_array(name):
             return self["masks"][name]["subtype"]
 
+    def _set_type(self, name, qtype):
+        if qtype not in QP_TYPES:
+            err = "'{}' is not a valid variable type.".format(qtype)
+            logger.error(err); raise ValueError(err)
+        if self.is_array(name):
+            self["masks"][name]["subtype"] = qtype
+            for source in self.sources(name):
+                self._set_type(source, qtype)
+        else:
+            self["columns"][name]["type"] = qtype
+
     def get_property(self, name, prop):
         if self.is_array(name):
             return self["masks"][name]["properties"].get(prop)
@@ -1250,13 +1261,193 @@ class Meta(dict):
             return apm
 
     # -------------------------------------------------------------------------
-    # text_keys
+    # texts and text_keys
     # -------------------------------------------------------------------------
     def _extract_text(self, text_obj, text_key, axis):
         if axis:
             return text_obj.get(text_key, {}).get(axis, "")
         else:
             return text_obj.get(text_key, "")
+
+    @staticmethod
+    def _apply_to_texts(func, obj, kwargs={}):
+        """
+        Running recursively through the meta dict and apply func.
+        """
+        if isinstance(obj, dict):
+            for k, v in obj.keys():
+                if k == "text" and isinstance(v, dict)
+                    func(v, **kwargs)
+                elif k not in ["sets", "ddf"]:
+                    Meta._apply_to_texts(func, v, kwargs)
+        elif isinstance(obj, list):
+            for i in obj:
+                Meta._apply_to_texts(func, i, kwargs)
+
+    @staticmethod
+    def _used_text_keys(obj, tks, ignore=["x edits", "y edits"]):
+        new = [tk for tk in obj.keys() if tk not in ignore + tks['tks']]
+        tks["tks"].extend(new)
+
+    def used_text_keys(self):
+        """
+        Get a list of all used textkeys in the dataset instance.
+        """
+        func = self._used_text_keys
+        kwargs = {'tks': {'tks': []}}
+        DataSet._apply_to_texts(func, self, kwargs)
+        return kwargs['tks']['tks']
+
+    @staticmethod
+    def _force_texts(obj, copy_to, copy_from, update_existing):
+        new_text_key = None
+        for new_tk in reversed(copy_from):
+            if new_tk in obj.keys():
+                if new_tk in ['x edits', 'y edits']:
+                    if obj[new_tk].get(copy_to):
+                        new_text_key = new_tk
+                else:
+                    new_text_key = new_tk
+        if not new_text_key:
+            raise ValueError('{} is no existing text_key'.format(copy_from))
+        if not obj.get(copy_to) or update_existing:
+            if new_text_key in ['x edits', 'y edits']:
+                text = obj[new_text_key][copy_to]
+            else:
+                text = obj[new_text_key]
+            obj.update({copy_to: text})
+
+    @modify(to_list='copy_from')
+    def force_texts(self, copy_to=None, copy_from=None, update_existing=False):
+        """
+        Copy info from existing text_key to a new or update the existing.
+
+        Parameters
+        ----------
+        copy_to : str, {self.valid_tks}
+            None -> self.text_key
+            The text key that will be filled.
+        copy_from : str / list {self.valid_tks}
+            You can also enter a list with text_keys, if the first text_key
+            doesn't exist, it takes the next one
+        update_existing : bool
+            True : copy_to will be filled in any case
+            False: copy_to will be filled if it's empty/ not existing
+        """
+        copy_to = copy_to or self.text_key
+        copy_from.append(copy_to)
+        func = self._force_texts
+        kwargs = {
+            'copy_to': copy_to,
+            'copy_from': copy_from,
+            'update_existing': update_existing}
+        Meta._apply_to_texts(func, self, kwargs)
+
+    @staticmethod
+    def _select_text_keys(obj, text_key):
+        if not any(tk in obj for tk in text_key):
+            msg = 'Cannot select {}. A variable does not contain any of it.'
+            raise ValueError(msg.format(text_key))
+        for tk in obj.keys():
+            if not tk in ['x edits', 'y edits']:
+                if not tk in text_key:
+                    obj.pop(tk)
+            else:
+                for etk in obj[tk].keys():
+                    if not etk in text_key:
+                        obj[tk].pop(etk)
+
+    @modify(to_list='text_key')
+    def select_text_keys(self, text_key=None):
+        """
+        Cycle through all meta ``text`` objects keep only selected text_key.
+
+        Parameters
+        ----------
+        text_key : str / list of str, default None {self.valid_tks}
+            The text_keys which should be kept.
+        """
+        text_key = text_key or self.valid_tks
+        func = self._select_text_keys
+        kwargs = {'text_key': text_key}
+        Meta._apply_to_texts(func, self, kwargs)
+
+    @staticmethod
+    def _remove_html(obj):
+        htmls = ['_', '**', '*']
+        for tk, text in obj.items():
+            if not tk in ['x edits', 'y edits']:
+                for html in htmls:
+                    text = text.replace(html, '')
+                text = text.replace('<br/>', '\n')
+                remove = re.compile('<.*?>')
+                text = re.sub(remove, '', text)
+                remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+                obj[tk] = re.sub(remove, '', text)
+            else:
+                for etk, etext in obj[tk].items():
+                    for html in htmls:
+                        etext = etext.replace(html, '')
+                    remove = re.compile('<.*?>')
+                    etext = re.sub(remove, '', etext)
+                    remove = '(<|\$)(.|\n)+?(>|.raw |.raw)'
+                    obj[tk][etk] = re.sub(remove, '', etext)
+
+    def remove_html(self):
+        """
+        Cycle through all meta ``text`` objects removing html tags.
+        """
+        func = self._remove_html
+        Meta._apply_to_texts(func, self)
+
+    @staticmethod
+    def _replace_from_dict(obj, replace_map, text_key):
+        for tk, text in obj.items():
+            if tk in text_key:
+                for k, v in replace_map.items():
+                    obj[tk] = obj[tk].replace(k, v)
+            elif tk in ['x edits', 'y edits']:
+                for etk, etext in obj[tk].items():
+                    if etk in text_key:
+                        for k, v in replace_map.items():
+                            obj[tk][etk] = obj[tk][etk].replace(k, v)
+
+    @modify(to_list='text_key')
+    def replace_texts(self, replace, text_key=None):
+        """
+        Cycle through all meta ``text`` objects replacing unwanted strings.
+
+        Parameters
+        ----------
+        replace : dict, default None
+            A dictionary mapping {unwanted string: replacement string}.
+        text_key : str / list of str, default None {self.valid_tks}
+            The text_keys for which unwanted strings are replaced.
+        """
+        text_key = text_key or self.valid_tks
+        func = self._replace_from_dict
+        kwargs = {'replace_map': replace, 'text_key': text_key}
+        Meta._apply_to_texts(func, self, kwargs)
+
+    @staticmethod
+    def _repair_text_edits(obj, text_key):
+        for ax in ['x edits', 'y edits']:
+            if not isinstance(obj.get(ax, {}), dict):
+                obj[ax] = {tk: obj[ax] for tk in obj.keys() if tk in text_key}
+
+    def repair_text_edits(self, text_key=None):
+        """
+        Cycle through all meta ``text`` objects repairing axis edits.
+
+        Parameters
+        ----------
+        text_key : str / list of str, default None {self.valid_tks}
+            The text_keys for which text edits should be included.
+        """
+        text_key = text_key or self.valid_tks
+        func = self._repair_text_edits
+        kwargs = {'text_key': text_key}
+        Meta._apply_to_texts(func, self, kwargs)
 
     # -------------------------------------------------------------------------
     # repair
@@ -1295,8 +1486,8 @@ class Meta(dict):
                     self["masks"][mask]["values"] = lib_def
                     self["lib"]["values"][mask] = values
                     logger.info("Fixed value ref for '{}'".format(mask))
-            elif "values" in self["masks"][mask]:
-                self["masks"][mask].pop("values")
+            else:
+                self._del_values(mask)
 
         for col in self.columns:
             # verify column name
@@ -1315,6 +1506,8 @@ class Meta(dict):
                 values = self["masks"][col]["values"]
                 if self.is_categorical(col) and isinstance(values, str):
                     self["masks"][col]["values"] = self.emulate_meta(values)
+                else:
+                    self._del_values(col)
 
         # verify data file set
         data_file = []
@@ -1324,6 +1517,27 @@ class Meta(dict):
                     data_file.append(self.parent(var))
                 else:
                     data_file.append(var)
-
         self.create_set(
             "data file", include=uniquify_list(data_file), overwrite=True)
+
+        # verify text edits
+        self.repair_text_edits()
+
+    def _del_values(self, name):
+        if self.is_array(name):
+            self["masks"][name].pop("values", None)
+            self["lib"]["values"].pop(mask, None)
+            for source in self.sources(name):
+                self._del_values(source)
+        elif not self.is_array_item(name):
+            self["columns"][name].pop("values", None)
+
+    def _set_values(self, name, values):
+        if self.is_array(name):
+            lib_ref = "lib@values@{}".format(name)
+            self["masks"][name]["values"] = lib_ref
+            self["lib"]["values"][mask] = values
+            for source in self.sources(name):
+                self["columns"][source]["values"] = lib_ref
+        elif not self.is_array_item(name):
+            self["columns"][name]["values"] = values
