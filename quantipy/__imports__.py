@@ -54,8 +54,7 @@ from .core.tools.logger import get_logger
 # decorators
 from .core.tools.qp_decorators import (
     lazy_property,
-    verify,
-    modify
+    params
 )
 
 # logics

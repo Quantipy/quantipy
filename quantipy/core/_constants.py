@@ -14,6 +14,15 @@ INVALID_VARS = ["id_L1", "id_L1.1"]
 
 INVALID_CHARS_IN_NAMES = [' ', '~', '(', ')', '&']
 
+DEFAULT_MISSINGS = [
+    u'weißnicht',
+    u'keineangabe',
+    u'weißnicht/keineangabe',
+    u'keineangabe/weißnicht',
+    u'kannmichnichterinnern',
+    u'weißichnicht',
+    u'nichtindeutschland']
+
 # variable types
 QP_TYPES = [
     "single", "delimited set", "array", "int", "float", "string", "date"]

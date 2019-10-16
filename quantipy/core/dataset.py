@@ -46,7 +46,8 @@ class DataSet(object):
         else:
             sliced_access = False
         var = self.unroll(var)
-        if len(var) == 1: var = var[0]
+        if len(var) == 1:
+            var = var[0]
         if sliced_access:
             return self._data.ix[slicer, var]
         else:
@@ -95,6 +96,20 @@ class DataSet(object):
         self.batches = self._meta.batches
 
     def _inherit_meta_functions(self):
+        # list variables
+        self.describe = self._meta.describe
+        self.variables = self._meta.variables
+        self.variables_from_set = self._meta.variables_from_set
+        self.by_type = self._meta.by_type
+        self.by_property = self._meta.by_property
+
+        # variable names
+        self.find = self._meta.find
+        self.names = self._meta.names
+        self.get_weak_dupes = self._meta.get_weak_dupes
+        self.valid_var_name = self._meta.valid_var_name
+
+        # inspect variable
         self.is_single = self._meta.is_single
         self.is_delimited_set = self._meta.is_delimited_set
         self.is_int = self._meta.is_int
@@ -106,44 +121,57 @@ class DataSet(object):
         self.is_filter = self._meta.is_filter
         self.is_categorical = self._meta.is_categorical
 
-        self.describe = self._meta.describe
-        self.variables = self._meta.variables
-        self.variables_from_set = self._meta.variables_from_set
-        self.by_type = self._meta.by_type
-        self.by_property = self._meta.by_property
-
-        self.find = self._meta.find
-        self.names = self._meta.names
-        self.valid_var_name = self._meta.valid_var_name
-
+        # get and set variable information
+        # types
         self.get_type = self._meta.get_type
         self.get_subtype = self._meta.get_subtype
-        self.get_property = self._meta.get_property
-        self.get_missings = self._meta.get_missings
-        self.get_rules = self._meta.get_rules
+        # texts
         self.get_text = self._meta.get_text
+        self.set_text = self._meta.set_text
+        self.remove_html = self._meta.remove_html
+        self.replace_texts = self._meta.replace_texts
+        # values
         self.get_values = self._meta.get_values
         self.get_value_texts = self._meta.get_value_texts
+        self.set_value_texts = self._meta.set_value_texts
         self.get_codes = self._meta.get_codes
         self.get_codes_from_label = self._meta.get_codes_from_label
-        self.get_factors = self._meta.get_factors
+        # items / arrays
         self.get_items = self._meta.get_items
         self.get_item_no = self._meta.get_item_no
         self.get_item_texts = self._meta.get_item_texts
-        self.get_sources = self._meta.get_sources
+        self.set_item_texts = self._meta.set_item_texts
         self.get_parent = self._meta.get_parent
-        self.get_weak_dupes = self._meta.get_weak_dupes
+        self.get_sources = self._meta.get_sources
+        # factors
+        self.get_factors = self._meta.get_factors
+        self.set_factors = self._meta.set_factors
+        self.del_factors = self._meta.del_factors
+        # properties
+        self.get_property = self._meta.get_property
+        self.set_property = self._meta.set_property
+        self.del_property = self._meta.del_property
+        # missings
+        self.get_missings = self._meta.get_missings
+        self.set_missings = self._meta.set_missings
+        self.del_missings = self._meta.del_missings
+        # rules
+        self.get_rules = self._meta.get_rules
 
+        # text_keys
+        self.used_text_keys = self._meta.used_text_keys
+        self.force_texts = self._meta.force_texts
+        self.select_text_keys = self._meta.select_text_keys
+
+        # lists and sets
         self.create_set = self._meta.create_set
         self.extend_set = self._meta.extend_set
         self.roll_up = self._meta.roll_up
         self.unroll = self._meta.unroll
 
-        self.used_text_keys = self._meta.used_text_keys
-        self.force_texts = self._meta.force_texts
-        self.select_text_keys = self._meta.select_text_keys
-        self.remove_html = self._meta.remove_html
-        self.replace_texts = self._meta.replace_texts
+        # batches
+        self.get_batches = self._meta.get_batches
+        self.adds_per_mains = self._meta.adds_per_mains
 
     # -------------------------------------------------------------------------
     # file i/o / conversions
@@ -322,7 +350,7 @@ class DataSet(object):
         """
         path_xml = os.path.join(path, u"{}.codebooks.xml".format(name))
         path_txt = os.path.join(path, u"{}_tabdelimited.txt".format(name))
-        meta, data = quantipy_from_ascribe(path_mdd, path_ddf)
+        meta, data = quantipy_from_ascribe(path_xml, path_txt)
         dataset = cls(name, meta, data)
         dataset.path = path
         self._verbose_io(name, path, "ascribe")
@@ -341,7 +369,7 @@ class DataSet(object):
             The path, where the sav file is located.
         """
         path_sav = os.path.join(path, u"{}.sav".format(name))
-        meta, data = parse_sav_file(path_mdd, path_ddf)
+        meta, data = parse_sav_file(path_sav)
         dataset = cls(name, meta, data)
         dataset.path = path
         self._verbose_io(name, path, "SPSS")
@@ -372,7 +400,7 @@ class DataSet(object):
         """
         Return the ``meta`` and ``data`` components of the DataSet instance.
         """
-        return = self._meta, self._data
+        return self._meta, self._data
 
     @verify(text_keys='text_key')
     def to_dimensions(self, name=None, path=None, **kwargs):
@@ -462,7 +490,7 @@ class DataSet(object):
         dupes = self.names(as_df=False)
         renamed_wd = []
         if isinstance(dupes, dict):
-            for var in list(dupes.values())[1:]
+            for var in list(dupes.values())[1:]:
                 n_var = self.valid_var_name(var)
                 self.rename(var, n_var)
                 renamed_wd.append([var, n_var])
@@ -491,7 +519,7 @@ class DataSet(object):
         ignore = ['@1']
         actual = self.unroll(self.variables_from_set())
         expected = self._data.columns.values.tolist()
-        missing = [col for col in expected if not col in actual + ignore]
+        missing = [col for col in expected if col not in actual + ignore]
         if missing:
             self.extend_set("data file", missing)
 
@@ -512,12 +540,12 @@ class DataSet(object):
         Test if a ``string``-typed variable can be expressed numerically.
         """
         if not self.is_string(name):
+            if self.is_array(name):
+                qtype = self.get_subtype(name)
+            else:
+                qtype = self.get_type(name)
             err = "'{}' is not of type string (but {}).".format(name, qtype)
             logger.error(err); raise ValueError(err)
-        if self.is_array(name)
-            qtype = self.get_subtype(name)
-        else:
-            qtype = self.get_type(name)
         try:
             self[self.unroll(name)].astype(float)
             return True
@@ -585,7 +613,8 @@ class DataSet(object):
             self.reset_index()
         if self.duplicates(unique_id):
             cases_before = self._data.shape[0]
-            self._data.drop_duplicates(subset=unique_id, keep=keep, inplace=True)
+            self._data.drop_duplicates(
+                subset=unique_id, keep=keep, inplace=True)
             if self._verbose_infos:
                 cases_after = self._data.shape[0]
                 droped_cases = cases_before - cases_after
@@ -768,19 +797,156 @@ class DataSet(object):
         return stack.crosstab(x, y, f, **kwargs)
 
     # ------------------------------------------------------------------------
+    # Converting
+    # ------------------------------------------------------------------------
+    @verify(variables={'name': 'columns'})
+    def convert(self, name, to):
+        """
+        Convert meta and case data between compatible variable types.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']`` that will
+            be converted.
+        to : str {"single", "delimited set", "int", "float", "string", "date"}
+            The variable type to convert to, only valid depending on the
+            initial variable type.
+        """
+        if self.is_array(name):
+            qtype = self.get_subtype(name)
+        else:
+            qtype = self.get_type(name)
+        if qtype == to:
+            logger.info("'{}' is already if type '{}'".format(name, qtype))
+            return None
+        if to not in COMPATIBLE_TYPES.get(qtype, []):
+            err = "Cannot convert '{}' into '{}'.".format(qtype, to)
+            logger.error(err); raise ValueError(err)
+        elif self.is_array_item(name):
+            err = "Cannot convert a single array item."
+        funcs = {
+            "int": self._as_int,
+            "float": self._as_float,
+            "single": self._as_single,
+            "delimited set": self._as_delimited_set,
+            "string": self._as_string
+        }
+        funcs[to](name)
+
+    def _as_float(self, name):
+        """
+        Change type to ``float``.
+        """
+        if self.is_array(name):
+            for source in self.sources(name):
+                self._as_float(source)
+            self._meta._set_type(name, "float")
+        else:
+            if self.is_string(name) and not self.is_like_numeric(name):
+                self._as_single(name)
+            self[name] = self[name].apply(
+                lambda x: float(x) if not np.isnan(x) else np.NaN)
+            if not self.is_array_item(name):
+                self._meta._set_type(name, "float")
+
+    def _as_int(self, name):
+        """
+        Change type to ``int``.
+        """
+        is_categorical = self.is_categorical(name)
+        if self.is_array(name):
+            for source in self.sources(name):
+                self._as_int(source)
+            self._meta._set_type(name, "int")
+            if is_categorical:
+                self._meta._del_values(name)
+        else:
+            if self.is_string(name) and not self.is_like_numeric(name):
+                self._as_single(name)
+            self[name] = self[name].apply(
+                lambda x: int(x) if not np.isnan(x) else np.NaN)
+            if not self.is_array_item(name):
+                self._meta._set_type(name, "int")
+                if is_categorical:
+                    self._meta._del_values(name)
+
+    def _as_delimited_set(self, name):
+        """
+        Change type to ``delimited set``.
+        """
+        if self.is_array(name):
+            for source in self.sources(name):
+                self._as_delimited_set(source)
+            self._meta._set_type(name, "delimited set")
+            if is_categorical:
+                self._meta._del_values(name)
+        else:
+            self[name] = self[name].apply(
+                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
+            if not self.is_array_item(name):
+                self._meta._set_type(name, "delimited set")
+                if is_categorical:
+                    self._meta._del_values(name)
+
+    def _as_single(self, name):
+        """
+        Change type to ``single``.
+        """
+        if self.is_delimited_set(name) and len(self.codes(name)) > 1:
+            err = "Cannot convert delimited set into single."
+            logger.error(err); raise ValueError(err)
+        if self.is_array(name):
+            for source in self.sources(name):
+                values = self._as_single(source)
+            self._meta._set_type(name, "single")
+            self._meta._set_values(name, values)
+        else:
+            series = self[name]
+            if self.is_int(name):
+                num_vals = sorted(series.dropna().astype(int).unique())
+                values = self._meta.start_values(num_vals)
+            elif self.is_date(name):
+                str_vals = series.order().astype(str).unique()
+                values = self._meta.start_values(str_vals)
+                replace_map = {v: i for i, v in enumerate(str_vals, 1)}
+                series.replace(replace_map, inplace=True)
+            elif self.is_string(name):
+                series.replace({"__NA__": np.NaN}, inplace=True)
+                str_vald = series.dropna().unique()
+                values = self._meta.start_values(str_vald)
+                replace_map = {v: i for i, v in enumerate(str_vals, 1)}
+                series.replace(replace_map, inplace=True)
+            elif self.is_delimited_set(name):
+                self[name] = series.apply(
+                    lambda x:
+                        np.NaN if np.isnan(x) else int(x.replace(';', '')))
+            if not self.is_array_item(name):
+                self._meta._set_type(name, "single")
+                self._meta._set_values(name, values)
+            else:
+                return values
+
+    def _as_string(self, name):
+        """"
+        Change type to ``string``.
+        """
+        if self.is_array(name):
+            for source in self.sources(name):
+                self._as_delimited_set(source)
+            self._meta._set_type(name, "string")
+            if is_categorical:
+                self._meta._del_values(name)
+        else:
+            self[name] = self[name].astype(str)
+            if not self.is_array_item(name):
+                self._meta._set_type(name, "string")
+                if is_categorical:
+                    self._meta._del_values(name)
+
+    # ------------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------------
-    @staticmethod
-    def _is_all_ints(s):
-        try:
-            return all(s.dropna().astype(int) == s.dropna())
-        except:
-            return False
-
-    def _all_str_are_int(self, s):
-        temp_s = s.apply(lambda x: float(x)).dropna()
-        return self._is_all_ints(temp_s)
-
     def _check_and_update_element_def(self, element_def):
         all_int = all(isinstance(v, int) for v in element_def)
         all_str = all(isinstance(v, (str, unicode)) for v in element_def)
@@ -1046,9 +1212,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # Misc
     # ------------------------------------------------------------------------
-
-
-
     def validate(self, spss_limits=False, verbose=True):
         """
         Identify and report inconsistencies in the ``DataSet`` instance.
@@ -3006,154 +3169,6 @@ class DataSet(object):
             self.dimensionize(name)
         return None
 
-    # ------------------------------------------------------------------------
-    # Converting
-    # ------------------------------------------------------------------------
-
-    @verify(variables={'name': 'columns'})
-    def convert(self, name, to):
-        """
-        Convert meta and case data between compatible variable types.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']`` that will
-            be converted.
-        to : str {"single", "delimited set", "int", "float", "string", "date"}
-            The variable type to convert to, only valid depending on the
-            initial variable type.
-        """
-        if self.is_array(name):
-            qtype = self.get_subtype(name)
-        else:
-            qtype = self.get_type(name)
-        if qtype == to:
-            logger.info("'{}' is already if type '{}'".format(name, qtype))
-            return None
-        if to not in COMPATIBLE_TYPES.get(qtype, []):
-            err = "Cannot convert '{}' into '{}'.".format(qtype, to)
-            logger.error(err); raise ValueError(err)
-        elif self.is_array_item(name):
-            err = "Cannot convert a single array item."
-        funcs = {
-            "int": self._as_int,
-            "float": self._as_float,
-            "single": self._as_single,
-            "delimited set": self._as_delimited_set
-            "string": self._as_string
-        }
-        funcs[to](name)
-
-    def _as_float(self, name):
-        """
-        Change type to ``float``.
-        """
-        if self.is_array(name):
-            for source in self.sources(name):
-                self._as_float(source)
-            self._meta._set_type(name, "float")
-        else:
-            if self.is_string(name) and not self.is_like_numeric(name):
-                self._as_single(name)
-            self[name] = self[name].apply(
-                lambda x: float(x) if not np.isnan(x) else np.NaN)
-            if not self.is_array_item(name):
-                self._meta._set_type(name, "float")
-
-    def _as_int(self, name):
-        """
-        Change type to ``int``.
-        """
-        is_categorical = self.is_categorical(name)
-        if self.is_array(name):
-            for source in self.sources(name):
-                self._as_int(source)
-            self._meta._set_type(name, "int")
-            if is_categorical:
-               self._meta._del_values(name)
-        else:
-            if self.is_string(name) and not self.is_like_numeric(name):
-                self._as_single(name)
-            self[name] = self[name].apply(
-                lambda x: int(x) if not np.isnan(x) else np.NaN)
-            if not self.is_array_item(name):
-                self._meta._set_type(name, "int")
-                is is_categorical:
-                    self._meta._del_values(name)
-
-    def _as_delimited_set(self, name):
-        """
-        Change type to ``delimited set``.
-        """
-        if self.is_array(name):
-            for source in self.sources(name):
-                self._as_delimited_set(source)
-            self._meta._set_type(name, "delimited set")
-            if is_categorical:
-               self._meta._del_values(name)
-        else:
-            self[name] = self[name].apply(
-                lambda x: str(int(x)) + ';' if not np.isnan(x) else np.NaN)
-            if not self.is_array_item(name):
-                self._meta._set_type(name, "delimited set")
-                is is_categorical:
-                    self._meta._del_values(name)
-
-    def _as_single(self, name):
-        """
-        Change type to ``single``.
-        """
-        if self.is_delimited_set(name) and len(self.codes(name)) > 1:
-            err = "Cannot convert delimited set into single."
-            logger.error(err); raise ValueError(err)
-        if self.is_array(name):
-            for source in self.sources(name):
-                values = self._as_single(source)
-            self._meta._set_type(name, "single")
-            self._meta._set_values(name, values)
-        else:
-            series = self[name]
-            if self.is_int(name):
-                num_vals = sorted(series.dropna().astype(int).unique())
-                values = self._meta.start_values(num_vals)
-            elif self.is_date(name):
-                str_vals = series.order().astype(str).unique()
-                values = self._meta.start_values(str_vals)
-                replace_map = {v: i for i, v in enumerate(str_vals, 1)}
-                series.replace(replace_map, inplace=True)
-            elif self.is_string(name):
-                series.replace({"__NA__": np.NaN}, inplace=True)
-                str_vald = series.dropna().unique()
-                values = self._meta.start_values(str_vald)
-                replace_map = {v: i for i, v in enumerate(str_vals, 1)}
-                series.replace(replace_map, inplace=True)
-            elif self.is_delimited_set(name):
-                self[name] = series.apply(
-                    lambda x:
-                        np.NaN if np.isnan(x) else int(x.replace(';', '')))
-            if not self.is_array_item(name):
-                self._meta._set_type(name, "single")
-                self._meta._set_values(name, values)
-            else:
-                return values
-
-    def _as_string(self, name):
-        """"
-        Change type to ``string``.
-        """
-        if self.is_array(name):
-            for source in self.sources(name):
-                self._as_delimited_set(source)
-            self._meta._set_type(name, "string")
-            if is_categorical:
-               self._meta._del_values(name)
-        else:
-            self[name] = self[name].astype(str)
-            if not self.is_array_item(name):
-                self._meta._set_type(name, "string")
-                is is_categorical:
-                    self._meta._del_values(name)
 
     # renaming
     # ------------------------------------------------------------------------
@@ -3798,358 +3813,8 @@ class DataSet(object):
             self.dimensionize()
         return None
 
-    # text_keys and texts manipulation
-    # ------------------------------------------------------------------------
-    @modify(to_list=['text_key', 'axis_edit'])
-    @verify(variables={'name': 'both'}, text_keys='text_key', axis='axis_edit')
-    def set_variable_text(self, name, new_text, text_key=None, axis_edit=None):
-        """
-        Apply a new or update a column's/masks' meta text object.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``
-            or ``meta['masks']``.
-        new_text : str
-            The ``text`` (label) to be set.
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's text_key property information if not provided.
-        axis_edit: {'x', 'y', ['x', 'y']}, default None
-            If the ``new_text`` of the variable should only be considered temp.
-            for build exports, the axes on that the edited text should appear
-            can be provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        def _get_text(name, shorten, text_key, axis_edit):
-            text = self.text(name, shorten, text_key, axis_edit)
-            if text is None:
-                text = self.text(name, shorten, text_key, None)
-            if text is None:
-                text = self.text(name, shorten, self.text_key, None)
-            return text
-
-        collection = 'masks' if self.is_array(name) else 'columns'
-        textobj = self._meta[collection][name]['text']
-        if not text_key and not axis_edit:
-            text_key = [self.text_key]
-        elif not text_key and axis_edit:
-            text_key = [tk for tk in textobj.keys()
-                        if tk not in ['x edits', 'y edits']]
-
-        if self._is_array_item(name):
-            parent = self._maskname_from_item(name)
-            p_obj = self._meta['masks'][parent]['text']
-
-            for tk in text_key:
-                if axis_edit:
-                    if not tk in p_obj: continue
-                    for ax in axis_edit:
-                        p_text = _get_text(parent, False, tk, ax)
-                        a_edit = '{} edits'.format(ax)
-                        if not a_edit in p_obj: p_obj[a_edit] = {}
-                        p_obj[a_edit].update({tk: p_text})
-                else:
-                    if not tk in p_obj:
-                        p_text = _get_text(parent, False, tk, None)
-                        p_obj.update({tk: p_text})
-            n_items = []
-            for item in self._meta['masks'][parent]['items']:
-                if name == item['source'].split('@')[-1]:
-                    i_textobj = item['text']
-                    for tk in text_key:
-                        if axis_edit:
-                            for ax in axis_edit:
-                                if not tk in i_textobj: continue
-                                a_edit = '{} edits'.format(ax)
-                                if not a_edit in i_textobj: i_textobj[a_edit] = {}
-                                i_textobj[a_edit].update({tk: new_text})
-                        else:
-                            i_textobj.update({tk: new_text})
-                n_items.append(item)
-            self._meta['masks'][parent]['items'] = n_items
-
-        for tk in text_key:
-            if axis_edit:
-                if not tk in textobj: continue
-                for ax in axis_edit:
-                    a_edit = '{} edits'.format(ax)
-                    if not a_edit in textobj: textobj[a_edit] = {}
-                    if self._is_array_item(name):
-                        p_text = self.text(parent, False, tk, ax)
-                        n_text = '{} - {}'.format(p_text, new_text)
-                    else:
-                        n_text = new_text
-                    textobj[a_edit].update({tk: n_text})
-            else:
-                if self._is_array_item(name):
-                    p_text = self.text(parent, False, tk, None)
-                    n_text = '{} - {}'.format(p_text, new_text)
-                else:
-                    n_text = new_text
-                textobj.update({tk: n_text})
-
-        if collection == 'masks':
-            for s in self.sources(name):
-                for tk in text_key:
-                    if axis_edit:
-                        for ax in axis_edit:
-                            item_text = _get_text(s, True, tk, ax)
-                            self.set_variable_text(s, item_text, tk, ax)
-                    else:
-                        item_text = _get_text(s, True, tk, None)
-                        self.set_variable_text(s, item_text, tk)
-        return None
-
-    @modify(to_list=['text_key', 'axis_edit'])
-    @verify(variables={'name': 'both'}, categorical='name', text_keys='text_key', axis='axis_edit')
-    def set_value_texts(self, name, renamed_vals, text_key=None, axis_edit=None):
-        """
-        Rename or add value texts in the 'values' object.
-
-        This method works for array masks and column meta data.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        renamed_vals : dict
-            A dict mapping with following structure:
-            ``{1: 'new label for code=1', 5: 'new label for code=5'}``
-            Codes will be ignored if they do not exist in the 'values' object.
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's ``text_key`` property information if not
-            provided.
-        axis_edit: {'x', 'y', ['x', 'y']}, default None
-            If ``renamed_vals`` should only be considered temp. for build
-            exports, the axes on that the edited text should appear can be
-            provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        # Do we need to modify a mask's lib def.?
-        if not self.is_array(name) and self._is_array_item(name):
-            name = self._maskname_from_item(name)
-        use_array = self.is_array(name)
-
-        valuesobj = self._get_value_loc(name)
-        new_valuesobj = []
-
-        if not text_key:
-            if not axis_edit:
-                text_key = [self.text_key]
-            else:
-                text_key = valuesobj[0]['text'].keys()
-
-        text_key = [tk for tk in text_key if tk not in ['x edits', 'y edits']]
-
-        if self.codes(name):
-            ignore = [k for k in renamed_vals.keys() if k not in self.codes(name)]
-            if ignore:
-                msg = 'Warning: Cannot set new value texts... '
-                msg = msg + "Codes {} not found in values object of '{}'!"
-                warnings.warn(msg.format(ignore, name))
-        else:
-            msg = '{} has empty values object, allowing arbitrary values meta!'
-            msg = msg + ' ...falling back to extend_values() now!'
-            warnings.warn(msg.format(name))
-            for tk in text_key:
-                for k, v in renamed_vals.items():
-                    self.extend_values(name, (k, v), tk)
-            return None
-
-
-        for value in valuesobj:
-            val = value['value']
-            if val in renamed_vals.keys():
-                value_texts = value['text']
-                for tk in text_key:
-                    if axis_edit:
-                        for ax in axis_edit:
-                            edit_key = 'x edits' if ax == 'x' else 'y edits'
-                            if not edit_key in value_texts: value_texts[edit_key] = {}
-                            if tk in value_texts:
-                                value_texts[edit_key][tk] = renamed_vals[val]
-                    else:
-                        if tk in value_texts.keys():
-                            value['text'][tk] = renamed_vals[val]
-                        else:
-                            value['text'].update({tk: renamed_vals[val]})
-            new_valuesobj.append(value)
-        if not use_array:
-            self._meta['columns'][name]['values'] = new_valuesobj
-        else:
-            self._meta['lib']['values'][name] = new_valuesobj
-        return None
-
-    @modify(to_list=['text_key', 'axis_edit'])
-    @verify(variables={'name': 'masks'}, text_keys='text_key', axis='axis_edit')
-    def set_item_texts(self, name, renamed_items, text_key=None, axis_edit=None):
-        """
-        Rename or add item texts in the ``items`` objects of ``masks``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['masks']``.
-        renamed_items : dict
-            A dict mapping with following structure (array mask items are
-            assumed to be passed by their order number):
-
-            >>> {1: 'new label for item #1',
-            ...  5: 'new label for item #5'}
-        text_key : str, default None
-            Text key for text-based label information. Will automatically fall
-            back to the instance's ``text_key`` property information if not
-            provided.
-        axis_edit: {'x', 'y', ['x', 'y']}, default None
-            If the ``new_text`` of the variable should only be considered temp.
-            for build exports, the axes on that the edited text should appear
-            can be provided.
-
-        Returns
-        -------
-        None
-            The ``DataSet`` is modified inplace.
-        """
-        for item_no, item_text in renamed_items.items():
-            source = self.sources(name)[item_no - 1]
-            self.set_variable_text(source, item_text, text_key, axis_edit)
-        return None
-
-    @verify(variables={'name': 'both'})
-    def clear_factors(self, name):
-        """
-        Remove all factors set in the variable's ``'values'`` object.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-
-        Returns
-        -------
-        None
-        """
-        val_loc = self._get_value_loc(name)
-        for value in val_loc:
-            value['factor'] = None
-        return None
-
-    @verify(variables={'name': 'both'})
-    def set_factors(self, name, factormap, safe=False):
-        """
-        Apply numerical factors to (``single``-type categorical) variables.
-
-        Factors can be read while aggregating descrp. stat. ``qp.Views``.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        factormap : dict
-            A mapping of ``{value: factor}`` (``int`` to ``int``).
-        safe : bool, default False
-            Set to ``True`` to prevent setting factors to the ``values`` meta
-            data of non-``single`` type variables.
-
-        Returns
-        -------
-        None
-        """
-        e = False
-        if name in self.masks():
-            if self._get_subtype(name) != 'single':
-                e = True
-        else:
-            if self._get_type(name) != 'single':
-                e = True
-        if e:
-            if safe:
-                err = "Can only set factors to 'single' type categorical variables!"
-                raise TypeError(err)
-            else:
-                return None
-        vals = self.codes(name)
-        facts = factormap.keys()
-        val_loc = self._get_value_loc(name)
-        if not all(f in vals for f in facts):
-            err = 'At least one factor is mapped to a code that does not exist '
-            err += 'in the values object of "{}"!'
-            raise ValueError(err.format(name))
-        for value in val_loc:
-            if value['value'] in factormap:
-                value['factor'] = factormap[value['value']]
-            else:
-                value['factor'] = None
-        return None
-
     # rules and properties
     # ------------------------------------------------------------------------
-
-    @modify(to_list='name')
-    @verify(variables={'name': 'both'})
-    def set_property(self, name, prop_name, prop_value, ignore_items=False):
-        """
-        Access and set the value of a meta object's ``properties`` collection.
-
-        Parameters
-        ----------
-        name : str
-            The originating column variable name keyed in ``meta['columns']``
-            or ``meta['masks']``.
-        prop_name : str
-            The property key name.
-        prop_value : any
-            The value to be set for the property. Must be of valid type and
-            have allowed values(s) with regard to the property.
-        ignore_items : bool, default False
-            When ``name`` refers to a variable from the ``'masks'`` collection,
-            setting to True will ignore any ``items`` and only apply the
-            property to the ``mask`` itself.
-
-        Returns
-        -------
-        None
-        """
-        valid_props = ['base_text', '_no_valid_items', '_no_valid_values']
-        if prop_name not in valid_props:
-            raise ValueError("'prop_name' must be one of {}".format(valid_props))
-        self._set_property(name, prop_name, prop_value, ignore_items)
-        return None
-
-    @modify(to_list='name')
-    @verify(variables={'name': 'both'})
-    def _set_property(self, name, prop_name, prop_value, ignore_items=False):
-        """
-        Access and set the value of a meta object's ``properties`` collection.
-
-        Note: This method allows the setting for any property, so it should only
-        be used by developers.
-        """
-        prop_update = {prop_name: prop_value}
-        for n in name:
-            collection = 'masks' if self.is_array(n) else 'columns'
-            if not 'properties' in self._meta[collection][n]:
-                self._meta[collection][n]['properties'] = {}
-            self._meta[collection][n]['properties'].update(prop_update)
-            if ignore_items: continue
-            for s in self.sources(n):
-                self._set_property(s, prop_name, prop_value)
-        return None
-
     @modify(to_list='name')
     @verify(variables={'name': 'columns'}, axis='axis')
     def slicing(self, name, slicer, axis='y'):
@@ -4456,97 +4121,6 @@ class DataSet(object):
                                'with_weight': sort_by_weight}
                 self._meta[collection][n]['rules']['x']['sortx'] = rule_update
         return None
-
-    def _clean_missing_map(self, var, missing_map):
-        """
-        Generate a map of missings that only contains valid flag names
-        and existing meta value texts.
-        """
-        valid_flags = ['d.exclude', 'exclude']
-        valid_codes = self._get_valuemap(var, non_mapped='codes')
-        valid_map = {}
-        for mtype, mcodes in missing_map.items():
-            if not isinstance(mcodes, list): mcodes = [mcodes]
-            if mtype in valid_flags:
-                codes = [c for c in mcodes if c in valid_codes]
-                if codes: valid_map[mtype] = codes
-        return valid_map
-
-    def _set_default_missings(self, ignore=None):
-        excludes = [
-            u'weißnicht',
-            'keineangabe',
-            u'weißnicht/keineangabe',
-                    'keineangabe/weißnicht', 'kannmichnichterinnern',
-                    'weißichnicht', 'nichtindeutschland']
-        d = self.describe()
-        cats = []
-        valids = ['array', 'single', 'delimited set']
-        for valid in valids:
-            cats.extend(d[valid].replace('', np.NaN).dropna().values.tolist())
-        for cat in cats:
-            if cat not in ignore:
-                flags_code = []
-                vmap = self._get_valuemap(cat)
-                for exclude in excludes:
-                    code = self._code_from_text(vmap, exclude)
-                    if code:
-                        flags_code.append(code)
-                if flags_code:
-                    flags_code = set(flags_code)
-                    mis_map = {'exclude': list(flags_code)}
-                    self.set_missings(cat, mis_map)
-        return None
-
-    @verify(variables={'var': 'both', 'ignore': 'both'})
-    def set_missings(self, var, missing_map='default', hide_on_y=True,
-                     ignore=None):
-        """
-        Flag category definitions for exclusion in aggregations.
-
-        Parameters
-        ----------
-        var : str or list of str
-            Variable(s) to apply the meta flags to.
-        missing_map: 'default' or list of codes or dict of {'flag': code(s)}, default 'default'
-            A mapping of codes to flags that can either be 'exclude' (globally
-            ignored) or 'd.exclude' (only ignored in descriptive statistics).
-            Codes provided in a list are flagged as 'exclude'.
-            Passing 'default' is using a preset list of (TODO: specify) values
-            for exclusion.
-        ignore : str or list of str, default None
-            A list of variables that should be ignored when applying missing
-            flags via the 'default' list method.
-
-        Returns
-        -------
-        None
-        """
-        var = self.unroll(var)
-        ignore = self.unroll(ignore, both='all')
-        if not missing_map:
-            for v in var:
-                if 'missings' in self._meta['columns'][v]:
-                    del self._meta['columns'][v]['missings']
-        elif missing_map == 'default':
-            self._set_default_missings(ignore)
-        else:
-            if isinstance(missing_map, list):
-                m_map = {'exclude': missing_map}
-            else:
-                m_map = org_copy.deepcopy(missing_map)
-            for v in var:
-                if v in ignore: continue
-                v_m_map = self._clean_missing_map(v, m_map)
-                if self._has_missings(v):
-                    self._meta['columns'][v].update({'missings': v_m_map})
-                else:
-                    self._meta['columns'][v]['missings'] = v_m_map
-            if hide_on_y:
-                self.hiding(var, missing_map, 'y', True)
-
-        return None
-
     # ------------------------------------------------------------------------
     # derotate the dataset
     # ------------------------------------------------------------------------
@@ -4812,18 +4386,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # BATCH HANDLERS
     # ------------------------------------------------------------------------
-
-    def batches(self, main=True, add=True):
-        """
-        View all names of included batches, depending if they are main or add.
-        """
-        return self._meta.batches(main=main, add=add)
-
-    def adds_per_mains(self, reverse=False):
-        """
-        Return a dictionary that maps all additional batches to the main batch.
-        """
-        return self._meta.batches(reverse=False)
 
     @modify(to_list=['ci', 'weights', 'tests'])
     def add_batch(self, name, ci=['c', 'p'], weights=None, tests=None):
