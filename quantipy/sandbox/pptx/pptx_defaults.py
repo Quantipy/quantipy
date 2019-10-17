@@ -7,7 +7,7 @@ import pandas as pd
 # ----------------------------------------------------------------------------
 # Font defaults
 
-default_font_name='Trebuchet MS'
+default_font_name='Arial'
 # default_font_file='fonts\Raleway-Regular.ttf'
 
 default_font = OrderedDict([
@@ -34,7 +34,7 @@ default_font_vaxis['font_bold'] = True
 # Chart data labels
 default_font_data_label = default_font.copy()
 default_font_data_label['font_size'] = 8.5
-default_font_data_label['font_color'] = (0, 0, 0)
+default_font_data_label['font_color'] = (64, 64, 64)
 
 # ----------------------------------------------------------------------------
 # Textframe defaults
@@ -54,9 +54,9 @@ default_textframe = OrderedDict([
 # Textbox defaults
 default_textbox = OrderedDict([
     ('text', ''),
-    ('left', 831600),  # Cm(2.31)
+    ('left', 777600),  # Cm(2.16)
     ('top', 1170000),  # Cm(3.25)
-    ('width', 10522800),  # Cm(29.23)
+    ('width', 10634400),  # Cm(29.23)
     ('height', 630000),  # Cm(1.75)
     ('rotation', 0),
     ('textbox_fill_solid', False),
@@ -82,7 +82,7 @@ default_cell_kwargs = OrderedDict([
 default_table = OrderedDict([
     ('dataframe', pd.DataFrame()),
     ('text', None),
-    ('left', 838800), ('top', 1476000), ('width', 10515600), ('height', 4140000),
+    ('left', 777600), ('top', 1476000), ('width', 10515600), ('height', 4140000),
 
     ('show_side_member', True),
     ('side_member_column_width', 2160000),  # Cm(6)
@@ -134,7 +134,7 @@ default_side_table['side_member_textframe_kwargs']['font_kwargs']['font_size'] =
 default_chart = OrderedDict([
     ('dataframe', pd.DataFrame()),
     ('chart_type', 'bar_clustered'),
-    ('left', 838800), ('top', 1476000), ('width', 10515600), ('height', 4140000),
+    ('left', 777600), ('top', 1476000), ('width', 10515600), ('height', 4140000),
     ('chart_style', 2),
 
     # Title
@@ -256,9 +256,9 @@ default_chart_pie['plot_vary_by_cat'] = True
 # ----------------------------
 # Question_text-dict for default_slide_kwargs
 header_shape = default_textbox.copy()
-header_shape['left'] = 838800
+header_shape['left'] = 777600
 header_shape['top'] = 1026000
-header_shape['width'] = 10515600
+header_shape['width'] = 10634400
 header_shape['height'] = 468000
 header_shape['textframe_kwargs'] = default_textframe.copy()
 header_shape['textframe_kwargs']['font_kwargs'] = default_font.copy()
@@ -269,9 +269,9 @@ header_shape['textframe_kwargs']['font_kwargs']['font_italic']=True
 # ----------------------------
 # Base_description-dict for default_slide_kwargs
 footer_shape = default_textbox.copy()
-footer_shape['left'] = 838800
+footer_shape['left'] = 777600
 footer_shape['top'] = 5652000
-footer_shape['width'] = 10515600
+footer_shape['width'] = 10634400
 footer_shape['height'] = 396000
 footer_shape['textframe_kwargs'] = default_textframe.copy()
 footer_shape['textframe_kwargs']['font_kwargs'] = default_font.copy()
