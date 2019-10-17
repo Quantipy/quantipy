@@ -28,6 +28,9 @@ class Meta(dict):
     def __contains__(self, name):
         return self.var_exists(name)
 
+    # -------------------------------------------------------------------------
+    # properties
+    # -------------------------------------------------------------------------
     @property
     def text_key(self):
         return self["lib"].get("default text", "en-GB")
@@ -69,6 +72,159 @@ class Meta(dict):
             logger.error(err); raise TypeError(err)
         self["info"]["dimensions_suffix"] = suffix
 
+    @property
+    def columns(self):
+        return self["columns"].keys()
+
+    @property
+    def masks(self):
+        return self["masks"].keys()
+
+    @property
+    def sets(self):
+        return self["sets"].keys()
+
+    @property
+    def singles(self):
+        return self._get_columns("single")
+
+    @property
+    def delimited_sets(self):
+        return self._get_columns("delimited set")
+
+    @property
+    def ints(self):
+        return self._get_columns("int")
+
+    @property
+    def floats(self):
+        return self._get_columns("float")
+
+    @property
+    def dates(self):
+        return self._get_columns("date")
+
+    @property
+    def strings(self):
+        return self._get_columns("string")
+
+    def _get_columns(self, vtype=None):
+        if vtype:
+            return [
+                col for col in self.columns
+                if self.get_type(col) == vtype]
+        else:
+            return self.columns
+
+    @property
+    def filters(self):
+        return self.by_property("recoded_filter")
+
+    # -------------------------------------------------------------------------
+    # i/o
+    # -------------------------------------------------------------------------
+    def clone(self):
+        """
+        Get a deep copy of the instance.
+        """
+        return copy.deepcopy(self)
+
+    @params(is_var=["variables"], to_list=["variables"])
+    def subset(self, variables=[], from_set=None, inplace=False):
+        """
+        Create a version of self with a reduced collection of variables.
+
+        Parameters
+        ----------
+        variables : (list of) str
+            Names of the variables to keep in the (new) instance.
+        from_set : str
+            The set name to base the (new) instance on.
+        inplace : bool, default False
+            *  True: Delete all vars that are not in "variables" or "from_set".
+            *  False: Return a new (reduced) instance.
+        """
+        if not any([variables, from_set]):
+            err = "Must either pass 'variables' or 'from_set'!"
+            logger.error(err); raise ValueError(err)
+        elif all([variables, from_set]):
+            err = "Must either pass 'variables' or 'from_set', not both!"
+            logger.error(err); raise ValueError(err)
+        meta = self if inplace else self.clone()
+        if variables:
+            variables = meta.roll_up(variables)
+        else:
+            variables = meta.variables_from_set(from_set)
+        for v in meta.variables():
+            if v not in variables:
+                meta.drop(v)
+        if not inplace:
+            return meta
+
+    @classmethod
+    def from_json(cls, path, reset=True):
+        """
+        Load json file into a new Meta instance.
+
+        Parameters
+        ----------
+        path : str
+            Full path, where the .json file is located.
+        reset : bool, default True
+            *  True: Custom sets and libs are removed.
+        """
+        meta = cls(load_json(path))
+        if reset:
+            meta._clean_custom_sets_and_libs()
+        return meta
+
+    def to_json(self, path):
+        """
+        Save instance into a json file.
+
+        Parameters
+        ----------
+        path : str
+            Full path, where the .json file is saved to.
+        """
+        save_json(self, path)
+
+    @classmethod
+    def inferred_from_df(cls, df, text_key=None):
+        """
+        Create a new Meta instance derived by data information.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The data object.
+        text_key : str, default None (== ``self.text_key``)
+            Text key for label information.
+        """
+        meta = cls()
+        if text_key:
+            meta.text_key = text_key
+        for name in df.columns:
+            s = df[name]
+            try:
+                if all(s.dropna().astype(int) == s.dropna()):
+                    pdtype = "int"
+                else:
+                    pdtype = str(s.dtype)
+            except TypeError:
+                pdtype = str(s.dtype)
+            if "int" in pdtype:
+                qptype = "int"
+            elif "float" in pdtype:
+                qptype = "float"
+            else:
+                qptype = "string"
+            meta.add_meta(name, qptype, name)
+        return meta
+
+    # -------------------------------------------------------------------------
+    # start meta
+    # -------------------------------------------------------------------------
     def start_meta(self):
         """
         Get dict with basic meta structure.
@@ -248,73 +404,6 @@ class Meta(dict):
         else:
             return item
 
-    def clone(self):
-        """
-        Get a deep copy of the instance.
-        """
-        return copy.deepcopy(self)
-
-    @classmethod
-    def from_json(cls, path, reset=True):
-        """
-        Load json file into a new Meta instance.
-
-        Parameters
-        ----------
-        path : str
-            Full path, where the .json file is located.
-        reset : bool, default True
-            *  True: Custom sets and libs are removed.
-        """
-        meta = cls(load_json(path))
-        if reset:
-            meta._clean_custom_sets_and_libs()
-        return meta
-
-    def to_json(self, path):
-        """
-        Save instance into a json file.
-
-        Parameters
-        ----------
-        path : str
-            Full path, where the .json file is saved to.
-        """
-        save_json(self, path)
-
-    @classmethod
-    def inferred_from_df(cls, df, text_key=None):
-        """
-        Create a new Meta instance derived by data information.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            The data object.
-        text_key : str, default None (== ``self.text_key``)
-            Text key for label information.
-        """
-        meta = cls()
-        if text_key:
-            meta.text_key = text_key
-        for name in df.columns:
-            s = df[name]
-            try:
-                if all(s.dropna().astype(int) == s.dropna()):
-                    pdtype = "int"
-                else:
-                    pdtype = str(s.dtype)
-            except TypeError:
-                pdtype = str(s.dtype)
-            if "int" in pdtype:
-                qptype = "int"
-            elif "float" in pdtype:
-                qptype = "float"
-            else:
-                qptype = "string"
-            meta.add_meta(name, qptype, name)
-        return meta
-
     @params(to_list=["categories", "items"], text_key=["text_key"])
     def add_meta(self, name, qtype, label="", categories=[], items=[],
                  text_key=None):
@@ -408,127 +497,257 @@ class Meta(dict):
         self.create_set(name, item_set)
         self.extend_set(name)
 
-    @params(to_list=["include", "exclude"])
-    def create_set(self, setname, include=[], exclude=[], overwrite=False):
+    @params(repeat=["name"])
+    def drop(self, name, ignore_items=False):
         """
-        Create a new set.
+        Drop variable safely from meta dict.
 
         Parameters
         ----------
-        setname : str
-            Name of the new set.
-        included : (list of) str
-            Names of the variables to be included in the new set.
-            If None, all variables in ``data file`` are taken.
-        excluded : (list of) str
-            Names of the variables to be excluded in the new set.
-        overwrite : bool, default False
-            *  True: Overwrite existing set with same name.
-            *  False: Raises if set with same name exists.
+        name : str
+            The variable name (mask or column).
+        ignore_items: bool
+            If False source variables for arrays in ``_meta["columns"]``
+            are dropped, otherwise kept.
         """
-        if setname in self.sets and not overwrite:
-            err = "'{}' already exists.".format(setname)
+        def remove_loop(obj, var):
+            if isinstance(obj, dict):
+                obj.pop(var, None)
+                for key in obj:
+                    remove_loop(obj[key], var)
+
+        if self.is_array_item(name):
+            err = "Cannot drop isolated array items!"
             logger.error(err); raise ValueError(err)
-        self["sets"][setname] = {"items": []}
-        if not include:
-            include = self.variables_from_set()
-        for v in include:
-            if v not in exclude:
-                self.extend_set(v, setname)
+
+        data_file = self.get_set()[:]
+        if self.is_array(name):
+            m_ref = "masks@{}".format(name)
+            if ignore_items:
+                items = self.get_set(n)
+                idx = data_file.index(m_ref)
+                data_file = data_file[:idx] + items + data_file[idx + 1:]
+                if self.is_categorical(name):
+                    values = self["lib"]["values"][name][:]
+                for source in self.sources(n):
+                    if self.is_categorical(source):
+                        self["columns"][source]["values"] = values
+                    self["columns"][source]["parent"] = {}
+            else:
+                data_file.remove(m_ref)
+        else:
+            c_ref = "columns@{}".format(name)
+            data_file.remove(c_ref)
+        self["sets"]["data file"]["items"] = data_file
+        remove_loop(self, name)
+
+    # ------------------------------------------------------------------------
+    # inspect
+    # ------------------------------------------------------------------------
+    def _check_type(self, name, checktype):
+        if isinstance(name, list):
+            return all(self._check_type(n, checktype) for n in name)
+        if self.is_array(name):
+            return self.get_subtype(name) in [checktype]
+        else:
+            return self.get_type(name) in [checktype]
 
     @params(is_var=["name"])
-    def extend_set(self, name, setname="data file", idx=-1):
-        collection = "masks" if self.is_array(name) else "columns"
-        name = "{}@{}".format(collection, name)
-        if idx == -1:
-            self["sets"][setname]["items"].append(name)
-        else:
-            items = self.get_set(setname)
-            nitems = items[:idx] + [name] + items[idx + 1:]
-            self["sets"][setname]["items"] = nitems
+    def is_single(self, name):
+        return self._check_type(name, "single")
 
-    @params(is_var=["variables"], to_list=["variables"])
-    def subset(self, variables=[], from_set=None, inplace=False):
+    @params(is_var=["name"])
+    def is_delimited_set(self, name):
+        return self._check_type(name, "delimited set")
+
+    @params(is_var=["name"])
+    def is_int(self, name):
+        return self._check_type(name, "int")
+
+    @params(is_var=["name"])
+    def is_float(self, name):
+        return self._check_type(name, "float")
+
+    @params(is_var=["name"])
+    def is_string(self, name):
+        return self._check_type(name, "string")
+
+    @params(is_var=["name"])
+    def is_date(self, name):
+        return self._check_type(name, "date")
+
+    @params(is_var=["name"])
+    def is_array(self, name):
+        return self.get_type(name) == "array"
+
+    @params(is_var=["name"])
+    def is_array_item(self, name):
+        if self.is_array or not self["columns"][name].get("parent"):
+            return False
+        else:
+            return True
+
+    @params(is_var=["name"])
+    def is_numeric(self, name):
+        return self._check_type(name, NUMERIC)
+
+    @params(is_var=["name"])
+    def is_filter(self, name):
+        if self.get_property(name, "recoded_filter"):
+            return True
+        else:
+            return False
+
+    @params(is_var=["name"])
+    def is_categorical(self, name):
+        return self._check_type(name, CATEGORICAL)
+
+    # -------------------------------------------------------------------------
+    @params(to_list=["name"])
+    def var_exists(self, name):
+        variables = self.variables()
+        return all(n in variables for n in name)
+
+    @params(to_list=["blacklist"])
+    def variables(self, setname="data file", numeric=True, string=True,
+                  date=True, blacklist=[]):
         """
-        Create a version of self with a reduced collection of variables.
+        View all variables listed in their global order.
 
         Parameters
         ----------
-        variables : (list of) str
-            Names of the variables to keep in the (new) instance.
-        from_set : str
-            The set name to base the (new) instance on.
-        inplace : bool, default False
-            *  True: Delete all vars that are not in "variables" or "from_set".
-            *  False: Return a new (reduced) instance.
+        setname : str, default "data file"
+            The set name to query.
+        numeric : bool, default True
+            *  False: Skip numeric variables.
+        string : bool, default True
+            *  False: Skip string variables.
+        date : bool, default True
+            *  False: Skip date variables.
+        blacklist : list, default None
+            A list of variables names to exclude from the variable listing.
+
+        Returns
+        -------
+        varlist : list
+            The list of variables registered in the queried ``set``.
         """
-        if not any([variables, from_set]):
-            err = "Must either pass 'variables' or 'from_set'!"
-            logger.error(err); raise ValueError(err)
-        elif all([variables, from_set]):
-            err = "Must either pass 'variables' or 'from_set', not both!"
-            logger.error(err); raise ValueError(err)
-        meta = self if inplace else self.clone()
-        if variables:
-            variables = meta.roll_up(variables)
+        if not numeric:
+            blacklist.extend(self.ints + self.floats)
+        if not string:
+            blacklist.extend(self.strings)
+        if not date:
+            blacklist.extend(self.dates)
+        variables = self.variables_from_set(setname)
+        return [var for var in variables if var not in blacklist]
+
+    @params(is_var=["name"], to_list=["only_type"], text_key=["text_key"],
+            axis=[("edits", "axis")])
+    def describe(self, name=None, only_type=None, text_key=None, axis=None):
+        """
+        Inspect the instance's global or variable level structure.
+
+        Parameters
+        ----------
+        name : str, default None
+            The variable name (mask or column).
+        only_type : (list of) str, default None
+            Display specific types of global structure.
+        text_key : str, default None == self.text_key
+            Text key for text-based label information.
+        axis : {"x", "y"}, default None
+            Axis for text-based label information.
+        """
+        if name:
+            return self._get_meta(var, text_key, axis)
+        types = {qptype: [] for qptype in QP_TYPES}
+        for var in self.variables():
+            qptype = self.get_type(var)
+            types[qptype].append(var)
+        max_types = max(len(values) for values in types.values())
+        for k, v in types.items():
+            types[k] = _pad_list(v, max_types)
+        types = pd.DataFrame(types)
+        if only_type:
+            types = types[only_type]
+            types = types.replace("", np.NaN).dropna(how="all")
         else:
-            variables = meta.variables_from_set(from_set)
-        for v in meta.variables():
-            if v not in variables:
-                meta.drop(v)
-        if not inplace:
-            return meta
+            types = types[QP_TYPES]
+        return types
 
-    # -------------------------------------------------------------------------
-    # properties
-    # -------------------------------------------------------------------------
-    @property
-    def columns(self):
-        return self["columns"].keys()
-
-    @property
-    def masks(self):
-        return self["masks"].keys()
-
-    @property
-    def sets(self):
-        return self["sets"].keys()
-
-    @property
-    def singles(self):
-        return self._get_columns("single")
-
-    @property
-    def delimited_sets(self):
-        return self._get_columns("delimited set")
-
-    @property
-    def ints(self):
-        return self._get_columns("int")
-
-    @property
-    def floats(self):
-        return self._get_columns("float")
-
-    @property
-    def dates(self):
-        return self._get_columns("date")
-
-    @property
-    def strings(self):
-        return self._get_columns("string")
-
-    def _get_columns(self, vtype=None):
-        if vtype:
-            return [
-                col for col in self.columns
-                if self.get_type(col) == vtype]
+    def _describe(self, name, text_key, axis):
+        """
+        Return the meta data of a variable in a well formated DataFrame.
+        """
+        if self.is_array(name):
+            qtype = self.get_subtype(name)
         else:
-            return self.columns
+            qtype = self.get_type(name)
+        label = self.get_text(name, False, text_key, axis)
+        if self.is_array(name) or self.is_categorical(name):
+            codes = texts = []
+            missings = []
+            if self.is_categorical(name):
+                codes = self.get_codes(name)
+                texts = self.get_value_texts(text_key, axis)
+                if self.get_missings(name):
+                    for code in codes:
+                        has_missing = False
+                        for miss_t, miss_c in self.get_missings(name).items():
+                            if code in miss_c:
+                                missings.append(miss_t)
+                                has_missing = True
+                        if not has_missing:
+                            missings.append(None)
+            if self.is_array(name):
+                sources = self.get_sources(name)
+                item_t = self.get_item_texts(name)
+                max_len = max(len(obj) for obj in [codes, sources])
+                codes = self._pad_meta_list(codes, max_len)
+                texts = self._pad_meta_list(texts, max_len)
+                missings = self._pad_meta_list(missings, max_len)
+                sources = self._pad_meta_list(sources, max_len)
+                item_t = self._pad_meta_list(item_t, max_len)
+                elements = [items, items_texts, codes, texts, missings]
+                columns = ["items", "item texts", "codes", "texts", "missing"]
+            else:
+                max_len = len(codes)
+                elements = [codes, texts, missings]
+                columns = ["codes", "texts", "missing"]
+            s = [pd.Series(el, index=range(0, idx_len)) for el in elements]
+            df = pd.concat(s, axis=1)
+            df.columns = columns
+            df.columns.name = qtype
+            df.index.name = "{}: {}".format(name, label)
+        else:
+            df = pd.DataFrame(["N/A"])
+            df.columns = [qtype]
+            df.index = ["{}: {}".format(name, label)]
+        return df
 
-    @property
-    def filters(self):
-        return self.by_property("recoded_filter")
+    def by_type(self, qtype=None):
+        """
+        View all DataSet variables that own the requested type.
+        """
+        return self.describe(only_type=qtype)
+
+    def by_property(self, prop, **kwargs):
+        """
+        View all variables that own the requested property.
+
+        Parameters
+        ----------
+        prop : str
+            The property name.
+        kwargs : dict
+            kwargs for ``Meta.variables()``.
+        """
+        return [
+            v for v in self.variables(**kwargs) if self.get_property(v, prop)]
+
+    def variables_from_set(self, setname="data file"):
+        items = self.get_set(setname)
+        return self._dissect_setlist(items)
 
     # -------------------------------------------------------------------------
     # names
@@ -790,218 +1009,57 @@ class Meta(dict):
         else:
             return name
 
+    # -------------------------------------------------------------------------
+    # sets
+    # -------------------------------------------------------------------------
+    def get_set(self, setname="data file"):
+        if setname not in self.sets:
+            err = "'{}' is not a valid setname.".format(setname)
+            logger.error(err); raise KeyError(err)
+        return self["sets"][setname]["items"]
 
+    @params(to_list=["include", "exclude"])
+    def create_set(self, setname, include=[], exclude=[], overwrite=False):
+        """
+        Create a new set.
 
+        Parameters
+        ----------
+        setname : str
+            Name of the new set.
+        included : (list of) str
+            Names of the variables to be included in the new set.
+            If None, all variables in ``data file`` are taken.
+        excluded : (list of) str
+            Names of the variables to be excluded in the new set.
+        overwrite : bool, default False
+            *  True: Overwrite existing set with same name.
+            *  False: Raises if set with same name exists.
+        """
+        if setname in self.sets and not overwrite:
+            err = "'{}' already exists.".format(setname)
+            logger.error(err); raise ValueError(err)
+        self["sets"][setname] = {"items": []}
+        if not include:
+            include = self.variables_from_set()
+        for v in include:
+            if v not in exclude:
+                self.extend_set(v, setname)
 
-
-    # ------------------------------------------------------------------------
-    # inspect
-    # ------------------------------------------------------------------------
-    def _check_type(self, name, checktype):
-        if isinstance(name, list):
-            return all(self._check_type(n, checktype) for n in name)
-        if self.is_array(name):
-            return self.get_subtype(name) in [checktype]
+    @params(is_var=["name"])
+    def extend_set(self, name, setname="data file", idx=-1):
+        collection = "masks" if self.is_array(name) else "columns"
+        name = "{}@{}".format(collection, name)
+        if idx == -1:
+            self["sets"][setname]["items"].append(name)
         else:
-            return self.get_type(name) in [checktype]
-
-    @params(is_var=["name"])
-    def is_single(self, name):
-        return self._check_type(name, "single")
-
-    @params(is_var=["name"])
-    def is_delimited_set(self, name):
-        return self._check_type(name, "delimited set")
-
-    @params(is_var=["name"])
-    def is_int(self, name):
-        return self._check_type(name, "int")
-
-    @params(is_var=["name"])
-    def is_float(self, name):
-        return self._check_type(name, "float")
-
-    @params(is_var=["name"])
-    def is_string(self, name):
-        return self._check_type(name, "string")
-
-    @params(is_var=["name"])
-    def is_date(self, name):
-        return self._check_type(name, "date")
-
-    @params(is_var=["name"])
-    def is_array(self, name):
-        return self.get_type(name) == "array"
-
-    @params(is_var=["name"])
-    def is_array_item(self, name):
-        if self.is_array or not self["columns"][name].get("parent"):
-            return False
-        else:
-            return True
-
-    @params(is_var=["name"])
-    def is_numeric(self, name):
-        return self._check_type(name, NUMERIC)
-
-    @params(is_var=["name"])
-    def is_filter(self, name):
-        if self.get_property(name, "recoded_filter"):
-            return True
-        else:
-            return False
-
-    @params(is_var=["name"])
-    def is_categorical(self, name):
-        return self._check_type(name, CATEGORICAL)
+            items = self.get_set(setname)
+            nitems = items[:idx] + [name] + items[idx + 1:]
+            self["sets"][setname]["items"] = nitems
 
     # -------------------------------------------------------------------------
-    @params(to_list=["name"])
-    def var_exists(self, name):
-        variables = self.variables()
-        return all(n in variables for n in name)
-
-    @params(to_list=["blacklist"])
-    def variables(self, setname="data file", numeric=True, string=True,
-                  date=True, blacklist=[]):
-        """
-        View all variables listed in their global order.
-
-        Parameters
-        ----------
-        setname : str, default "data file"
-            The set name to query.
-        numeric : bool, default True
-            *  False: Skip numeric variables.
-        string : bool, default True
-            *  False: Skip string variables.
-        date : bool, default True
-            *  False: Skip date variables.
-        blacklist : list, default None
-            A list of variables names to exclude from the variable listing.
-
-        Returns
-        -------
-        varlist : list
-            The list of variables registered in the queried ``set``.
-        """
-        if not numeric:
-            blacklist.extend(self.ints + self.floats)
-        if not string:
-            blacklist.extend(self.strings)
-        if not date:
-            blacklist.extend(self.dates)
-        variables = self.variables_from_set(setname)
-        return [var for var in variables if var not in blacklist]
-
-    @params(is_var=["name"], to_list=["only_type"], text_key=["text_key"],
-            axis=[("edits", "axis")])
-    def describe(self, name=None, only_type=None, text_key=None, axis=None):
-        """
-        Inspect the instance's global or variable level structure.
-
-        Parameters
-        ----------
-        name : str, default None
-            The variable name (mask or column).
-        only_type : (list of) str, default None
-            Display specific types of global structure.
-        text_key : str, default None == self.text_key
-            Text key for text-based label information.
-        axis : {"x", "y"}, default None
-            Axis for text-based label information.
-        """
-        if name:
-            return self._get_meta(var, text_key, axis)
-        types = {qptype: [] for qptype in QP_TYPES}
-        for var in self.variables():
-            qptype = self.get_type(var)
-            types[qptype].append(var)
-        max_types = max(len(values) for values in types.values())
-        for k, v in types.items():
-            types[k] = _pad_list(v, max_types)
-        types = pd.DataFrame(types)
-        if only_type:
-            types = types[only_type]
-            types = types.replace("", np.NaN).dropna(how="all")
-        else:
-            types = types[QP_TYPES]
-        return types
-
-    def _describe(self, name, text_key, axis):
-        """
-        Return the meta data of a variable in a well formated DataFrame.
-        """
-        if self.is_array(name):
-            qtype = self.get_subtype(name)
-        else:
-            qtype = self.get_type(name)
-        label = self.get_text(name, False, text_key, axis)
-        if self.is_array(name) or self.is_categorical(name):
-            codes = texts = []
-            missings = []
-            if self.is_categorical(name):
-                codes = self.get_codes(name)
-                texts = self.get_value_texts(text_key, axis)
-                if self.get_missings(name):
-                    for code in codes:
-                        has_missing = False
-                        for miss_t, miss_c in self.get_missings(name).items():
-                            if code in miss_c:
-                                missings.append(miss_t)
-                                has_missing = True
-                        if not has_missing:
-                            missings.append(None)
-            if self.is_array(name):
-                sources = self.get_sources(name)
-                item_t = self.get_item_texts(name)
-                max_len = max(len(obj) for obj in [codes, sources])
-                codes = self._pad_meta_list(codes, max_len)
-                texts = self._pad_meta_list(texts, max_len)
-                missings = self._pad_meta_list(missings, max_len)
-                sources = self._pad_meta_list(sources, max_len)
-                item_t = self._pad_meta_list(item_t, max_len)
-                elements = [items, items_texts, codes, texts, missings]
-                columns = ["items", "item texts", "codes", "texts", "missing"]
-            else:
-                max_len = len(codes)
-                elements = [codes, texts, missings]
-                columns = ["codes", "texts", "missing"]
-            s = [pd.Series(el, index=range(0, idx_len)) for el in elements]
-            df = pd.concat(s, axis=1)
-            df.columns = columns
-            df.columns.name = qtype
-            df.index.name = "{}: {}".format(name, label)
-        else:
-            df = pd.DataFrame(["N/A"])
-            df.columns = [qtype]
-            df.index = ["{}: {}".format(name, label)]
-        return df
-
-    def by_type(self, qtype=None):
-        """
-        View all DataSet variables that own the requested type.
-        """
-        return self.describe(only_type=qtype)
-
-    def by_property(self, prop, **kwargs):
-        """
-        View all variables that own the requested property.
-
-        Parameters
-        ----------
-        prop : str
-            The property name.
-        kwargs : dict
-            kwargs for ``Meta.variables()``.
-        """
-        return [
-            v for v in self.variables(**kwargs) if self.get_property(v, prop)]
-
-    def variables_from_set(self, setname="data file"):
-        items = self.get_set(setname)
-        return self._dissect_setlist(items)
-
+    # types
+    # -------------------------------------------------------------------------
     @params(is_var=["name"])
     def get_type(self, name):
         for collection in ["columns", "masks"]:
@@ -1024,6 +1082,9 @@ class Meta(dict):
         else:
             self["columns"][name]["type"] = qtype
 
+    # -------------------------------------------------------------------------
+    # properties
+    # -------------------------------------------------------------------------
     @params(is_var=["name"])
     def get_property(self, name, prop):
         if self.is_array(name):
@@ -1058,6 +1119,9 @@ class Meta(dict):
         base_text = self.get_property(name, "base_text")
         return self._extract_text(base_text, text_key)
 
+    # -------------------------------------------------------------------------
+    # missings
+    # -------------------------------------------------------------------------
     @params(is_var=["name"])
     def get_missings(self, name):
         if self.is_array(name):
@@ -1104,6 +1168,9 @@ class Meta(dict):
         else:
             self["columns"][name].pop("missings", None)
 
+    # -------------------------------------------------------------------------
+    # rules
+    # -------------------------------------------------------------------------
     @params(is_var=["name"], axis=["axis"])
     def get_rules(self, name, axis="x"):
         if self.is_array(name):
@@ -1112,12 +1179,9 @@ class Meta(dict):
             rules = self["columns"][name].get("rules", {}).get(axis, {})
         return rules
 
-    def get_set(self, setname="data file"):
-        if setname not in self.sets:
-            err = "'{}' is not a valid setname.".format(setname)
-            logger.error(err); raise KeyError(err)
-        return self["sets"][setname]["items"]
-
+    # -------------------------------------------------------------------------
+    # texts (variable labels)
+    # -------------------------------------------------------------------------
     @params(is_var=["name"], text_key=["text_key"], axis=[("edits", "axis")])
     def get_text(self, name, shorten=True, text_key=None, axis=None):
         """
@@ -1189,6 +1253,9 @@ class Meta(dict):
             text_obj = self["columns"][name]["text"]
             self._update_text(text, text_obj, text_key, axis)
 
+    # -------------------------------------------------------------------------
+    # values
+    # -------------------------------------------------------------------------
     @params(is_var=["name"], is_cat=["name"], text_key=["text_key"],
             axis=[("edits", "axis")])
     def get_values(self, name, text_key=None, axis=None):
@@ -1476,6 +1543,9 @@ class Meta(dict):
         for value in values:
             value.pop("factor", None)
 
+    # -------------------------------------------------------------------------
+    # items
+    # -------------------------------------------------------------------------
     @params(is_mask=["name"], text_key=["text_key"], axis=[("edits", "axis")])
     def get_items(self, name, text_key=None, axis=None):
         """
@@ -1573,219 +1643,6 @@ class Meta(dict):
             return None
         else:
             return self["columns"][name]["parent"][0].split("@")[-1]
-
-    # -------------------------------------------------------------------------
-    # helpers
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def _pad_list(pad_list, pad_to_len):
-        to_add = pad_to_len - len(pad_list)
-        pad_list.extend([""] * to_add)
-        return pad_list
-
-    @params(text_key=["text_key"])
-    def _check_dupes_in_values(self, values, text_key=None, safe=True):
-        c_dupes = dupes_in_list([value["value"] for value in values])
-        if c_dupes:
-            err = "Cannot add duplicated codes: {}".format(c_dupes)
-            logger.error(err); raise ValueError(err)
-        if safe:
-            t_dupes = dupes_in_list(
-                [self._extract_text(value["text"]) for value in values])
-            if t_dupes:
-                err = "Cannot add duplicated texts: {}".format(t_dupes)
-                logger.error(err); raise ValueError(err)
-
-    @params(to_list=["items"])
-    def _dissect_setlist(self, items, collection=False, name=True):
-        new_list = []
-        for item in items:
-            c, n = item.split("@")
-            if collection and name:
-                new_list.append((c, n))
-            elif collection:
-                new_list.append(c)
-            elif name:
-                new_list.append(n)
-        return new_list
-
-    def _array_and_item_list(self, v, keep):
-        new_list = []
-        if not self.is_array(v):
-            # columns
-            if keep in ["both", "items"]:
-                new_list.append(v)
-        else:
-            # masks
-            if keep in ["both", "mask"]:
-                new_list.append(v)
-            if keep in ["both", "items"]:
-                new_list.extend(self.sources(v))
-        return new_list
-
-    # -------------------------------------------------------------------------
-    @params(to_list=["varlist", "keep", "both"], is_var=["varlist"])
-    def unroll(self, varlist, keep=None, both=None):
-        """
-        Replace mask with its items, optionally excluding/keeping certain ones.
-
-        Parameters
-        ----------
-        varlist : list
-           A list of meta ``"columns"`` and/or ``"masks"`` names.
-        keep : str or list, default None
-            The names of masks that will not be replaced with their items.
-        both : "all", str or list of str, default None
-            The names of masks that will be included both as themselves and as
-            collections of their items.
-
-        Note
-        ----
-        varlist can also contain nesting `var1 > var2`. The variables which are
-        included in the nesting can also be controlled by keep and both, even
-        if the variables are also included as a "normal" variable.
-
-        Example::
-            meta.unroll(varlist = ["q1", "q1 > gender"], both="all")
-            ["q1",
-             "q1_1",
-             "q1_2",
-             "q1 > gender",
-             "q1_1 > gender",
-             "q1_2 > gender"]
-
-        Returns
-        -------
-        unrolled : list
-            The modified ``varlist``.
-        """
-        if both and both[0] == "all":
-            both = self.masks
-        unrolled = []
-        for var in varlist:
-            if " > " in var:
-                nested = var.replace(" ", "").split(">")
-                n_list = []
-                for n in nested:
-                    if n in keep:
-                        to_keep = "mask"
-                    elif n in both:
-                        to_keep = "both"
-                    else:
-                        to_keep = "items"
-                    n_list.append(self._array_and_item_list(n, to_keep))
-                for ur in [" > ".join(list(un)) for un in product(*n_list)]:
-                    if ur not in unrolled:
-                        unrolled.append(ur)
-            else:
-                if var in keep:
-                    to_keep = "mask"
-                elif var in both:
-                    to_keep = "both"
-                else:
-                    to_keep = "items"
-                for ur in self._array_and_item_list(var, to_keep):
-                    if ur not in unrolled:
-                        unrolled.append(ur)
-        return unrolled
-
-    @params(to_list=["varlist", "ignore_arrays"], is_var=["varlist"])
-    def roll_up(self, varlist, ignore_arrays=None):
-        """
-        Replace any array items with its parent mask variable definition name.
-
-        Parameters
-        ----------
-        varlist : list
-           A list of meta ``"columns"`` and/or ``"masks"`` names.
-        ignore_arrays : (list of) str
-            A list of array mask names that should not be rolled up if their
-            items are found inside ``varlist``.
-
-        Note
-        ----
-        varlist can also contain nesting `var1 > var2`. The variables which are
-        included in the nesting can also be controlled by keep and both, even
-        if the variables are also included as a "normal" variable.
-
-        Returns
-        -------
-        rolled_up : list
-            The modified ``varlist``.
-        """
-        def _var_to_keep(var, ignore):
-            if self.is_array(var):
-                to_keep = "mask"
-            else:
-                to_keep = "items"
-                if self._is_array_item(var):
-                    parent = self._maskname_from_item(var)
-                    if parent not in ignore_arrays:
-                        var = parent
-                        to_keep = "mask"
-            return var, to_keep
-
-        rolled_up = []
-        for var in varlist:
-            if " > " in var:
-                nested = var.replace(" ", "").split(">")
-                n_list = []
-                for n in nested:
-                    n, to_keep = _var_to_keep(n, ignore_arrays)
-                    n_list.append(self._array_and_item_list(n, to_keep))
-                for ru in [" > ".join(list(un)) for un in product(*n_list)]:
-                    if ru not in rolled_up:
-                        rolled_up.append(ru)
-            else:
-                var, to_keep = _var_to_keep(var, ignore_arrays)
-                for ru in self._array_and_item_list(var, to_keep):
-                    if ru not in rolled_up:
-                        rolled_up.append(ru)
-        return rolled_up
-
-    @params(repeat=["name"])
-    def drop(self, name, ignore_items=False):
-        """
-        Drop variable safely from meta dict.
-
-        Parameters
-        ----------
-        name : str
-            The variable name (mask or column).
-        ignore_items: bool
-            If False source variables for arrays in ``_meta["columns"]``
-            are dropped, otherwise kept.
-        """
-        def remove_loop(obj, var):
-            if isinstance(obj, dict):
-                obj.pop(var, None)
-                for key in obj:
-                    remove_loop(obj[key], var)
-
-        if self.is_array_item(name):
-            err = "Cannot drop isolated array items!"
-            logger.error(err); raise ValueError(err)
-
-        data_file = self.get_set()[:]
-        if self.is_array(name):
-            m_ref = "masks@{}".format(name)
-            if ignore_items:
-                items = self.get_set(n)
-                idx = data_file.index(m_ref)
-                data_file = data_file[:idx] + items + data_file[idx + 1:]
-                if self.is_categorical(name):
-                    values = self["lib"]["values"][name][:]
-                for source in self.sources(n):
-                    if self.is_categorical(source):
-                        self["columns"][source]["values"] = values
-                    self["columns"][source]["parent"] = {}
-            else:
-                data_file.remove(m_ref)
-        else:
-            c_ref = "columns@{}".format(name)
-            data_file.remove(c_ref)
-        self["sets"]["data file"]["items"] = data_file
-        remove_loop(self, name)
 
     # -------------------------------------------------------------------------
     # batches
@@ -2028,6 +1885,128 @@ class Meta(dict):
         Meta._apply_to_texts(func, self, kwargs)
 
     # -------------------------------------------------------------------------
+    # misc
+    # -------------------------------------------------------------------------
+    @params(to_list=["varlist", "keep", "both"], is_var=["varlist"])
+    def unroll(self, varlist, keep=None, both=None):
+        """
+        Replace mask with its items, optionally excluding/keeping certain ones.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of meta ``"columns"`` and/or ``"masks"`` names.
+        keep : str or list, default None
+            The names of masks that will not be replaced with their items.
+        both : "all", str or list of str, default None
+            The names of masks that will be included both as themselves and as
+            collections of their items.
+
+        Note
+        ----
+        varlist can also contain nesting `var1 > var2`. The variables which are
+        included in the nesting can also be controlled by keep and both, even
+        if the variables are also included as a "normal" variable.
+
+        Example::
+            meta.unroll(varlist = ["q1", "q1 > gender"], both="all")
+            ["q1",
+             "q1_1",
+             "q1_2",
+             "q1 > gender",
+             "q1_1 > gender",
+             "q1_2 > gender"]
+
+        Returns
+        -------
+        unrolled : list
+            The modified ``varlist``.
+        """
+        if both and both[0] == "all":
+            both = self.masks
+        unrolled = []
+        for var in varlist:
+            if " > " in var:
+                nested = var.replace(" ", "").split(">")
+                n_list = []
+                for n in nested:
+                    if n in keep:
+                        to_keep = "mask"
+                    elif n in both:
+                        to_keep = "both"
+                    else:
+                        to_keep = "items"
+                    n_list.append(self._array_and_item_list(n, to_keep))
+                for ur in [" > ".join(list(un)) for un in product(*n_list)]:
+                    if ur not in unrolled:
+                        unrolled.append(ur)
+            else:
+                if var in keep:
+                    to_keep = "mask"
+                elif var in both:
+                    to_keep = "both"
+                else:
+                    to_keep = "items"
+                for ur in self._array_and_item_list(var, to_keep):
+                    if ur not in unrolled:
+                        unrolled.append(ur)
+        return unrolled
+
+    @params(to_list=["varlist", "ignore_arrays"], is_var=["varlist"])
+    def roll_up(self, varlist, ignore_arrays=None):
+        """
+        Replace any array items with its parent mask variable definition name.
+
+        Parameters
+        ----------
+        varlist : list
+           A list of meta ``"columns"`` and/or ``"masks"`` names.
+        ignore_arrays : (list of) str
+            A list of array mask names that should not be rolled up if their
+            items are found inside ``varlist``.
+
+        Note
+        ----
+        varlist can also contain nesting `var1 > var2`. The variables which are
+        included in the nesting can also be controlled by keep and both, even
+        if the variables are also included as a "normal" variable.
+
+        Returns
+        -------
+        rolled_up : list
+            The modified ``varlist``.
+        """
+        def _var_to_keep(var, ignore):
+            if self.is_array(var):
+                to_keep = "mask"
+            else:
+                to_keep = "items"
+                if self._is_array_item(var):
+                    parent = self._maskname_from_item(var)
+                    if parent not in ignore_arrays:
+                        var = parent
+                        to_keep = "mask"
+            return var, to_keep
+
+        rolled_up = []
+        for var in varlist:
+            if " > " in var:
+                nested = var.replace(" ", "").split(">")
+                n_list = []
+                for n in nested:
+                    n, to_keep = _var_to_keep(n, ignore_arrays)
+                    n_list.append(self._array_and_item_list(n, to_keep))
+                for ru in [" > ".join(list(un)) for un in product(*n_list)]:
+                    if ru not in rolled_up:
+                        rolled_up.append(ru)
+            else:
+                var, to_keep = _var_to_keep(var, ignore_arrays)
+                for ru in self._array_and_item_list(var, to_keep):
+                    if ru not in rolled_up:
+                        rolled_up.append(ru)
+        return rolled_up
+
+    # -------------------------------------------------------------------------
     # repair
     # -------------------------------------------------------------------------
     def _clean_custom_sets_and_libs(self):
@@ -2106,3 +2085,53 @@ class Meta(dict):
 
         # verify text edits
         self.repair_text_edits()
+
+
+    # -------------------------------------------------------------------------
+    # helpers
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def _pad_list(pad_list, pad_to_len):
+        to_add = pad_to_len - len(pad_list)
+        pad_list.extend([""] * to_add)
+        return pad_list
+
+    @params(text_key=["text_key"])
+    def _check_dupes_in_values(self, values, text_key=None, safe=True):
+        c_dupes = dupes_in_list([value["value"] for value in values])
+        if c_dupes:
+            err = "Cannot add duplicated codes: {}".format(c_dupes)
+            logger.error(err); raise ValueError(err)
+        if safe:
+            t_dupes = dupes_in_list(
+                [self._extract_text(value["text"]) for value in values])
+            if t_dupes:
+                err = "Cannot add duplicated texts: {}".format(t_dupes)
+                logger.error(err); raise ValueError(err)
+
+    @params(to_list=["items"])
+    def _dissect_setlist(self, items, collection=False, name=True):
+        new_list = []
+        for item in items:
+            c, n = item.split("@")
+            if collection and name:
+                new_list.append((c, n))
+            elif collection:
+                new_list.append(c)
+            elif name:
+                new_list.append(n)
+        return new_list
+
+    def _array_and_item_list(self, v, keep):
+        new_list = []
+        if not self.is_array(v):
+            # columns
+            if keep in ["both", "items"]:
+                new_list.append(v)
+        else:
+            # masks
+            if keep in ["both", "mask"]:
+                new_list.append(v)
+            if keep in ["both", "items"]:
+                new_list.extend(self.sources(v))
+        return new_list
