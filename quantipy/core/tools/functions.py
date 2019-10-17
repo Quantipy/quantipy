@@ -140,12 +140,22 @@ def ensure_list(obj):
     return obj
 
 
-def uniquify_list(the_list):
-    seen = []
-    new_list = []
+def _dupes_in_list(the_list):
+    unique = []
+    dupes = []
     for item in the_list:
-        if item not in seen:
-            new_list.append(item)
+        if item in unique:
+            dupes.append(item)
         else:
-            seen.append(item)
-    return new_list
+            unique.append(item)
+    return unique, dupes
+
+
+def uniquify_list(the_list):
+    unique, _ = _dupes_in_list(the_list)
+    return unique
+
+
+def dupes_in_list(the_list):
+    _, dupes = _dupes_in_list(the_list)
+    return dupes

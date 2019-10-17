@@ -170,7 +170,7 @@ class Meta(dict):
         return mask
 
     @params(text_key=["text_key"])
-    def start_values(self, categories, text_key=None, start_at=1):
+    def start_values(self, categories, text_key=None, start_at=1, safe=True):
         """
         Get dict with basic values structure.
 
@@ -185,6 +185,8 @@ class Meta(dict):
             Text key for label information.
         start_at : int
             Starting number for code enumeration (all cats are strings).
+        safe : bool, default True
+            *  True: Duplicated texts will lead to an error raise.
         """
         all_int = all(isinstance(v, int) for v in categories)
         all_str = all(isinstance(v, str) for v in categories)
@@ -195,6 +197,7 @@ class Meta(dict):
                 "tuples).")
             logger.error(err); raise TypeError(err)
         if all_int:
+            safe=False
             values = [
                 {"value": cat, "text": {text_key: ""}} for cat in categories]
         elif all_str:
@@ -202,13 +205,10 @@ class Meta(dict):
                 {"value": idx, "text": {text_key: cat}}
                 for idx, cat in enumerate(categories, start_at)]
         else:
-            codes = [cat[0] for cat in categories]
-            if not len(codes) == len(set(codes)):
-                err = "Cannot add duplicated codes."
-                logger.error(err); raise ValueError(err)
             values = [
                 {"value": code, "text": {text_key: lab}}
                 for code, lab in categories]
+        self._check_dupes_in_values(values, text_key, safe)
         return values
 
     @params(text_key=["text_key"])
@@ -314,38 +314,6 @@ class Meta(dict):
                 qptype = "string"
             meta.add_meta(name, qptype, name)
         return meta
-
-    def valid_var_name(self, name, prefix=True, extend="_"):
-        """
-        Find a valid variable name. Check against weak_dupes, removes invalid
-        chars, extends if necessary.
-
-        Parameters
-        ----------
-        name : str
-            The desired name.
-        prefix : bool, default True
-            If modifications are needed:
-            *  True: a string is added as prefix (see extend)
-            *  False: the name is enumerated (add number as suffix)
-        extend : str, default "_"
-            This string is used as prefix.
-        """
-        for char in INVALID_CHARS_IN_NAMES:
-            name = name.replace(char, "")
-        if self.get_weak_dupes(name) or name in BLACKLIST_VARIABLES:
-            if prefix:
-                valid = "{}{}".format(prefix, name)
-                while self.get_weak_dupes(name):
-                    name = "{}{}".format(prefix, name)
-            else:
-                suf = 2
-                valid = "{}{}".format(name, suf)
-                while self.get_weak_dupes(valid):
-                    suf += 1
-                    valid = "{}{}".format(name, suf)
-                name = valid
-        return name
 
     @params(to_list=["categories", "items"], text_key=["text_key"])
     def add_meta(self, name, qtype, label="", categories=[], items=[],
@@ -562,6 +530,270 @@ class Meta(dict):
     def filters(self):
         return self.by_property("recoded_filter")
 
+    # -------------------------------------------------------------------------
+    # names
+    # -------------------------------------------------------------------------
+    @params(to_list=["str_tags"])
+    def find(self, str_tags=None, suffixed=False):
+        """
+        Find variables by searching their names for substrings.
+
+        Parameters
+        ----------
+        str_tags : (list of) str
+            The strings tags to look for in the variable names.
+            If not provided, the modules" default global list of substrings
+            from VAR_SUFFIXES will be used.
+        suffixed : bool, default False
+            *  True: Only variable names that end with a given string sequence
+            will qualify.
+        """
+        if not str_tags:
+            str_tags = VAR_SUFFIXES
+        found = []
+        for v in self.variables():
+            for str_tag in str_tags:
+                if suffixed and v.endswith(str_tag):
+                    found.append(v)
+                elif str_tag in v:
+                    found.append(v)
+        return found
+
+    def names(self, ignore_items=True, as_df=True):
+        """
+        Find all weak-duplicate variable names that are different only by case.
+
+        Parameters
+        ----------
+        ignore_items : bool, default True
+            *  True: array items are not taken into account.
+        as_df : bool, default True
+            *  True: Return weak duplicates in a pandas DataFrame.
+            *  False: Return weak duplicates in an OrderedDict.
+
+        Note
+        ----
+        Returns self.variables() if no weak-duplicates are found.
+        """
+        all_names = self.variables()
+        if not ignore_items:
+            all_names = self.unroll(all_names, both="all")
+        lower_names = [n.lower() for n in all_names]
+        weak_dupes = OrderedDict()
+        for name in all_names:
+            lower = name.lower()
+            if lower_names.count(lower) > 1:
+                if lower not in weak_dupes:
+                    weak_dupes[lower] = [name]
+                else:
+                    weak_dupes[lower].append(name)
+        if not weak_dupes:
+            return all_names
+        if not as_df:
+            return weak_dupes
+        else:
+            max_dupes = max(len(values) for values in weak_dupes.values())
+            for k, v in weak_dupes.items():
+                weak_dupes[k] = _pad_list(v, max_dupes)
+            return pd.DataFrame(weak_dupes)
+
+    def valid_var_name(self, name, prefix=True, extend="_"):
+        """
+        Find a valid variable name. Check against weak_dupes, removes invalid
+        chars, extends if necessary.
+
+        Parameters
+        ----------
+        name : str
+            The desired name.
+        prefix : bool, default True
+            If modifications are needed:
+            *  True: a string is added as prefix (see extend)
+            *  False: the name is enumerated (add number as suffix)
+        extend : str, default "_"
+            This string is used as prefix.
+        """
+        for char in INVALID_CHARS_IN_NAMES:
+            name = name.replace(char, "")
+        if self.get_weak_dupes(name) or name in BLACKLIST_VARIABLES:
+            if prefix:
+                valid = "{}{}".format(prefix, name)
+                while self.get_weak_dupes(name):
+                    name = "{}{}".format(prefix, name)
+            else:
+                suf = 2
+                valid = "{}{}".format(name, suf)
+                while self.get_weak_dupes(valid):
+                    suf += 1
+                    valid = "{}{}".format(name, suf)
+                name = valid
+        return name
+
+    def _verify_new_name(new_name):
+        new = self.valid_var_name(new_name)
+        return new == new_name:
+
+    @params(is_var=["name"])
+    def get_weak_dupes(self, name):
+        """
+        Get all weak dupes (different spellings) of an input string.
+        """
+        resolved = []
+        dupes = self.names(ignore_items=False, as_df=False)
+        lower = OrderedDict([
+            (v.lower(), v) for v in self.unroll(self.variables(), both="all")])
+        if isinstance(dupes, dict) and name.lower() in dupes:
+            resolved = dupes[name.lower()]
+        elif name in self:
+            resolved.append(name)
+        elif name.lower() in lower:
+            resolved.append(lower[name.lower()])
+        return resolved[0] if len(resolved) == 1 else resolved
+
+    @params(is_var=["name"])
+    def rename(self, name, new_name, ignore_items=False):
+        """
+        Change the name of a variable in all keys and references.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (mask or column).
+        new_name : str
+            The new variable name.
+        ignore_items : bool, default False
+            *  False : Array items inherit mask's name. Suffix is either the
+            initial digit (``_x``) or the item_no.
+        """
+        dims_comp = self.dimensions_comp
+        if dims_comp:
+            self.undimensionize()
+        if not self._verify_new_name(new_name):
+            err = "Cannot rename '{}' into '{}'. Weak duplicates exist: {}"
+            err = err.format(name, new_name, self.get_weak_dupes(new_name))
+            logger.error(err); raise ValueError(err)
+        mapper = {name: new_name}
+        if self.is_array(name) and not ignore_items:
+            sources = self.get_sources(name)
+            suffixes = [source.rsplit("_", 1)[-1] for source in sources]
+            unique, dupes = _dupes_in_list(suffixes)
+            if dupes or not all(u.isdigit() for u in unique):
+                new_sources = [
+                    "{}_{}".format(new_name, self.get_item_no(source))
+                    for source in sources]
+            else:
+                new_sources = [
+                    "{}_{}".format(new, source.rsplit("_", 1)[-1].isdigit())
+                    for source in sources]
+            if not all(self._verify_new_name(n_s) for n_s in new_sources):
+                invalids = [
+                    (s, n_s) for s, n_s in zip(sources, new_sources)
+                    if not self._verify_new_name(n_s)]
+                err = "Cannot rename, weak duplicates exist:\n {}"
+                err = err.format(
+                    "\n".join([" -> ".join(invalid)] for invalid in invalids))
+                logger.error(err); raise ValueError(err)
+            mapper.update({
+                source: new_source
+                for source, new_source in zip(sources, new_sources)})
+        self._rename_from_mapper(self, mapper)
+        if dims_comp:
+            self.dimensionize()
+
+    @staticmethod
+    def _rename_from_mapper(obj, mapper):
+        if isinstance(obj, dict):
+            for key in obj.keys():
+                if key in mapper:
+                    value = obj.pop(key)
+                    obj[mapper[key]] = self._rename_from_mapper(value, mapper)
+                else:
+                    self._rename_from_mapper(obj[key], mapper)
+            return obj
+        elif isinstance(obj, list):
+            return [self._rename_from_mapper(item, mapper) for item in obj]
+        elif isinstance(obj, tuple):
+            return tuple(
+                self._rename_from_mapper(item, mapper) for item in obj)
+        elif isinstance(obj, str):
+            if obj == "@1":
+                return obj
+            new_obj = obj.split("@")
+            if any(item in mapper for item in new_obj):
+                for x, item in enumerate(new_obj):
+                    if item in mapper:
+                        new_obj[x] = mapper[item]
+            return "@".join(new_obj)
+
+    def dimensionize(self):
+        """
+        Rename the variables for Dimensions compatibility.
+        """
+        if self.dimensions_comp:
+            err = "Instance is already dimensionized."
+            logger.error(err); raise ValueError(err)
+
+        self.dimensions_comp = True
+
+        mapper = {}
+        for mask in self.masks:
+            mapper[mask] = self.dims_comp_array_name(mask)
+            for source in self.sources(mask):
+                mapper[source] = self.dims_comp_array_item_name(source)
+        self._rename_from_mapper(self, mapper)
+
+    def undimensionize(self):
+        """
+        Rename the variables for Dimensions compatibility.
+        """
+        if not self.dimensions_comp:
+            err = "Instance is already undimensionized."
+            logger.error(err); raise ValueError(err)
+
+        self.dimensions_comp = False
+
+        mapper = {}
+        for mask in self.masks:
+            mapper[mask] = self.dims_comp_array_name(mask)
+            for source in self.sources(mask):
+                mapper[source] = self.dims_comp_array_item_name(source)
+        self._rename_from_mapper(self, mapper)
+
+    @classmethod
+    def dims_free_array_name(cls, name):
+        return name.split(".")[0]
+
+    @classmethod
+    def dims_free_array_item_name(cls, name):
+        pattern = '\[\{.*?\}\]\.'  # noqa
+        found = re.search(pattern, name)
+        if found:
+            return found.group()[2: -3]
+        else:
+            return name
+
+    @params(is_var=["name"])
+    def dims_comp_array_name(self, name):
+        name = self.dims_free_array_name(name)
+        if self.dimensions_comp:
+            return "{}.{}{}".format(name, name, self.dimensions_suffix)
+        else:
+            return name
+
+    @params(is_var=["name"])
+    def dims_comp_array_item_name(self, name):
+        parent = self.get_parent(name)
+        name = self.dims_free_array_item_name(name)
+        if self.dimensions_comp:
+            return "{parent}[{{name}}].{parent}{suffix}".format(
+                parent=parent, name=name, suffix=self.dimensions_suffix)
+        else:
+            return name
+
+
+
+
+
     # ------------------------------------------------------------------------
     # inspect
     # ------------------------------------------------------------------------
@@ -766,70 +998,6 @@ class Meta(dict):
         return [
             v for v in self.variables(**kwargs) if self.get_property(v, prop)]
 
-    @params(to_list=["str_tags"])
-    def find(self, str_tags=None, suffixed=False):
-        """
-        Find variables by searching their names for substrings.
-
-        Parameters
-        ----------
-        str_tags : (list of) str
-            The strings tags to look for in the variable names.
-            If not provided, the modules" default global list of substrings
-            from VAR_SUFFIXES will be used.
-        suffixed : bool, default False
-            *  True: Only variable names that end with a given string sequence
-            will qualify.
-        """
-        if not str_tags:
-            str_tags = VAR_SUFFIXES
-        found = []
-        for v in self.variables():
-            for str_tag in str_tags:
-                if suffixed and v.endswith(str_tag):
-                    found.append(v)
-                elif str_tag in v:
-                    found.append(v)
-        return found
-
-    def names(self, ignore_items=True, as_df=True):
-        """
-        Find all weak-duplicate variable names that are different only by case.
-
-        Parameters
-        ----------
-        ignore_items : bool, default True
-            *  True: array items are not taken into account.
-        as_df : bool, default True
-            *  True: Return weak duplicates in a pandas DataFrame.
-            *  False: Return weak duplicates in an OrderedDict.
-
-        Note
-        ----
-        Returns self.variables() if no weak-duplicates are found.
-        """
-        all_names = self.variables()
-        if not ignore_items:
-            all_names = self.unroll(all_names, both="all")
-        lower_names = [n.lower() for n in all_names]
-        weak_dupes = OrderedDict()
-        for name in all_names:
-            lower = name.lower()
-            if lower_names.count(lower) > 1:
-                if lower not in weak_dupes:
-                    weak_dupes[lower] = [name]
-                else:
-                    weak_dupes[lower].append(name)
-        if not weak_dupes:
-            return all_names
-        if not as_df:
-            return weak_dupes
-        else:
-            max_dupes = max(len(values) for values in weak_dupes.values())
-            for k, v in weak_dupes.items():
-                weak_dupes[k] = _pad_list(v, max_dupes)
-            return pd.DataFrame(weak_dupes)
-
     def variables_from_set(self, setname="data file"):
         items = self.get_set(setname)
         return self._dissect_setlist(items)
@@ -950,23 +1118,6 @@ class Meta(dict):
             logger.error(err); raise KeyError(err)
         return self["sets"][setname]["items"]
 
-    @params(is_var=["name"])
-    def get_weak_dupes(self, name):
-        """
-        Get all weak dupes (different spellings) of an input string.
-        """
-        resolved = []
-        dupes = self.names(ignore_items=False, as_df=False)
-        lower = OrderedDict([
-            (v.lower(), v) for v in self.unroll(self.variables(), both="all")])
-        if isinstance(dupes, dict) and name.lower() in dupes:
-            resolved = dupes[name.lower()]
-        elif name in self:
-            resolved.append(name)
-        elif name.lower() in lower:
-            resolved.append(lower[name.lower()])
-        return resolved[0] if len(resolved) == 1 else resolved
-
     @params(is_var=["name"], text_key=["text_key"], axis=[("edits", "axis")])
     def get_text(self, name, shorten=True, text_key=None, axis=None):
         """
@@ -1079,6 +1230,86 @@ class Meta(dict):
         elif not self.is_array_item(name):
             self["columns"][name]["values"] = values
 
+    @params(is_var=["name"], is_cat=["name"], to_list=["new_values"],
+            text_key=["text_key"], repeat=["name"])
+    def extend_values(sekf, name, new_values, text_key=None, safe=True):
+        """
+        Extend the existing values object of a variable.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (mask or column)
+        new_values : (list of) str / int/ tupes (int, str)
+            The values to add, all item list must be if the same type.
+        text_key : str, default None == self.text_key
+            Text key for text-based label information.
+        safe : bool, default True
+            *  True: Duplicated texts will lead to an error raise.
+        """
+        if self.is_array_item(name):
+            err = "Cannot change values object of a single array item."
+            logger.error(er); raise ValueError(err)
+        start_at = max(self.codes(name))
+        new_val_obj = self.start_values(new_values, text_key, start_at, safe)
+        values = self.get_values(name, text_key)
+        values.extend(new_val_obj)
+        self._check_dupes_in_values(values, text_key, safe)
+        self._set_values(name, values)
+
+    @params(is_var=["name"], is_cat=["name"], to_list=["remove"],
+            repeat=["name"])
+    def remove_values(sekf, name, remove):
+        """
+        Remove values from the existing values object of a variable.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (mask or column)
+        remove : (list of) int
+            The codes to remove from the values object.
+        """
+        if self.is_array_item(name):
+            err = "Cannot change values object of a single array item."
+            logger.error(er); raise ValueError(err)
+        codes = self.codes(name)
+        remove = [r for r in remove if r in codes]
+        if set(remove) == set(codes):
+            err = "Cannot remove all codes of a categorical variable."
+            logger.error(err); raise ValueError(err)
+        value_ref = self.get_value_ref(name)
+        new_values = [
+            value for value in self[value_ref] if value["value"] not in remove]
+        self[value_ref] = new_values
+
+    @params(is_var=["name"], is_cat=["name"], to_list=["order"],
+            repeat=["name"])
+    def reorder_values(sekf, name, order):
+        """
+        Apply a new order to the value codes.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (mask or column)
+        order : (list of) int
+            The order to apply to the values object.
+        """
+        if self.is_array_item(name):
+            err = "Cannot change values object of a single array item."
+            logger.error(er); raise ValueError(err)
+        codes = self.codes(name)
+        order = [r for r in order if r in codes]
+        if not set(order) == set(codes):
+            err = "The new order does not take all variable codes into account"
+            logger.error(err); raise ValueError(err)
+        value_ref = self.get_value_ref(name)
+        new_values = [
+            value for idx in order for value in self[value_ref]
+            if value["value"] == idx]
+        self[value_ref] = new_values
+
     @params(is_var=["name"], is_cat=["name"])
     def _get_value_ref(self, name):
         if self.is_array(name):
@@ -1087,6 +1318,7 @@ class Meta(dict):
             return "lib@values@{}".format(self.get_parent(name))
         else:
             return "columns@{}@values".format(name)
+
     @params(is_var=["name"], is_cat=["name"], text_key=["text_key"],
             axis=["axis"])
     def get_value_texts(self, name, text_key=None, axis=None):
@@ -1345,40 +1577,24 @@ class Meta(dict):
     # -------------------------------------------------------------------------
     # helpers
     # -------------------------------------------------------------------------
-    @classmethod
-    def dims_free_array_name(cls, name):
-        return name.split(".")[0]
-
-    @classmethod
-    def dims_free_array_item_name(cls, name):
-        pattern = '\[\{.*?\}\]\.'  # noqa
-        found = re.search(pattern, name)
-        if found:
-            return found.group()[2: -3]
-        else:
-            return name
-
-    @params(is_var=["name"])
-    def dims_comp_array_name(self, name):
-        name = self.dims_free_array_name(name)
-        if self.dimensions_comp:
-            return "{}.{}{}".format(name, name, self.dimensions_suffix)
-        else:
-            return name
-
-    @params(is_var=["name"])
-    def dims_comp_array_item_name(self, name):
-        parent = self.get_parent(name)
-        name = self.dims_free_array_item_name(name)
-        if self.dimensions_comp:
-            return "{parent}[{{name}}].{parent}{suffix}".format(
-                parent=parent, name=name, suffix=self.dimensions_suffix)
-
     @staticmethod
     def _pad_list(pad_list, pad_to_len):
         to_add = pad_to_len - len(pad_list)
         pad_list.extend([""] * to_add)
         return pad_list
+
+    @params(text_key=["text_key"])
+    def _check_dupes_in_values(self, values, text_key=None, safe=True):
+        c_dupes = dupes_in_list([value["value"] for value in values])
+        if c_dupes:
+            err = "Cannot add duplicated codes: {}".format(c_dupes)
+            logger.error(err); raise ValueError(err)
+        if safe:
+            t_dupes = dupes_in_list(
+                [self._extract_text(value["text"]) for value in values])
+            if t_dupes:
+                err = "Cannot add duplicated texts: {}".format(t_dupes)
+                logger.error(err); raise ValueError(err)
 
     @params(to_list=["items"])
     def _dissect_setlist(self, items, collection=False, name=True):
