@@ -22,6 +22,7 @@ class WeightEngine:
                 "\n You must pass a pandas.DataFrame to the 'data' argument of the WeightEngine"
                 "\n constructor. If your DataFrame is serialized please load it first."
                 )
+
         self.dataset = None
         self._df = data.copy()
 

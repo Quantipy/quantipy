@@ -74,12 +74,14 @@
           
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
 
@@ -92,8 +94,11 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../release_notes/00_overview.html">Release notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (01/10/2018)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_notes/01_latest.html">Latest (09/04/2019)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/02_archive.html">Archived release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-14-01-2019">sd (14/01/2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-26-10-2018">sd (26/10/2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-01-10-2018">sd (01/10/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-06-2018">sd (04/06/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-04-04-2018">sd (04/04/2018)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/02_archive.html#sd-27-02-2018">sd (27/02/2018)</a></li>
@@ -124,16 +129,16 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../release_notes/03_how_to_snippets.html">How-to-snippets</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html"><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> Dimensions compatibility</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#the-compatibility-mode">The compatibility mode</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal"><span class="pre">array</span></code> data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/dimensions_comp.html#accessing-and-creating-array-data">Accessing and creating <code class="docutils literal notranslate"><span class="pre">array</span></code> data</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/create_categorical_meta.html">Different ways of creating categorical values</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html">Derotation</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-is-derotation">What is derotation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal"><span class="pre">DataSet.derotate()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal"><span class="pre">arrays</span></code>?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#how-to-use-dataset-derotate">How to use <code class="docutils literal notranslate"><span class="pre">DataSet.derotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../release_notes/how_to_snippets/derotate.html#what-about-arrays">What about <code class="docutils literal notranslate"><span class="pre">arrays</span></code>?</a></li>
 </ul>
 </li>
 </ul>
@@ -143,16 +148,16 @@
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/dataprocessing/00_overview.html">Data processing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html">DataSet components</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#case-and-meta-data">Case and meta data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#columns-and-masks-objects"><code class="docutils literal"><span class="pre">columns</span></code> and <code class="docutils literal"><span class="pre">masks</span></code> objects</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal"><span class="pre">text</span></code> and <code class="docutils literal"><span class="pre">text_key</span></code> mappings</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#categorical-values-object">Categorical <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#the-array-type">The <code class="docutils literal"><span class="pre">array</span></code> type</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#columns-and-masks-objects"><code class="docutils literal notranslate"><span class="pre">columns</span></code> and <code class="docutils literal notranslate"><span class="pre">masks</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#languages-text-and-text-key-mappings">Languages: <code class="docutils literal notranslate"><span class="pre">text</span></code> and <code class="docutils literal notranslate"><span class="pre">text_key</span></code> mappings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#categorical-values-object">Categorical <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/01_components.html#the-array-type">The <code class="docutils literal notranslate"><span class="pre">array</span></code> type</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html">I/O</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#starting-from-native-components">Starting from native components</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal"><span class="pre">pd.DataFrame</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#csv-json-pairs"><code class="docutils literal"><span class="pre">.csv</span></code> / <code class="docutils literal"><span class="pre">.json</span></code> pairs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#using-a-standalone-pd-dataframe">Using a standalone <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#csv-json-pairs"><code class="docutils literal notranslate"><span class="pre">.csv</span></code> / <code class="docutils literal notranslate"><span class="pre">.json</span></code> pairs</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/02_io.html#third-party-conversions">Third party conversions</a><ul>
@@ -186,10 +191,10 @@
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html">Editing metadata</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#creating-meta-from-scratch">Creating meta from scratch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#renaming">Renaming</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal"><span class="pre">text</span></code> info</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#extending-the-values-object">Extending the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal"><span class="pre">values</span></code> object</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#removing-dataset-objects">Removing <code class="docutils literal"><span class="pre">DataSet</span></code> objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#changing-adding-text-info">Changing &amp; adding <code class="docutils literal notranslate"><span class="pre">text</span></code> info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#extending-the-values-object">Extending the <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#reordering-the-values-object">Reordering the <code class="docutils literal notranslate"><span class="pre">values</span></code> object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/04_editing.html#removing-dataset-objects">Removing <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> objects</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/05_transforming.html">Transforming variables</a><ul>
@@ -202,29 +207,29 @@
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html">Logic and set operaters</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#ranges">Ranges</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#complex-logic">Complex logic</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal"><span class="pre">union</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal"><span class="pre">intersection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#union"><code class="docutils literal notranslate"><span class="pre">union</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#intersection"><code class="docutils literal notranslate"><span class="pre">intersection</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#list-logic">“List” logic</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal"><span class="pre">has_any</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal"><span class="pre">not_any</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal"><span class="pre">has_all</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-all"><code class="docutils literal"><span class="pre">not_all</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-count"><code class="docutils literal"><span class="pre">has_count</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-count"><code class="docutils literal"><span class="pre">not_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-any"><code class="docutils literal notranslate"><span class="pre">has_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-any"><code class="docutils literal notranslate"><span class="pre">not_any</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-all"><code class="docutils literal notranslate"><span class="pre">has_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-all"><code class="docutils literal notranslate"><span class="pre">not_all</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#has-count"><code class="docutils literal notranslate"><span class="pre">has_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#not-count"><code class="docutils literal notranslate"><span class="pre">not_count</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/06_logics.html#boolean-slicers-and-code-existence">Boolean slicers and code existence</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html">Custom data recoding</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal"><span class="pre">recode()</span></code> method in detail</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#target"><code class="docutils literal"><span class="pre">target</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#mapper"><code class="docutils literal"><span class="pre">mapper</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#default"><code class="docutils literal"><span class="pre">default</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#append"><code class="docutils literal"><span class="pre">append</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#intersect"><code class="docutils literal"><span class="pre">intersect</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#initialize"><code class="docutils literal"><span class="pre">initialize</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#fillna"><code class="docutils literal"><span class="pre">fillna</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#the-recode-method-in-detail">The <code class="docutils literal notranslate"><span class="pre">recode()</span></code> method in detail</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#target"><code class="docutils literal notranslate"><span class="pre">target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#default"><code class="docutils literal notranslate"><span class="pre">default</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#append"><code class="docutils literal notranslate"><span class="pre">append</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#intersect"><code class="docutils literal notranslate"><span class="pre">intersect</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#initialize"><code class="docutils literal notranslate"><span class="pre">initialize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#fillna"><code class="docutils literal notranslate"><span class="pre">fillna</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/dataprocessing/07_custom_recoding.html#custom-recode-examples">Custom recode examples</a><ul>
@@ -242,27 +247,52 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../lib_doc/batch/00_overview.html"><code class="docutils literal"><span class="pre">Batch</span></code></a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/01_create_load.html">Creating/ Loading a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/02_variables.html">Adding variables to a <code class="docutils literal"><span class="pre">qp.Batch</span></code> instance</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="../lib_doc/weights/00_overview.html">Weights</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/weights/01_background.html">Background and methodology</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/01_background.html#the-statistical-problem">The statistical problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/01_background.html#rim-weighting-concept">Rim weighting concept</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/weights/02_rim.html">Weight scheme setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/02_rim.html#using-the-rim-class">Using the <code class="docutils literal notranslate"><span class="pre">Rim</span></code> class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/02_rim.html#target-distributions">Target distributions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/02_rim.html#weight-groups-and-filters">Weight groups and filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/02_rim.html#setting-group-targets">Setting group targets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/weights/02_rim.html#integration-within-dataset">Integration within <code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/02_rim.html#weighting-and-weighted-aggregations">Weighting and weighted aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/02_rim.html#the-isolated-weight-dataframe">The isolated weight dataframe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/weights/03_diags.html">Diagnostics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/03_diags.html#the-weighting-efficiency">The weighting efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/weights/03_diags.html#gotchas">Gotchas</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../lib_doc/batch/00_overview.html"><code class="docutils literal notranslate"><span class="pre">Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/01_create_load.html">Creating/ Loading a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/02_variables.html">Adding variables to a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code> instance</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/02_variables.html#x-keys-and-y-keys">x-keys and y-keys</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/02_variables.html#arrays">Arrays</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/02_variables.html#verbatims-open-ends">Verbatims/ open ends</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/02_variables.html#special-aggregations">Special aggregations</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/03_properties.html">Set properties of a <code class="docutils literal"><span class="pre">qp.Batch</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/03_properties.html">Set properties of a <code class="docutils literal notranslate"><span class="pre">qp.Batch</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#filter-weights-and-significance-testing">Filter, weights and significance testing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../lib_doc/batch/03_properties.html#cell-items-and-language">Cell items and language</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/04_subclass.html">Inherited <code class="docutils literal"><span class="pre">qp.DataSet</span></code> methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/batch/04_subclass.html">Inherited <code class="docutils literal notranslate"><span class="pre">qp.DataSet</span></code> methods</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/engine/00_overview.html">Analysis &amp; aggregation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html">Collecting aggregations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal"><span class="pre">qp.Link?</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal"><span class="pre">qp.Stack</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#what-is-a-qp-link">What is a <code class="docutils literal notranslate"><span class="pre">qp.Link?</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/engine/01_links_stacks.html#populating-a-qp-stack">Populating a <code class="docutils literal notranslate"><span class="pre">qp.Stack</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/engine/02_quantity.html">The computational engine</a></li>
@@ -284,12 +314,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../lib_doc/builds/00_overview.html">Builds</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../lib_doc/builds/01_chains.html">Combining results</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal"><span class="pre">View</span></code> aggregations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal"><span class="pre">Chain</span></code> aggregations</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/builds/01_chains.html#what-is-a-chain">What is a <code class="docutils literal"><span class="pre">Chain</span></code>?</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../lib_doc/builds/01_chains.html#customizing-results">Customizing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#organizing-view-aggregations">Organizing <code class="docutils literal notranslate"><span class="pre">View</span></code> aggregations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/01_chains.html#creating-chain-aggregations">Creating <code class="docutils literal notranslate"><span class="pre">Chain</span></code> aggregations</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../lib_doc/builds/02_cm_edits.html">Deriving post aggregation results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/02_cm_edits.html#summarizing-and-reducing-results">Summarizing and reducing results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lib_doc/builds/02_cm_edits.html#custom-calculations">Custom calculations</a></li>
 </ul>
 </li>
 </ul>
@@ -301,7 +332,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">quantify.engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantipyViews.html">QuantipyViews</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Rim_scheme.html">Rim</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Stack.html">Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stack.html">Stack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="View.html">View</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ViewMapper.html">ViewMapper</a></li>
 </ul>
@@ -401,7 +432,7 @@ pandas.DataFrame or will be left in its numpy.array format.</li>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Passes a pandas.DataFrame or numpy.array of cell or margin counts
-to the <code class="docutils literal"><span class="pre">result</span></code> property.</p>
+to the <code class="docutils literal notranslate"><span class="pre">result</span></code> property.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">self</p>
@@ -435,19 +466,19 @@ Excludes specified codes from aggregation.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>groups</strong> (<em>list</em><em>, </em><em>dict of lists</em><em> or </em><em>logic expression</em>) – <p>The group/net code defintion(s) in form of…</p>
 <ul>
-<li>a simple list: <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></code></li>
-<li>a dict of list: <code class="docutils literal"><span class="pre">{'grp</span> <span class="pre">A':</span> <span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3],</span> <span class="pre">'grp</span> <span class="pre">B':</span> <span class="pre">[4,</span> <span class="pre">5,</span> <span class="pre">6]}</span></code></li>
-<li>a logical expression: <code class="docutils literal"><span class="pre">not_any([1,</span> <span class="pre">2])</span></code></li>
+<li>a simple list: <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></code></li>
+<li>a dict of list: <code class="docutils literal notranslate"><span class="pre">{'grp</span> <span class="pre">A':</span> <span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3],</span> <span class="pre">'grp</span> <span class="pre">B':</span> <span class="pre">[4,</span> <span class="pre">5,</span> <span class="pre">6]}</span></code></li>
+<li>a logical expression: <code class="docutils literal notranslate"><span class="pre">not_any([1,</span> <span class="pre">2])</span></code></li>
 </ul>
 </li>
-<li><strong>axis</strong> ({<code class="docutils literal"><span class="pre">'x'</span></code>, <code class="docutils literal"><span class="pre">'y'</span></code>}, default <code class="docutils literal"><span class="pre">'x'</span></code>) – The axis to group codes on.</li>
-<li><strong>expand</strong> ({None, <code class="docutils literal"><span class="pre">'before'</span></code>, <code class="docutils literal"><span class="pre">'after'</span></code>}, default <code class="docutils literal"><span class="pre">None</span></code>) – If <code class="docutils literal"><span class="pre">'before'</span></code>, the codes that are grouped will be kept and placed
-before the grouped aggregation; vice versa for <code class="docutils literal"><span class="pre">'after'</span></code>. Ignored
-on logical expressions found in <code class="docutils literal"><span class="pre">groups</span></code>.</li>
-<li><strong>complete</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, codes that define the Link on the given <code class="docutils literal"><span class="pre">axis</span></code> but are
-not present in the <code class="docutils literal"><span class="pre">groups</span></code> defintion(s) will be placed in their
+<li><strong>axis</strong> ({<code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>}, default <code class="docutils literal notranslate"><span class="pre">'x'</span></code>) – The axis to group codes on.</li>
+<li><strong>expand</strong> ({None, <code class="docutils literal notranslate"><span class="pre">'before'</span></code>, <code class="docutils literal notranslate"><span class="pre">'after'</span></code>}, default <code class="docutils literal notranslate"><span class="pre">None</span></code>) – If <code class="docutils literal notranslate"><span class="pre">'before'</span></code>, the codes that are grouped will be kept and placed
+before the grouped aggregation; vice versa for <code class="docutils literal notranslate"><span class="pre">'after'</span></code>. Ignored
+on logical expressions found in <code class="docutils literal notranslate"><span class="pre">groups</span></code>.</li>
+<li><strong>complete</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, codes that define the Link on the given <code class="docutils literal notranslate"><span class="pre">axis</span></code> but are
+not present in the <code class="docutils literal notranslate"><span class="pre">groups</span></code> defintion(s) will be placed in their
 natural position within the aggregation, respecting the value of
-<code class="docutils literal"><span class="pre">expand</span></code>.</li>
+<code class="docutils literal notranslate"><span class="pre">expand</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -470,33 +501,40 @@ Restrict the data matrix entires to contain the specified codes only.</p>
 
 <dl class="method">
 <dt id="quantipy.Quantity.normalize">
-<code class="descname">normalize</code><span class="sig-paren">(</span><em>on='y'</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
+<code class="descname">normalize</code><span class="sig-paren">(</span><em>on='y'</em>, <em>per_cell=False</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.normalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a raw cell count result to its percentage representation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>on</strong> (<em>{'y'</em><em>, </em><em>'x'}</em><em>, </em><em>default 'y'</em>) – Defines the base to normalize the result on. <code class="docutils literal"><span class="pre">'y'</span></code> will
-produce column percentages, <code class="docutils literal"><span class="pre">'x'</span></code> will produce row
-percentages.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>on</strong> (<em>{'y'</em><em>, </em><em>'x'</em><em>, </em><em>'counts_sum'</em><em>, </em><em>str}</em><em>, </em><em>default 'y'</em>) – Defines the base to normalize the result on. <code class="docutils literal notranslate"><span class="pre">'y'</span></code> will
+produce column percentages, <code class="docutils literal notranslate"><span class="pre">'x'</span></code> will produce row percentages.
+It is also possible to use another question’s frequencies to
+compute rebased percentages providing its name instead.</li>
+<li><strong>per_cell</strong> (<em>bool</em><em>, </em><em>default False</em>) – Compute percentages on a cell-per-cell basis, effectively treating
+each categorical row as a base figure on its own. Only possible if the
+<code class="docutils literal notranslate"><span class="pre">on</span></code> argument does not indidcate an axis result (<code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'counts_sum'</span></code>), but instead another variable’s name. The related
+<code class="docutils literal notranslate"><span class="pre">xdef</span></code> codes collection length must be identical for this for work,
+otherwise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Updates an count-based aggregation in the <code class="docutils literal"><span class="pre">result</span></code> property.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Updates a count-based aggregation in the <code class="docutils literal notranslate"><span class="pre">result</span></code> property.</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">self</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">self</p>
+</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="quantipy.Quantity.rebase">
-<code class="descname">rebase</code><span class="sig-paren">(</span><em>reference</em>, <em>on='counts'</em>, <em>overwrite_margins=True</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.rebase" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="quantipy.Quantity.rescale">
 <code class="descname">rescale</code><span class="sig-paren">(</span><em>scaling</em>, <em>drop=False</em><span class="sig-paren">)</span><a class="headerlink" href="#quantipy.Quantity.rescale" title="Permalink to this definition">¶</a></dt>
-<dd><p>Modify the object’s <code class="docutils literal"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
+<dd><p>Modify the object’s <code class="docutils literal notranslate"><span class="pre">xdef</span></code> property reflecting new value defintions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -540,7 +578,7 @@ pandas.DataFrame or will be left in its numpy.array format.</li>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Passes a pandas.DataFrame or numpy.array of the descriptive (summary)
-statistic(s) to the <code class="docutils literal"><span class="pre">result</span></code> property.</p>
+statistic(s) to the <code class="docutils literal notranslate"><span class="pre">result</span></code> property.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">self</p>
@@ -561,9 +599,9 @@ statistic(s) to the <code class="docutils literal"><span class="pre">result</spa
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>var</strong> (<em>str</em>) – New variable’s name used in axis swap.</li>
-<li><strong>axis</strong> ({‘x’, ‘y’}, default <code class="docutils literal"><span class="pre">'x'</span></code>) – The axis to swap.</li>
-<li><strong>update_axis_def</strong> (<em>bool</em><em>, </em><em>default False</em>) – If self is of type <code class="docutils literal"><span class="pre">'array'</span></code>, the name and item definitions
-(that are e.g. used in the <code class="docutils literal"><span class="pre">to_df()</span></code> method) can be updated to
+<li><strong>axis</strong> ({‘x’, ‘y’}, default <code class="docutils literal notranslate"><span class="pre">'x'</span></code>) – The axis to swap.</li>
+<li><strong>update_axis_def</strong> (<em>bool</em><em>, </em><em>default False</em>) – If self is of type <code class="docutils literal notranslate"><span class="pre">'array'</span></code>, the name and item definitions
+(that are e.g. used in the <code class="docutils literal notranslate"><span class="pre">to_df()</span></code> method) can be updated to
 reflect the swapped axis variable or kept to show the original’s
 ones.</li>
 <li><strong>inplace</strong> (<em>bool</em><em>, </em><em>default True</em>) – Whether to modify the Quantity inplace or return a new instance.</li>
@@ -667,9 +705,9 @@ testing between multi-coded column pairs.</li>
 fall below a treshhold comparison aggregation that assumes counts
 to be independent.</li>
 <li><strong>flag_bases</strong> (<em>list of two int</em><em>, </em><em>default None</em>) – If provided, the output dataframe will replace results that have
-been calculated on (eff.) bases below the first int with <code class="docutils literal"><span class="pre">'**'</span></code>
+been calculated on (eff.) bases below the first int with <code class="docutils literal notranslate"><span class="pre">'**'</span></code>
 and mark results in columns with bases below the second int with
-<code class="docutils literal"><span class="pre">'*'</span></code></li>
+<code class="docutils literal notranslate"><span class="pre">'*'</span></code></li>
 </ul>
 </td>
 </tr>
