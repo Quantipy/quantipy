@@ -659,17 +659,24 @@ class PptxChain(object):
 
         if chain.array_style in [0,1]:
             return chain
+
         if chain._nested_y: # contains nested crossbreaks
-            # drop nested columns
-            drop_list = get_drop_cols(chain.dataframe.columns)
-            chain.dataframe.drop(drop_list, axis=1, level=0, inplace=True)
-            # need to fix not painted columns too
-            drop_list = get_drop_cols(chain._columns)
-            chain._columns = chain._columns.drop(drop_list)
-            # drop the nested levels
-            chain.dataframe.columns = chain.dataframe.columns.droplevel([0, 1])
-            chain.toggle_labels()
-            chain.dataframe.columns = chain.dataframe.columns.droplevel([0, 1])
+            cdf = chain.dataframe
+            try:
+                cdf.columns.get_level_values('Values')
+            except KeyError:
+                # drop nested columns and the levels used
+                drop_list = get_drop_cols(cdf.columns)
+                cdf.drop(drop_list, axis=1, level=0, inplace=True)
+                cdf.columns = cdf.columns.droplevel([0, 1])
+                # need to fix not painted columns too
+                drop_list = get_drop_cols(chain._columns)
+                chain._columns = chain._columns.drop(drop_list)
+                chain._columns = chain._columns.droplevel([0, 1])
+                chain = self._strip_nested(chain)
+            else:
+                chain._y_keys = [x for x in chain._y_keys if '>' not in x]
+
         return chain
 
     @property
