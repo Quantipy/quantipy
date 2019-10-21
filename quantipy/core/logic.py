@@ -1267,7 +1267,6 @@ def resolve_logic(series, logic, data):
         The relationship-part of the view key that represents this
         logical block.
     """
-
     if isinstance(logic, dict):
         wildcard, logic = logic.keys()[0], logic.values()[0]
         if isinstance(logic, (str)):
@@ -1279,27 +1278,21 @@ def resolve_logic(series, logic, data):
             idx, vkey = resolve_logic(data[wildcard], logic, data)
         idx = series.dropna().index.intersection(idx)
         vkey = '{}={}'.format(wildcard, vkey)
-
     else:
-
         if isinstance(logic, int):
             logic = has_any([logic])
-
         if logic[0] in [_has_any, _not_any, _has_all, _not_all, _has_count,
                         _not_count]:
             idx, vkey = resolve_func_logic(series, logic)
-
         elif logic[0] in [_is_lt, _is_le, _is_eq, _is_ne, _is_ge, _is_gt]:
             func = logic[0]
             value = logic[1]
             idx = func(series, value)
             vkey = get_logic_key_chunk(func, value)
-
         elif logic[0] in [_union, _intersection, _difference,
                           _symmetric_difference]:
             set_func = logic[0]
             idx, vkey = apply_set_theory(set_func, series, logic[1], data)
-
         elif isinstance(logic[0], (tuple, dict)):
             idx1, vkey1 = resolve_logic(series, logic[0], data)
             index_func = logic[1]
@@ -1308,7 +1301,6 @@ def resolve_logic(series, logic, data):
             idx = index_func(idx1, idx2)
             vkey = '({}{}{})'.format(
                 vkey1, __index_symbol__[index_func], vkey2)
-
     return idx, vkey
 
 
@@ -1336,18 +1328,17 @@ def get_logic_index(series, logic, data=None):
         The relationship-part of the view key that represents this
         logical block.
     """
-
     if isinstance(logic, list):
         logic = (_has_any, logic, False)
         idx, vkey = resolve_logic(series, logic, data)
-
-    if isinstance(logic, (tuple, dict)):
+    elif isinstance(logic, (tuple, dict)):
         idx, vkey = resolve_logic(series, logic, data)
-
+    elif isinstance(logic, str):
+        logic = {logic: 0}
+        idx, vkey = resolve_logic(series, logic, data)
     else:
         msg = "get_logic_index() recieved a non-tuple logical chunk. {}"
         raise TypeError(msg.format(logic))
-
     vkey = 'x[{}]:y'.format(vkey)
     return idx, vkey
 

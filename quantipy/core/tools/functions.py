@@ -4,7 +4,9 @@
 import sys
 import json
 import pickle
+import numpy as np
 import pandas as pd
+
 
 def set_encoding(encoding):
     """
@@ -81,6 +83,103 @@ def load_csv(path_csv):
     data = pd.DataFrame.from_csv(path_csv)
     return data
 
+
+# -----------------------------------------------------------------------------
+#
+# -----------------------------------------------------------------------------
+def remove_codes(x, remove):
+    if any([x is np.NaN, x in remove, x == ""]):
+        x = np.NaN
+    elif ';' in str(x):
+        remove = [str(r) for r in remove]
+        x = str(x).split(';')
+        x = [y for y in x if y not in remove]
+        x = ';'.join(x) or np.NaN
+    return x
+
+def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
+                             yes=1, no=0, values_regex=None):
+    """
+    Condense the given dichotomous columns to a delimited set series.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The column/s in the dichotomous set. This may be a single-column
+        DataFrame, in which case a non-delimited set will be returned.
+    values_from_labels : bool, default=True
+        Should the values used for each response option be taken from
+        the dichotomous column names using the rule name.split('_')[-1]?
+        If not then the values will be sequential starting from 1.
+    sniff_single : bool, default=False
+        Should the returned series be given as dtype 'int' if the
+        maximum number of responses for any row is 1?
+
+    Returns
+    -------
+    series: pandas.series
+        The converted series
+    """
+    # Anything not counted as yes or no should be treated as no
+    df = df.applymap(lambda x: x if x in [yes, no] else no)
+    # Convert to delimited set
+    df_str = df.astype('str')
+    for v, col in enumerate(df_str.columns, start=1):
+        if values_from_labels:
+            if values_regex is None:
+                v = col.split('_')[-1]
+            else:
+                try:
+                    v = str(int(re.match(values_regex, col).groups()[0]))
+                except AttributeError:
+                    raise AttributeError(
+                        "Your values_regex may have failed to find a match"
+                        " using re.match('{}', '{}')".format(
+                            values_regex, col))
+        else:
+            v = str(v)
+        # Convert to categorical set
+        df_str[col].replace(
+            {
+                'nan': 'nan',
+                '{}.0'.format(no): 'nan',
+                '{}'.format(no): 'nan'
+            },
+            inplace=True
+        )
+        df_str[col].replace(
+            {
+                '{}'.format(yes): v,
+                '{}.0'.format(yes): v
+            },
+            inplace=True
+        )
+    # Concatenate the rows
+    series = df_str.apply(
+        lambda x: ';'.join([
+            v
+            for v in x.tolist()
+            if v != 'nan'
+        ]),
+        axis=1
+    )
+    # Add trailing delimiter
+    series = series + ';'
+
+    # Use NaNs to represent emtpy
+    series.replace(
+        {';': np.NaN},
+        inplace=True
+    )
+    if df.dropna().size==0:
+        # No responses are known, return filled with NaN
+        return series
+
+    if sniff_single and df.sum(axis=1).max()==1:
+        # Convert to float
+        series = series.str.replace(';','').astype('float')
+        return series
+    return series
 
 # -----------------------------------------------------------------------------
 # lists
