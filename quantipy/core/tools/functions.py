@@ -87,6 +87,19 @@ def load_csv(path_csv):
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
+def _merge_delimited_sets(x, y):
+    codes = []
+    x = str(x) + str(y).replace("nan", "")
+    for c in x.split(';'):
+        if not c:
+            continue
+        if not c in codes:
+            codes.append(c)
+    if not codes:
+        return np.NaN
+    else:
+        return ';'.join(sorted(codes)) + ';'
+
 def remove_codes(x, remove):
     if any([x is np.NaN, x in remove, x == ""]):
         x = np.NaN

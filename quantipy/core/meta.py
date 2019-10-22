@@ -616,6 +616,57 @@ class Meta(dict):
         if dims_comp:
             self.dimensionize()
 
+    def merge(self, meta, overwrite=True):
+        for tk in dataset.valid_tks:
+            if tk not in self.valid_tks:
+                self.valid_tks.append(tk)
+        skip = []
+        for v in meta.variables():
+            try:
+                if self.is_array(v):
+                    self._merge_mask(v, meta, overwrite)
+                else:
+                    self._merge_column(v, meta["columns"][v], overwrite)
+            except ValueError:
+                skip.append(v)
+        if skip:
+            logger.info("Could not merge: {}".format(skip))
+        return skip
+
+    def _merge_mask(self, name, meta, overwrite):
+        if name in self:
+            mask = meta["masks"][name]
+            self._merge_texts(
+                self["masks"][name]["text"], mask["text"], overwrite)
+            self._merge_properties(name, mask.get("properties", {}), overwrite)
+            if self.is_categorical(name):
+                self._merge_values(name, meta[mask["values"]], overwrite)
+            self._merge_items(name, mask["items"], overwrite)
+        else:
+            if not self._verify_new_name(new_name):
+                raise ValueError("Weak dupes")
+            self["masks"][name] = meta["masks"][name]
+            self["sets"][name] = meta["sets"][name]
+            if self.is_categorical(name):
+                self["lib"]["values"][name] = meta["lib"]["values"][name]
+            for source in meta.get_sources(name):
+                self["columns"][source] = meta["columns"][source]
+            self.extend_set(name)
+
+    def _merge_column(self, name, col, overwrite):
+        if name in self:
+            self._merge_texts(
+                self["columns"][name]["text"], col["text"], overwrite)
+            self._merge_properties(name, col.get("properties", {}), overwrite)
+            if self.is_categorical(name) and not self.is_array_item(name):
+                self._merge_values(name, col["values"], overwrite)
+        else:
+            if not self._verify_new_name(new_name):
+                raise ValueError("Weak dupes")
+            self["columns"][name] = col
+            if not self.is_array_item(name):
+                self.extend_set(name)
+
     # ------------------------------------------------------------------------
     # inspect
     # ------------------------------------------------------------------------
@@ -1201,6 +1252,12 @@ class Meta(dict):
         else:
             self["columns"][name]["properties"].pop(prop, None)
 
+    def _merge_properties(self, name, new_prop, overwrite):
+        for prop, value in new_prop.items():
+            has_prop = self.get_property(name, prop)
+            if overwrite or not has_prop:
+                self.set_property(name, prop, value)
+
     @params(is_var=["name"], text_key=["text_key"])
     def get_basetext(self, name, text_key=None):
         base_text = self.get_property(name, "base_text")
@@ -1585,6 +1642,17 @@ class Meta(dict):
             if value["value"] == idx]
         self[value_ref] = new_values
 
+    def _merge_values(self, name, new_values, overwrite):
+        codes = self.get_codes(name)
+        value_ref = self._get_value_ref(name)
+        for value in new_values:
+            if value["value"] in codes:
+                for v in self[value_ref]:
+                    if v["value"] == value["value"]:
+                        self._merge_texts(v["text"], value["text"], overwrite)
+            else:
+                self[value_ref].append(value)
+
     @params(is_var=["name"], is_cat=["name"])
     def _get_value_ref(self, name):
         if self.is_array(name):
@@ -1933,6 +2001,18 @@ class Meta(dict):
         self["masks"][name]["items"] = items
         self._reduce_set(r_items)
 
+    def _merge_items(self, name, meta, overwrite):
+        for item in meta["masks"][name]["items"]:
+            source = item["source"].split("@")[-1]
+            if source in self:
+                for i in self["masks"][name]["items"]:
+                    if source == i["source"].split("@")[-1]:
+                        self._merge_texts(i["text"], item["text"], overwrite)
+            else:
+                self["masks"][name]["items"].append(item)
+                self.extend_set(source, name)
+            self._merge_column(source, meta["columns"][source], overwrite)
+
     @params(is_mask=["name"])
     def get_sources(self, name):
         """
@@ -2058,6 +2138,15 @@ class Meta(dict):
     # -------------------------------------------------------------------------
     # texts and text_keys
     # -------------------------------------------------------------------------
+    @classmethod
+    def _merge_texts(cls, text_obj, new_texts, overwrite):
+        if overwrite:
+            text_obj.update(new_texts)
+        else:
+            for tk, text in new_texts.items():
+                if tk not in text_obj:
+                    text_obj[tk] = text
+
     @classmethod
     def _extract_text(cls, text_obj, text_key, axis=None):
         if axis:

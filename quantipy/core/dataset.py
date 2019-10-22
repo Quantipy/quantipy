@@ -165,18 +165,15 @@ class DataSet(object):
         self.set_sorting = self._meta.set_sorting
         self.set_hiding = self._meta.set_hiding
         self.set_slicing = self._meta.set_slicing
-
         # text_keys
         self.used_text_keys = self._meta.used_text_keys
         self.force_texts = self._meta.force_texts
         self.select_text_keys = self._meta.select_text_keys
-
         # lists and sets
         self.create_set = self._meta.create_set
         self.extend_set = self._meta.extend_set
         self.roll_up = self._meta.roll_up
         self.unroll = self._meta.unroll
-
         # batches
         self.get_batches = self._meta.get_batches
         self.adds_per_mains = self._meta.adds_per_mains
@@ -404,11 +401,14 @@ class DataSet(object):
         self._data.to_csv(path_csv)
         self._verbose_io(name, path, "quantipy", False)
 
-    def to_components(self):
+    def to_components(self, inplace=True):
         """
         Return the ``meta`` and ``data`` components of the DataSet instance.
         """
-        return self._meta, self._data
+        if inplace:
+            return self._meta, self._data
+        else:
+            return copy.deepcopy(self._meta), self._data.copy()
 
     @verify(text_keys='text_key')
     def to_dimensions(self, name=None, path=None, **kwargs):
@@ -756,6 +756,8 @@ class DataSet(object):
         slicer : pandas.Index
             The indices fulfilling the passed logical condition.
         """
+        if not condition:
+            return self._data.index
         full_data = self._data.copy()
         series_data = self._data['@1'].copy()
         slicer, _ = get_logic_index(series_data, condition, full_data)
@@ -876,6 +878,751 @@ class DataSet(object):
             name="ct",
             add_data={"ct": {"meta": ds._meta, "data": ds._data}})
         return stack.crosstab(x, y, f, **kwargs)
+
+        @params(repeat=["name"])
+    def _add_data_column(self, name, replace=True):
+        if replace or name not in self._data.columns:
+            if self.is_delimited_set(name):
+                self._data[name] = ''
+            else:
+                self._data[name] = np.NaN
+
+    @params(to_list=['categories', 'items'], repeat=["name"])
+    def add_meta(self, name, qtype, label, categories=None, items=None,
+        text_key=None, replace=True):
+        """
+        Create and insert a well-formed meta object.
+
+        Parameters
+        ----------
+        name : str
+            The variable name.
+        qtype : {'int', 'float', 'single', 'delimited set', 'date', 'string'}
+            The structural type of the data the meta describes.
+        label : str, default ""
+            The ``text`` label information.
+        categories : list of str, int, or tuples in form of (int, str)
+            Example:
+            ``[(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]``
+        items : list of str or tuples in form of (int, str)
+            Example:
+            ``[(1 'The 1st item'), (2, 'The 2nd item'), (99, 'Last item')]``
+        text_key : str, default None
+            Text key for text-based label information.
+        replace : bool, default True
+            If True, an already existing corresponding ``pd.DataFrame``
+            column in the case data component will be overwritten with a
+            new (empty) one.
+        """
+        self._meta.add_meta(name, qtype, label, categories, items, text_key)
+        name = self.unroll(name)
+        for n in name:
+            self._add_data_column(name, replace)
+
+    @params(repeat=["name"])
+    def categorize(self, name, categorized_name=None):
+        """
+        Categorize an ``int``/``string``/``text`` variable to ``single``.
+
+        The ``values`` object of the categorized variable is populated with the
+        unique values found in the originating variable (ignoring np.NaN /
+        empty row entries).
+
+        Parameters
+        ----------
+        name : str
+            The variable name
+        categorized_name : str
+            If provided, the categorized variable's new name will be drawn
+            from here, otherwise a default name in form of ``'name#'`` will be
+            used.
+        """
+        if not categorized_name:
+            categorized_name = "{}#".format(name)
+        self.copy(name, categorized_name)
+        self.convert(categorized_name, 'single')
+
+    @params(repeat=["name"], is_column=["name"], is_cat=["name"],
+            text_key=["text_key"], to_list=["ignore"])
+    def dichotomize(self, name, keep_variable_text=True, ignore=[],
+                    replace=False, text_key=None):
+        """
+        Dichotomize a categorical variable.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (column)
+        keep_variable_text : bool, default True
+            *  True: The new label is variable label + the value label
+            *  False: The new label is the value label
+        ignore : (list of) int
+            Codes to ignore while conversion.
+        replace : bool, default False
+            Replace the initial variable in the datafile set with the new
+            dichotomised variables and remove it completely from the instance.
+        """
+        values = self.values(name, text_key)
+        new_vars = []
+        for value in values:
+            code, text = value
+            new_name = "{}_{}".format(name, code)
+            if keep_variable_text:
+                label = '{}: {}'.format(self.text(name, text_key), text)
+            else:
+                label = text
+            mapper = [
+                (1, "Yes", {name: has_any([code])}),
+                (0, "No", {name: not_any([code])})]
+            self.derive(new_name, "single", label, mapper)
+            new_vars.append(new_name)
+        if replace:
+            self.order(reposition={name: new_vars})
+            self.drop(name)
+
+    @params(repeat=["name"], is_column=["name"])
+    def first_responses(self, name, n=3, others='others', reduce_values=False):
+        """
+        Create n-first mentions from the set of responses of a delimited set.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (column)
+        n : int, default 3
+            The number of mentions that will be turned into single-type
+            variables, i.e. 1st mention, 2nd mention, 3rd mention, 4th mention,
+            etc.
+        others : None or str, default 'others'
+            If provided, all remaining values will end up in a new delimited
+            set variable reduced by the responses transferred to the single
+            mention variables.
+        reduce_values : bool, default False
+            If True, each new variable will only list the categorical value
+            metadata for the codes found in the respective data vector, i.e.
+            not the initial full codeframe.
+        """
+        if not self.is_delimited_set(name) or self.empty(name):
+            return None
+        created = []
+        values = self.values(name)
+        for _n in frange('1-{}'.format(n)):
+            n_name = '{}_{}'.format(name, _n)
+            n_label = '{} ({})'.format(self.text(name), _n)
+            self.add_meta(n_name, 'single', n_label, values)
+            n_vector = self[name].str.split(';', n=_n, expand=True)[_n-1]
+            self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
+            created.append(n_name)
+        if others:
+            o_name = '{}_{}'.format(name, others)
+            o_label = '{} ({})'.format(self.text(name), others)
+            self.add_meta(o_name, 'delimited set', o_label, values)
+            o_string = self[name].str.split(';', n=n, expand=True)[n]
+            self[o_name] = o_string.replace(('', None), np.NaN)
+            created.append(o_name)
+        if reduce_values:
+            for v in created:
+                reduce_codes = [
+                    value[0] for value in values
+                    if value[0] not in self.codes_in_data(v)]
+                self.remove_values(v, reduce_codes)
+
+    @params(repeat=["name"], is_mask=["name"], to_list=["codes"],
+            text_key=["text_key"])
+    def flatten(self, name, codes, new_name=None, text_key=None):
+        """
+        Create a variable that groups array mask item answers to categories.
+
+        Parameters
+        ----------
+        name : str
+            The array variable name keyed in ``meta['masks']`` that will
+            be converted.
+        codes : int, list of int
+            The answers codes that determine the categorical grouping.
+            Item labels will become the category labels.
+        new_name : str, default None
+            The name of the new delimited set variable. If None, ``name`` is
+            suffixed with '_rec'.
+        text_key : str, default None (``== self.text_key``)
+            Text key for text-based label information.
+        """
+        if not new_name:
+            new_name = '{}_rec'.format(Meta.dims_free_array_name(name))
+        label = self.get_text(name)
+        cats = self.get_item_texts(name)
+        self.add_meta(new_name, 'delimited set', label, cats)
+        for x, source in enumerate(self.get_sources(name), 1):
+            self.recode(new_name, {x: {source: codes}}, append=True)
+
+    @modify(to_list='name')
+    def drop(self, name, ignore_items=False):
+        """
+        Drops variables from meta and data components of the ``DataSet``.
+
+        Parameters
+        ----------
+        name : str or list of str
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        ignore_items: bool
+            If False source variables for arrays in ``_meta['columns']``
+            are dropped, otherwise kept.
+        Returns
+        -------
+        None
+            DataSet is modified inplace.
+        """
+        self._meta.drop(name, ignore_items)
+        data_drop = [self.unroll(n) for n in names if not ignore_items]
+        data.drop(data_drop, 1, inplace=True)
+
+    @modify(to_list=['copy_only', 'copy_not'])
+    def copy(self, name, new_name=None, copy_data=True, slicer=None,
+             copy_only=None, copy_not=None):
+        """
+        Copy meta and case data of the variable defintion given per ``name``.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (mask or column)
+        new_name : str, default None
+            The new variable name, is None is provided, the initial name is
+            extended by the suffix ``_rec``.
+        copy_data : bool, default True
+            The new variable assumes the ``data`` of the original variable.
+        slicer : str or dict
+            If the data is copied it is possible to filter the data with a
+            complex logic or a filter variable.
+            Example: ``slicer = {'q1': not_any([99])}``
+        copy_only: int or list of int, default None
+            If provided, the copied version of the variable will only contain
+            (data and) meta for the specified codes.
+        copy_not: int or list of int, default None
+            If provided, the copied version of the variable will contain
+            (data and) meta for the all codes, except of the indicated.
+        """
+        self._meta.copy(name, new_name, copy_only, copy_not)
+        old = self.unroll(name)
+        new = self.unroll(new_name)
+        self._add_data_column(new)
+        if copy_data:
+            for o, n in zip(old, new):
+                self[self.take(slicer), n] = self[o].copy()
+                if self.is_categorical(n):
+                    remove = [
+                        code for code in self.codes_in_data(n)
+                        if code not in self.codes(n)]
+                    if remove:
+                        self[n].apply(lambda x: remove_codes(x, remove))
+
+    def copy_array_data(self, source, target, source_items=None,
+                        target_items=None, slicer=None):
+        """
+        Take over data of an array to another array
+        """
+        if not set(self.get_codes(source)) == set(self.get_codes(target)):
+            err = "Expect equal codes for source and target."
+            logger.error(err); raise ValueError(err)
+        sources = self.get_sources(source)
+        targets = self.get_sources(target)
+        if slicer:
+            mask = self.take(slicer)
+        if source_items:
+            sources = [sources[i-1] for i in source_items]
+        if target_items:
+            targets = [targets[i-1] for i in target_items]
+        for s, t in zip(sources, targets):
+            self[self.take(slicer), t] = self[s]
+
+    @params(is_mask=["name"], to_list=["ignore_items", "ignore_values"],
+            text_key=["text_key"])
+    def transpose(self, name, new_name, ignore_items=[], ignore_values=[],
+                  text_key=None):
+        """
+        Create a new array mask with transposed items / values structure.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (mask).
+        new_name : str
+            The name of the new mask
+        ignore_items : (list of) int
+            If provided, the items listed by their order number in the
+            ``self['masks'][name]['items']`` object will not be part of the
+            transposed array. This means they will be ignored while creating
+            the new value codes meta.
+        ignore_codes : (list of) int
+            If provided, the listed code values will not be part of the
+            transposed array. This means they will not be part of the new
+            item meta.
+        text_key : str, default None == self.text_key
+            Text key for text-based label information.
+        """
+        if not self._verify_new_name(new_name):
+            err = "Cannot create '{}'. Weak duplicates exist: {}"
+            err = err.format(new_name, self.get_weak_dupes(new_name))
+            logger.error(err); raise ValueError(err)
+
+        label = self.get_text(name, text_key=text_key)
+        items = [
+            (self.get_item_no(i[0]), i[1]) for i in self.get_items(name)
+            if self.get_item_no(i[0]) not in ignore_items]
+        values = [v for v in self.get_values(name) if v[0] not in ignore_codes]
+        self.add_meta(new_name, "delimited set", label, items=values,
+                      categories=items, text_key=text_key)
+        sources = self.get_sources(new_name)
+        for code, source in zip(values, sources):
+            mapper = {no: {item: code[0]} for no, item in items}
+            self.recode(source, mapper, append=True)
+
+    @params(is_column=["target"], repeat=["target"])
+    def recode(self, target, mapper, intersect=None, initialize=None,
+               fillna=None):
+        """
+        Add codes to a data series by using a recode mapper.
+
+        Parameters
+        ----------
+        target : str
+            The variable name (column).
+        mapper : dict
+            A mapper of structure: ``{code: qp-logic}``
+            Code is added to the series if logic is satisfied.
+        intersect : str or qp-logic, default None
+            A filter variable name or quantipy logic which is added as
+            intersection to all given conditions in mapper.
+        initialize : str or np.NaN, default None
+            If not None, a copy of the data named column will be used to
+            populate the target column before the recode is performed.
+            Alternatively, initialize can be used to populate the target
+            column with np.NaNs (overwriting whatever may be there) prior
+            to the recode.
+        fillna : int, default=None
+            If provided, empty cases will be filled with this value after the
+            recode is performed.
+        """
+        if fillna and self.is_categorical(target):
+            if fillna not in self.codes(target):
+                err = "'{}' is not a valid code for {}".format(fillna, target)
+                logger.error(err); raise ValueError(err)
+        if initialize is not None:
+            if isinstance(initialize, str):
+                if not self.get_type(initialize) == self.get_type(target):
+                    err = (
+                        "Cannot initialize '{}' with '{}', types are "
+                        "different")
+                    err = err.format(target, initialize)
+                    logger.error(err); raise ValueError(err)
+                self._data[target] = self._data[initialize].copy()
+            elif np.isnan(initialize):
+                self._add_data_column(target)
+        index_mapper = self._index_mapper(mapper, intersect)
+        self._recode_from_index_mapper(target, mapper)
+        if fillna:
+            self[self.take({target: has_count(0)}), target] = fillna
+
+    @params(is_column=["target"], repeat=["target"])
+    def uncode(self, target, mapper, intersect=None):
+        """
+        Remove codes from a data series by using an uncode mapper.
+
+        Parameters
+        ----------
+        target : str
+            The variable name (column).
+        mapper : dict
+            A mapper of structure: ``{code: qp-logic}``
+            Code is removed from the series if logic is satisfied.
+        intersect : str or qp-logic, default None
+            A filter variable name or quantipy logic which is added as
+            intersection to all given conditions in mapper.
+        """
+        index_mapper = self._index_mapper(mapper, intersect)
+        for code, index in index_mapper.items():
+            self[target][index] = self[target][index].apply(
+                lambda x: remove_codes(x, [code]))
+
+    def interlock(self, name, label, variables, val_text_sep = '/'):
+        """
+        Build a new category-intersected variable from >=2 incoming variables.
+
+        Parameters
+        ----------
+        name : str
+            The new variable name.
+        label : str
+            The new text label for the created variable.
+        variables : list of >= 2 str or dict (mapper)
+            The column names of the variables that are feeding into the
+            intersecting recode operation. Or dicts/mapper to create temporary
+            variables for interlock. Can also be a mix of str and dict. Example:
+
+            >>> ['gender',
+            ...  {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
+            ...              (2, '35-54', {'age': frange('35-54')}),
+            ...              (3, '55+', {'age': is_ge(55)})]},
+            ...  'region']
+        val_text_sep : str, default '/'
+            The passed character (or any other str value) wil be used to
+            separate the incoming individual value texts to make up the inter-
+            sected category value texts, e.g.: 'Female/18-30/London'.
+        """
+        if not isinstance(variables, list) or len(variables) < 2:
+            err = "'variables' must be a list of at least two items!"
+            logger.error(err); raise ValueError(err)
+
+        i_variables = []
+        new_variables = []
+        for var in variables:
+            if isinstance(var, dict):
+                v = var.keys()[0]
+                mapper = var.values()[0]
+                if self._is_delimited_set_mapper(mapper):
+                    qtype = 'delimited set'
+                else:
+                    qtype = 'single'
+                self.derive('{}_temp'.format(v), qtype, v, mapper)
+                i_variables.append('{}_temp'.format(v))
+                new_variables.append('{}_temp'.format(v))
+            else:
+                i_variables.append(var)
+
+        if any(self.is_array(v) for v in i_variables):
+            raise TypeError('Cannot interlock within array-typed variables!')
+        if any(self.is_delimited_set(v) for v in i_variables):
+            qtype = 'delimited set'
+        else:
+            qtype = 'single'
+
+        codes = [self.get_codes(v) for v in i_variables]
+        texts = [self.get_value_texts(v) for v in i_variables]
+        zipped = zip(list(product(*codes)), list(product(*texts)))
+        categories = []
+        cat_id = 0
+        for codes, texts in zipped:
+            cat_id += 1
+            cat_label = val_text_sep.join(texts)
+            rec = [{v: [c]} for v, c in zip(i_variables, codes)]
+            rec = intersection(rec)
+            categories.append((cat_id, cat_label, rec))
+        self.derive(name, qtype, label, categories)
+        for var in new_variables:
+            self.drop(var)
+
+    @params(is_mask=["name"])
+    def _level(self, name):
+        lvlname = '{}_level'.format(name)
+        self.copy(name, lvlname)
+        items = self.get_items(name)
+        sources = enumerate(self.get_sources(lvlname), 1)
+        codes = self.get_codes(lvlname)
+        max_code = len(codes)
+        replace_codes = {}
+        mapped_codes = {c: [] for c in self.codes(name)}
+
+        for no, source in sources:
+            offset = (no-1) * max_code
+            new_codes = frange('{}-{}'.format((offset + 1), (offset + max_code)))
+            replace_codes[source] = dict(zip(codes, new_codes))
+
+        for source, codes in replace_codes.items():
+            self[source].replace(codes, inplace=True)
+            self[source].replace(np.NaN, '', inplace=True)
+            for org, new in codes.items():
+                mapped_codes[org].append(new)
+
+        code_range = frange('1-{}'.format(max_code * len(items)))
+        labels = self.value_texts(name) * len(items)
+        cats = zip(code_range, labels)
+        new_sources = self.get_sources(lvlname)
+        self.unbind(lvlname)
+        self.add_meta(lvlname, 'delimited set', self.text(name), cats)
+        self[lvlname] = self[new_sources].astype('str').apply(
+            lambda x: ';'.join(x).replace('.0', ''), axis=1)
+        self.drop(new_sources)
+        self.add_property("level", {
+            'source': name,
+            'level_codes': mapped_codes,
+            'item_look': self.get_sources(name)[0]})
+
+    @params(text_key=["text_key"])
+    def derive(self, name, qtype, label, cond_map, text_key=None):
+        """
+        Create meta and recode case data by specifying derived category logics.
+
+        Parameters
+        ----------
+        name : str
+            The new variable name.
+        qtype : [``int``, ``float``, ``single``, ``delimited set``]
+            The structural type of the data the meta describes.
+        label : str
+            The ``text`` label information.
+        cond_map : list of tuples
+            Tuples of either two or three elements of following structures:
+
+            2 elements, no labels provided:
+            (code, <qp logic expression here>),
+
+            2 elements, no codes provided:
+            ('text label', <qp logic expression here>),
+
+            3 elements, with codes + labels:
+            (code, 'Label goes here', <qp logic expression here>),
+        """
+        err_msg = (
+            "'cond_map' structure not understood. Must pass a list "
+            "of 2 (code, logic) / (text, logic) or 3 (code, text label, "
+            "logic) element tuples!")
+        if all(len(cond) == 3 for cond in cond_map):
+            categories = [(cond[0], cond[1]) for cond in cond_map]
+            idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
+        elif all(len(cond) == 2 for cond in cond_map):
+            all_int = all(isinstance(cond[0], int) for cond in cond_map)
+            all_str = all(isinstance(cond[0], str) for cond in cond_map)
+            if not (all_str or all_int):
+                raise TypeError(err_msg)
+            categories = [cond[0] for cond in cond_map]
+            if all_int:
+                idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
+            if all_str:
+                idx_mapper = {
+                    c: cond[-1] for c, cond in enumerate(cond_map, start=1)}
+        else:
+            raise TypeError(err_msg)
+        self.add_meta(name, qtype, label, categories, text_key=text_key)
+        self.recode(name, idx_mapper)
+
+    @params(is_column=["name"], text_key=["text_key"])
+    def band(self, name, bands, new_name=None, label=None, text_key=None):
+        """
+        Group numeric data with band definitions treated as group text labels.
+
+        Wrapper around ``derive()`` for quick banding of numeric
+        data.
+
+        Parameters
+        ----------
+        name : str
+            The variable name (column).
+        bands : list of int/tuple *or* dict mapping the former to value texts
+            The categorical bands to be used. Bands can be single numeric
+            values or ranges, e.g.: [0, (1, 10), 11, 12, (13, 20)].
+            Be default, each band will also make up the value text of the
+            category created in the ``_meta`` component. To specify custom
+            texts, map each band to a category name e.g.:
+            [{'A': 0},
+            {'B': (1, 10)},
+            {'C': 11},
+            {'D': 12},
+            {'E': (13, 20)}]
+        new_name : str, default None
+            The created variable will be named ``'<name>_banded'``, unless a
+            desired name is provided explicitly here.
+        label : str, default None
+            The created variable's text label will be identical to the origi-
+            nating one's passed in ``name``, unless a desired label is provided
+            explicitly here.
+        """
+        if not self.is_numeric(name):
+            err = "Can only band numeric typed data! {} is {}."
+            err = err.format(name, self.get_type(name))
+            logger.error(err); raise ValueError(msg)
+        if not new_name:
+            new_name = '{}_banded'.format(name)
+        if not label:
+            label = self.text(name, False, text_key)
+        franges = []
+        for idx, band in enumerate(bands, start=1):
+            lab = None
+            if isinstance(band, dict):
+                lab = band.keys()[0]
+                band = band.values()[0]
+            if isinstance(band, tuple):
+                if band[0] < 0:
+                    raise ValueError('Cannot band with lower bound < 0.')
+                elif band[1] < 0:
+                    raise ValueError('Cannot band with upper bound < 0.')
+                r = '{}-{}'.format(band[0], band[1])
+                franges.append([idx, lab or r, {name: frange(r)}])
+            else:
+                r = str(band)
+                franges.append([idx, lab or r, {name: [band]}])
+        self.derive(new_name, 'single', label, franges,
+                                text_key=text_key)
+
+    @params(to_list=["variables"])
+    def to_delimited_set(self, name, label, variables, from_dichotomous=True,
+                         codes_from_name=True):
+        """
+        Combines multiple single variables to new delimited set variable.
+
+        Parameters
+        ----------
+        name: str
+            Name of new delimited set
+        label: str
+            Label text for the new delimited set.
+        variables: (list of) str/ tuples
+            variables that get combined into the new delimited set. If they are
+            dichotomous (from_dichotomous=True), the labels of the variables
+            are used as category texts or if tuples are included, the second
+            items will be used for the category texts. If the variables are
+            categorical (from_dichotomous=False) the values of the variables
+            need to be eqaul and are taken for the delimited set.
+        from_dichotomous: bool, default True
+            Define if the input variables are dichotomous or categorical.
+        codes_from_name: bool, default True
+            If from_dichotomous=True, the codes can be taken from the Variable
+            names, if they are in form of 'q01_1', 'q01_3', ...
+            In this case the codes will be 1, 3, ....
+        """
+        columns = [v[0] if isinstance(v, tuple) else v for v in variables]
+        if not all(self.is_categorical(col) for col in columns):
+            err = "'variables' must be categorical."
+            logger.error(err); raise ValueError(err)
+        if from_dichotomous:
+            if not all(set(self.get_codes(c)) == set([0, 1]) for c in columns):
+                err = "'variables' must be dichotomous."
+                logger.error(err); raise ValueError(err)
+            mapper = []
+            for x, col in enumerate(variables, 1):
+                if codes_from_name:
+                    x = int(col.split('_')[-1])
+                if isinstance(col, tuple):
+                    text = col[1]
+                else:
+                    text = self.text(col)
+                mapper.append((x, text, {col: [1]}))
+        else:
+            values = self.values(columns[0])
+            if not all(self.values(c) == values for c in columns):
+                err = "'variables' must have same values."
+            mapper = []
+            for v in values:
+                mapper.append((v[0], v[1], union([{c: v[0]} for c in cols])))
+        self.derive(name, 'delimited set', label, mapper)
+
+    def to_array(self, name, variables, label):
+        """
+        Combines column variables with same ``values`` meta into an array.
+
+        Parameters
+        ----------
+        name : str
+            Name of the new variable (mask).
+        variables : list of str
+            Variable names that become items of the array.
+        label : str
+            Text label for the mask itself.
+        """
+        old = uniquify_list(variables)
+        self._meta.to_array(name, variables, label)
+        if self.dimensions_comp:
+            new = self.get_sources(name)
+            mapper = dict(zip(old, new))
+            self._data.rename(columns=mapper, inplace=True)
+
+    @params(to_list=["levels", "other"])
+    def derotate(self, level=None, levels=[], mapper={}, other=None,
+                 unique_key='identity', dropna=True):
+        """
+        Derotate data and meta using the given mapper, and appending others.
+
+        This function derotates data using the specification defined in
+        mapper, which is a list of dicts of lists, describing how
+        columns from data can be read as a heirarchical structure.
+
+        Returns derotated DataSet instance and saves data and meta as json
+        and csv.
+
+        Parameters
+        ----------
+        level : str, default None
+            Name of new column variable to identify cases.
+        levels : list
+            Column variables that are used to create the new level variable.
+        mapper : list of dicts of lists
+            A mapping of new column names to source columns:
+            ```
+            mapper = [
+                {'q14_1': ['q14_1_1', 'q14_1_2', 'q14_1_3']},
+                {'q14_2': ['q14_2_1', 'q14_2_2', 'q14_2_3']},
+                {'q14_3': ['q14_3_1', 'q14_3_2', 'q14_3_3']}]
+            ```
+        unique_key: str
+            Name of column variable that will be copied to new dataset.
+        other: list (optional; default=None)
+            A list of additional columns from the source data to be appended
+            to the end of the resulting stacked dataframe.
+
+        Returns
+        -------
+        new ``qp.DataSet`` instance
+        """
+        for mapping in mapper:
+            col, sources = list(mapping.items())[0]
+            sources = ensure_list(sources)
+            if not len(sources) == len(levels):
+                err = "Mismatch of length of sources and levels!"
+                logger.error(err); raise ValueError(err)
+            mapping[col] = sources
+
+        variables = [unique_key] + other + levels
+        columns = self.unroll(variables)
+        # derotated data
+        dfs = []
+        for mapping in mapper:
+            col, sources = list(mapping.items())[0]
+            df = self._data[sources].copy()
+            df = df.stack().reset_index([1])
+            df.columns = [level, col]
+            df[level] = df[level].map(
+                {el: ind for ind, el in enumerate(sources, 1)})
+            df.set_index([level], append=True, drop=True, inplace=True)
+            dfs.append(df)
+        new_df = pd.concat(dfs, axis=1)
+        new_df = new_df.reset_index(1)
+        new_df = new_df.join(self._data[columns])
+        new_df.reset_index(drop=True, inplace=True)
+
+        # new meta
+        variables = self.roll_up(variables)
+        new_meta = self.subset(variables)
+        for mapping in mapper:
+            col, sources = list(mapping.items())[0]
+            if new_meta.is_array_item(sources[0]):
+                new_meta.unbind(new_meta.get_parent(sources[0]))
+            new_meta.drop(sources[1:])
+            new_meta.rename(sources[0], col)
+
+        # new ds instance
+        name = '{}_derotated'.format(self.name)
+        ds = self.from_components(name, new_df, new_meta, self.text_key)
+        ds.path = self.path
+
+        # some recodes/ edits
+        ds._meta.add_meta(level, 'single', level, levels)
+
+        levelled = '{}_levelled'.format(level)
+        ds.add_meta(levelled, 'single', level, self.get_values(levels[0]))
+
+        for x, lev in enumerate(levels, 1):
+            rec = {y: {lev: y} for y in ds.codes(levelled)}
+            ds.recode(levelled, rec, intersect={level: x})
+
+        cols = (
+            ['@1', unique_key, level, levelled] + levels +
+            [new_var.keys()[0] for new_var in mapper] +
+            self.unroll(other))
+        ds._data = ds._data[cols]
+
+        # save ``DataSet`` instance as json and csv
+        ds.to_quantipy()
+        return ds
 
     # ------------------------------------------------------------------------
     # Converting
@@ -1024,76 +1771,6 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------------
-    def _verify_same_value_codes_meta(self, name_a, name_b):
-        value_codes_a = self._get_valuemap(name_a, non_mapped='codes')
-        value_codes_b = self._get_valuemap(name_b, non_mapped='codes')
-        if not set(value_codes_a) == set(value_codes_b):
-            msg = "'{}' and '{}' do not share the same code values!"
-            raise ValueError(msg.format(name_a, name_b))
-        return None
-
-    # def _get_missing_list(self, var, globally=True):
-    #     # -> self.get_missings
-    #     pass
-
-    def _get_value_loc(self, var):
-        if self._is_numeric(var):
-            raise TypeError("Numerical columns do not have 'values' meta.")
-        if not self._has_categorical_data(var):
-            raise TypeError("Variable '{}' is not categorical!".format(var))
-        loc = self._get_meta_loc(var)
-        if not self.is_array(var):
-            return emulate_meta(self._meta, loc[var].get('values', None))
-        else:
-            return emulate_meta(self._meta, loc[var])
-
-    def _get_valuemap(self, var, non_mapped=None, text_key=None, axis_edit=None):
-        if text_key is None: text_key = self.text_key
-        vals = self._get_value_loc(var)
-        if non_mapped in ['codes', 'lists', None]:
-            codes = [int(v['value']) for v in vals]
-            if non_mapped == 'codes':
-                return codes
-        if non_mapped in ['texts', 'lists', None]:
-            if axis_edit:
-                a_edit = '{} edits'.format(axis_edit)
-                texts = [v['text'][a_edit][text_key]
-                         if text_key in v['text'].get(a_edit, []) else None
-                         for v in vals]
-            else:
-                texts = [v['text'][text_key] if text_key in v['text'] else None
-                         for v in vals]
-            if non_mapped == 'texts':
-                return texts
-        if non_mapped == 'lists':
-            return codes, texts
-        else:
-            return zip(codes, texts)
-
-    def _get_itemmap(self, var, non_mapped=None, text_key=None, axis_edit=None):
-        if text_key is None: text_key = self.text_key
-        if non_mapped in ['items', 'lists', None]:
-            items = [i['source'].split('@')[-1]
-                     for i in self._meta['masks'][var]['items']]
-            if non_mapped == 'items':
-                return items
-        if non_mapped in ['texts', 'lists', None]:
-            if axis_edit:
-                a_edit = '{} edits'.format(axis_edit)
-                items_texts = [i['text'][a_edit][text_key]
-                               if text_key in i['text'].get(a_edit, []) else None
-                               for i in self._meta['masks'][var]['items']]
-            else:
-                items_texts = [i['text'][text_key]
-                               if text_key in i['text'] else None
-                               for i in self._meta['masks'][var]['items']]
-            if non_mapped == 'texts':
-                return items_texts
-        if non_mapped == 'lists':
-            return items, items_texts
-        else:
-            return zip(items, items_texts)
-
     def _index_mapper(self, mapper, intersect=None):
         """
         Convert a {value: logic} map to a {value: index} map.
@@ -1121,7 +1798,7 @@ class DataSet(object):
                 df[str(k)].loc[v] = 1
             s = condense_dichotomous_set(df)
             self._data[target] = pd.concat([self._data[target], s], axis=1)
-        elif self.get_type(target) in ["single", "int", "float"]:
+        else:
             for k, v in mapper.items():
                 self._data[target].loc[v] = k
 
@@ -1153,8 +1830,77 @@ class DataSet(object):
             x += 1
             n = '{}_{}'.format(name, x)
         return n
+
+    def _logic_as_pd_expr(self, logic, prefix='default'):
+        """
+        """
+        varname = '{}__logic_dummy__'.format(prefix).replace(' ', '_')
+        category = [(1, 'select', logic)]
+        meta = (varname, 'single', '', category)
+        self.derive(*meta)
+        return '{}==1'.format(varname)
+
+    @params(is_var=["name"])
+    def make_dummy(self, name, partitioned=False):
+        if self.is_array(name):
+            sources = self.get_sources(name)
+            if self.is_categorical(name):
+                codes = self.get_codes(name)
+            else:
+                codes = sorted(uniquify_list(flatten_list(
+                    [self.get_codes_in_data(source) for source in sources])))
+            dummy_data = []
+            if any(self[i].dtype == 'object' for i in items):
+                for i in items:
+                    try:
+                        i_dummy = self[i].str.get_dummies(';')
+                        i_dummy.columns = [int(col) for col in i_dummy.columns]
+                    except:
+                        i_dummy = self._data[[i]]
+                        i_dummy.columns = [0]
+                    dummy_data.append(i_dummy.reindex(columns=codes))
+            else:
+                for i in items:
+                    if codes:
+                        dummy_data.append(
+                            pd.get_dummies(self[i]).reindex(columns=codes))
+                    else:
+                        dummy_data.append(pd.get_dummies(self[i]))
+            dummy_data = pd.concat(dummy_data, axis=1)
+            if not partitioned:
+                return dummy_data
+            else:
+                return dummy_data.values, codes, items
+        else:
+            if self.is_delimited_set(name):
+                try:
+                    dummy_data = self[name].str.get_dummies(';')
+                except:
+                    dummy_data = self._data[[name]]
+                    dummy_data.columns = [0]
+                codes = self.get_codes(name)
+                dummy_data.columns = [int(col) for col in dummy_data.columns]
+                dummy_data = dummy_data.reindex(columns=codes)
+                dummy_data.replace(np.NaN, 0, inplace=True)
+            else: # single, int, float data
+                dummy_data = pd.get_dummies(self[name])
+                if self.is_single(name):
+                    codes = self.get_codes(name)
+                    dummy_data = dummy_data.reindex(columns=var_codes)
+                    dummy_data.replace(np.NaN, 0, inplace=True)
+                dummy_data.rename(
+                    columns={
+                        col: int(col) if float(col).is_integer() else col
+                        for col in dummy_data.columns
+                    },
+                    inplace=True)
+            if not partitioned:
+                return dummy_data
+            else:
+                return dummy_data.values, dummy_data.columns.tolist()
+
     # ------------------------------------------------------------------------
-    # Misc
+    # Weight
     # ------------------------------------------------------------------------
     def weight(self, weight_scheme, weight_name='weight',
                unique_key='identity', subset=None, report=True,
@@ -1616,851 +2362,162 @@ class DataSet(object):
         return included
 
     # ------------------------------------------------------------------------
-    # extending / merging
+    # merging
     # ------------------------------------------------------------------------
-
-    @modify(to_list=['dataset'])
-    @verify(variables={'on': 'columns', 'left_on': 'columns'})
-    def hmerge(self, dataset, on=None, left_on=None, right_on=None,
-               overwrite_text=False, from_set=None, inplace=True,
-               merge_existing=None, verbose=True):
-
-        """
-        Merge Quantipy datasets together using an index-wise identifer.
-
-        This function merges two Quantipy datasets together, updating variables
-        that exist in the left dataset and appending others. New variables
-        will be appended in the order indicated by the 'data file' set if
-        found, otherwise they will be appended in alphanumeric order.
-        This merge happend horizontally (column-wise). Packed kwargs will be
-        passed on to the pandas.DataFrame.merge() method call, but that merge
-        will always happen using how='left'.
-
-        Parameters
-        ----------
-        dataset : ``quantipy.DataSet``
-            The dataset to merge into the current ``DataSet``.
-        on : str, default=None
-            The column to use as a join key for both datasets.
-        left_on : str, default=None
-            The column to use as a join key for the left dataset.
-        right_on : str, default=None
-            The column to use as a join key for the right dataset.
-        overwrite_text : bool, default=False
-            If True, text_keys in the left meta that also exist in right
-            meta will be overwritten instead of ignored.
-        from_set : str, default=None
-            Use a set defined in the right meta to control which columns are
-            merged from the right dataset.
-        """
-        new_tks = []
-        for d in dataset:
-            for tk in d.valid_tks:
-                if not d in self.valid_tks and not d in new_tks:
-                    new_tks.append(tk)
-        self.extend_valid_tks(new_tks)
-        ds_left = (self._meta, self._data)
-        ds_right = [(ds._meta, ds._data) for ds in dataset]
-        if on is None and right_on in self.columns():
-            id_backup = self._data[right_on].copy()
-        else:
-            id_backup = None
-        merged_meta, merged_data = _hmerge(
-            ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
-            overwrite_text=overwrite_text, from_set=from_set, verbose=verbose,
-            merge_existing=merge_existing)
-        if id_backup is not None:
-            merged_data[right_on] = id_backup
-        if inplace:
-            self._data = merged_data
-            self._meta = merged_meta
-            return None
-        else:
-            new_dataset = self.clone()
-            new_dataset._data = merged_data
-            new_dataset._meta = merged_meta
-            return new_dataset
-        return None
-
-    @modify(to_list=['dataset'])
-    @verify(variables={'on': 'columns', 'left_on': 'columns'})
-    def vmerge(self, dataset, on=None, left_on=None, right_on=None,
-               row_id_name=None, left_id=None, right_id=None, row_ids=None,
-               overwrite_text=False, from_set=None, uniquify_key=None,
-               reset_index=True, inplace=True, verbose=True):
-        """
-        Merge Quantipy datasets together by appending rows.
-
-        This function merges two Quantipy datasets together, updating variables
-        that exist in the left dataset and appending others. New variables
-        will be appended in the order indicated by the 'data file' set if
-        found, otherwise they will be appended in alphanumeric order. This
-        merge happens vertically (row-wise).
-
-        Parameters
-        ----------
-        dataset : (A list of multiple) ``quantipy.DataSet``
-            One or multiple datasets to merge into the current ``DataSet``.
-        on : str, default=None
-            The column to use to identify unique rows in both datasets.
-        left_on : str, default=None
-            The column to use to identify unique in the left dataset.
-        right_on : str, default=None
-            The column to use to identify unique in the right dataset.
-        row_id_name : str, default=None
-            The named column will be filled with the ids indicated for each
-            dataset, as per left_id/right_id/row_ids. If meta for the named
-            column doesn't already exist a new column definition will be
-            added and assigned a reductive-appropriate type.
-        left_id : str/int/float, default=None
-            Where the row_id_name column is not already populated for the
-            dataset_left, this value will be populated.
-        right_id : str/int/float, default=None
-            Where the row_id_name column is not already populated for the
-            dataset_right, this value will be populated.
-        row_ids : list of str/int/float, default=None
-            When datasets has been used, this list provides the row ids
-            that will be populated in the row_id_name column for each of
-            those datasets, respectively.
-        overwrite_text : bool, default=False
-            If True, text_keys in the left meta that also exist in right
-            meta will be overwritten instead of ignored.
-        from_set : str, default=None
-            Use a set defined in the right meta to control which columns are
-            merged from the right dataset.
-        uniquify_key : str, default None
-            A int-like column name found in all the passed ``DataSet`` objects
-            that will be protected from having duplicates. The original version
-            of the column will be kept under its name prefixed with 'original'.
-        reset_index : bool, default=True
-            If True pandas.DataFrame.reindex() will be applied to the merged
-            dataframe.
-        inplace : bool, default True
-            If True, the ``DataSet`` will be modified inplace with new/updated
-            rows. Will return a new ``DataSet`` instance if False.
-        verbose : bool, default=True
-            Echo progress feedback to the output pane.
-
-        Returns
-        -------
-        None or new_dataset : ``quantipy.DataSet``
-            If the merge is not applied ``inplace``, a ``DataSet`` instance
-            is returned.
-        """
-        datasets = [(self._meta, self._data)]
-        merge_ds = [(ds._meta, ds._data) for ds in dataset]
-        datasets.extend(merge_ds)
-        merged_meta, merged_data = _vmerge(
-            None, None, datasets, on=on, left_on=left_on,
-            right_on=right_on, row_id_name=row_id_name, left_id=left_id,
-            right_id=right_id, row_ids=row_ids, overwrite_text=overwrite_text,
-            from_set=from_set, reset_index=reset_index, verbose=verbose)
-        if inplace:
-            self._data = merged_data
-            self._meta = merged_meta
-            if uniquify_key:
-                self._make_unique_key(uniquify_key, row_id_name)
-            return None
-        else:
-            new_dataset = self.clone()
-            new_dataset._data = merged_data
-            new_dataset._meta = merged_meta
-            if uniquify_key:
-                new_dataset._make_unique_key(uniquify_key, row_id_name)
-            return new_dataset
-
-    @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
-    def _make_unique_key(self, id_key_name, multiplier):
-        """
-        """
-        columns = self._meta['columns']
-        if columns[id_key_name]['type'] not in ['int', 'float']:
-            raise TypeError("'id_key_name' must be of type int, float, single!")
-        elif columns[multiplier]['type'] not in ['single', 'int', 'float']:
-            raise TypeError("'multiplier' must be of type int, float, single!")
-        org_key_col = self._data.copy()[id_key_name]
-        new_name = 'original_{}'.format(id_key_name)
-        name, qtype, lab = new_name, 'int', 'Original ID'
-        self.add_meta(name, qtype, lab)
-        self[new_name] = org_key_col
-        self[id_key_name] += self[multiplier].astype(int) * 100000000
-        return None
-
-    @modify(to_list='dataset')
+    @params(repeat=["dataset"])
     def merge_texts(self, dataset):
         """
-        Add additional ``text`` versions from other ``text_key`` meta.
+        Merge meta only.
 
-        Case data will be ignored during the merging process.
-
-        Parameters
-        ----------
-        dataset : (A list of multiple) ``quantipy.DataSet``
-            One or multiple datasets that provide new ``text_key`` meta.
-
-        Returns
-        -------
-        None
+        dataset : qp.DataSet
+            The instance which is merged into self.
         """
-        for ds in dataset:
-            empty_data = ds._data.copy()
-            ds._data = ds._data[ds._data.index < 0]
-        self.vmerge(dataset, verbose=False, overwrite_text=True)
-        return None
+        ds = dataset.clone()
+        self._compare_types(ds)
+        self._meta.merge(ds._meta, True)
 
-    # ------------------------------------------------------------------------
-    # Recoding
-    # ------------------------------------------------------------------------
-    @params(repeat=["name"])
-    def _add_data_column(self, name, replace=True):
-        if replace or name not in self._data.columns:
-            if self.is_delimited_set(name):
-                self._data[name] = ''
-            else:
-                self._data[name] = np.NaN
-
-    @params(to_list=['categories', 'items'], repeat=["name"])
-    def add_meta(self, name, qtype, label, categories=None, items=None,
-        text_key=None, replace=True):
-        """
-        Create and insert a well-formed meta object.
-
-        Parameters
-        ----------
-        name : str
-            The variable name.
-        qtype : {'int', 'float', 'single', 'delimited set', 'date', 'string'}
-            The structural type of the data the meta describes.
-        label : str, default ""
-            The ``text`` label information.
-        categories : list of str, int, or tuples in form of (int, str)
-            Example:
-            ``[(1, 'Elephant'), (2, 'Mouse'), (999, 'No animal')]``
-        items : list of str or tuples in form of (int, str)
-            Example:
-            ``[(1 'The 1st item'), (2, 'The 2nd item'), (99, 'Last item')]``
-        text_key : str, default None
-            Text key for text-based label information.
-        replace : bool, default True
-            If True, an already existing corresponding ``pd.DataFrame``
-            column in the case data component will be overwritten with a
-            new (empty) one.
-        """
-        self._meta.add_meta(name, qtype, label, categories, items, text_key)
-        name = self.unroll(name)
-        for n in name:
-            self._add_data_column(name, replace)
-
-    @params(repeat=["name"])
-    def categorize(self, name, categorized_name=None):
-        """
-        Categorize an ``int``/``string``/``text`` variable to ``single``.
-
-        The ``values`` object of the categorized variable is populated with the
-        unique values found in the originating variable (ignoring np.NaN /
-        empty row entries).
-
-        Parameters
-        ----------
-        name : str
-            The variable name
-        categorized_name : str
-            If provided, the categorized variable's new name will be drawn
-            from here, otherwise a default name in form of ``'name#'`` will be
-            used.
-        """
-        if not categorized_name:
-            categorized_name = "{}#".format(name)
-        self.copy(name, categorized_name)
-        self.convert(categorized_name, 'single')
-
-    @params(repeat=["name"], is_column=["name"], is_cat=["name"],
-            text_key=["text_key"], to_list=["ignore"])
-    def dichotomize(self, name, keep_variable_text=True, ignore=[],
-                    replace=False, text_key=None):
-        """
-        Dichotomize a categorical variable.
-
-        Parameters
-        ----------
-        name : str
-            The variable name (column)
-        keep_variable_text : bool, default True
-            *  True: The new label is variable label + the value label
-            *  False: The new label is the value label
-        ignore : (list of) int
-            Codes to ignore while conversion.
-        replace : bool, default False
-            Replace the initial variable in the datafile set with the new
-            dichotomised variables and remove it completely from the instance.
-        """
-        values = self.values(name, text_key)
-        new_vars = []
-        for value in values:
-            code, text = value
-            new_name = "{}_{}".format(name, code)
-            if keep_variable_text:
-                label = '{}: {}'.format(self.text(name, text_key), text)
-            else:
-                label = text
-            mapper = [
-                (1, "Yes", {name: has_any([code])}),
-                (0, "No", {name: not_any([code])})]
-            self.derive(new_name, "single", label, mapper)
-            new_vars.append(new_name)
-        if replace:
-            self.order(reposition={name: new_vars})
-            self.drop(name)
-
-    @params(repeat=["name"], is_column=["name"])
-    def first_responses(self, name, n=3, others='others', reduce_values=False):
-        """
-        Create n-first mentions from the set of responses of a delimited set.
-
-        Parameters
-        ----------
-        name : str
-            The variable name (column)
-        n : int, default 3
-            The number of mentions that will be turned into single-type
-            variables, i.e. 1st mention, 2nd mention, 3rd mention, 4th mention,
-            etc.
-        others : None or str, default 'others'
-            If provided, all remaining values will end up in a new delimited
-            set variable reduced by the responses transferred to the single
-            mention variables.
-        reduce_values : bool, default False
-            If True, each new variable will only list the categorical value
-            metadata for the codes found in the respective data vector, i.e.
-            not the initial full codeframe.
-        """
-        if not self.is_delimited_set(name) or self.empty(name):
-            return None
-        created = []
-        values = self.values(name)
-        for _n in frange('1-{}'.format(n)):
-            n_name = '{}_{}'.format(name, _n)
-            n_label = '{} ({})'.format(self.text(name), _n)
-            self.add_meta(n_name, 'single', n_label, values)
-            n_vector = self[name].str.split(';', n=_n, expand=True)[_n-1]
-            self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
-            created.append(n_name)
-        if others:
-            o_name = '{}_{}'.format(name, others)
-            o_label = '{} ({})'.format(self.text(name), others)
-            self.add_meta(o_name, 'delimited set', o_label, values)
-            o_string = self[name].str.split(';', n=n, expand=True)[n]
-            self[o_name] = o_string.replace(('', None), np.NaN)
-            created.append(o_name)
-        if reduce_values:
-            for v in created:
-                reduce_codes = [
-                    value[0] for value in values
-                    if value[0] not in self.codes_in_data(v)]
-                self.remove_values(v, reduce_codes)
-
-    @params(repeat=["name"], is_mask=["name"], to_list=["codes"],
-            text_key=["text_key"])
-    def flatten(self, name, codes, new_name=None, text_key=None):
-        """
-        Create a variable that groups array mask item answers to categories.
-
-        Parameters
-        ----------
-        name : str
-            The array variable name keyed in ``meta['masks']`` that will
-            be converted.
-        codes : int, list of int
-            The answers codes that determine the categorical grouping.
-            Item labels will become the category labels.
-        new_name : str, default None
-            The name of the new delimited set variable. If None, ``name`` is
-            suffixed with '_rec'.
-        text_key : str, default None (``== self.text_key``)
-            Text key for text-based label information.
-        """
-        if not new_name:
-            new_name = '{}_rec'.format(Meta.dims_free_array_name(name))
-        label = self.get_text(name)
-        cats = self.get_item_texts(name)
-        self.add_meta(new_name, 'delimited set', label, cats)
-        for x, source in enumerate(self.get_sources(name), 1):
-            self.recode(new_name, {x: {source: codes}}, append=True)
-
-    @modify(to_list='name')
-    def drop(self, name, ignore_items=False):
-        """
-        Drops variables from meta and data components of the ``DataSet``.
-
-        Parameters
-        ----------
-        name : str or list of str
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        ignore_items: bool
-            If False source variables for arrays in ``_meta['columns']``
-            are dropped, otherwise kept.
-        Returns
-        -------
-        None
-            DataSet is modified inplace.
-        """
-        self._meta.drop(name, ignore_items)
-        data_drop = [self.unroll(n) for n in names if not ignore_items]
-        data.drop(data_drop, 1, inplace=True)
-
-    @modify(to_list=['copy_only', 'copy_not'])
-    def copy(self, name, new_name=None, copy_data=True, slicer=None,
-             copy_only=None, copy_not=None):
-        """
-        Copy meta and case data of the variable defintion given per ``name``.
-
-        Parameters
-        ----------
-        name : str
-            The variable name (mask or column)
-        new_name : str, default None
-            The new variable name, is None is provided, the initial name is
-            extended by the suffix ``_rec``.
-        copy_data : bool, default True
-            The new variable assumes the ``data`` of the original variable.
-        slicer : str or dict
-            If the data is copied it is possible to filter the data with a
-            complex logic or a filter variable.
-            Example: ``slicer = {'q1': not_any([99])}``
-        copy_only: int or list of int, default None
-            If provided, the copied version of the variable will only contain
-            (data and) meta for the specified codes.
-        copy_not: int or list of int, default None
-            If provided, the copied version of the variable will contain
-            (data and) meta for the all codes, except of the indicated.
-        """
-        self._meta.copy(name, new_name, copy_only, copy_not)
-        old = self.unroll(name)
-        new = self.unroll(new_name)
-        self._add_data_column(new)
-        if copy_data:
-            for o, n in zip(old, new):
-                self[self.take(slicer), n] = self[o].copy()
-                if self.is_categorical(n):
-                    remove = [
-                        code for code in self.codes_in_data(n)
-                        if code not in self.codes(n)]
-                    if remove:
-                        self[n].apply(lambda x: remove_codes(x, remove))
-
-    def copy_array_data(self, source, target, source_items=None,
-                        target_items=None, slicer=None):
-        """
-        """
-        self._verify_same_value_codes_meta(source, target)
-        all_source_items = self._get_itemmap(source, non_mapped='items')
-        all_target_items = self._get_itemmap(target, non_mapped='items')
-        if slicer: mask = self.take(slicer)
-        if source_items:
-            source_items = [all_source_items[i-1] for i in source_items]
-        else:
-            source_items = all_source_items
-        if target_items:
-            target_items = [all_target_items[i-1] for i in target_items]
-        else:
-            target_items = all_target_items
-        for s, t in zip(source_items, target_items):
-                if slicer:
-                    self._data.loc[mask, t] = self._data.loc[mask, s]
+    def _compare_types(self, merge_ds):
+        skip = []
+        for v in ds.variables():
+            if v in self:
+                if ds.is_array(v):
+                    if not self.is_array(v):
+                        skip.append(v)
+                        continue
+                    ltype = self.get_subtype(v)
+                    rtype = ds.get_subtype(v)
                 else:
-                    self[t] = self[s]
-        return None
+                    ltype = self.get_type(v)
+                    rtype = ds.get_type(v)
+                if ltype not in COMPATIBLE_TYPES[rtype]:
+                    skip.append(v)
+                    continue
+                ds.convert(v, ltype)
 
-    @params(is_mask=["name"], to_list=["ignore_items", "ignore_values"],
-            text_key=["text_key"])
-    def transpose(self, name, new_name, ignore_items=[], ignore_values=[],
-                  text_key=None):
+    @params(repeat=["dataset"], is_column=["on", "left_on"])
+    def hmerge(self, dataset, on=None, left_on=None, right_on=None,
+               overwrite=False, from_set=None):
         """
-        Create a new array mask with transposed items / values structure.
+        Merge other QP dataset instances to extend the variables.
 
         Parameters
         ----------
-        name : str
-            The variable name (mask).
-        new_name : str
-            The name of the new mask
-        ignore_items : (list of) int
-            If provided, the items listed by their order number in the
-            ``self['masks'][name]['items']`` object will not be part of the
-            transposed array. This means they will be ignored while creating
-            the new value codes meta.
-        ignore_codes : (list of) int
-            If provided, the listed code values will not be part of the
-            transposed array. This means they will not be part of the new
-            item meta.
-        text_key : str, default None == self.text_key
-            Text key for text-based label information.
+        dataset : qp.DataSet
+            The instance which is merged into self.
+        on : str
+            The variable name to identify cases in both datasets.
+        left_on : str
+            The variable name to identify cases in the left dataset.
+        right_on : str
+            The variable name to identify cases in the right dataset.
+        overwrite : bool
+            Define priorization for meta information (e.g. texts):
+            *  True: The right dataset is prioritized
+            *  False: The left dataset is prioritized
+        from_set : str
+            A set name from which variables are taken from.
         """
-        if not self._verify_new_name(new_name):
-            err = "Cannot create '{}'. Weak duplicates exist: {}"
-            err = err.format(new_name, self.get_weak_dupes(new_name))
-            logger.error(err); raise ValueError(err)
-
-        label = self.get_text(name, text_key=text_key)
-        items = [
-            (self.get_item_no(i[0]), i[1]) for i in self.get_items(name)
-            if self.get_item_no(i[0]) not in ignore_items]
-        values = [v for v in self.get_values(name) if v[0] not in ignore_codes]
-        self.add_meta(new_name, "delimited set", label, items=values,
-                      categories=items, text_key=text_key)
-        sources = self.get_sources(new_name)
-        for code, source in zip(values, sources):
-            mapper = {no: {item: code[0]} for no, item in items}
-            self.recode(source, mapper, append=True)
-
-    @params(is_column=["target"], repeat=["target"])
-    def recode(self, target, mapper, intersect=None, initialize=None,
-               fillna=None):
-        """
-        Add codes to a data series by using a recode mapper.
-
-        Parameters
-        ----------
-        target : str
-            The variable name (column).
-        mapper : dict
-            A mapper of structure: ``{code: qp-logic}``
-            Code is added to the series if logic is satisfied.
-        intersect : str or qp-logic, default None
-            A filter variable name or quantipy logic which is added as
-            intersection to all given conditions in mapper.
-        initialize : str or np.NaN, default None
-            If not None, a copy of the data named column will be used to
-            populate the target column before the recode is performed.
-            Alternatively, initialize can be used to populate the target
-            column with np.NaNs (overwriting whatever may be there) prior
-            to the recode.
-        fillna : int, default=None
-            If provided, empty cases will be filled with this value after the
-            recode is performed.
-        """
-        if fillna and self.is_categorical(target):
-            if fillna not in self.codes(target):
-                err = "'{}' is not a valid code for {}".format(fillna, target)
+        if on:
+            left_on = on
+            right_on = on
+        else:
+            if not (left_on and right_on):
+                err = "Please define variables to identify the cases."
                 logger.error(err); raise ValueError(err)
-        if initialize is not None:
-            if isinstance(initialize, str):
-                if not self.get_type(initialize) == self.get_type(target):
-                    err = (
-                        "Cannot initialize '{}' with '{}', types are "
-                        "different")
-                    err = err.format(target, initialize)
-                    logger.error(err); raise ValueError(err)
-                self._data[target] = self._data[initialize].copy()
-            elif np.isnan(initialize):
-                self._add_data_column(target)
-        index_mapper = self._index_mapper(mapper, intersect)
-        self._recode_from_index_mapper(target, mapper)
-        if fillna:
-            self[self.take({target: has_count(0)}), target] = fillna
-
-    @params(is_column=["target"], repeat=["target"])
-    def uncode(self, target, mapper, intersect=None):
-        """
-        Remove codes from a data series by using an uncode mapper.
-
-        Parameters
-        ----------
-        target : str
-            The variable name (column).
-        mapper : dict
-            A mapper of structure: ``{code: qp-logic}``
-            Code is removed from the series if logic is satisfied.
-        intersect : str or qp-logic, default None
-            A filter variable name or quantipy logic which is added as
-            intersection to all given conditions in mapper.
-        """
-        index_mapper = self._index_mapper(mapper, intersect)
-        for code, index in index_mapper.items():
-            self[target][index] = self[target][index].apply(
-                lambda x: remove_codes(x, [code]))
-
-    def interlock(self, name, label, variables, val_text_sep = '/'):
-        """
-        Build a new category-intersected variable from >=2 incoming variables.
-
-        Parameters
-        ----------
-        name : str
-            The new variable name.
-        label : str
-            The new text label for the created variable.
-        variables : list of >= 2 str or dict (mapper)
-            The column names of the variables that are feeding into the
-            intersecting recode operation. Or dicts/mapper to create temporary
-            variables for interlock. Can also be a mix of str and dict. Example:
-
-            >>> ['gender',
-            ...  {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
-            ...              (2, '35-54', {'age': frange('35-54')}),
-            ...              (3, '55+', {'age': is_ge(55)})]},
-            ...  'region']
-        val_text_sep : str, default '/'
-            The passed character (or any other str value) wil be used to
-            separate the incoming individual value texts to make up the inter-
-            sected category value texts, e.g.: 'Female/18-30/London'.
-        """
-        if not isinstance(variables, list) or len(variables) < 2:
-            err = "'variables' must be a list of at least two items!"
-            logger.error(err); raise ValueError(err)
-
-        i_variables = []
-        new_variables = []
-        for var in variables:
-            if isinstance(var, dict):
-                v = var.keys()[0]
-                mapper = var.values()[0]
-                if self._is_delimited_set_mapper(mapper):
-                    qtype = 'delimited set'
+        if from_set:
+            ds = dataset.subset(from_set=from_set)
+        else:
+            ds = dataset.clone()
+        slicer = ~data[right_on].isin(self[left_on].values.tolist()).tolist()
+        ds.filter({right_on: slicer}, inplace=True)
+        self._compare_types(ds)
+        skip = self._meta.merge(ds._meta, overwrite)
+        skip = self.unroll(skip)
+        ds._data.set_index(right_on, drop=False)
+        self._data.set_index(left_on, drop=False)
+        new = []
+        update = []
+        for col in ds._data.columns.tolist():
+            if col in skip or col == right_on:
+                continue
+            if col in self._data.columns:
+                if self.is_delimited_set(col):
+                    self[col] = self[col].combine(
+                        ds[col],
+                        lambda x, y: _merge_delimited_sets(x, y))
                 else:
-                    qtype = 'single'
-                self.derive('{}_temp'.format(v), qtype, v, mapper)
-                i_variables.append('{}_temp'.format(v))
-                new_variables.append('{}_temp'.format(v))
+                    update.append(col)
             else:
-                i_variables.append(var)
+                new.append(col)
+        if update:
+            self._data.update(ds[update])
+        if new:
+            kwargs = {'left_on': left_on, 'right_on': right_on, 'how': 'left'}
+            self._data.merge(ds._data[new], **kwargs)
+        self.reset_index()
 
-        if any(self.is_array(v) for v in i_variables):
-            raise TypeError('Cannot interlock within array-typed variables!')
-        if any(self.is_delimited_set(v) for v in i_variables):
-            qtype = 'delimited set'
+    @params(repeat=["dataset"], is_column=["on", "left_on"])
+    def vmerge(self, dataset, on=None, left_on=None, right_on=None,
+               row_id_name="datasource", left_id=1, right_id=2,
+               overwrite=False, from_set=None):
+        """
+        Merge other QP dataset instances to extend the cases.
+
+        Parameters
+        ----------
+        dataset : qp.DataSet
+            The instance which is merged into self.
+        on : str
+            The variable name to identify cases in both datasets.
+        left_on : str
+            The variable name to identify cases in the left dataset.
+        right_on : str
+            The variable name to identify cases in the right dataset.
+        row_id_name : str, default "datasource"
+            The named column will be filled with the ids indicated for each
+            dataset, as per left_id and right_id
+        left_id : int, default 1
+            Where the row_id_name column is not already populated for the
+            dataset_left, this value will be populated.
+        right_id : int, default 2
+            Where the row_id_name column is not already populated for the
+            dataset_right, this value will be populated.
+        overwrite : bool
+            Define priorization for meta information (e.g. texts):
+            *  True: The right dataset is prioritized
+            *  False: The left dataset is prioritized
+        from_set : str
+            A set name from which variables are taken from.
+        """
+        if on:
+            left_on = on
+            right_on = on
         else:
-            qtype = 'single'
-
-        codes = [self.get_codes(v) for v in i_variables]
-        texts = [self.get_value_texts(v) for v in i_variables]
-        zipped = zip(list(product(*codes)), list(product(*texts)))
-        categories = []
-        cat_id = 0
-        for codes, texts in zipped:
-            cat_id += 1
-            cat_label = val_text_sep.join(texts)
-            rec = [{v: [c]} for v, c in zip(i_variables, codes)]
-            rec = intersection(rec)
-            categories.append((cat_id, cat_label, rec))
-        self.derive(name, qtype, label, categories)
-        for var in new_variables:
-            self.drop(var)
-
-    @params(is_mask=["name"])
-    def _level(self, name):
-        lvlname = '{}_level'.format(name)
-        self.copy(name, lvlname)
-        items = self.get_items(name)
-        sources = enumerate(self.get_sources(lvlname), 1)
-        codes = self.get_codes(lvlname)
-        max_code = len(codes)
-        replace_codes = {}
-        mapped_codes = {c: [] for c in self.codes(name)}
-
-        for no, source in sources:
-            offset = (no-1) * max_code
-            new_codes = frange('{}-{}'.format((offset + 1), (offset + max_code)))
-            replace_codes[source] = dict(zip(codes, new_codes))
-
-        for source, codes in replace_codes.items():
-            self[source].replace(codes, inplace=True)
-            self[source].replace(np.NaN, '', inplace=True)
-            for org, new in codes.items():
-                mapped_codes[org].append(new)
-
-        code_range = frange('1-{}'.format(max_code * len(items)))
-        labels = self.value_texts(name) * len(items)
-        cats = zip(code_range, labels)
-        new_sources = self.get_sources(lvlname)
-        self.unbind(lvlname)
-        self.add_meta(lvlname, 'delimited set', self.text(name), cats)
-        self[lvlname] = self[new_sources].astype('str').apply(
-            lambda x: ';'.join(x).replace('.0', ''), axis=1)
-        self.drop(new_sources)
-        self.add_property("level", {
-            'source': name,
-            'level_codes': mapped_codes,
-            'item_look': self.get_sources(name)[0]})
-
-    @params(text_key=["text_key"])
-    def derive(self, name, qtype, label, cond_map, text_key=None):
-        """
-        Create meta and recode case data by specifying derived category logics.
-
-        Parameters
-        ----------
-        name : str
-            The new variable name.
-        qtype : [``int``, ``float``, ``single``, ``delimited set``]
-            The structural type of the data the meta describes.
-        label : str
-            The ``text`` label information.
-        cond_map : list of tuples
-            Tuples of either two or three elements of following structures:
-
-            2 elements, no labels provided:
-            (code, <qp logic expression here>),
-
-            2 elements, no codes provided:
-            ('text label', <qp logic expression here>),
-
-            3 elements, with codes + labels:
-            (code, 'Label goes here', <qp logic expression here>),
-        """
-        err_msg = (
-            "'cond_map' structure not understood. Must pass a list "
-            "of 2 (code, logic) / (text, logic) or 3 (code, text label, "
-            "logic) element tuples!")
-        if all(len(cond) == 3 for cond in cond_map):
-            categories = [(cond[0], cond[1]) for cond in cond_map]
-            idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
-        elif all(len(cond) == 2 for cond in cond_map):
-            all_int = all(isinstance(cond[0], int) for cond in cond_map)
-            all_str = all(isinstance(cond[0], str) for cond in cond_map)
-            if not (all_str or all_int):
-                raise TypeError(err_msg)
-            categories = [cond[0] for cond in cond_map]
-            if all_int:
-                idx_mapper = {cond[0]: cond[-1] for cond in cond_map}
-            if all_str:
-                idx_mapper = {
-                    c: cond[-1] for c, cond in enumerate(cond_map, start=1)}
-        else:
-            raise TypeError(err_msg)
-        self.add_meta(name, qtype, label, categories, text_key=text_key)
-        self.recode(name, idx_mapper)
-
-    @params(is_column=["name"], text_key=["text_key"])
-    def band(self, name, bands, new_name=None, label=None, text_key=None):
-        """
-        Group numeric data with band definitions treated as group text labels.
-
-        Wrapper around ``derive()`` for quick banding of numeric
-        data.
-
-        Parameters
-        ----------
-        name : str
-            The variable name (column).
-        bands : list of int/tuple *or* dict mapping the former to value texts
-            The categorical bands to be used. Bands can be single numeric
-            values or ranges, e.g.: [0, (1, 10), 11, 12, (13, 20)].
-            Be default, each band will also make up the value text of the
-            category created in the ``_meta`` component. To specify custom
-            texts, map each band to a category name e.g.:
-            [{'A': 0},
-            {'B': (1, 10)},
-            {'C': 11},
-            {'D': 12},
-            {'E': (13, 20)}]
-        new_name : str, default None
-            The created variable will be named ``'<name>_banded'``, unless a
-            desired name is provided explicitly here.
-        label : str, default None
-            The created variable's text label will be identical to the origi-
-            nating one's passed in ``name``, unless a desired label is provided
-            explicitly here.
-        """
-        if not self.is_numeric(name):
-            err = "Can only band numeric typed data! {} is {}."
-            err = err.format(name, self.get_type(name))
-            logger.error(err); raise ValueError(msg)
-        if not new_name:
-            new_name = '{}_banded'.format(name)
-        if not label:
-            label = self.text(name, False, text_key)
-        franges = []
-        for idx, band in enumerate(bands, start=1):
-            lab = None
-            if isinstance(band, dict):
-                lab = band.keys()[0]
-                band = band.values()[0]
-            if isinstance(band, tuple):
-                if band[0] < 0:
-                    raise ValueError('Cannot band with lower bound < 0.')
-                elif band[1] < 0:
-                    raise ValueError('Cannot band with upper bound < 0.')
-                r = '{}-{}'.format(band[0], band[1])
-                franges.append([idx, lab or r, {name: frange(r)}])
-            else:
-                r = str(band)
-                franges.append([idx, lab or r, {name: [band]}])
-        self.derive(new_name, 'single', label, franges,
-                                text_key=text_key)
-
-    @params(to_list=["variables"])
-    def to_delimited_set(self, name, label, variables, from_dichotomous=True,
-                         codes_from_name=True):
-        """
-        Combines multiple single variables to new delimited set variable.
-
-        Parameters
-        ----------
-        name: str
-            Name of new delimited set
-        label: str
-            Label text for the new delimited set.
-        variables: (list of) str/ tuples
-            variables that get combined into the new delimited set. If they are
-            dichotomous (from_dichotomous=True), the labels of the variables
-            are used as category texts or if tuples are included, the second
-            items will be used for the category texts. If the variables are
-            categorical (from_dichotomous=False) the values of the variables
-            need to be eqaul and are taken for the delimited set.
-        from_dichotomous: bool, default True
-            Define if the input variables are dichotomous or categorical.
-        codes_from_name: bool, default True
-            If from_dichotomous=True, the codes can be taken from the Variable
-            names, if they are in form of 'q01_1', 'q01_3', ...
-            In this case the codes will be 1, 3, ....
-        """
-        columns = [v[0] if isinstance(v, tuple) else v for v in variables]
-        if not all(self.is_categorical(col) for col in columns):
-            err = "'variables' must be categorical."
-            logger.error(err); raise ValueError(err)
-        if from_dichotomous:
-            if not all(set(self.get_codes(c)) == set([0, 1]) for c in columns):
-                err = "'variables' must be dichotomous."
+            if not (left_on and right_on):
+                err = "Please define variables to identify the cases."
                 logger.error(err); raise ValueError(err)
-            mapper = []
-            for x, col in enumerate(variables, 1):
-                if codes_from_name:
-                    x = int(col.split('_')[-1])
-                if isinstance(col, tuple):
-                    text = col[1]
-                else:
-                    text = self.text(col)
-                mapper.append((x, text, {col: [1]}))
+        if from_set:
+            ds = dataset.subset(from_set=from_set)
         else:
-            values = self.values(columns[0])
-            if not all(self.values(c) == values for c in columns):
-                err = "'variables' must have same values."
-            mapper = []
-            for v in values:
-                mapper.append((v[0], v[1], union([{c: v[0]} for c in cols])))
-        self.derive(name, 'delimited set', label, mapper)
-
-    def to_array(self, name, variables, label):
-        """
-        Combines column variables with same ``values`` meta into an array.
-
-        Parameters
-        ----------
-        name : str
-            Name of the new variable (mask).
-        variables : list of str
-            Variable names that become items of the array.
-        label : str
-            Text label for the mask itself.
-        """
-        old = uniquify_list(variables)
-        self._meta.to_array(name, variables, label)
-        if self.dimensions_comp:
-            new = self.get_sources(name)
-            mapper = dict(zip(old, new))
-            self._data.rename(columns=mapper, inplace=True)
+            ds = dataset.clone()
+        ds.subset(variables=self.variables() + [right_on], inplace=True)
+        slicer = ~data[right_on].isin(self[left_on].values.tolist()).tolist()
+        ds.filter({right_on: slicer}, inplace=True)
+        self._compare_types(ds)
+        skip = self._meta.merge(ds._meta, overwrite)
+        ds.drop(skip)
+        ds._data.set_index(right_on, drop=False)
+        self._data.set_index(left_on, drop=False)
+        self._data = pd.concat([self._data, ds._data])
+        self.reset_index()
+        if row_id_name not in self:
+            self.add_meta(row_id_name, "int", row_id_name)
+        lid = self.take(intersection([
+            {left_on: not_any(slicer)}, {row_id_name: has_count(0)}]))
+        self[lid, row_id_name] = left_id
+        rid = self.take(intersection([
+            {left_on: has_any(slicer)}, {row_id_name: has_count(0)}]))
+        self[rid, row_id_name] = right_id
 
     # renaming
     # ------------------------------------------------------------------------
@@ -2570,271 +2627,10 @@ class DataSet(object):
             self._add_data_column(name, replace=False):
 
     # ------------------------------------------------------------------------
-    # derotate the dataset
+    # batch
     # ------------------------------------------------------------------------
-    def _derotate_df(self, mapper, levels, other=None, dropna=True):
-        """
-        Returns derotated ``dataframe``.
-        """
-        data = self._data
-        dfs = []
-        level = levels.keys()[0]
-        for question_group in mapper:
-            new_var = question_group.keys()[0]
-            q_group = question_group.values()[0]
-
-            df = data[q_group]
-            df = df.stack().reset_index([1])
-            df.columns = [level, new_var]
-            df[level] = df[level].map({el: ind for ind, el in enumerate(
-                                           q_group, 1)})
-            df.set_index([level], append=True, drop=True, inplace=True)
-            dfs.append(df)
-
-        new_df = pd.concat(dfs, axis=1)
-        new_df = new_df.reset_index(1)
-
-        new_df = new_df.join(data[other])
-
-        new_df.index = list(xrange(0, len(new_df.index)))
-
-        return new_df
-
-    def _derotate_meta(self, mapper, other):
-        """
-        Returns derotated ``meta``.
-        """
-        meta = self._meta
-        new_meta = self.start_meta(self.text_key)
-        n = meta['info'].get('dataset', meta['info']).get('name')
-        dname = '{}_derotate'.format(n)
-        new_meta['info']['dataset'] = {'name': dname}
-        for var in other:
-            new_meta = self._assume_meta(new_meta, var, var)
-
-        for question_group in mapper:
-            new_var = question_group.keys()[0]
-            old_var = question_group.values()[0][0]
-            new_meta = self._assume_meta(new_meta, new_var, old_var)
-        return new_meta
-
-    def _assume_meta(self, new_meta, new_var, old_var):
-        """
-        Assumes meta information for variables to other meta object.
-        """
-        meta = self._meta
-        n_masks = new_meta['masks']
-        n_cols = new_meta['columns']
-        n_sets = new_meta['sets']
-        n_lib_v = new_meta['lib']['values']
-
-        if self.is_array(old_var):
-            n_masks[new_var] = org_copy.deepcopy(meta['masks'][old_var])
-            n_masks[new_var]['name'] = new_var
-            if self._has_categorical_data(old_var):
-                n_lib_v[new_var] = meta['lib']['values'][old_var]
-            n_sets[new_var] = org_copy.deepcopy(meta['sets'][old_var])
-            n_sets['data file']['items'].append('masks@{}'.format(new_var))
-            for var in self.get_sources(old_var):
-                new_meta = self._assume_meta(new_meta, var, var)
-        else:
-            n_cols[new_var] = org_copy.deepcopy(meta['columns'][old_var])
-            n_cols[new_var]['name'] = new_var
-            if self._is_array_item(old_var):
-                if not self._maskname_from_item(old_var) in new_meta['masks']:
-                    n_cols[new_var]['parent'] = {}
-                    n_cols[new_var]['values'] = self._get_value_loc(old_var)
-                    n_sets['data file']['items'].append('columns@{}'.format(new_var))
-            else:
-                n_sets['data file']['items'].append('columns@{}'.format(new_var))
-
-        return new_meta
-
-    @modify(to_list='other')
-    def derotate(self, levels, mapper, other=None, unique_key='identity',
-                 dropna=True):
-        """
-        Derotate data and meta using the given mapper, and appending others.
-
-        This function derotates data using the specification defined in
-        mapper, which is a list of dicts of lists, describing how
-        columns from data can be read as a heirarchical structure.
-
-        Returns derotated DataSet instance and saves data and meta as json
-        and csv.
-
-        Parameters
-        ----------
-        levels : dict
-            The name and values of a new column variable to identify cases.
-
-        mapper : list of dicts of lists
-            A list of dicts matching where the new column names are keys to
-            to lists of source columns. Example:
-
-            >>> mapper = [{'q14_1': ['q14_1_1', 'q14_1_2', 'q14_1_3']},
-            ...           {'q14_2': ['q14_2_1', 'q14_2_2', 'q14_2_3']},
-            ...           {'q14_3': ['q14_3_1', 'q14_3_2', 'q14_3_3']}]
-
-        unique_key: str
-            Name of column variable that will be copied to new dataset.
-
-        other: list (optional; default=None)
-            A list of additional columns from the source data to be appended
-            to the end of the resulting stacked dataframe.
-
-        dropna: boolean (optional; default=True)
-            Passed through to the pandas.DataFrame.stack() operation.
-
-        Returns
-        -------
-        new ``qp.DataSet`` instance
-        """
-        data = self._data
-        meta = self._meta
-
-        if not (isinstance(levels.values()[0], list) and isinstance(levels, dict)):
-            raise ValueError('``levels`` must be a ``dict`` of ``lists``.')
-        if not all(isinstance(e, dict) and isinstance(e.values()[0], list) and
-                   isinstance(mapper, list) for e in mapper):
-            msg = '``mapper`` must be ``list`` of ``dicts`` of ``lists``.'
-            raise ValueError(msg)
-        for q_group in mapper:
-            if not len(levels.values()[0]) == len(q_group.values()[0]):
-                raise ValueError('``lists`` of source ``columns`` and level '
-                                 'variables must have same length.')
-        level = levels.keys()[0]
-        if other:
-            exist_vars = [unique_key] + other + levels[level]
-        else:
-            exist_vars = [unique_key] + levels[level]
-        for var in exist_vars:
-            if not (var in meta['columns'] or var in meta['masks']):
-                msg = "{} not found in dataset.".format(var)
-                raise KeyError(msg)
-
-        # derotated data
-        add_cols = self.unroll(exist_vars)
-        new_df = self._derotate_df(mapper, levels, add_cols, dropna)
-
-        # new meta
-        new_meta = self._derotate_meta(mapper, exist_vars)
-
-        ds = DataSet('{}_derotated'.format(self.name))
-        ds.from_components(new_df, new_meta)
-        ds.path = self.path
-
-        # some recodes/edits
-        lev = ds._data[level]
-        ds.add_meta(level, 'single', level, levels[level])
-        ds._data[level] = lev
-
-        ds.add_meta('{}_levelled'.format(level), 'single', level,
-                    self.values(levels[level][0]))
-
-        for x, lev in enumerate(levels[level], 1):
-            rec = {y: {lev: y} for y in ds.codes('{}_levelled'.format(level))}
-            ds.recode('{}_levelled'.format(level), rec, intersect={level: x})
-
-        cols = (['@1', unique_key, level, '{}_levelled'.format(level)] +
-                levels[level] + [new_var.keys()[0] for new_var in mapper] +
-                self.unroll(other))
-        ds._data = ds._data[cols]
-
-        # save ``DataSet`` instance as json and csv
-        path_json = os.path.join(ds.path, ''.join([ds.name, '.json']))
-        path_csv = os.path.join(ds.path, ''.join([ds.name,  '.csv']))
-        ds.write_quantipy(path_json, path_csv)
-
-        return ds
-
-    # ------------------------------------------------------------------------
-    # DATA MANIPULATION/HANDLING
-    # ------------------------------------------------------------------------
-
-    def _logic_as_pd_expr(self, logic, prefix='default'):
-        """
-        """
-        varname = '{}__logic_dummy__'.format(prefix).replace(' ', '_')
-        category = [(1, 'select', logic)]
-        meta = (varname, 'single', '', category)
-        self.derive(*meta)
-        return '{}==1'.format(varname)
-
-    def make_dummy(self, var, partitioned=False):
-        if not self.is_array(var):
-            vartype = self._get_type(var)
-            if vartype == 'delimited set':
-                try:
-                    dummy_data = self[var].str.get_dummies(';')
-                except:
-                    dummy_data = self._data[[var]]
-                    dummy_data.columns = [0]
-                if self.meta is not None:
-                    var_codes = self._get_valuemap(var, non_mapped='codes')
-                    dummy_data.columns = [int(col) for col in dummy_data.columns]
-                    dummy_data = dummy_data.reindex(columns=var_codes)
-                    dummy_data.replace(np.NaN, 0, inplace=True)
-                if not self.meta:
-                    dummy_data.sort_values(axis=1, inplace=True)
-            else: # single, int, float data
-                dummy_data = pd.get_dummies(self[var])
-                if self.meta and not self._is_numeric(var):
-                    var_codes = self._get_valuemap(var, non_mapped='codes')
-                    dummy_data = dummy_data.reindex(columns=var_codes)
-                    dummy_data.replace(np.NaN, 0, inplace=True)
-                dummy_data.rename(
-                    columns={
-                        col: int(col)
-                        if float(col).is_integer()
-                        else col
-                        for col in dummy_data.columns
-                    },
-                    inplace=True)
-            if not partitioned:
-                return dummy_data
-            else:
-                return dummy_data.values, dummy_data.columns.tolist()
-        else: # array-type data
-            items = self.get_sources(var)
-            # items = self._get_itemmap(var, non_mapped='items')
-            if self._has_categorical_data(var):
-                codes = self._get_valuemap(var, non_mapped='codes')
-            else:
-                codes = []
-                for i in items:
-                    codes.extend(self._data[i].dropna().unique().tolist())
-                codes = sorted(list(set(codes)))
-            dummy_data = []
-            if any(self[i].dtype == 'object' for i in items):
-                for i in items:
-                    try:
-                        i_dummy = self[i].str.get_dummies(';')
-                        i_dummy.columns = [int(col) for col in i_dummy.columns]
-                        # dummy_data.append(i_dummy.reindex(columns=codes))
-                    except:
-                        i_dummy = self._data[[i]]
-                        i_dummy.columns = [0]
-                    dummy_data.append(i_dummy.reindex(columns=codes))
-            else:
-                for i in items:
-                    if codes:
-                        dummy_data.append(
-                            pd.get_dummies(self[i]).reindex(columns=codes))
-                    else:
-                        dummy_data.append(pd.get_dummies(self[i]))
-            dummy_data = pd.concat(dummy_data, axis=1)
-            if not partitioned:
-                return dummy_data
-            else:
-                return dummy_data.values, codes, items
-
-
-    # ------------------------------------------------------------------------
-    # BATCH HANDLERS
-    # ------------------------------------------------------------------------
-    @modify(to_list=['ci', 'weights', 'tests'])
-    def add_batch(self, name, ci=['c', 'p'], weights=None, tests=None):
+    @params(repeat=["name"], to_list=['ci', 'weights', 'tests'])
+    def add_batch(self, name, ci=['c', 'p'], weights=[], tests=[]):
         return qp.Batch(self, name, ci, weights, tests)
 
     def get_batch(self, name=None):
@@ -2854,7 +2650,7 @@ class DataSet(object):
             err = "'{}' is not a valid batch.".format(name)
             logger.error(err); raise KeyError(name)
 
-    @modify(to_list='batches')
+    @params(to_list='batches')
     def populate(self, batches='all', verbose=True):
         """
         Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
