@@ -40,3 +40,4 @@ docs/API/_templates/
 .cache
 .pytest_cache/*
 build
+.idea
