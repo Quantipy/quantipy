@@ -2536,7 +2536,6 @@ class Chain(object):
         if not self.painted: self.toggle_labels()
         return mapped
 
-    @lazy_property
     def _nested_y(self):
         return any('>' in v for v in self._y_keys)
 
