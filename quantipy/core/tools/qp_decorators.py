@@ -28,7 +28,7 @@ def _collect_args(all_args, keys, args, kwargs, nested=False, listed=True):
             values = kwargs.get(key, args[all_args.index(key)])
             if listed:
                 values = ensure_list(values)
-            collect["key"] = values
+            collect[key] = values
     return collect
 
 
@@ -70,7 +70,7 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
                         invalid.append(v)
         if invalid:
             raise KeyError(err.format(
-                obj.__class__.__name__), "', '".join(invalid))
+                obj.__class__.__name__, "', '".join(invalid)))
         return func(*args, **kwargs)
 
     @decorator
@@ -79,7 +79,7 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
         Verify that defined parameters are included columns in object (self).
         """
         all_args = getargspec(func)[0]
-        collect = _is_column + ["self"]
+        collect = is_column + ["self"]
         collected = _collect_args(all_args, collect, args, kwargs, False, True)
         obj = collected.pop("self")[0]
         columns = obj.columns
@@ -128,7 +128,7 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
         invalid = []
         for variables in collected.values():
             for var in variables:
-                if obj.is_categorical(var):
+                if not obj.is_categorical(var):
                     invalid.append(var)
         if invalid:
             raise KeyError(err.format("', '".join(invalid)))
@@ -178,17 +178,21 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
         """
         all_args = getargspec(func)[0]
         collect = text_key + ["self"]
-        collected = _collect_args(all_args, collect, args, kwargs, False, True)
-        obj = collected.pop("self")[0]
+        collected = _collect_args(all_args, collect, args, kwargs, False,
+                                  False)
+        obj = collected.pop("self")
         invalid = []
         for k, tks in collected.items():
             if tks == ["all"]:
                 collected[k] = obj.valid_tks
-            if not tks:
+            elif not tks:
                 collected[k] = obj.text_key
-            for tk in tks:
-                if tk not in obj.valid_tks:
-                    invalid.append(tk)
+            elif isinstance(tks, list):
+                for tk in collected[k]:
+                    if tk not in obj.valid_tks:
+                        invalid.append(tk)
+            elif tks not in obj.valid_tks:
+                invalid.append(tks)
         if invalid:
             err = "Not found in '{}.valid_tks': '{}'"
             raise ValueError(err.format(
@@ -214,7 +218,6 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
             func = _text_key(func)
         if to_list:
             func = _to_list(func)
-
         return func(*args, **kwargs)
 
     repeat = ensure_list(repeat)

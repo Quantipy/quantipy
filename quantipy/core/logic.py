@@ -1268,7 +1268,7 @@ def resolve_logic(series, logic, data):
         logical block.
     """
     if isinstance(logic, dict):
-        wildcard, logic = logic.keys()[0], logic.values()[0]
+        wildcard, logic = list(logic.keys())[0], list(logic.values())[0]
         if isinstance(logic, (str)):
             idx = data[data[wildcard] == logic].index
             vkey = logic

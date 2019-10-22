@@ -5,7 +5,7 @@ import os
 import re
 import sys
 import copy
-import ftfy
+# import ftfy
 import json
 import math
 import time
@@ -29,8 +29,7 @@ from difflib import (
 from itertools import (
     chain,
     combinations,
-    izip,
-    izip_longest,
+    zip_longest,
     product)
 
 from operator import (
@@ -38,7 +37,7 @@ from operator import (
     eq, ne,
     gt, ge,
     add, sub,
-    mul, div
+    mul, truediv
 )
 
 # -----------------------------------------------------------------------------

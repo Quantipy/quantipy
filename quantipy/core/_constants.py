@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 VALID_TKS = [
     "en-GB", "da-DK", "fi-FI", "nb-NO", "sv-SE", "de-DE", "fr-FR", "ar-AR",

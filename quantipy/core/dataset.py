@@ -3,27 +3,28 @@
 
 from ..__imports__ import *  # noqa
 
-from .io import (
-    quantipy_from_dimensions,
-    quantipy_from_ascribe,
-    parse_sav_file,
-    dimensions_from_quantipy,
-    save_sav
-)
+# from .io import (
+#     quantipy_from_dimensions,
+#     quantipy_from_ascribe,
+#     parse_sav_file,
+#     dimensions_from_quantipy,
+#     save_sav
+# )
 from .meta import Meta
 
+logger = get_logger(__name__)
 
 class DataSet(object):
     """
     A set of casedata ``pandas.DataFrame`` and meta data ``qp.Meta``.
     """
-    def __init__(self, name, meta, data):
+    def __init__(self, name, meta=None, data=None):
         self.name = name
         self.path = "."
-        if not data:
+        if data is None:
             data = pd.DataFrame()
         self._data = data
-        if not meta:
+        if meta is None:
             meta = Meta()
         self._meta = meta
         self._inherit_meta_properties()
@@ -60,13 +61,14 @@ class DataSet(object):
             name = name[1]
         else:
             sliced_insert = False
-        scalar_insert = isinstance(val, (int, float, str, unicode))
+        scalar_insert = isinstance(val, (int, float, str))
         if scalar_insert and not np.isnan(val):
-            valid_codes = self.codes(name)
-            if self.is_categorical(name) and val not in valid_codes:
-                err = "{} is undefined for '{}'! Valid: {}".format(
-                    val, name, self.codes(name))
-                logger.error(err); raise ValueError(err)
+            if self.is_categorical(name):
+                valid_codes = self.get_codes(name)
+                if val not in valid_codes:
+                    err = "{} is undefined for '{}'! Valid: {}".format(
+                        val, name, self.get_codes(name))
+                    logger.error(err); raise ValueError(err)
             if self.get_type(name) == 'delimited set':
                 val = '{};'.format(val)
         if sliced_insert:
@@ -75,11 +77,6 @@ class DataSet(object):
             self._data[name] = val
 
     def _inherit_meta_properties(self):
-        self.text_key = self._meta.text_key
-        self.valid_tks = self._meta.valid_tks
-        self.dimensions_comp = self._meta.dimensions_comp
-        self.dimensions_suffix = self._meta.dimensions_suffix
-
         self.masks = self._meta.masks
         self.columns = self._meta.columns
 
@@ -95,6 +92,38 @@ class DataSet(object):
 
         self.sets = self._meta.sets
         self.batches = self._meta.batches
+
+    @property
+    def text_key(self):
+        return self._meta.text_key
+
+    @text_key.setter
+    def text_key(self, value):
+        self._meta.text_key = value
+
+    @property
+    def valid_tks(self):
+        return self._meta.valid_tks
+
+    @valid_tks.setter
+    def valid_tks(self, value):
+        self._meta.valid_tks = value
+
+    @property
+    def dimensions_comp(self):
+        return self._meta.dimensions_comp
+
+    @dimensions_comp.setter
+    def dimensions_comp(self, value):
+        self._meta.dimensions_comp = value
+
+    @property
+    def dimensions_suffix(self):
+        return self._meta.dimensions_suffix
+
+    @dimensions_suffix.setter
+    def dimensions_suffix(self, value):
+        self._meta.dimensions_suffix = value
 
     def _inherit_meta_functions(self):
         # list variables
@@ -193,7 +222,10 @@ class DataSet(object):
         """
         Get a deep copy of the ``DataSet`` instance.
         """
-        return copy.deepcopy(self)
+        name = self.name
+        meta = self._meta.clone()
+        data = self._data.copy()
+        return DataSet.from_components(name, data, meta, self.text_key)
 
     def filter(self, condition, inplace=False):
         """
@@ -227,8 +259,8 @@ class DataSet(object):
         """
         ds = self if inplace else self.clone()
         ds._meta.subset(variables, from_set, inplace=True)
-        keep = ds.variables_from_set("data file")
-        drop = ds.unroll([col for col in ds._data.columns if col not in keep])
+        keep = ds.unroll(ds.variables_from_set("data file"))
+        drop = [col for col in ds._data.columns if col not in keep]
         ds._data.drop(drop, 1, inplace=True)
         if not inplace:
             return ds
@@ -262,7 +294,7 @@ class DataSet(object):
         data = load_csv(path_csv)
         dataset = cls(name, meta, data)
         dataset.path = path
-        self._verbose_io(name, path, "quantipy")
+        dataset._verbose_io(name, path, "quantipy")
         return dataset
 
     @classmethod
@@ -410,7 +442,7 @@ class DataSet(object):
         else:
             return copy.deepcopy(self._meta), self._data.copy()
 
-    @verify(text_keys='text_key')
+    @params(text_key='text_key')
     def to_dimensions(self, name=None, path=None, **kwargs):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
@@ -441,7 +473,7 @@ class DataSet(object):
             ds._meta, ds._data, path_mdd, path_ddf, text_key)
         self._verbose_io(name, path, "dimensions", False)
 
-    @verify(text_keys='text_key')
+    @params(text_key='text_key')
     def to_spss(self, name=None, path=None, **kwargs):
         """
         Convert the Quantipy DataSet into a SPSS .sav data file.
@@ -485,10 +517,11 @@ class DataSet(object):
     def _rename_blacklist_vars(self):
         blacklist_var = []
         for var in BLACKLIST_VARIABLES:
-            n_var = self.valid_var_name(var)
-            if not var == n_var:
-                self.rename(var, n_var)
-                blacklist_var.append([var, n_var])
+            if var in self:
+                n_var = self.valid_var_name(var)
+                if not var == n_var:
+                    self.rename(var, n_var)
+                    blacklist_var.append([var, n_var])
         if blacklist_var:
             msg = "Renamed blacklist variables:\n{}".format(
                 "\n".join(["-->".join(renamed) for renamed in blacklist_var]))
@@ -529,11 +562,11 @@ class DataSet(object):
         expected = self._data.columns.values.tolist()
         missing = [col for col in expected if col not in actual + ignore]
         if missing:
-            self.extend_set("data file", missing)
+            self.extend_set(missing, "data file")
 
     def _repair_one_cat_sets(self):
         for ds in self.delimited_sets:
-            if len(self.codes(ds)) == 1:
+            if len(self.get_codes(ds)) == 1:
                 self.convert(n, "single")
                 logger.info("Auto conversion of '{}' to single.".format(ds))
 
@@ -1054,7 +1087,7 @@ class DataSet(object):
         for x, source in enumerate(self.get_sources(name), 1):
             self.recode(new_name, {x: {source: codes}}, append=True)
 
-    @modify(to_list='name')
+    @params(repeat='name')
     def drop(self, name, ignore_items=False):
         """
         Drops variables from meta and data components of the ``DataSet``.
@@ -1076,7 +1109,7 @@ class DataSet(object):
         data_drop = [self.unroll(n) for n in names if not ignore_items]
         data.drop(data_drop, 1, inplace=True)
 
-    @modify(to_list=['copy_only', 'copy_not'])
+    @params(to_list=['copy_only', 'copy_not'])
     def copy(self, name, new_name=None, copy_data=True, slicer=None,
              copy_only=None, copy_not=None):
         """
@@ -1112,7 +1145,7 @@ class DataSet(object):
                 if self.is_categorical(n):
                     remove = [
                         code for code in self.codes_in_data(n)
-                        if code not in self.codes(n)]
+                        if code not in self.get_codes(n)]
                     if remove:
                         self[n].apply(lambda x: remove_codes(x, remove))
 
@@ -1202,7 +1235,7 @@ class DataSet(object):
             recode is performed.
         """
         if fillna and self.is_categorical(target):
-            if fillna not in self.codes(target):
+            if fillna not in self.get_codes(target):
                 err = "'{}' is not a valid code for {}".format(fillna, target)
                 logger.error(err); raise ValueError(err)
         if initialize is not None:
@@ -1317,7 +1350,7 @@ class DataSet(object):
         codes = self.get_codes(lvlname)
         max_code = len(codes)
         replace_codes = {}
-        mapped_codes = {c: [] for c in self.codes(name)}
+        mapped_codes = {c: [] for c in self.get_codes(name)}
 
         for no, source in sources:
             offset = (no - 1) * max_code
@@ -1606,7 +1639,7 @@ class DataSet(object):
         ds.add_meta(levelled, 'single', level, self.get_values(levels[0]))
 
         for x, lev in enumerate(levels, 1):
-            rec = {y: {lev: y} for y in ds.codes(levelled)}
+            rec = {y: {lev: y} for y in ds.get_codes(levelled)}
             ds.recode(levelled, rec, intersect={level: x})
 
         cols = ['@1', unique_key, level, levelled] + levels
@@ -1620,7 +1653,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # Converting
     # ------------------------------------------------------------------------
-    @verify(variables={'name': 'columns'})
+    @params(is_var=["name"])
     def convert(self, name, to):
         """
         Convert meta and case data between compatible variable types.
@@ -1710,7 +1743,7 @@ class DataSet(object):
         """
         Change type to ``single``.
         """
-        if self.is_delimited_set(name) and len(self.codes(name)) > 1:
+        if self.is_delimited_set(name) and len(self.get_codes(name)) > 1:
             err = "Cannot convert delimited set into single."
             logger.error(err); raise ValueError(err)
         if self.is_array(name):
@@ -1931,13 +1964,13 @@ class DataSet(object):
 
         org_wname = weight_name
         if report:
-            print engine.get_report()
-            print
+            print (engine.get_report())
+            # print
         if path_report:
             df = engine.get_report()
             full_file_path = '{} ({}).xlsx'.format(path_report, weight_name)
             df.to_excel(full_file_path)
-            print 'Weight report saved to:\n{}'.format(full_file_path)
+            print ('Weight report saved to:\n{}'.format(full_file_path))
         s_name = weight_scheme.name
         s_w_name = 'weights_{}'.format(s_name)
         if inplace:
@@ -1995,7 +2028,7 @@ class DataSet(object):
         self.recode(name, {0: {name: has_count(len(values) - 1)}})
         self.set_property(name, 'recoded_filter', True)
 
-    @modify(to_list=['logic'])
+    @params(to_list=['logic'])
     def extend_filter_var(self, name, logic, suffix=None):
         """
         Extend logic of an existing filter-variable.
@@ -2031,11 +2064,11 @@ class DataSet(object):
             f_name = name
         self.uncode(f_name, {0: {f_name: 0}})
         values = self._transform_filter_logics(
-            logic, max(self.codes(f_name)) + 1)
+            logic, max(self.get_codes(f_name)) + 1)
         self.extend_values(f_name, values)
         self.recode(f_name, {x: z for x, y, z in values})
         self.recode(
-            f_name, {0: {f_name: has_count(len(self.codes(f_name)) - 1)}})
+            f_name, {0: {f_name: has_count(len(self.get_codes(f_name)) - 1)}})
         text = '{} _ {}'.format(self.text(f_name), suffix)
         self.set_text(f_name, text)
 
@@ -2071,11 +2104,11 @@ class DataSet(object):
             raise KeyError('{} is no valid filter-variable.'.format(name))
         if 0 in values:
             raise ValueError('Cannot remove the 0-keep value from filter var')
-        elif len([x for x in self.codes(name) if x not in values]) <= 1:
+        elif len([x for x in self.get_codes(name) if x not in values]) <= 1:
             raise ValueError('Cannot remove all values from filter var.')
         self.uncode(name, {0: {name: 0}})
         self.remove_values(name, values)
-        self.recode(name, {0: {name: has_count(len(self.codes(name)) - 1)}})
+        self.recode(name, {0: {name: has_count(len(self.get_codes(name)) - 1)}})
 
     def manifest_filter(self, name):
         """
@@ -2099,7 +2132,6 @@ class DataSet(object):
             'logic': union([{f: 0} for f in filters])}
         self.add_filter_var(name, logic, True)
 
-    @modify(to_list=['name2'])
     @params(is_column=["name1", "name2"], to_list=['name2'])
     def compare_filter(self, name1, name2):
         """
@@ -2136,7 +2168,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
-    @modify(to_list=['vlist', 'fix'])
+    @params(to_list=['vlist', 'fix'])
     def align_order(self, vlist, align_against=None,
                     integrate_rc=(["_rc", "_rb"], True), fix=[]):
         """
@@ -2187,7 +2219,7 @@ class DataSet(object):
         new_vlist += miss
         return new_vlist
 
-    @modify(to_list='reposition')
+    @params(to_list='reposition')
     def order(self, new_order=None, reposition=None):
         """
         Set the global order of the DataSet variables collection.
@@ -2487,86 +2519,86 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # batch
     # ------------------------------------------------------------------------
-    @params(repeat=["name"], to_list=['ci', 'weights', 'tests'])
-    def add_batch(self, name, ci=['c', 'p'], weights=[], tests=[]):
-        return qp.Batch(self, name, ci, weights, tests)
+    # @params(repeat=["name"], to_list=['ci', 'weights', 'tests'])
+    # def add_batch(self, name, ci=['c', 'p'], weights=[], tests=[]):
+    #     return qp.Batch(self, name, ci, weights, tests)
 
-    def get_batch(self, name=None):
-        """
-        Get existing Batch instance from DataSet meta information.
+    # def get_batch(self, name=None):
+    #     """
+    #     Get existing Batch instance from DataSet meta information.
 
-        Parameters
-        ----------
-        name: str
-            Name of existing Batch instance.
-        """
-        if not name:
-            return [qp.Batch(self, b) for b in self.batches]
-        elif name in self.batches:
-            return qp.Batch(self, name)
-        else:
-            err = "'{}' is not a valid batch.".format(name)
-            logger.error(err); raise KeyError(name)
+    #     Parameters
+    #     ----------
+    #     name: str
+    #         Name of existing Batch instance.
+    #     """
+    #     if not name:
+    #         return [qp.Batch(self, b) for b in self.batches]
+    #     elif name in self.batches:
+    #         return qp.Batch(self, name)
+    #     else:
+    #         err = "'{}' is not a valid batch.".format(name)
+    #         logger.error(err); raise KeyError(name)
 
-    @params(to_list='batches')
-    def populate(self, batches='all', verbose=True):
-        """
-        Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
+    # @params(to_list='batches')
+    # def populate(self, batches='all', verbose=True):
+    #     """
+    #     Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
 
-        Parameters
-        ----------
-        batches: str/ list of str
-            Name(s) of ``qp.Batch`` instances that are used to populate the
-            ``qp.Stack``.
+    #     Parameters
+    #     ----------
+    #     batches: str/ list of str
+    #         Name(s) of ``qp.Batch`` instances that are used to populate the
+    #         ``qp.Stack``.
 
-        Returns
-        -------
-        qp.Stack
-        """
-        dk = self.name
-        meta = self._meta
-        data = self._data
-        stack = Stack(name='aggregations', add_data={dk: (data, meta)})
-        batches = stack._check_batches(dk, batches)
-        for name in batches:
-            batch = meta['sets']['batches'][name]
-            xys = batch['x_y_map']
-            fs = batch['x_filter_map']
-            fy = batch['y_filter_map']
-            my = batch['yks']
-            total_len = len(xys) + len(batch['y_on_y'])
-            for idx, xy in enumerate(xys, start=1):
-                x, y = xy
-                if x == '@':
-                    if fs[y[0]] is None:
-                        fi = 'no_filter'
-                    else:
-                        fi = {fs[y[0]]: {fs[y[0]]: 0}}
-                    stack.add_link(dk, fi, x='@', y=y)
-                else:
-                    if fs[x] is None:
-                        fi = 'no_filter'
-                    else:
-                        fi = {fs[x]: {fs[x]: 0}}
-                    stack.add_link(dk, fi, x=x, y=y)
-                if verbose:
-                    done = float(idx) / float(total_len) * 100
-                    print '\r',
-                    time.sleep(0.01)
-                    print 'Batch [{}]: {} %'.format(name, round(done, 1)),
-                    sys.stdout.flush()
-            for idx, y_on_y in enumerate(batch['y_on_y'], len(xys) + 1):
-                if fy[y_on_y] is None:
-                    fi = 'no_filter'
-                else:
-                    fi = {fy[y_on_y]: {fy[y_on_y]: 1}}
-                stack.add_link(dk, fi, x=my[1:], y=my)
-                if verbose:
-                    done = float(idx) / float(total_len) * 100
-                    print '\r',
-                    time.sleep(0.01)
-                    print 'Batch [{}]: {} %'.format(name, round(done, 1)),
-                    sys.stdout.flush()
-            if verbose:
-                print '\n'
-        return stack
+    #     Returns
+    #     -------
+    #     qp.Stack
+    #     """
+    #     dk = self.name
+    #     meta = self._meta
+    #     data = self._data
+    #     stack = Stack(name='aggregations', add_data={dk: (data, meta)})
+    #     batches = stack._check_batches(dk, batches)
+    #     for name in batches:
+    #         batch = meta['sets']['batches'][name]
+    #         xys = batch['x_y_map']
+    #         fs = batch['x_filter_map']
+    #         fy = batch['y_filter_map']
+    #         my = batch['yks']
+    #         total_len = len(xys) + len(batch['y_on_y'])
+    #         for idx, xy in enumerate(xys, start=1):
+    #             x, y = xy
+    #             if x == '@':
+    #                 if fs[y[0]] is None:
+    #                     fi = 'no_filter'
+    #                 else:
+    #                     fi = {fs[y[0]]: {fs[y[0]]: 0}}
+    #                 stack.add_link(dk, fi, x='@', y=y)
+    #             else:
+    #                 if fs[x] is None:
+    #                     fi = 'no_filter'
+    #                 else:
+    #                     fi = {fs[x]: {fs[x]: 0}}
+    #                 stack.add_link(dk, fi, x=x, y=y)
+    #             if verbose:
+    #                 done = float(idx) / float(total_len) * 100
+    #                 print '\r',
+    #                 time.sleep(0.01)
+    #                 print 'Batch [{}]: {} %'.format(name, round(done, 1)),
+    #                 sys.stdout.flush()
+    #         for idx, y_on_y in enumerate(batch['y_on_y'], len(xys) + 1):
+    #             if fy[y_on_y] is None:
+    #                 fi = 'no_filter'
+    #             else:
+    #                 fi = {fy[y_on_y]: {fy[y_on_y]: 1}}
+    #             stack.add_link(dk, fi, x=my[1:], y=my)
+    #             if verbose:
+    #                 done = float(idx) / float(total_len) * 100
+    #                 print '\r',
+    #                 time.sleep(0.01)
+    #                 print 'Batch [{}]: {} %'.format(name, round(done, 1)),
+    #                 sys.stdout.flush()
+    #         if verbose:
+    #             print '\n'
+    #     return stack

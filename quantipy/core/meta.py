@@ -1,6 +1,7 @@
 
 from ..__imports__ import *  # noqa
 
+logger = get_logger(__name__)
 
 class Meta(dict):
 
@@ -74,15 +75,15 @@ class Meta(dict):
 
     @property
     def columns(self):
-        return self["columns"].keys()
+        return list(self["columns"].keys())
 
     @property
     def masks(self):
-        return self["masks"].keys()
+        return list(self["masks"].keys())
 
     @property
     def sets(self):
-        return self["sets"].keys()
+        return list(self["sets"].keys())
 
     @property
     def singles(self):
@@ -402,9 +403,12 @@ class Meta(dict):
         Get full meta info. Pointers are replaced with their spotted location.
         """
         if isinstance(item, (list, tuple, set)):
-            for x, i in enumerate(item):
-                item[x] = self.emulate_meta(i)
-            return item
+            nitem = [self.emulate_meta(i) for i in item]
+            if isinstance(item, tuple):
+                nitem = tuple(nitem)
+            if isinstance(item, set):
+                nitem = set(nitem)
+            return nitem
         elif isinstance(item, dict):
             for k, i in item.items():
                 item[k] = self.emulate_meta(i)
@@ -475,7 +479,8 @@ class Meta(dict):
         column = self.start_column(name, qtype, label, text_key, values,
                                    prop={'created': True})
         self["columns"][name] = column
-        self.extend_set(name)
+        if not name == "@1":
+            self.extend_set(name)
 
     def _add_array(name, qtype, label, items, categories, text_key):
         """
@@ -532,7 +537,8 @@ class Meta(dict):
                 obj.pop(var, None)
                 for key in obj:
                     remove_loop(obj[key], var)
-
+        if name == "@1":
+            return None
         if self.is_array_item(name):
             err = "Cannot drop isolated array items!"
             logger.error(err); raise ValueError(err)
@@ -674,9 +680,9 @@ class Meta(dict):
         if isinstance(name, list):
             return all(self._check_type(n, checktype) for n in name)
         if self.is_array(name):
-            return self.get_subtype(name) in [checktype]
+            return self.get_subtype(name) in ensure_list(checktype)
         else:
-            return self.get_type(name) in [checktype]
+            return self.get_type(name) in ensure_list(checktype)
 
     @params(is_var=["name"])
     def is_single(self, name):
@@ -731,7 +737,7 @@ class Meta(dict):
     # -------------------------------------------------------------------------
     @params(to_list=["name"])
     def var_exists(self, name):
-        variables = self.variables()
+        variables = self.masks + self.columns
         return all(n in variables for n in name)
 
     @params(to_list=["blacklist"])
@@ -1175,7 +1181,7 @@ class Meta(dict):
             if v not in exclude:
                 self.extend_set(v, setname)
 
-    @params(is_var=["name"])
+    @params(is_var=["name"], repeat=["name"])
     def extend_set(self, name, setname="data file", idx=-1):
         collection = "masks" if self.is_array(name) else "columns"
         ref = "{}@{}".format(collection, name)
@@ -1367,13 +1373,13 @@ class Meta(dict):
             else:
                 n_fix = [f for f in fix if f in self.get_codes(name)]
             rule = {
-                "sortx":
+                "sortx": {
                     "ascending": ascending,
                     "within": within,
                     "between": between,
                     "fixed": n_fix,
                     "sort_on": on,
-                    "with_weight": sort_by_weight}
+                    "with_weight": sort_by_weight}}
             self._set_rules(name, rule, "x")
 
     @params(is_var=["name"], repeat=["name", "axis"], to_list=["hide"],
@@ -1436,7 +1442,7 @@ class Meta(dict):
         """
         if self.is_array_item(name):
             err = "Cannot slice on single array items."
-            logger.error(err); raise ValueError(err)et_codes(name)
+            logger.error(err); raise ValueError(err)
         n_slice = [h for h in hide if h in codes]
         if len(n_slice) == 0:
             err = "Cannot hide all codes."
@@ -1541,11 +1547,11 @@ class Meta(dict):
             (val["value"], self._extract_text(val["text"], text_key, axis))
             for val in values]
 
-    @params(is_var=["name"], is_cat=["name"])
+    @params(is_var=["name"])
     def _del_values(self, name):
         if self.is_array(name):
             self["masks"][name].pop("values", None)
-            self["lib"]["values"].pop(mask, None)
+            self["lib"]["values"].pop(name, None)
             for source in self.get_sources(name):
                 self._del_values(source)
         elif not self.is_array_item(name):
@@ -2169,7 +2175,7 @@ class Meta(dict):
         Running recursively through the meta dict and apply func.
         """
         if isinstance(obj, dict):
-            for k, v in obj.keys():
+            for k, v in obj.items():
                 if k == "text" and isinstance(v, dict):
                     func(v, **kwargs)
                 elif k not in ["sets", "ddf"]:
@@ -2439,8 +2445,8 @@ class Meta(dict):
                 to_keep = "mask"
             else:
                 to_keep = "items"
-                if self._is_array_item(var):
-                    parent = self._maskname_from_item(var)
+                if self.is_array_item(var):
+                    parent = self.get_parent(var)
                     if parent not in ignore_arrays:
                         var = parent
                         to_keep = "mask"
@@ -2512,7 +2518,7 @@ class Meta(dict):
             self["columns"][col]["name"] = col
             # verify properties
             if "properties" not in self["columns"][col]:
-                self["masks"][mask]["properties"] = {}
+                self["columns"][col]["properties"] = {}
             if col in parents:
                 # verify parent and values for array items
                 mask = parents[col]
@@ -2524,9 +2530,10 @@ class Meta(dict):
             else:
                 # verify parent and values for non-array items
                 self["columns"][col]["parent"] = {}
-                values = self.emulate_meta(self.get_values(col))
-                if self.is_categorical(col) and isinstance(values, str):
-                    self["masks"][col]["values"] = values
+                if self.is_categorical(col):
+                    if isinstance(values, str):
+                        values = self.emulate_meta(self.get_values(col))
+                        self["masks"][col]["values"] = values
                 else:
                     self._del_values(col)
 

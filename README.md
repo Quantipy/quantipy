@@ -3,13 +3,13 @@
 Quantipy is an open-source data processing, analysis and reporting software project that builds on the excellent pandas and numpy libraries. Aimed at people data, Quantipy offers support for native handling of special data types like multiple choice variables, statistical analysis using case or observation weights, DataFrame metadata and pretty data exports.
 
 ### Key features
-  - Reads plain .csv, converts from Dimensions, SPSS, Decipher, or Ascribe
+  - Reads plain .csv, converts from Dimensions, SPSS, Decipher or Ascribe
   - Open metadata format to describe and manage datasets
   - Powerful, metadata-driven cleaning, editing, recoding and transformation of datasets
   - Computation and assessment of data weights
   - Easy-to-use analysis interface
   - Automated data aggregation using ``Batch`` defintions
-  - Structured analysis and reporting via Chain and Cluster containers
+  - Structured analysis and reporting via Chain and Stack containers
   - Exports to SPSS, Dimensions ddf/mdd, MS Excel and Powerpoint with flexible layouts and various options
 
 #### Contributors
@@ -20,10 +20,10 @@ Quantipy is an open-source data processing, analysis and reporting software proj
 [View the documentation at readthedocs.org](http://quantipy.readthedocs.io/)
 
 ### Required libraries before installation
-We recommend installing [Anaconda for Python 2.7](http://continuum.io/downloads)
+We recommend installing [Anaconda for Python 3.6.9](http://continuum.io/downloads)
 which will provide most of the required libraries and an easy means of keeping
 them up-to-date over time.
-  - Python 2.7.8
+  - Python 3.6.9
   - Numpy 1.11.3
   - Pandas 0.19.2
 
@@ -34,7 +34,7 @@ them up-to-date over time.
 Dependencies numpy and scipy are handled by conda.
 Create a virtual environment:
 ```python
-conda create -n envqp python=2.7 numpy==1.11.3 scipy==0.18.1
+conda create -n envqp python=3.* numpy==1.11.3 scipy==0.18.1
 ```
 Install in editable mode:
 ```python
@@ -46,7 +46,7 @@ Dependencies numpy and scipy are handled in the installation.
 
 Create a virtual environment:
 ```python
-conda create -n envqp python=2.7
+conda create -n envqp python=3.6.9
 ```
 Install in editable mode:
 ```python
