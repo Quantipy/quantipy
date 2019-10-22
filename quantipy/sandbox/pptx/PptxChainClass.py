@@ -592,6 +592,7 @@ class PptxChain(object):
 
     def __init__(self, chain, is_varname_in_qtext=True, crossbreak=None, base_type='weighted', decimals=2, verbose=True):
 
+        chain = self._strip_nested(chain)
         self._chart_type = None
         self._sig_test = None # type: list # is updated by ._select_crossbreak()
         self.crossbreak_qtext = None # type: str # is updated by ._select_crossbreak()
@@ -649,6 +650,34 @@ class PptxChain(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def _strip_nested(self, chain):
+
+        def get_drop_cols(cols):
+            outer_cols = cols.get_level_values(0).tolist()
+            return uniquify([x for x in outer_cols[1:] if not x.startswith('#pad')])
+
+        if chain.array_style in [0,1]:
+            return chain
+
+        if chain._nested_y: # contains nested crossbreaks
+            cdf = chain.dataframe
+            try:
+                cdf.columns.get_level_values('Values')
+            except KeyError:
+                # drop nested columns and the levels used
+                drop_list = get_drop_cols(cdf.columns)
+                cdf.drop(drop_list, axis=1, level=0, inplace=True)
+                cdf.columns = cdf.columns.droplevel([0, 1])
+                # need to fix not painted columns too
+                drop_list = get_drop_cols(chain._columns)
+                chain._columns = chain._columns.drop(drop_list)
+                chain._columns = chain._columns.droplevel([0, 1])
+                chain = self._strip_nested(chain)
+            else:
+                chain._y_keys = [x for x in chain._y_keys if '>' not in x]
+
+        return chain
 
     @property
     def sig_test(self):
