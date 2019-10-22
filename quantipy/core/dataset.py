@@ -618,7 +618,7 @@ class DataSet(object):
                 hide.append(i)
         if hide:
             codes = self.get_codes(v)
-            hide = [h for h in hide if not h == 'All']
+            hide = [h for h in hide if not h == 'All' and h in codes]
             self.set_hiding(v, hide, axis)
 
     @params(is_var=["name"])
@@ -811,8 +811,7 @@ class DataSet(object):
             slicer = self.take({name: has_any(codes)})
         return slicer
 
-    @modify(to_list='codes')
-    @verify(variables={'name': 'both'})
+    @params(is_var=["name"], to_list=["codes"])
     def all(self, name, codes):
         """
         Return a logical has_all() slicer for the passed codes.
@@ -879,7 +878,7 @@ class DataSet(object):
             add_data={"ct": {"meta": ds._meta, "data": ds._data}})
         return stack.crosstab(x, y, f, **kwargs)
 
-        @params(repeat=["name"])
+    @params(repeat=["name"])
     def _add_data_column(self, name, replace=True):
         if replace or name not in self._data.columns:
             if self.is_delimited_set(name):
@@ -889,7 +888,7 @@ class DataSet(object):
 
     @params(to_list=['categories', 'items'], repeat=["name"])
     def add_meta(self, name, qtype, label, categories=None, items=None,
-        text_key=None, replace=True):
+                 text_key=None, replace=True):
         """
         Create and insert a well-formed meta object.
 
@@ -1010,7 +1009,7 @@ class DataSet(object):
             n_name = '{}_{}'.format(name, _n)
             n_label = '{} ({})'.format(self.text(name), _n)
             self.add_meta(n_name, 'single', n_label, values)
-            n_vector = self[name].str.split(';', n=_n, expand=True)[_n-1]
+            n_vector = self[name].str.split(';', n=_n, expand=True)[_n - 1]
             self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
             created.append(n_name)
         if others:
@@ -1127,12 +1126,10 @@ class DataSet(object):
             logger.error(err); raise ValueError(err)
         sources = self.get_sources(source)
         targets = self.get_sources(target)
-        if slicer:
-            mask = self.take(slicer)
         if source_items:
-            sources = [sources[i-1] for i in source_items]
+            sources = [sources[i - 1] for i in source_items]
         if target_items:
-            targets = [targets[i-1] for i in target_items]
+            targets = [targets[i - 1] for i in target_items]
         for s, t in zip(sources, targets):
             self[self.take(slicer), t] = self[s]
 
@@ -1161,7 +1158,7 @@ class DataSet(object):
         text_key : str, default None == self.text_key
             Text key for text-based label information.
         """
-        if not self._verify_new_name(new_name):
+        if not self._meta._verify_new_name(new_name):
             err = "Cannot create '{}'. Weak duplicates exist: {}"
             err = err.format(new_name, self.get_weak_dupes(new_name))
             logger.error(err); raise ValueError(err)
@@ -1219,7 +1216,7 @@ class DataSet(object):
                 self._data[target] = self._data[initialize].copy()
             elif np.isnan(initialize):
                 self._add_data_column(target)
-        index_mapper = self._index_mapper(mapper, intersect)
+        mapper = self._index_mapper(mapper, intersect)
         self._recode_from_index_mapper(target, mapper)
         if fillna:
             self[self.take({target: has_count(0)}), target] = fillna
@@ -1245,7 +1242,7 @@ class DataSet(object):
             self[target][index] = self[target][index].apply(
                 lambda x: remove_codes(x, [code]))
 
-    def interlock(self, name, label, variables, val_text_sep = '/'):
+    def interlock(self, name, label, variables, val_text_sep='/'):
         """
         Build a new category-intersected variable from >=2 incoming variables.
 
@@ -1258,8 +1255,7 @@ class DataSet(object):
         variables : list of >= 2 str or dict (mapper)
             The column names of the variables that are feeding into the
             intersecting recode operation. Or dicts/mapper to create temporary
-            variables for interlock. Can also be a mix of str and dict. Example:
-
+            variables for interlock. Can also be a mix of str and dict.
             >>> ['gender',
             ...  {'agegrp': [(1, '18-34', {'age': frange('18-34')}),
             ...              (2, '35-54', {'age': frange('35-54')}),
@@ -1297,15 +1293,15 @@ class DataSet(object):
         else:
             qtype = 'single'
 
-        codes = [self.get_codes(v) for v in i_variables]
-        texts = [self.get_value_texts(v) for v in i_variables]
+        codes = [self.get_codes(iv) for iv in i_variables]
+        texts = [self.get_value_texts(iv) for iv in i_variables]
         zipped = zip(list(product(*codes)), list(product(*texts)))
         categories = []
         cat_id = 0
         for codes, texts in zipped:
             cat_id += 1
             cat_label = val_text_sep.join(texts)
-            rec = [{v: [c]} for v, c in zip(i_variables, codes)]
+            rec = [{iv: [c]} for iv, c in zip(i_variables, codes)]
             rec = intersection(rec)
             categories.append((cat_id, cat_label, rec))
         self.derive(name, qtype, label, categories)
@@ -1324,8 +1320,8 @@ class DataSet(object):
         mapped_codes = {c: [] for c in self.codes(name)}
 
         for no, source in sources:
-            offset = (no-1) * max_code
-            new_codes = frange('{}-{}'.format((offset + 1), (offset + max_code)))
+            offset = (no - 1) * max_code
+            new_codes = frange('{}-{}'.format(offset + 1, offset + max_code))
             replace_codes[source] = dict(zip(codes, new_codes))
 
         for source, codes in replace_codes.items():
@@ -1451,8 +1447,7 @@ class DataSet(object):
             else:
                 r = str(band)
                 franges.append([idx, lab or r, {name: [band]}])
-        self.derive(new_name, 'single', label, franges,
-                                text_key=text_key)
+        self.derive(new_name, 'single', label, franges, text_key=text_key)
 
     @params(to_list=["variables"])
     def to_delimited_set(self, name, label, variables, from_dichotomous=True,
@@ -1614,10 +1609,8 @@ class DataSet(object):
             rec = {y: {lev: y} for y in ds.codes(levelled)}
             ds.recode(levelled, rec, intersect={level: x})
 
-        cols = (
-            ['@1', unique_key, level, levelled] + levels +
-            [new_var.keys()[0] for new_var in mapper] +
-            self.unroll(other))
+        cols = ['@1', unique_key, level, levelled] + levels
+        cols += [new_var.keys()[0] for new_var in mapper] + self.unroll(other)
         ds._data = ds._data[cols]
 
         # save ``DataSet`` instance as json and csv
@@ -1855,7 +1848,7 @@ class DataSet(object):
                     try:
                         i_dummy = self[i].str.get_dummies(';')
                         i_dummy.columns = [int(col) for col in i_dummy.columns]
-                    except:
+                    except:  # noqa
                         i_dummy = self._data[[i]]
                         i_dummy.columns = [0]
                     dummy_data.append(i_dummy.reindex(columns=codes))
@@ -1875,14 +1868,14 @@ class DataSet(object):
             if self.is_delimited_set(name):
                 try:
                     dummy_data = self[name].str.get_dummies(';')
-                except:
+                except:  # noqa
                     dummy_data = self._data[[name]]
                     dummy_data.columns = [0]
                 codes = self.get_codes(name)
                 dummy_data.columns = [int(col) for col in dummy_data.columns]
                 dummy_data = dummy_data.reindex(columns=codes)
                 dummy_data.replace(np.NaN, 0, inplace=True)
-            else: # single, int, float data
+            else:  # single, int, float data
                 dummy_data = pd.get_dummies(self[name])
                 if self.is_single(name):
                     codes = self.get_codes(name)
@@ -1959,87 +1952,190 @@ class DataSet(object):
             return wdf.rename(columns={s_w_name: org_wname})
 
     # ------------------------------------------------------------------------
+    # Filters
+    # ------------------------------------------------------------------------
+    @params(to_list=['logic'])
+    def add_filter_var(self, name, logic, overwrite=False):
+        """
+        Create filter-var, that allows index slicing using ``manifest_filter``
+
+        Parameters
+        ----------
+        name: str
+            Name and label of the new filter-variable, which gets also listed
+            in DataSet.filters
+        logic: complex logic/ str, list of complex logic/ str
+            Logic to keep cases.
+            Complex logic should be provided in form of:
+            ```
+            {
+            'label': 'any text',
+            'logic': {var: keys} / intersection/ ....
+            }
+            ```
+            If a str (column-name) is provided, automatically a logic is
+            created that keeps all cases which are not empty for this column.
+            If logic is a list, each included list-item becomes a category of
+            the new filter-variable and all cases are kept that satisfy all
+            conditions (intersection)
+        overwrite: bool, default False
+            Overwrite an already existing filter-variable.
+        """
+        if name in self and overwrite:
+            self.drop(name)
+        if not self._meta._verify_new_name(name):
+            err = "Cannot create '{}'. Weak duplicates exist: {}"
+            err = err.format(name, self.get_weak_dupes(name))
+            logger.error(err); raise ValueError(err)
+        values = [(0, 'keep', None)]
+        values += self._transform_filter_logics(logic, 1)
+        self.add_meta(
+            name, 'delimited set', name, [(x, y) for x, y, z in values])
+        self.recode(name, {x: z for x, y, z in values[1:]})
+        self.recode(name, {0: {name: has_count(len(values) - 1)}})
+        self.set_property(name, 'recoded_filter', True)
+
+    @modify(to_list=['logic'])
+    def extend_filter_var(self, name, logic, suffix=None):
+        """
+        Extend logic of an existing filter-variable.
+
+        Parameters
+        ----------
+        name: str
+            Name of the existing filter variable.
+        logic: (list of) complex logic/ str
+            Additional logic to keep cases (intersection with existing logic).
+            Complex logic should be provided in form of:
+            ```
+            {
+            'label': 'any text',
+            'logic': {var: keys} / intersection/ ....
+            }
+            ```
+        suffix: str, default None
+            Addition to the filter-name to create a new filter. If it is None
+            the existing filter-variable is overwritten.
+        """
+        if not self.is_filter(name):
+            err = '{} is no valid filter-variable.'.format(name)
+            logger.error(err); raise ValueError(err)
+        if suffix:
+            f_name = '{}_{}'.format(name, suffix)
+            if not self._meta._verify_new_name(f_name):
+                err = "Cannot create '{}'. Weak duplicates exist: {}"
+                err = err.format(f_name, self.get_weak_dupes(f_name))
+                logger.error(err); raise ValueError(err)
+            self.copy(name, f_name)
+        else:
+            f_name = name
+        self.uncode(f_name, {0: {f_name: 0}})
+        values = self._transform_filter_logics(
+            logic, max(self.codes(f_name)) + 1)
+        self.extend_values(f_name, values)
+        self.recode(f_name, {x: z for x, y, z in values})
+        self.recode(
+            f_name, {0: {f_name: has_count(len(self.codes(f_name)) - 1)}})
+        text = '{} _ {}'.format(self.text(f_name), suffix)
+        self.set_text(f_name, text)
+
+    def _transform_filter_logics(self, logic, start):
+        if not logic:
+            logic = ['@1']
+        values = []
+        for x, log in enumerate(logic, start):
+            if isinstance(log, basestring):
+                if log not in self:
+                    raise KeyError("{} is not included in Dataset".format(log))
+                val = (x, '{} not empty'.format(log), {log: not_count(0)})
+            elif isinstance(log, dict):
+                if not ('label' in log and 'logic' in log):
+                    log = {'label': str(x), 'logic': log}
+                val = (x, log['label'], log['logic'])
+            else:
+                try:
+                    log[0].__name__ in ['_intersection', '_union']
+                    val = (x, str(x), log)
+                except IndexError:
+                    msg = 'Invalid logic'
+                    raise TypeError(msg)
+            values.append(val)
+        return values
+
+    @params(to_list=['values'])
+    def reduce_filter_var(self, name, values):
+        """
+        Remove values from filter-variables and recalculate the filter.
+        """
+        if not self.is_filter(name):
+            raise KeyError('{} is no valid filter-variable.'.format(name))
+        if 0 in values:
+            raise ValueError('Cannot remove the 0-keep value from filter var')
+        elif len([x for x in self.codes(name) if x not in values]) <= 1:
+            raise ValueError('Cannot remove all values from filter var.')
+        self.uncode(name, {0: {name: 0}})
+        self.remove_values(name, values)
+        self.recode(name, {0: {name: has_count(len(self.codes(name)) - 1)}})
+
+    def manifest_filter(self, name):
+        """
+        Get index slicer from filter-variables.
+
+        Parameters
+        ----------
+        name: str
+            Name of the filter_variable.
+        """
+        if not self.is_filter(name):
+            raise KeyError('{} is no valid filter-variable.'.format(name))
+        return self.take(name)
+
+    @params(to_list="filters")
+    def merge_filter(self, name, filters):
+        if not all(f in self.filters() for f in filters):
+            raise KeyError("Not all included names are valid filters.")
+        logic = {
+            'label': 'merged filter logics',
+            'logic': union([{f: 0} for f in filters])}
+        self.add_filter_var(name, logic, True)
+
+    @modify(to_list=['name2'])
+    @params(is_column=["name1", "name2"], to_list=['name2'])
+    def compare_filter(self, name1, name2):
+        """
+        Show if filters result in the same index.
+
+        Parameters
+        ----------
+        name1: str
+            Name of the first filter variable
+        name2: str/ list of st
+            Name(s) of the filter variable(s) to compare with.
+        """
+        if not all(self.is_filter(f) for f in [name1] + name2):
+            raise ValueError('Can only compare filter variables')
+        equal = True
+        f0 = self.manifest_filter(name1).tolist()
+        for f in name2:
+            if not f0 == self.manifest_filter(f).tolist():
+                equal = False
+        return equal
+
+    @params(to_list=["name2"])
+    def is_subfilter(self, name1, name2):
+        """
+        Verify if index of name2 is part of the index of name1.
+        """
+        idx = self.manifest_filter(name1).tolist()
+        included = True
+        for n in name2:
+            if [i for i in self.manifest_filter(n).tolist() if i not in idx]:
+                included = False
+        return included
+
+    # ------------------------------------------------------------------------
     # lists/ sets of variables/ data file items
     # ------------------------------------------------------------------------
-    def _apply_order(self, variables):
-        # set order of 'data file' items listing
-        datafile_items = self._variables_to_set_format(variables)
-        self._meta['sets']['data file']['items'] = datafile_items
-        # set pd.DataFrame column order
-        column_order = self.unroll(variables)
-        self._data = self._data[column_order]
-        return None
-
-    def _mapped_by_substring(self):
-        suffixed = {}
-        suffixed_variables = self.find()
-        if suffixed_variables:
-            for sv in suffixed_variables:
-                for suffix in VAR_SUFFIXES:
-                    if suffix in sv:
-                        origin = sv.split(suffix)[0]
-
-                        # test name...
-                        origin_res = self.resolve_name(origin)
-                        if not origin_res:
-                            origin_res = origin
-                        if isinstance(origin_res, list):
-                            if len(origin_res) > 1:
-                                msg = "Unable to regroup to {}, ".format(origin)
-                                msg += "found weak duplicate derived names:\n"
-                                msg += "{}".format(origin_res)
-                                warnings.warn(msg)
-                                origin_res = origin
-                            else:
-                                origin_res = origin_res[0]
-
-                        if not origin_res in suffixed:
-                            suffixed[origin_res] = [sv]
-                        else:
-                            suffixed[origin_res].append(sv)
-        return suffixed
-
-    def _mapped_by_meta(self):
-        rec_views = {}
-        for v in self.variables():
-            origin = self.get_property(v, 'recoded_net')
-            if origin:
-                if not origin in rec_views:
-                    rec_views[origin] = [v]
-                else:
-                    rec_views[origin].append(v)
-        return rec_views
-
-    def _map_to_origins(self):
-        by_origins = self._mapped_by_substring()
-        recoded_views = self._mapped_by_meta()
-        varlist = self.variables()
-        for var in varlist:
-            if var in recoded_views:
-                if not var in by_origins:
-                    by_origins[var] = recoded_views[var]
-                else:
-                    for recoded_view in recoded_views[var]:
-                        if recoded_view not in by_origins[var]:
-                            by_origins[var].append(recoded_view)
-        for k, v in by_origins.items():
-            if not k in varlist:
-                del by_origins[k]
-                if not v[0] in varlist:
-                    by_origins[v[0]] = v[1:]
-        sort_them = []
-        for k, v in by_origins.items():
-            sort_them.append(k)
-            sort_them.extend(v)
-        grouped = []
-        for v in varlist:
-            if v in by_origins:
-                grouped.append(v)
-                grouped.extend(by_origins[v])
-            else:
-                if not v in sort_them: grouped.append(v)
-        return grouped
-
     @modify(to_list=['vlist', 'fix'])
     def align_order(self, vlist, align_against=None,
                     integrate_rc=(["_rc", "_rb"], True), fix=[]):
@@ -2092,274 +2188,36 @@ class DataSet(object):
         return new_vlist
 
     @modify(to_list='reposition')
-    def order(self, new_order=None, reposition=None, regroup=False):
+    def order(self, new_order=None, reposition=None):
         """
         Set the global order of the DataSet variables collection.
-
-        The global order of the DataSet is reflected in the data component's
-        pd.DataFrame.columns order and the variable references in the meta
-        component's 'data file' items.
 
         Parameters
         ----------
         new_order : list
             A list of all DataSet variables in the desired order.
-        reposition : (List of) dict
-            Each dict maps one or a list of variables to a reference variable
-            name key. The mapped variables are moved before the reference key.
+        reposition : dict
+            mapping of anchor and items to include. Items are added before the
+            anchor.
         regroup : bool, default False
             Attempt to regroup non-native variables (i.e. created either
             manually with ``add_meta()``, ``recode()``, ``derive()``, etc.
             or automatically by manifesting ``qp.View`` objects) with their
             originating variables.
-
-        Returns
-        -------
-        None
         """
-        if (bool(new_order) + bool(reposition) + regroup) > 1:
-            err = "Can only either apply ``new_order``, ``reposition`` or "
-            err += "``regroup`` variables, not perform multiple operations at once."
-            raise ValueError(err)
+        if new_order and reposition:
+            err = "Can only either apply ``new_order`` or ``reposition``"
+            logger.error(err); raise ValueError(err)
         if new_order:
-            if not sorted(self._variables_from_set('data file')) == sorted(new_order):
+            if not sorted(self.variables_from_set()) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
-                raise ValueError(err)
-            check = new_order
+                logger.error(err); raise ValueError(err)
+            self.create_set("data file", include=new_order, overwrite=True)
         elif reposition:
-            check = []
-            for r in reposition:
-                check.extend(list(r.keys() + r.values()))
-        elif regroup:
-            new_order = self._map_to_origins()
-            check = new_order
-        else:
-            err = "No ``order`` operation provided, select one of "
-            err += "``new_order``, ``regroup``, ``reposition``."
-            raise ValueError(err)
-        if not all(self.var_exists(v) for v in check):
-            err = "At least one variable named in ordering does not exist."
-            raise ValueError(err)
-        if reposition:
-            new_order = self._variables_from_set('data file')
-            for repos in reposition:
-                before_var = repos.keys()[0]
-                repos_vars = repos.values()[0]
-                if not isinstance(repos_vars, list): repos_vars = [repos_vars]
-                repos_vars = list(reversed(repos_vars))
-                idx = new_order.index(before_var)
-                for repos_var in repos_vars:
-                    new_order.remove(repos_var)
-                    new_order.insert(idx, repos_var)
-        self._apply_order(new_order)
-        return None
-
-    @modify(to_list=['logic'])
-    def add_filter_var(self, name, logic, overwrite=False):
-        """
-        Create filter-var, that allows index slicing using ``manifest_filter``
-
-        Parameters
-        ----------
-        name: str
-            Name and label of the new filter-variable, which gets also listed
-            in DataSet.filters
-        logic: complex logic/ str, list of complex logic/ str
-            Logic to keep cases.
-            Complex logic should be provided in form of:
-            ```
-            {
-            'label': 'any text',
-            'logic': {var: keys} / intersection/ ....
-            }
-            ```
-            If a str (column-name) is provided, automatically a logic is
-            created that keeps all cases which are not empty for this column.
-            If logic is a list, each included list-item becomes a category of
-            the new filter-variable and all cases are kept that satify all
-            conditions (intersection)
-
-        overwrite: bool, default False
-            Overwrite an already existing filter-variable.
-        """
-        name = self._verify_filter_name(name, None)
-        if name in self:
-            if overwrite and not self.is_filter(name):
-                msg = "Cannot add filter-variable '{}', a non-filter"
-                msg +=" variable is already included"
-                raise ValueError(msg.format(name))
-            elif not overwrite:
-                msg = "Cannot add filter-variable '{}', it's already included."
-                raise ValueError(msg.format(name))
-            else:
-                self.drop(name)
-                if self._verbose_infos:
-                    print 'Overwriting {}'.format(name)
-        values = [(0, 'keep', None)]
-        values += self._transform_filter_logics(logic, 1)
-        self.add_meta(name, 'delimited set', name, [(x, y) for x, y, z in values])
-        self.recode(name, {x: z for x, y, z in values[1:]})
-        self.recode(name, {0: {name: has_count(len(values)-1)}}, append=True)
-        self._set_property(name, 'recoded_filter', True)
-        return None
-
-    @modify(to_list=['logic'])
-    def extend_filter_var(self, name, logic, extend_as=None):
-        """
-        Extend logic of an existing filter-variable.
-
-        Parameters
-        ----------
-        name: str
-            Name of the existing filter variable.
-        logic: (list of) complex logic/ str
-            Additional logic to keep cases (intersection with existing logic).
-            Complex logic should be provided in form of:
-            ```
-            {
-            'label': 'any text',
-            'logic': {var: keys} / intersection/ ....
-            }
-            ```
-        extend_as: str, default None
-            Addition to the filter-name to create a new filter. If it is None
-            the existing filter-variable is overwritten.
-        """
-        if not self.is_filter(name):
-            raise KeyError('{} is no valid filter-variable.'.format(name))
-        name = self._verify_filter_name(name, None)
-        if extend_as:
-            extend_as = self._verify_filter_name(extend_as, None)
-            f_name = '{}_{}'.format(name, extend_as)
-            if f_name in self:
-                msg = "Please change 'extend_as': '{}' is already in dataset."
-                raise KeyError(msg.format(f_name))
-            self.copy(name, extend_as)
-            self._meta['columns'][f_name]['properties']['recoded_filter'] = True
-        else:
-            f_name = name
-        self.uncode(f_name, {0: {f_name: 0}})
-        values = self._transform_filter_logics(logic, max(self.codes(f_name))+1)
-        self.extend_values(f_name, values)
-        self.recode(f_name, {x: z for x, y, z in values}, append=True)
-        self.recode(f_name, {0: {f_name: has_count(len(self.codes(f_name))-1)}}, append=True)
-        text = '{} _ {}'.format(self.text(f_name), extend_as)
-        self._meta['columns'][f_name]['text'][self.text_key] = text
-        return None
-
-    def _transform_filter_logics(self, logic, start):
-        if not logic: logic = ['@1']
-        values = []
-        for x, l in enumerate(logic, start):
-            if isinstance(l, basestring):
-                if not l in self:
-                    raise KeyError("{} is not included in Dataset".format(l))
-                val = (x, '{} not empty'.format(l), {l: not_count(0)})
-            elif isinstance(l, dict):
-                if not ('label' in l and 'logic' in l):
-                    l = {'label': str(x), 'logic': l}
-                    if self._verbose_infos:
-                        msg = "Filter logic must contain 'label' and 'logic'"
-                        warnings.warn(msg)
-                val = (x, l['label'], l['logic'])
-            else:
-                try:
-                    l[0].__name__ in ['_intersection', '_union']
-                    val = (x, str(x), l)
-                except:
-                    msg = 'Included logic must be (list of) str or dict/complex logic.'
-                    raise TypeError(msg)
-            values.append(val)
-        return values
-
-    def _verify_filter_name(self, name, suf='f', number=False):
-        f = '{}_{}'.format(name, suf) if suf else name
-        f = f.encode('utf8')
-        repl = [(' ', '_'), ('~', '_'), ('(', ''), (')', ''), ('&', '_')]
-        for r in repl:
-            f = f.replace(r[0], r[1])
-        if number:
-            f = self.enumerator(f)
-        return f
-
-    @modify(to_list=['values'])
-    def reduce_filter_var(self, name, values):
-        """
-        Remove values from filter-variables and recalculate the filter.
-        """
-        name = self._verify_filter_name(name, None)
-        if not self.is_filter(name):
-            raise KeyError('{} is no valid filter-variable.'.format(name))
-        if 0 in values:
-            raise ValueError('Cannot remove the 0-keep value from filter var')
-        elif len([x for x in self.codes(name) if not x in values]) <= 1:
-            raise ValueError('Cannot remove all values from filter var.')
-        self.uncode(name, {0: {name: 0}})
-        self.remove_values(name, values)
-        self.recode(name, {0: {name: has_count(len(self.codes(name))-1)}}, append=True)
-        return None
-
-    def manifest_filter(self, name):
-        """
-        Get index slicer from filter-variables.
-
-        Parameters
-        ----------
-        name: str
-            Name of the filter_variable.
-        """
-        if not name:
-            return self._data.index
-        else:
-            name = self._verify_filter_name(name, None)
-        if not self.is_filter(name):
-            raise KeyError('{} is no valid filter-variable.'.format(name))
-        return self.take({name: 0})
-
-    @modify(to_list="filters")
-    def merge_filter(self, name, filters):
-        if not all(f in self.filters() for f in filters):
-            raise KeyError("Not all included names are valid filters.")
-        logic = {
-            'label': 'merged filter logics',
-            'logic': union([{f: 0} for f in filters])
-            }
-        self.add_filter_var(name, logic, True)
-        return None
-
-    @modify(to_list=['name2'])
-    @verify(variables={'name1': 'both', 'name2': 'both'})
-    def compare_filter(self, name1, name2):
-        """
-        Show if filters result in the same index.
-
-        Parameters
-        ----------
-        name1: str
-            Name of the first filter variable
-        name2: str/ list of st
-            Name(s) of the filter variable(s) to compare with.
-        """
-        if not all(self.is_filter(f) for f in [name1] + name2):
-            raise ValueError('Can only compare filter variables')
-        equal = True
-        f0 = self.manifest_filter(name1).tolist()
-        for f in name2:
-            if not f0 == self.manifest_filter(f).tolist():
-                equal = False
-        return equal
-
-    @modify(to_list=["name2"])
-    def is_subfilter(self, name1, name2):
-        """
-        Verify if index of name2 is part of the index of name1.
-        """
-        idx = self.manifest_filter(name1).tolist()
-        included = True
-        for n in name2:
-            if [i for i in self.manifest_filter(n).tolist() if i not in idx]:
-                included = False
-        return included
+            new_order = insert_by_anchor(self.variables_from_set(), reposition)
+            new_order = uniquify_list(order)
+            self.create_set("data file", include=new_order, overwrite=True)
+        self._data = self._data[self.unroll(new_order)]
 
     # ------------------------------------------------------------------------
     # merging
@@ -2624,7 +2482,7 @@ class DataSet(object):
         """
         self._meta.extend_items(name, new_items, text_key)
         for source in self.get_sources(name):
-            self._add_data_column(name, replace=False):
+            self._add_data_column(name, replace=False)
 
     # ------------------------------------------------------------------------
     # batch
@@ -2675,7 +2533,7 @@ class DataSet(object):
             xys = batch['x_y_map']
             fs = batch['x_filter_map']
             fy = batch['y_filter_map']
-            my  = batch['yks']
+            my = batch['yks']
             total_len = len(xys) + len(batch['y_on_y'])
             for idx, xy in enumerate(xys, start=1):
                 x, y = xy
@@ -2692,22 +2550,22 @@ class DataSet(object):
                         fi = {fs[x]: {fs[x]: 0}}
                     stack.add_link(dk, fi, x=x, y=y)
                 if verbose:
-                    done = float(idx) / float(total_len) *100
+                    done = float(idx) / float(total_len) * 100
                     print '\r',
                     time.sleep(0.01)
-                    print  'Batch [{}]: {} %'.format(name, round(done, 1)),
+                    print 'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
-            for idx, y_on_y in enumerate(batch['y_on_y'], len(xys)+1):
+            for idx, y_on_y in enumerate(batch['y_on_y'], len(xys) + 1):
                 if fy[y_on_y] is None:
                     fi = 'no_filter'
                 else:
                     fi = {fy[y_on_y]: {fy[y_on_y]: 1}}
                 stack.add_link(dk, fi, x=my[1:], y=my)
                 if verbose:
-                    done = float(idx) / float(total_len) *100
+                    done = float(idx) / float(total_len) * 100
                     print '\r',
                     time.sleep(0.01)
-                    print  'Batch [{}]: {} %'.format(name, round(done, 1)),
+                    print 'Batch [{}]: {} %'.format(name, round(done, 1)),
                     sys.stdout.flush()
             if verbose:
                 print '\n'

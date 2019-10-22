@@ -271,3 +271,50 @@ def uniquify_list(the_list):
 def dupes_in_list(the_list):
     _, dupes = _dupes_in_list(the_list)
     return dupes
+
+
+def insert_by_anchor(the_list, incl):
+    """
+    Include items into an existing list and position by anchor.
+
+    Parameters
+    ----------
+    the_list : list
+        The list to be extended.
+    incl : dict/ list
+        Keys of a provided dict are the anchor for the given value.
+        The anchor can either be the item or the index. The new items are
+        always added before the anchor.
+        Given list without an anchor is added at the end.
+
+    Returns
+    -------
+    the_list: extended list
+
+    Note
+    ----
+    Only string items and lists of str are supported.
+    """
+    if not all(isinstance(i, basestring) for i in the_list):
+        msg = "Only string items are supported!"
+        logger.error(msg); raise ValueError(msg)
+    if not isinstance(incl, (list, dict)):
+        msg = "'incl' must either be dict or list!"
+        logger.error(msg); raise ValueError(msg)
+    if isinstance(incl, list):
+        the_list.extend(incl)
+        return the_list
+
+    ext = incl.pop(-1, [])
+    if not isinstance(ext, list):
+        ext = [ext]
+    the_list.extend(ext)
+    for k in list(incl.keys()):
+        if isinstance(k, basestring):
+            incl[the_list.index(k)] = incl.pop(k)
+            k = the_list.index(k)
+        if not isinstance(incl[k], list):
+            incl[k] = [incl[k]]
+    for k in reversed(sorted(incl.keys())):
+        the_list = the_list[:k] + incl[k] + the_list[k:]
+    return the_list
