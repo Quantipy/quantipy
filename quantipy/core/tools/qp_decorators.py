@@ -3,6 +3,9 @@ from decorator import decorator
 from inspect import getargspec
 from itertools import product
 from .functions import ensure_list
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def _update_args(all_args, args, kwargs, new):
@@ -17,7 +20,12 @@ def _collect_args(all_args, keys, args, kwargs, nested=False, listed=True):
     if nested:
         pre_collect = []
         for key in keys:
-            values = ensure_list(kwargs.get(key, args[all_args.index(key)]))
+            if isinstance(key, tuple):
+                values = ensure_list(
+                    kwargs.get(key[1], args[all_args.index(key[1])]))
+            else:
+                values = ensure_list(
+                    kwargs.get(key, args[all_args.index(key)]))
             pre_collect.append([{key: value} for value in values])
         collect = [
             {k: v for p in prod for k, v in p.items()}
@@ -25,7 +33,10 @@ def _collect_args(all_args, keys, args, kwargs, nested=False, listed=True):
     else:
         collect = {}
         for key in keys:
-            values = kwargs.get(key, args[all_args.index(key)])
+            if isinstance(key, tuple):
+                values = kwargs.get(key[1], args[all_args.index(key[1])])
+            else:
+                values = kwargs.get(key, args[all_args.index(key)])
             if listed:
                 values = ensure_list(values)
             collect[key] = values
@@ -69,8 +80,8 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
                     if v not in obj:
                         invalid.append(v)
         if invalid:
-            raise KeyError(err.format(
-                obj.__class__.__name__, "', '".join(invalid)))
+            err = err.format(obj.__class__.__name__, "', '".join(invalid))
+            logger.error(err); raise KeyError(err)
         return func(*args, **kwargs)
 
     @decorator
@@ -92,7 +103,8 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
                     if v not in columns:
                         invalid.append(v)
         if invalid:
-            raise KeyError(err.format("', '".join(invalid)))
+            err = err.format("', '".join(invalid))
+            logger.error(err); raise KeyError(err)
         return func(*args, **kwargs)
 
     @decorator
@@ -112,7 +124,8 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
                 if var not in masks:
                     invalid.append(var)
         if invalid:
-            raise KeyError(err.format("', '".join(invalid)))
+            err = err.format("', '".join(invalid))
+            logger.error(err); raise KeyError(err)
         return func(*args, **kwargs)
 
     @decorator
@@ -131,7 +144,8 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
                 if not obj.is_categorical(var):
                     invalid.append(var)
         if invalid:
-            raise KeyError(err.format("', '".join(invalid)))
+            err = err.format("', '".join(invalid))
+            logger.error(err); raise TypeError(err)
         return func(*args, **kwargs)
 
     @decorator
@@ -150,24 +164,34 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
         Verify that defined parameters are {"x", "y", ["x", "y"]}.
         """
         all_args = getargspec(func)[0]
-        collected = _collect_args(all_args, to_list, args, kwargs, False, True)
+        collected = _collect_args(all_args, axis, args, kwargs, False, False)
         invalid = []
-        for k, ax in collected.items():
-            if isinstance(ax, tuple):
-                n_axis = "{{}} {b}".format(b=ax[0]).format
-                ax = ax[1]
+        for k, ax in list(collected.items()):
+            collected.pop(k)
+            suffix = None
+            if not ax:
+                continue
+            if isinstance(k, tuple):
+                suffix = k[0]
+                n_axis = "{{}} {b}".format(b=suffix).format
+                k = k[1]
             else:
                 n_axis = "{}".format
             new_ax = []
-            for a in ax:
-                if a not in ["x", "y"]:
+            for a in ensure_list(ax):
+                if a not in ["x", "y", n_axis("x"), n_axis("y")]:
                     invalid.append(a)
+                elif suffix and suffix in a:
+                    new_ax.append(a)
                 else:
                     new_ax.append(n_axis(a))
-            collected[k] = new_ax
+            if isinstance(ax, list):
+                collected[k] = new_ax
+            else:
+                collected[k] = new_ax[0]
         if invalid:
-            err = "Not valid axis: '{}'"
-            raise KeyError(err.format("', '".join(invalid)))
+            err = "Not valid axis: '{}'".format("', '".join(invalid))
+            logger.error(err); raise KeyError(err)
         args = _update_args(all_args, args, kwargs, collected)
         return func(*args)
 
@@ -194,9 +218,9 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
             elif tks not in obj.valid_tks:
                 invalid.append(tks)
         if invalid:
-            err = "Not found in '{}.valid_tks': '{}'"
-            raise ValueError(err.format(
-                obj.__class__.__name__, "', '".join(invalid)))
+            err = "Not found in '{}.valid_tks': '{}'".format(
+                obj.__class__.__name__, "', '".join(invalid))
+            logger.error(err); raise ValueError(err)
         args = _update_args(all_args, args, kwargs, collected)
         return func(*args)
 

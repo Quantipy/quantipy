@@ -1,5 +1,6 @@
 
 import pytest
+from collections import OrderedDict
 from quantipy.__imports__ import *  # noqa
 from quantipy import (
     DataSet,
@@ -9,7 +10,7 @@ from quantipy import (
 NAME = "Example Data (A)"
 DATA = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def dataset():
     name = NAME
     path = DATA
@@ -27,9 +28,60 @@ def _assert_exists(name, suffix=[]):
         path = os.path.join(DATA, "{}.{}".format(name, suf))
         assert os.path.exists(path)
 
+def _assert_raise(caplog, err, msg, func, *args, **kwargs):
+    caplog.clear()
+    with pytest.raises(err):
+        func(*args, **kwargs)
+    assert caplog.records[-1].message == msg
+
 
 class TestDataSet:
+    # ------------------------------------------------------------------------
+    # properties
+    # ------------------------------------------------------------------------
+    def test_aproperties(self, dataset):
+        assert set(dataset.columns) == set([
+            '@1', 'RecordNo', 'Wave', 'age', 'birth_day', 'birth_month',
+            'birth_year', 'duration', 'end_time', 'ethnicity', 'gender',
+            'locality', 'q1', 'q14r01c01', 'q14r01c02', 'q14r01c03',
+            'q14r02c01', 'q14r02c02', 'q14r02c03', 'q14r03c01', 'q14r03c02',
+            'q14r03c03', 'q14r04c01', 'q14r04c02', 'q14r04c03', 'q14r05c01',
+            'q14r05c02', 'q14r05c03', 'q14r06c01', 'q14r06c02', 'q14r06c03',
+            'q14r07c01', 'q14r07c02', 'q14r07c03', 'q14r08c01', 'q14r08c02',
+            'q14r08c03', 'q14r09c01', 'q14r09c02', 'q14r09c03', 'q14r10c01',
+            'q14r10c02', 'q14r10c03', 'q2', 'q2b', 'q3', 'q4', 'q5_1', 'q5_2',
+            'q5_3', 'q5_4', 'q5_5', 'q5_6', 'q6_1', 'q6_2', 'q6_3', 'q7_1',
+            'q7_2', 'q7_3', 'q7_4', 'q7_5', 'q7_6', 'q8', 'q8a', 'q9', 'q9a',
+            'record_number', 'religion', 'start_time', 'unique_id', 'visit_1',
+            'visit_2', 'visit_3', 'weight', 'weight_a', 'weight_b'])
+        assert set(dataset.masks) == set([
+            'q14_1', 'q14_2', 'q14_3', 'q5', 'q6', 'q7'])
+        assert set(dataset.sets) == set([
+            'data file', 'q14_1', 'q14_2', 'q14_3', 'q5', 'q6', 'q7'])
+        assert set(dataset.singles) == set([
+            'Wave', 'ethnicity', 'gender', 'locality', 'q1', 'q14r01c01',
+            'q14r01c02', 'q14r01c03', 'q14r02c01', 'q14r02c02', 'q14r02c03',
+            'q14r03c01', 'q14r03c02', 'q14r03c03', 'q14r04c01', 'q14r04c02',
+            'q14r04c03', 'q14r05c01', 'q14r05c02', 'q14r05c03', 'q14r06c01',
+            'q14r06c02', 'q14r06c03', 'q14r07c01', 'q14r07c02', 'q14r07c03',
+            'q14r08c01', 'q14r08c02', 'q14r08c03', 'q14r09c01', 'q14r09c02',
+            'q14r09c03', 'q14r10c01', 'q14r10c02', 'q14r10c03', 'q2b', 'q4',
+            'q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6', 'q6_1', 'q6_2',
+            'q6_3', 'q7_1', 'q7_2', 'q7_3', 'q7_4', 'q7_5', 'q7_6', 'religion',
+            'visit_1', 'visit_2', 'visit_3'])
+        assert set(dataset.delimited_sets) == set(['q2', 'q3', 'q8', 'q9'])
+        assert set(dataset.ints) == set([
+            '@1', 'RecordNo', 'age', 'birth_day', 'birth_month', 'birth_year',
+            'record_number', 'unique_id'])
+        assert set(dataset.floats) == set(['weight', 'weight_a', 'weight_b'])
+        assert set(dataset.dates) == set(['end_time', 'start_time'])
+        assert set(dataset.strings) == set(['q8a', 'q9a'])
+        assert dataset.filters == []
+        assert dataset.hidden_arrays == []
 
+    # -------------------------------------------------------------------------
+    # file i/o / conversions
+    # -------------------------------------------------------------------------
     def test_from_quantipy(self, dataset):
         assert isinstance(dataset._meta, Meta)
         assert isinstance(dataset._data, pd.DataFrame)
@@ -74,10 +126,321 @@ class TestDataSet:
         assert ds._data.shape == (3952, 76)
         assert ds.get_codes_in_data("gender") == [1]
 
-    def test_subset(self, dataset):
+    def test_subset(self, dataset, caplog):
         ds = dataset.subset(["gender", "age", "q5"])
         assert ds._data.shape == (8255, 8)
         assert ds.variables_from_set() == ['age', 'gender', 'q5']
+
+        msg = "Must either pass 'variables' or 'from_set'!"
+        _assert_raise(caplog, ValueError, msg, dataset.subset)
+
+        msg = "Must either pass 'variables' or 'from_set', not both!"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.subset, ["gender"], "q5")
+
+    # ------------------------------------------------------------------------
+    # inspect
+    # ------------------------------------------------------------------------
+    def test_is_type(self, dataset, caplog):
+        assert dataset.is_single("gender") == True
+        assert dataset.is_delimited_set("gender") == False
+        assert dataset.is_int("q5") == False
+        assert dataset.is_single("q5") == True
+        assert dataset.is_array("q5") == True
+        assert dataset.is_float("age") == False
+        assert dataset.is_date("start_time") == True
+        assert dataset.is_array_item("q5_1") == True
+        assert dataset.is_numeric("age") == True
+        assert dataset.is_filter("gender") == False
+        assert dataset.is_categorical("gender") == True
+
+        msg = "'gender' is not of type string (but single)."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.is_like_numeric, "gender")
+
+    def test_empty(self, dataset):
+        sources = dataset.get_sources("q5")
+        assert dataset.empty("q5") == []
+        assert dataset.empty("q5", {"age": is_le(15)}) == sources
+        assert not dataset.empty("gender")
+        assert dataset.empty("gender", {"age": is_le(15)})
+        assert dataset.empty("weight")
+
+    def test_all_any_nan(self, dataset):
+        assert all(dataset.is_nan("weight"))
+        assert len(dataset.any("q5", 5)) == 3907
+        assert len(dataset.any("gender", 1)) == 3952
+        assert len(dataset.all("q2", [1, 2])) == 800
+        assert len(dataset.all("q5", 5)) == 102
+
+    # ------------------------------------------------------------------------
+    # add meta
+    # ------------------------------------------------------------------------
+    def test_add_meta_single(self, dataset):
+        name, qtype, label = 'test', 'single', 'TEST VAR'
+        cats1 = [(4, 'Cat1'), (5, 'Cat2')]
+        cats2 = ['Cat1', 'Cat2']
+        cats3 = [1, 2]
+        for check, cat in enumerate([cats1, cats2, cats3], start=1):
+            dataset.add_meta(name, qtype, label, cat)
+            values = dataset.get_values(name)
+            if check == 1:
+                assert values == cats1
+            elif check == 2:
+                assert values == [(1, 'Cat1'), (2, 'Cat2')]
+            elif check == 3:
+                assert values == [(1, ''), (2, '')]
+
+    def test_add_meta_array(self, dataset):
+        name, qtype, label = 'array_test', 'delimited set', 'TEST LABEL TEXT'
+        cats = ['Cat 1', 'Cat 2', 'Cat 3', 'Cat 4', 'Cat 5']
+        items1 = [(1, 'ITEM A'), (3, 'ITEM B'), (6, 'ITEM C')]
+        items2 = ['ITEM A', 'ITEM B', 'ITEM C']
+        for check, items in enumerate([items1, items2], start=1):
+            dataset.add_meta(name, qtype, label, cats, items)
+            # check values and parent
+            assert dataset.get_values(name) == list(enumerate(cats, start=1))
+            value_ref = dataset._meta._get_value_ref(name)
+            assert value_ref == "lib@values@array_test"
+            assert dataset._meta["masks"][name]["values"] == value_ref
+            sources = dataset.get_sources(name)
+            parent = {'masks@array_test': {'type': 'array'}}
+            for source in sources:
+                assert dataset._meta["columns"][source]["values"] == value_ref
+                assert dataset._meta["columns"][source]["parent"] == parent
+            # check items
+            items = dataset.get_items(name)
+            if check == 1:
+                assert items == [
+                    ('array_test_1', 'ITEM A'),
+                    ('array_test_3', 'ITEM B'),
+                    ('array_test_6', 'ITEM C')]
+            elif check == 2:
+                assert items == [
+                    ('array_test_1', 'ITEM A'),
+                    ('array_test_2', 'ITEM B'),
+                    ('array_test_3', 'ITEM C')]
+            # check set
+            data_file = dataset.get_set("data file")
+            assert 'masks@array_test' in data_file
+            assert 'columns@array_test_1' not in data_file
+
+    def test_copy(self, dataset, caplog):
+        # raises
+        msg = "Must pass either 'copy_only' or 'copy_not', not both!"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.copy,
+            "gender", **{"copy_only": [1], "copy_not": [1]})
+
+        msg = "Cannot copy a single array item."
+        _assert_raise(caplog, ValueError, msg, dataset.copy, "q5_1")
+
+        msg = "Cannot create 'Gender'. Weak duplicates exist: gender"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.copy, "gender", "Gender")
+
+        # full copy
+        dataset.copy("q5")
+        # check mask keys
+        assert "q5" in dataset.masks
+        assert "q5_rec" in dataset.masks
+        # check set
+        assert "masks@q5_rec" in dataset.get_set("data file")
+        expect = ["columns@q5_rec_{}".format(x) for x in frange("1-6")]
+        assert dataset.get_set("q5_rec") == expect
+        # check sources
+        expect = ["q5_rec_{}".format(x) for x in frange("1-6")]
+        sources = dataset.get_sources("q5_rec")
+        assert sources == expect
+        # check values and parent
+        ref1 = dataset._meta._get_value_ref("q5")
+        ref2 = dataset._meta._get_value_ref("q5_rec")
+        assert not ref1 == ref2
+        assert dataset._meta[ref1] == dataset._meta[ref2]
+        parent = {'masks@q5_rec': {'type': 'array'}}
+        q5s = dataset.get_sources("q5")
+        for s, source in zip(q5s, sources):
+            assert dataset._meta["columns"][source]["values"] == ref2
+            assert dataset._meta["columns"][source]["parent"] == parent
+            assert dataset[s].equals(dataset[source])
+
+        # slices copy
+        dataset.copy("q5", "q5_rec2", True, {'gender': 1}, [1, 2, 3])
+        assert dataset.get_codes("q5_rec2") == [1, 2, 3]
+        assert not dataset.get_codes("q5") == [1, 2, 3]
+        # data sliced and reduced properly?
+        for source in dataset.get_sources('q5_rec2'):
+            assert set(dataset[source].dropna().unique()) == set([1, 2, 3])
+            assert dataset[[source, 'gender']].dropna()['gender'].unique() == 1
+
+        # copy array data
+        dataset.copy("q5", "q5_rec3", False)
+        assert dataset.empty("q5_rec3") == dataset.get_sources("q5_rec3")
+        dataset.copy_array_data("q5", "q5_rec3")
+
+        msg = "Expect equal codes for source and target."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.copy_array_data, "q6", "q5_rec3")
+
+    # ------------------------------------------------------------------------
+    # values
+    # ------------------------------------------------------------------------
+    def test_values_get(self, dataset, caplog):
+        # values
+        assert dataset.get_values("gender") == [(1, "Male"), (2, "Female")]
+
+        msg = "Not categorical: 'q8a'"
+        _assert_raise(caplog, TypeError, msg, dataset.get_values, "q8a")
+
+        # value texts
+        assert dataset.get_value_texts("gender") == ["Male", "Female"]
+
+        assert dataset.get_codes_from_label("gender", "Male") == [1]
+        assert dataset.get_codes_from_label(
+            "gender", ["Male"], flat=False) == [1]
+
+        # codes
+        data = dataset._data.copy()
+        dataset._data = data.head(20)
+        assert dataset.get_codes("q8") == [1, 2, 3, 4, 5, 96, 98]
+        assert dataset.get_codes_in_data("q8") == [1, 4, 5]
+        dataset._data = data
+
+    def test_values_modify(self, dataset, caplog):
+        # extend values
+        dataset.extend_values("q5", ["test", "new"])
+        assert dataset.get_values("q5_1")[-2:] == [(99, "test"), (100, "new")]
+
+        msg = "Cannot change values object of a single array item."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.extend_values,
+            "q5_1", ["test", "new"])
+        msg = "Cannot add duplicated codes: [1]"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.extend_values,
+            "q5", [(1, "test")])
+        msg = "Cannot add duplicated texts: ['test']"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.extend_values,
+            "q5", "test")
+
+        # remove values
+        dataset.remove_values("q5", [99, 100])
+        assert len(dataset.get_codes("q5")) == 7
+
+        msg = "Cannot change values object of a single array item."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.remove_values, "q5_1", 1)
+
+        msg = "Cannot remove all codes of a categorical variable."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.remove_values,
+            "q5", dataset.get_codes("q5"))
+
+        # reorder values
+        order = [98, 97, 5, 4, 3, 2, 1]
+        dataset.reorder_values("q5", order)
+        assert dataset.get_codes("q5_1") == order
+
+        msg = "Cannot change values object of a single array item."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.reorder_values, "q5_1", order)
+
+        msg = "The new order does not take all variable codes into account"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.reorder_values, "q5", [1, 2, 3])
+
+    def test_factors(self, dataset):
+        assert dataset.get_factors("gender") == OrderedDict()
+        dataset.set_factors("gender", {2: 5})
+        assert dataset.get_factors("gender") == OrderedDict([(2, 5)])
+        dataset.del_factors("gender")
+        assert dataset.get_factors("gender") == OrderedDict()
+
+    # ------------------------------------------------------------------------
+    # texts
+    # ------------------------------------------------------------------------
+    def test_texts_variables_get(self, dataset):
+
+        text = dataset.get_text("gender")
+        assert text == "What is your gender?"
+        text = dataset.get_text("q6")
+        assert text == "How often do you take part in any of the following?"
+        texti = dataset.get_text("q6_1")
+        assert texti == "Exercise alone"
+        assert dataset.get_text("q6_1", False) == "{} - {}".format(text, texti)
+        texts = [
+            "Exercise alone",
+            "Join an exercise class",
+            "Play any kind of team sport"]
+        assert dataset.get_item_texts("q6") == texts
+
+    def test_texts_variables_set(self, dataset):
+        dataset.set_text("q6", "new new", axis="x")
+        assert dataset.get_text("q6", axis="x") == "new new"
+        assert dataset.get_text("q6_1", False, axis="x").startswith("new new")
+        dataset.set_text("gender", "GENDER", axis="x")
+        assert dataset.get_text("gender", axis="x") == "GENDER"
+        dataset.set_item_texts("q6", {1: "test"}, axis="x")
+        assert dataset.get_text("q6_1", False, axis="x") == "new new - test"
+        dataset.replace_texts({"new new": "new"})
+        print (dataset._meta["columns"]["q6_1"]["text"])
+        assert dataset.get_text("q6_1", False, axis="x") == "new - test"
+
+    def test_text_keys(self, dataset, caplog):
+        caplog.clear()
+        with pytest.raises(ValueError):
+            dataset.text_key = "bla"
+        assert caplog.records[0].message == "'bla' is not a valid textkey!"
+        assert dataset.text_key == "en-GB"
+        assert dataset.used_text_keys() == ["en-GB"]
+        dataset.force_texts("de-DE")
+        assert set(dataset.used_text_keys()) == set(["en-GB", "de-DE"])
+        dataset.select_text_keys("en-GB")
+        assert dataset.used_text_keys() == ["en-GB"]
+        gender = dataset._meta["columns"]["gender"]
+        gender["text"]["x edits"] = "GENDER"
+        dataset.repair_text_edits("en-GB")
+        assert gender["text"]["x edits"] == {"en-GB": "GENDER"}
+
+    # ------------------------------------------------------------------------
+    # rules
+    # ------------------------------------------------------------------------
+    def test_sorting(self, dataset):
+        dataset.set_sorting('q8', fix=[3, 98, 100])
+        expect = {
+            "sortx": {
+                "fixed": [3, 98],
+                "within": False,
+                "between": False,
+                "ascending": False,
+                "sort_on": "@",
+                "with_weight": "auto"}}
+        assert dataset.get_rules("q8", "x") == expect
+
+        dataset.set_sorting('q6', fix=["q6_1"], on="net_1")
+        expect = {
+            "sortx": {
+                "fixed": ["q6_1"],
+                "within": False,
+                "between": False,
+                "ascending": False,
+                "sort_on": "net_1",
+                "with_weight": "auto"}}
+        assert dataset.get_rules("q6", "x") == expect
+
+        dataset.set_sorting('q6', fix=[1, 2, 3], on="@")
+        expect = {
+            "sortx": {
+                "fixed": [1, 2, 3],
+                "within": False,
+                "between": False,
+                "ascending": False,
+                "sort_on": "@",
+                "with_weight": "auto"}}
+        assert dataset.get_rules("q6_1", "x") == expect
+
+
 
 
     # def check_freq(self, dataset, var, show='values'):
@@ -117,72 +480,6 @@ class TestDataSet:
     #                      data_file_items)
     #     self.assertEqual(expected_columns, df_columns)
 
-    # def test_categorical_metadata_additions(self):
-    #     dataset = self._get_dataset()
-    #     name, qtype, label = 'test', 'single', 'TEST VAR'
-    #     cats1 = [(4, 'Cat1'), (5, 'Cat2')]
-    #     cats2 = ['Cat1', 'Cat2']
-    #     cats3 = [1, 2]
-    #     for check, cat in enumerate([cats1, cats2, cats3], start=1):
-    #         dataset.add_meta(name, qtype, label, cat)
-    #         values = dataset.values(name)
-    #         if check == 1:
-    #             self.assertTrue(values, cats1)
-    #         elif check == 2:
-    #             expected_vals = [(1, 'Cat1'), (2, 'Cat2')]
-    #             self.assertTrue(values, expected_vals)
-    #         elif check == 3:
-    #             expected_vals = [(1, ''), (2, '')]
-    #             self.assertTrue(values, expected_vals)
-
-    # def test_array_metadata(self):
-    #     dataset = self._get_dataset()
-    #     meta, data = dataset.split()
-    #     name, qtype, label = 'array_test', 'delimited set', 'TEST LABEL TEXT'
-    #     cats = ['Cat 1', 'Cat 2', 'Cat 3', 'Cat 4', 'Cat 5']
-    #     items1 = [(1, 'ITEM A'), (3, 'ITEM B'), (6, 'ITEM C')]
-    #     items2 = ['ITEM A', 'ITEM B', 'ITEM C']
-    #     items3 = [4, 5, 6]
-    #     for check, items in enumerate([items1, items2, items3], start=1):
-    #         dataset.add_meta(name, qtype, label, cats, items)
-    #         sources = dataset.sources(name)
-    #         # catgeories correct?
-    #         expected_vals = list(enumerate(cats, start=1))
-    #         self.assertEqual(dataset.values(name), expected_vals)
-    #         # items correct?
-    #         items = dataset.items(name)
-    #         if check == 1:
-    #             expected_items = [('array_test_1', 'ITEM A'),
-    #                               ('array_test_3', 'ITEM B'),
-    #                               ('array_test_6', 'ITEM C')]
-    #             self.assertEqual(items, expected_items)
-    #         elif check == 2:
-    #             expected_items = [('array_test_1', 'ITEM A'),
-    #                               ('array_test_2', 'ITEM B'),
-    #                               ('array_test_3', 'ITEM C')]
-    #             self.assertEqual(items, expected_items)
-    #         elif check == 3:
-    #             expected_items = [('array_test_4', ''),
-    #                               ('array_test_5', ''),
-    #                               ('array_test_6', '')]
-    #             self.assertEqual(items, expected_items)
-    #         # value object location correct?
-    #         item_val_ref = dataset._get_value_loc(sources[0])
-    #         mask_val_ref = dataset._get_value_loc(name)
-    #         self.assertEqual(item_val_ref, mask_val_ref)
-    #         lib_ref = 'lib@values@array_test'
-    #         self.assertTrue(meta['columns'][sources[0]]['values'] == lib_ref)
-    #         self.assertTrue(meta['masks'][name]['values'] == lib_ref)
-    #         # sets entry correct?
-    #         self.assertTrue('masks@array_test' in meta['sets']['data file']['items'])
-    #         # parent entry correct?
-    #         for source in dataset.sources(name):
-    #             parent_meta = meta['columns'][source]['parent']
-    #             expected_parent_meta = {'masks@array_test': {'type': 'array'}}
-    #             parent_maskref = dataset.parents(source)
-    #             expected_parent_maskref = ['masks@array_test']
-    #             self.assertEqual(parent_meta, expected_parent_meta)
-    #             self.assertEqual(parent_maskref, expected_parent_maskref)
 
     # def test_rename_via_masks(self):
     #     dataset = self._get_dataset()
@@ -220,91 +517,6 @@ class TestDataSet:
     #     self.assertTrue('q5' not in meta['sets'])
     #     self.assertTrue('q5_new' in meta['sets'])
 
-    # def test_copy_via_masks_full(self):
-    #     dataset = self._get_dataset()
-    #     meta, data = dataset.split()
-    #     suffix = 'test'
-    #     new_name = 'q5_test'
-    #     dataset.copy('q5', suffix)
-    #     # name properly changend?
-    #     self.assertTrue('q5' in dataset.masks())
-    #     self.assertTrue(new_name in dataset.masks())
-    #     # item names updated?
-    #     items = meta['sets'][new_name]['items']
-    #     expected_items = ['columns@q5_test_1',
-    #                       'columns@q5_test_2',
-    #                       'columns@q5_test_3',
-    #                       'columns@q5_test_4',
-    #                       'columns@q5_test_5',
-    #                       'columns@q5_test_6']
-    #     self.assertEqual(items, expected_items)
-    #     sources = dataset.sources(new_name)
-    #     old_items_split = [s.split('_') for s in dataset.sources('q5')]
-    #     expected_sources = ['{}_{}_{}'.format('_'.join(ois[:-1]), suffix, ois[-1])
-    #                         for ois in old_items_split]
-    #     self.assertEqual(sources, expected_sources)
-    #     # lib reference properly updated?
-    #     lib_ref_mask = meta['masks'][new_name]['values']
-    #     lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
-    #     expected_lib_ref = 'lib@values@q5_test'
-    #     self.assertEqual(lib_ref_mask, lib_ref_items)
-    #     self.assertEqual(lib_ref_items, expected_lib_ref)
-    #     # new parent entry correct?
-    #     parent_spec = meta['columns'][dataset.sources(new_name)[0]]['parent']
-    #     expected_parent_spec = {'masks@{}'.format(new_name): {'type': 'array'}}
-    #     self.assertEqual(parent_spec, expected_parent_spec)
-    #     # sets entries replaced?
-    #     self.assertTrue('masks@q5' in meta['sets']['data file']['items'])
-    #     self.assertTrue('masks@q5_test' in meta['sets']['data file']['items'])
-    #     self.assertTrue('q5' in meta['sets'])
-    #     self.assertTrue('q5_test' in meta['sets'])
-
-    # def test_copy_via_masks_sliced_and_reduced(self):
-    #     dataset = self._get_dataset()
-    #     meta, data = dataset.split()
-    #     suffix = 'test'
-    #     new_name = 'q5_test'
-    #     slicer = {'gender': [1]}
-    #     copy_only = [1, 2, 3]
-    #     dataset.copy('q5', suffix, slicer=slicer, copy_only=copy_only)
-    #     # name properly changend?
-    #     self.assertTrue('q5' in dataset.masks())
-    #     self.assertTrue(new_name in dataset.masks())
-    #     # item names updated?
-    #     items = meta['sets'][new_name]['items']
-    #     expected_items = ['columns@q5_test_1',
-    #                       'columns@q5_test_2',
-    #                       'columns@q5_test_3',
-    #                       'columns@q5_test_4',
-    #                       'columns@q5_test_5',
-    #                       'columns@q5_test_6']
-    #     self.assertEqual(items, expected_items)
-    #     sources = dataset.sources(new_name)
-    #     old_items_split = [s.split('_') for s in dataset.sources('q5')]
-    #     expected_sources = ['{}_{}_{}'.format('_'.join(ois[:-1]), suffix, ois[-1])
-    #                         for ois in old_items_split]
-    #     self.assertEqual(sources, expected_sources)
-    #     # lib reference properly updated?
-    #     lib_ref_mask = meta['masks'][new_name]['values']
-    #     lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
-    #     expected_lib_ref = 'lib@values@q5_test'
-    #     self.assertEqual(lib_ref_mask, lib_ref_items)
-    #     self.assertEqual(lib_ref_items, expected_lib_ref)
-    #     # new parent entry correct?
-    #     parent_spec = meta['columns'][dataset.sources(new_name)[0]]['parent']
-    #     expected_parent_spec = {'masks@{}'.format(new_name): {'type': 'array'}}
-    #     self.assertEqual(parent_spec, expected_parent_spec)
-    #     # sets entries replaced?
-    #     self.assertTrue('masks@q5' in meta['sets']['data file']['items'])
-    #     self.assertTrue('masks@q5_test' in meta['sets']['data file']['items'])
-    #     self.assertTrue('q5' in meta['sets'])
-    #     self.assertTrue('q5_test' in meta['sets'])
-    #     # metadata reduced (only codes 1, 2, 3)?
-    #     self.assertTrue(dataset.codes(new_name) == copy_only)
-    #     # data sliced and reduced properly?
-    #     for s in dataset.sources('q5_test'):
-    #         self.assertTrue(set(dataset[s].dropna().unique()) == set(copy_only))
-    #         self.assertTrue(dataset[[s, 'gender']].dropna()['gender'].unique() == 1)
 
     # def test_transpose(self):
     #     dataset = self._get_dataset(cases=500)
@@ -329,36 +541,6 @@ class TestDataSet:
     #     transposed_ct = dataset.crosstab('q5_trans', text=False)
     #     self.assertTrue(np.array_equal(original_ct.drop('All', 1, 1).T.values,
     #                     transposed_ct.drop('All', 1, 1).values))
-
-    # def test_reorder_values(self):
-    #     dataset = self._get_dataset()
-    #     dataset.reorder_values('q8', [96, 1, 98, 4, 3, 2, 5])
-    #     df_vals = self.check_freq(dataset, 'q8')
-    #     df_texts = self.check_freq(dataset, 'q8', 'text')
-    #     meta = dataset.meta('q8')
-    #     df_vals_index = df_vals.index.get_level_values(1).tolist()
-    #     df_vals_index.remove('All')
-    #     df_texts_index = df_texts.index.get_level_values(1).tolist()
-    #     df_texts_index.remove('All')
-    #     # correctly indexed?
-    #     self.assertTrue(df_vals_index == meta['codes'].tolist())
-    #     self.assertTrue(df_texts_index == meta['texts'].tolist())
-    #     # correct values?
-    #     expected = [[2367.0],
-    #                 [283.0],
-    #                 [949.0],
-    #                 [49.0],
-    #                 [970.0],
-    #                 [595.0],
-    #                 [216.0],
-    #                 [1235.0]]
-    #     self.assertEqual(df_vals.values.tolist(), expected)
-
-    # def test_reorder_values_raises_on_incomplete_list(self):
-    #     dataset = self._get_dataset()
-    #     dataset.set_verbose_errmsg(False)
-    #     new_order = [3, 2, 1]
-    #     self.assertRaises(ValueError, dataset.reorder_values, 'q8', new_order)
 
 
     # def test_set_missings_flagging(self):
@@ -397,81 +579,6 @@ class TestDataSet:
     #     expected_cat_vals = [595, 970, 1235]
     #     self.assertEqual(cat_vals, expected_cat_vals)
 
-    # def test_remove_values(self):
-    #     dataset = self._get_dataset()
-    #     dataset.remove_values('q5_1', [1, 2, 97, 98])
-    #     # removed from meta data?
-    #     expected_cat_meta = [[3, "Probably wouldn't"],
-    #                          [4, 'Probably would if asked'],
-    #                          [5, 'Very likely']]
-    #     self.assertEqual(dataset.meta('q5_1')[['codes', 'texts']].values.tolist(),
-    #                      expected_cat_meta)
-    #     # removed from case data?
-    #     expected_cat_vals = [cat[0] for cat in expected_cat_meta]
-    #     self.assertEqual(sorted(dataset._data['q5_1'].value_counts().index.tolist()),
-    #                      expected_cat_vals)
-    #     # does the engine correctly handle it?
-    #     df = self.check_freq(dataset, 'q5_1', show='text')
-    #     expected_index = [cat[1] for cat in expected_cat_meta]
-    #     df_index = df.index.get_level_values(1).tolist()
-    #     df_index.remove('All')
-    #     self.assertTrue(df_index == expected_index)
-    #     expected_results =  [[5194.0],
-    #                          [2598.0],
-    #                          [124.0],
-    #                          [2472.0]]
-    #     self.assertEqual(df.values.tolist(), expected_results)
-
-    # def test_extend_values_autocodes(self):
-    #     dataset = self._get_dataset()
-    #     meta_before = dataset.meta('q8')[['codes', 'texts']]
-    #     add_values = ['CAT A', 'CAT B']
-    #     dataset.extend_values('q8', add_values)
-    #     meta_after = dataset.meta('q8')[['codes', 'texts']]
-    #     # codes are correctly selected?
-    #     expected_codes_diff = [99, 100]
-    #     codes_diff = sorted(list(set(meta_after['codes'].values)-
-    #                              set(meta_before['codes'].values)))
-    #     self.assertEqual(codes_diff, expected_codes_diff)
-    #     # texts match?
-    #     expected_values_at_end = ['CAT A', 'CAT B']
-    #     self.assertEqual(meta_after['texts'].tail(2).values.tolist(),
-    #                      expected_values_at_end)
-
-    # def test_extend_values_usercodes(self):
-    #     dataset = self._get_dataset()
-    #     meta_before = dataset.meta('q8')[['codes', 'texts']]
-    #     add_values = [(210, 'CAT A'), (102, 'CAT B')]
-    #     dataset.extend_values('q8', add_values)
-    #     meta_after = dataset.meta('q8')[['codes', 'texts']]
-    #     # codes are correct?
-    #     expected_codes_at_end = [210, 102]
-    #     self.assertEqual(meta_after['codes'].tail(2).values.tolist(),
-    #                      expected_codes_at_end)
-    #     # texts match?
-    #     expected_values_at_end = ['CAT A', 'CAT B']
-    #     self.assertEqual(meta_after['texts'].tail(2).values.tolist(),
-    #                      expected_values_at_end)
-
-    # def test_extend_values_no_texts(self):
-    #     dataset = self._get_dataset()
-    #     dataset.set_verbose_infomsg(False)
-    #     meta_before = dataset.meta('q8')[['codes', 'texts']]
-    #     add_values = [3001, 30002, 3003]
-    #     dataset.extend_values('q8', add_values)
-    #     meta_after = dataset.meta('q8')[['codes', 'texts']]
-    #     # codes are correct?
-    #     self.assertEqual(meta_after['codes'].tail(3).values.tolist(),
-    #                      add_values)
-    #     # texts are empty?
-    #     expected_values_at_end = ['', '', '']
-    #     self.assertEqual(meta_after['texts'].tail(3).values.tolist(),
-    #                      expected_values_at_end)
-
-    # def test_extend_values_raises_on_dupes(self):
-    #     dataset = self._get_dataset()
-    #     add_values = [(1, 'CAT A'), (2, 'CAT B')]
-    #     self.assertRaises(ValueError, dataset.extend_values, 'q8', add_values)
 
     # def test_text_replacements_non_array(self):
     #     dataset = self._get_dataset()
@@ -485,20 +592,7 @@ class TestDataSet:
     #     self.assertEqual(column_text, expected_label)
     #     self.assertEqual(value_text, expected_value)
 
-    # def test_sorting_rules_meta(self):
-    #     dataset = self._get_dataset()
-    #     dataset.sorting('q8', fix=[3, 98, 100])
-    #     expected_rules = {'x': {'sortx': {'fixed': [3, 98],
-    #                                       'within': False,
-    #                                       'between': False,
-    #                                       'ascending': False,
-    #                                       'sort_on': '@',
-    #                                       'with_weight': 'auto'}},
-    #                       'y': {}}
-    #     # rule correctly set?: i.e. code 100 removed from fix list since it
-    #     # does not appear in the values meta?
-    #     self.assertEqual(dataset._meta['columns']['q8']['rules'],
-    #                      expected_rules)
+
 
     # def test_force_texts(self):
     #     dataset = self._get_dataset()

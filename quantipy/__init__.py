@@ -24,4 +24,4 @@ from .core.meta import Meta
 
 # from .core.builds.xlsx.excel import Excel
 
-# from .__version__ import version as __version__
+from .__version__ import version as __version__

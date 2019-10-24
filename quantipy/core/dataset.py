@@ -27,7 +27,6 @@ class DataSet(object):
         if meta is None:
             meta = Meta()
         self._meta = meta
-        self._inherit_meta_properties()
         self._inherit_meta_functions()
 
         # default fixes
@@ -76,22 +75,53 @@ class DataSet(object):
         else:
             self._data[name] = val
 
-    def _inherit_meta_properties(self):
-        self.masks = self._meta.masks
-        self.columns = self._meta.columns
+    @property
+    def masks(self):
+        return self._meta.masks
 
-        self.singles = self._meta.singles
-        self.delimited_sets = self._meta.delimited_sets
-        self.ints = self._meta.ints
-        self.floats = self._meta.floats
-        self.dates = self._meta.dates
-        self.strings = self._meta.strings
+    @property
+    def columns(self):
+        return self._meta.columns
 
-        self.filters = self._meta.filters
-        self.hidden_arrays = self._meta.hidden_arrays
+    @property
+    def singles(self):
+        return self._meta.singles
 
-        self.sets = self._meta.sets
-        self.batches = self._meta.batches
+    @property
+    def delimited_sets(self):
+        return self._meta.delimited_sets
+
+    @property
+    def ints(self):
+        return self._meta.ints
+
+    @property
+    def floats(self):
+        return self._meta.floats
+
+    @property
+    def dates(self):
+        return self._meta.dates
+
+    @property
+    def strings(self):
+        return self._meta.strings
+
+    @property
+    def filters(self):
+        return self._meta.filters
+
+    @property
+    def hidden_arrays(self):
+        return self._meta.hidden_arrays
+
+    @property
+    def sets(self):
+        return self._meta.sets
+
+    @property
+    def batches(self):
+        return self._meta.batches
 
     @property
     def text_key(self):
@@ -145,6 +175,7 @@ class DataSet(object):
         self.is_int = self._meta.is_int
         self.is_float = self._meta.is_float
         self.is_date = self._meta.is_date
+        self.is_string = self._meta.is_string
         self.is_array = self._meta.is_array
         self.is_array_item = self._meta.is_array_item
         self.is_numeric = self._meta.is_numeric
@@ -160,6 +191,7 @@ class DataSet(object):
         self.set_text = self._meta.set_text
         self.remove_html = self._meta.remove_html
         self.replace_texts = self._meta.replace_texts
+        self.repair_text_edits = self._meta.repair_text_edits
         # values
         self.get_values = self._meta.get_values
         self.extend_values = self._meta.extend_values
@@ -199,6 +231,7 @@ class DataSet(object):
         self.force_texts = self._meta.force_texts
         self.select_text_keys = self._meta.select_text_keys
         # lists and sets
+        self.get_set = self._meta.get_set
         self.create_set = self._meta.create_set
         self.extend_set = self._meta.extend_set
         self.roll_up = self._meta.roll_up
@@ -577,6 +610,85 @@ class DataSet(object):
     # inspect
     # ------------------------------------------------------------------------
     @params(is_var=["name"])
+    def is_nan(self, name):
+        """
+        Detect empty entries in the ``_data`` rows.
+
+        Parameters
+        ----------
+        name : str
+            The column variable name keyed in ``meta['columns']``.
+
+        Returns
+        -------
+        count : pandas.Series
+            A series with the results as bool.
+        """
+        return self._data[name].isnull()
+
+    @params(is_var=["name"], to_list=["codes"])
+    def any(self, name, codes):
+        """
+        Return a logical has_any() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_any() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *at least one of* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_any([codes]).
+        """
+        if self.is_array(name):
+            logics = []
+            for s in self.get_sources(name):
+                logics.append({s: has_any(codes)})
+            slicer = self.take(union(logics))
+        else:
+            slicer = self.take({name: has_any(codes)})
+        return slicer
+
+    @params(is_var=["name"], to_list=["codes"])
+    def all(self, name, codes):
+        """
+        Return a logical has_all() slicer for the passed codes.
+
+        .. note:: When applied to an array mask, the has_all() logic is ex-
+            tended to the item sources, i.e. the it must itself be true for
+            *all* the items.
+
+        Parameters
+        ----------
+        name : str, default None
+            The column variable name keyed in ``_meta['columns']`` or
+            ``_meta['masks']``.
+        codes : int or list of int
+            The codes to build the logical slicer from.
+
+        Returns
+        -------
+        slicer : pandas.Index
+            The indices fulfilling has_all([codes]).
+        """
+        if self.is_array(name):
+            logics = []
+            for s in self.get_sources(name):
+                logics.append({s: has_all(codes)})
+            slicer = self.take(intersection(logics))
+        else:
+            slicer = self.take({name: has_all(codes)})
+        return slicer
+
+    @params(is_var=["name"])
     def empty(self, name, condition=None):
         """
         Get all empty items of an array or check emptiness of included column.
@@ -613,7 +725,7 @@ class DataSet(object):
             A logical condition expressed as Quantipy logic that determines
             which subset of the case data rows to be considered.
         """
-        empty_items = self.empty(arrays, condition)
+        empty_items = self.empty(name, condition)
         if empty_items:
             if len(empty_items) == len(self.sources(name)):
                 self.set_property("_no_valid_items", True, True)
@@ -794,85 +906,6 @@ class DataSet(object):
         full_data = self._data.copy()
         series_data = self._data['@1'].copy()
         slicer, _ = get_logic_index(series_data, condition, full_data)
-        return slicer
-
-    @params(is_var=["name"])
-    def is_nan(self, name):
-        """
-        Detect empty entries in the ``_data`` rows.
-
-        Parameters
-        ----------
-        name : str
-            The column variable name keyed in ``meta['columns']``.
-
-        Returns
-        -------
-        count : pandas.Series
-            A series with the results as bool.
-        """
-        return self._data[name].isnull()
-
-    @params(is_var=["name"], to_list=["codes"])
-    def any(self, name, codes):
-        """
-        Return a logical has_any() slicer for the passed codes.
-
-        .. note:: When applied to an array mask, the has_any() logic is ex-
-            tended to the item sources, i.e. the it must itself be true for
-            *at least one of* the items.
-
-        Parameters
-        ----------
-        name : str, default None
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        codes : int or list of int
-            The codes to build the logical slicer from.
-
-        Returns
-        -------
-        slicer : pandas.Index
-            The indices fulfilling has_any([codes]).
-        """
-        if self.is_array(name):
-            logics = []
-            for s in self.get_sources(name):
-                logics.append({s: has_any(codes)})
-            slicer = self.take(union(logics))
-        else:
-            slicer = self.take({name: has_any(codes)})
-        return slicer
-
-    @params(is_var=["name"], to_list=["codes"])
-    def all(self, name, codes):
-        """
-        Return a logical has_all() slicer for the passed codes.
-
-        .. note:: When applied to an array mask, the has_all() logic is ex-
-            tended to the item sources, i.e. the it must itself be true for
-            *all* the items.
-
-        Parameters
-        ----------
-        name : str, default None
-            The column variable name keyed in ``_meta['columns']`` or
-            ``_meta['masks']``.
-        codes : int or list of int
-            The codes to build the logical slicer from.
-
-        Returns
-        -------
-        slicer : pandas.Index
-            The indices fulfilling has_all([codes]).
-        """
-        if self.is_array(name):
-            logics = []
-            for s in self.get_sources(name):
-                logics.append({s: has_all(codes)})
-            slicer = self.take(intersection(logics))
-        else:
-            slicer = self.take({name: has_all(codes)})
         return slicer
 
     def crosstab(self, x, y="@", f=None, **kwargs):
@@ -1056,7 +1089,7 @@ class DataSet(object):
             for v in created:
                 reduce_codes = [
                     value[0] for value in values
-                    if value[0] not in self.codes_in_data(v)]
+                    if value[0] not in self.get_codes_in_data(v)]
                 self.remove_values(v, reduce_codes)
 
     @params(repeat=["name"], is_mask=["name"], to_list=["codes"],
@@ -1135,6 +1168,8 @@ class DataSet(object):
             If provided, the copied version of the variable will contain
             (data and) meta for the all codes, except of the indicated.
         """
+        if not new_name:
+            new_name = "{}_rec".format(name)
         self._meta.copy(name, new_name, copy_only, copy_not)
         old = self.unroll(name)
         new = self.unroll(new_name)
@@ -1144,10 +1179,11 @@ class DataSet(object):
                 self[self.take(slicer), n] = self[o].copy()
                 if self.is_categorical(n):
                     remove = [
-                        code for code in self.codes_in_data(n)
+                        code for code in self.get_codes_in_data(n)
                         if code not in self.get_codes(n)]
                     if remove:
-                        self[n].apply(lambda x: remove_codes(x, remove))
+                        self[n] = self[n].apply(
+                            lambda x: remove_codes(x, remove))
 
     def copy_array_data(self, source, target, source_items=None,
                         target_items=None, slicer=None):
@@ -1157,12 +1193,12 @@ class DataSet(object):
         if not set(self.get_codes(source)) == set(self.get_codes(target)):
             err = "Expect equal codes for source and target."
             logger.error(err); raise ValueError(err)
-        sources = self.get_sources(source)
-        targets = self.get_sources(target)
-        if source_items:
-            sources = [sources[i - 1] for i in source_items]
-        if target_items:
-            targets = [targets[i - 1] for i in target_items]
+        sources = [
+            s for s in self.get_sources(source)
+            if not source_items or self.get_item_no(s) not in source_items]
+        targets = [
+            t for t in self.get_sources(target)
+            if not target_items or self.get_item_no(t) not in target_items]
         for s, t in zip(sources, targets):
             self[self.take(slicer), t] = self[s]
 
@@ -2473,7 +2509,8 @@ class DataSet(object):
             The codes to be removed from the ``DataSet`` variable.
         """
         self._meta.remove_values(name, remove)
-        self[self.unroll(name)].apply(lambda x: remove_codes(x, remove))
+        for n in self.unroll(name):
+            self[n] = self[n].apply(lambda x: remove_codes(x, remove))
 
     # array items
     # ------------------------------------------------------------------------

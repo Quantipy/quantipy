@@ -5,15 +5,6 @@ from pandas.core.index import Index
 from operator import (
     lt, le, eq, ne, ge, gt)
 
-__op_symbol__ = {
-    lt: '<',
-    le: '<=',
-    eq: '',
-    ne: '!=',
-    ge: '>=',
-    gt: '>'
-}
-
 __index_symbol__ = {
     Index.union: ',',
     Index.intersection: '&',
@@ -1155,6 +1146,14 @@ def get_logic_key_chunk(func, values, exclusive=False):
         The relationship-part of the view key that represents this
         combination of view function and values.
     """
+    __op_symbol__ = {
+        _is_lt: '<',
+        _is_le: '<=',
+        _is_eq: '',
+        _is_ne: '!=',
+        _is_ge: '>=',
+        _is_gt: '>'
+    }
 
     _not = '~' if func in [_not_any, _not_all, _not_count] else ''
     excl = 'e' if exclusive else ''

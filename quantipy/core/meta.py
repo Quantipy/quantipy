@@ -40,7 +40,7 @@ class Meta(dict):
     def text_key(self, tk):
         if tk not in self.valid_tks:
             err = "'{}' is not a valid textkey!".format(tk)
-            logger.error(err); ValueError(err)
+            logger.error(err); raise ValueError(err)
         self["lib"]["default text"] = tk
 
     @property
@@ -57,9 +57,6 @@ class Meta(dict):
 
     @dimensions_comp.setter
     def dimensions_comp(self, value):
-        if not isinstance(value, bool):
-            err = "'dimensions_comp' must be of type bool."
-            logger.error(err); raise TypeError(err)
         self["info"]["dimensions_comp"] = value
 
     @property
@@ -68,9 +65,6 @@ class Meta(dict):
 
     @dimensions_suffix.setter
     def dimensions_suffix(self, suffix):
-        if not isinstance(suffix, str):
-            err = "'dimensions_suffix' must be of type str."
-            logger.error(err); raise TypeError(err)
         self["info"]["dimensions_suffix"] = suffix
 
     @property
@@ -109,13 +103,10 @@ class Meta(dict):
     def strings(self):
         return self._get_columns("string")
 
-    def _get_columns(self, vtype=None):
-        if vtype:
-            return [
-                col for col in self.columns
-                if self.get_type(col) == vtype]
-        else:
-            return self.columns
+    def _get_columns(self, vtype):
+        return [
+            col for col in self.columns
+            if self.get_type(col) == vtype]
 
     @property
     def filters(self):
@@ -331,7 +322,7 @@ class Meta(dict):
             "type": "array",
             "subtype": subtype,
             "text": {text_key: label},
-            "name": array_name,
+            "name": name,
             "properties": prop
         }
         if subtype in CATEGORICAL:
@@ -482,7 +473,7 @@ class Meta(dict):
         if not name == "@1":
             self.extend_set(name)
 
-    def _add_array(name, qtype, label, items, categories, text_key):
+    def _add_array(self, name, qtype, label, items, categories, text_key):
         """
         Add a new mask to the instance.
         """
@@ -500,13 +491,14 @@ class Meta(dict):
             elif all_tuple:
                 i = "{}_{}".format(name, item[0])
                 lab = item[1]
-            item_set.append("columns@{}".format(i))
+            item_set.append(i)
             item_obj.append(self.start_item(i, lab, text_key))
             column_lab = '{} - {}'.format(label, lab)
             self["columns"][i] = self.start_column(
-                i, qtype, column_lab, text_key, self.is_categorical(name),
-                name, {'created': True})
+                i, qtype, column_lab, text_key, categories, name,
+                {'created': True})
         self["masks"][name] = self.start_mask(name, qtype, label, text_key)
+        self["masks"][name]["items"] = item_obj
         values = self.start_values(categories, text_key) if categories else []
         if values:
             self["lib"]["values"][name] = values
@@ -583,6 +575,8 @@ class Meta(dict):
             If provided, the copied version of the variable will contain
             meta for the all codes, except of the indicated.
         """
+        if not new_name:
+            new_name = "{}_rec".format(name)
         if copy_only and copy_not:
             err = "Must pass either 'copy_only' or 'copy_not', not both!"
             logger.error(err); raise ValueError(err)
@@ -606,17 +600,17 @@ class Meta(dict):
                 copy.deepcopy(self["sets"][name]), mapper)
             if self.is_categorical(name):
                 self["lib"]["values"][new_name] = self._rename_from_mapper(
-                    copy.deepcopy(self["lib"]["values"][name]), mapper)
+                    self["lib"]["values"][name][:], mapper)
             for source, new_source in zip(sources, new_sources):
                 self["columns"][new_source] = self._rename_from_mapper(
                     copy.deepcopy(self["columns"][source]), mapper)
         else:
             self["columns"][new_name] = self._rename_from_mapper(
                 copy.deepcopy(self["columns"][name]), mapper)
-        self.extend_set(name)
+        self.extend_set(new_name)
         if self.is_categorical and (copy_only or copy_not):
             remove = [
-                code for code in self.codes(new_name)
+                code for code in self.get_codes(new_name)
                 if (code not in copy_only) or (code in copy_not)]
             self.remove_values(new_name, remove)
         if dims_comp:
@@ -714,7 +708,7 @@ class Meta(dict):
 
     @params(is_var=["name"])
     def is_array_item(self, name):
-        if self.is_array or not self["columns"][name].get("parent"):
+        if self.is_array(name) or not self["columns"][name].get("parent"):
             return False
         else:
             return True
@@ -859,7 +853,7 @@ class Meta(dict):
 
     def by_type(self, qtype=None):
         """
-        View all DataSet variables that own the requested type.
+        View all variables that own the requested type.
         """
         return self.describe(only_type=qtype)
 
@@ -980,11 +974,10 @@ class Meta(dict):
                 name = valid
         return name
 
-    def _verify_new_name(new_name):
+    def _verify_new_name(self, new_name):
         new = self.valid_var_name(new_name)
         return new == new_name
 
-    @params(is_var=["name"])
     def get_weak_dupes(self, name):
         """
         Get all weak dupes (different spellings) of an input string.
@@ -1034,14 +1027,14 @@ class Meta(dict):
     def _new_array_items(self, name, new_name):
         sources = self.get_sources(name)
         suffixes = [source.rsplit("_", 1)[-1] for source in sources]
-        unique, dupes = _dupes_in_list(suffixes)
+        unique, dupes = dupes_and_unique(suffixes)
         if dupes or not all(u.isdigit() for u in unique):
             new_sources = [
                 "{}_{}".format(new_name, self.get_item_no(source))
                 for source in sources]
         else:
             new_sources = [
-                "{}_{}".format(new_name, source.rsplit("_", 1)[-1].isdigit())
+                "{}_{}".format(new_name, source.rsplit("_", 1)[-1])
                 for source in sources]
         if not all(self._verify_new_name(n_s) for n_s in new_sources):
             invalids = [
@@ -1056,28 +1049,24 @@ class Meta(dict):
     @staticmethod
     def _rename_from_mapper(obj, mapper):
         if isinstance(obj, dict):
-            for key in obj.keys():
-                if key in mapper:
-                    value = obj.pop(key)
-                    k = self._rename_from_mapper(key, mapper)
-                    obj[k] = self._rename_from_mapper(value, mapper)
-                else:
-                    self._rename_from_mapper(obj[key], mapper)
+            for key in list(obj.keys()):
+                k = Meta._rename_from_mapper(key, mapper)
+                obj[k] = Meta._rename_from_mapper(obj.pop(key), mapper)
             return obj
         elif isinstance(obj, list):
-            return [self._rename_from_mapper(item, mapper) for item in obj]
+            return [Meta._rename_from_mapper(item, mapper) for item in obj]
         elif isinstance(obj, tuple):
             return tuple(
-                self._rename_from_mapper(item, mapper) for item in obj)
-        elif isinstance(obj, str):
-            if obj == "@1" or "@" not in obj:
-                return obj
+                Meta._rename_from_mapper(item, mapper) for item in obj)
+        elif isinstance(obj, str) and not (obj == "@1" or "@" not in obj):
             new_obj = obj.split("@")
             if any(item in mapper for item in new_obj):
                 for x, item in enumerate(new_obj):
                     if item in mapper:
                         new_obj[x] = mapper[item]
             return "@".join(new_obj)
+        else:
+            return obj
 
     def dimensionize(self):
         """
@@ -1303,7 +1292,7 @@ class Meta(dict):
         else:
             if all(isinstance(missings, str)):
                 missings = self.get_codes_from_label(name, missings)
-            codes = self.codes(name)
+            codes = self.get_codes(name)
             m_codes = [c for c in codes if c in missings]
             m_map = {flag: m_codes}
             self["columns"][name]["missings"] = m_map
@@ -1562,7 +1551,7 @@ class Meta(dict):
         if self.is_array(name):
             lib_ref = self._get_value_ref(name)
             self["masks"][name]["values"] = lib_ref
-            self["lib"]["values"][mask] = values
+            self["lib"]["values"][name] = values
             for source in self.get_sources(name):
                 self["columns"][source]["values"] = lib_ref
         elif not self.is_array_item(name):
@@ -1570,7 +1559,7 @@ class Meta(dict):
 
     @params(is_var=["name"], is_cat=["name"], to_list=["new_values"],
             text_key=["text_key"], repeat=["name"])
-    def extend_values(sekf, name, new_values, text_key=None, safe=True):
+    def extend_values(self, name, new_values, text_key=None, safe=True):
         """
         Extend the existing values object of a variable.
 
@@ -1587,17 +1576,18 @@ class Meta(dict):
         """
         if self.is_array_item(name):
             err = "Cannot change values object of a single array item."
-            logger.error(er); raise ValueError(err)
-        start_at = max(self.codes(name))
+            logger.error(err); raise ValueError(err)
+        start_at = max(self.get_codes(name)) + 1
         new_val_obj = self.start_values(new_values, text_key, start_at, safe)
-        values = self.get_values(name, text_key)
+        values = self[self._get_value_ref(name)][:]
         values.extend(new_val_obj)
+
         self._check_dupes_in_values(values, text_key, safe)
         self._set_values(name, values)
 
     @params(is_var=["name"], is_cat=["name"], to_list=["remove"],
             repeat=["name"])
-    def remove_values(sekf, name, remove):
+    def remove_values(self, name, remove):
         """
         Remove values from the existing values object of a variable.
 
@@ -1610,8 +1600,8 @@ class Meta(dict):
         """
         if self.is_array_item(name):
             err = "Cannot change values object of a single array item."
-            logger.error(er); raise ValueError(err)
-        codes = self.codes(name)
+            logger.error(err); raise ValueError(err)
+        codes = self.get_codes(name)
         remove = [r for r in remove if r in codes]
         if set(remove) == set(codes):
             err = "Cannot remove all codes of a categorical variable."
@@ -1619,11 +1609,11 @@ class Meta(dict):
         value_ref = self._get_value_ref(name)
         new_values = [
             value for value in self[value_ref] if value["value"] not in remove]
-        self[value_ref] = new_values
+        self._set_values(name, new_values)
 
     @params(is_var=["name"], is_cat=["name"], to_list=["order"],
             repeat=["name"])
-    def reorder_values(sekf, name, order):
+    def reorder_values(self, name, order):
         """
         Apply a new order to the value codes.
 
@@ -1636,8 +1626,8 @@ class Meta(dict):
         """
         if self.is_array_item(name):
             err = "Cannot change values object of a single array item."
-            logger.error(er); raise ValueError(err)
-        codes = self.codes(name)
+            logger.error(err); raise ValueError(err)
+        codes = self.get_codes(name)
         order = [r for r in order if r in codes]
         if not set(order) == set(codes):
             err = "The new order does not take all variable codes into account"
@@ -1646,18 +1636,19 @@ class Meta(dict):
         new_values = [
             value for idx in order for value in self[value_ref]
             if value["value"] == idx]
-        self[value_ref] = new_values
+        self._set_values(name, new_values)
 
     def _merge_values(self, name, new_values, overwrite):
         codes = self.get_codes(name)
-        value_ref = self._get_value_ref(name)
+        values = self[self._get_value_ref(name)]
         for value in new_values:
             if value["value"] in codes:
-                for v in self[value_ref]:
+                for v in values:
                     if v["value"] == value["value"]:
                         self._merge_texts(v["text"], value["text"], overwrite)
             else:
-                self[value_ref].append(value)
+                values.append(value)
+        self._set_values(name, values)
 
     @params(is_var=["name"], is_cat=["name"])
     def _get_value_ref(self, name):
@@ -1805,11 +1796,12 @@ class Meta(dict):
             A mapping with following structure: `{code: factor}`
         """
         if self.is_single(name):
-            values = self[value_ref]
+            values = self[self._get_value_ref(name)]
             for value in values:
                 code = value["value"]
                 if code in factors:
                     value["factor"] = factors[code]
+            self._set_values(name, values)
 
     @params(is_var=["name"], is_cat=["name"], repeat=["name"])
     def del_factors(self, name):
@@ -1905,7 +1897,7 @@ class Meta(dict):
         for source in self.get_sources(name):
             item_no = self.get_item_no(source)
             if item_no in texts:
-                self.set_variable_text(source, texts[item_no], text_key, axis)
+                self.set_text(source, texts[item_no], text_key, axis)
 
     @params(is_mask=["name"], repeat=["name"])
     def reorder_items(self, name, order):
@@ -2033,10 +2025,11 @@ class Meta(dict):
 
     @params(is_column=["name"])
     def get_parent(self, name):
-        if not is_array_item(name):
+        if not self.is_array_item(name):
             return None
         else:
-            return self["columns"][name]["parent"][0].split("@")[-1]
+            parents = list(self["columns"][name]["parent"].keys())
+            return parents[0].split("@")[-1]
 
     @params(is_column=["variables"])
     def to_array(self, name, variables, label):
@@ -2059,7 +2052,8 @@ class Meta(dict):
         variables = uniquify_list(variables)
 
         if self.is_categorical(variables[0]):
-            values = uniquify_list([self.get_values(var) for var in variables])
+            values = uniquify_list([
+                self[self._get_value_ref(var)] for var in variables])
             if len(values) > 1:
                 err = "Cannot combine variables to array with different values"
                 logger.error(err); raise ValueError(err)
@@ -2195,7 +2189,7 @@ class Meta(dict):
         """
         func = self._used_text_keys
         kwargs = {'tks': {'tks': []}}
-        DataSet._apply_to_texts(func, self, kwargs)
+        Meta._apply_to_texts(func, self, kwargs)
         return kwargs['tks']['tks']
 
     @staticmethod
@@ -2248,12 +2242,12 @@ class Meta(dict):
         if not any(tk in obj for tk in text_key):
             msg = 'Cannot select {}. A variable does not contain any of it.'
             raise ValueError(msg.format(text_key))
-        for tk in obj.keys():
+        for tk in list(obj.keys()):
             if tk not in ['x edits', 'y edits']:
                 if tk not in text_key:
                     obj.pop(tk)
             else:
-                for etk in obj[tk].keys():
+                for etk in list(obj[tk].keys()):
                     if etk not in text_key:
                         obj[tk].pop(etk)
 
@@ -2309,6 +2303,7 @@ class Meta(dict):
             elif tk in ['x edits', 'y edits']:
                 for etk, etext in obj[tk].items():
                     if etk in text_key:
+
                         for k, v in replace_map.items():
                             obj[tk][etk] = obj[tk][etk].replace(k, v)
 
@@ -2504,11 +2499,10 @@ class Meta(dict):
                 logger.info("Fixed subtype for '{}'".format(mask))
             # verify mask values
             if self.is_categorical(mask):
-                values = self.emulate_meta(self.get_values(mask))
-                if not isinstance(values, str):
-                    lib_ref = self._get_value_ref(mask)
+                lib_ref = self._get_value_ref(mask)
+                if not isinstance(self["masks"][mask]["values"], str):
                     self["masks"][mask]["values"] = lib_ref
-                    self["lib"]["values"][mask] = values
+                    self["lib"]["values"][mask] = self[lib_ref]
                     logger.info("Fixed value ref for '{}'".format(mask))
             else:
                 self._del_values(mask)
@@ -2531,9 +2525,9 @@ class Meta(dict):
                 # verify parent and values for non-array items
                 self["columns"][col]["parent"] = {}
                 if self.is_categorical(col):
+                    values = self["columns"][col]["values"]
                     if isinstance(values, str):
-                        values = self.emulate_meta(self.get_values(col))
-                        self["masks"][col]["values"] = values
+                        self["columns"][col]["values"] = self[values]
                 else:
                     self._del_values(col)
 
@@ -2567,8 +2561,9 @@ class Meta(dict):
             err = "Cannot add duplicated codes: {}".format(c_dupes)
             logger.error(err); raise ValueError(err)
         if safe:
-            t_dupes = dupes_in_list(
-                [self._extract_text(value["text"]) for value in values])
+            t_dupes = dupes_in_list([
+                self._extract_text(value["text"], text_key)
+                for value in values])
             if t_dupes:
                 err = "Cannot add duplicated texts: {}".format(t_dupes)
                 logger.error(err); raise ValueError(err)

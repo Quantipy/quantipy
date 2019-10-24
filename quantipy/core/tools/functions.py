@@ -253,7 +253,7 @@ def ensure_list(obj):
     return obj
 
 
-def _dupes_in_list(the_list):
+def dupes_and_unique(the_list):
     unique = []
     dupes = []
     for item in the_list:
@@ -265,12 +265,12 @@ def _dupes_in_list(the_list):
 
 
 def uniquify_list(the_list):
-    unique, _ = _dupes_in_list(the_list)
+    unique, _ = dupes_and_unique(the_list)
     return unique
 
 
 def dupes_in_list(the_list):
-    _, dupes = _dupes_in_list(the_list)
+    _, dupes = dupes_and_unique(the_list)
     return dupes
 
 
