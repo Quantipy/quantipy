@@ -503,7 +503,7 @@ class Meta(dict):
         values = self.start_values(categories, text_key) if categories else []
         if values:
             self["lib"]["values"][name] = values
-        self.create_set(name, item_set)
+        self.create_set(name, item_set, overwrite=True)
         self.extend_set(name)
         if self.dimensions_comp:
             mapper = {}

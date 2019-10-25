@@ -9,45 +9,6 @@ import pandas as pd
 from collections import OrderedDict
 
 
-def set_encoding(encoding):
-    """
-    Hack sys.setdefaultencoding() to escape ASCII hell.
-
-    Parameters
-    ----------
-    encoding : str
-        The name of the encoding to default to.
-    """
-    default_stdout = sys.stdout
-    default_stderr = sys.stderr
-    reload(sys)
-    sys.setdefaultencoding(encoding)
-    sys.stdout = default_stdout
-    sys.stderr = default_stderr
-
-
-def make_like_ascii(text):
-    """
-    Replaces any non-ascii unicode with ascii unicode.
-
-    http://www.fileformat.info/info/unicode/char/
-    """
-    unicode_ascii_mapper = {
-        u'\u2022': u'-',
-        u'\u2013': u'-',
-        u'\u2018': u'\u0027',
-        u'\u2019': u'\u0027',
-        u'\u201c': u'\u0022',
-        u'\u201d': u'\u0022',
-        u'\u00a3': u'GBP',
-        u'\u20AC': u'EUR',
-        u'\u2026': u'\u002E\u002E\u002E',
-    }
-    for old, new in unicode_ascii_mapper.iteritems():
-        text = text.replace(old, new)
-    return text
-
-
 # -----------------------------------------------------------------------------
 # i/o
 # -----------------------------------------------------------------------------
@@ -67,15 +28,13 @@ def loads_json(json_text, hook=OrderedDict):
     return obj
 
 
-def save_json(obj, path_json, decode_str=False, decoder='UTF-8'):
-    if decode_str:
-        obj = unicoder(obj, decoder)
+def represent(obj):
+    if isinstance(obj, np.generic):
+        return np.asscalar(obj)
+    else:
+        return "Unserializable object: {}".format(type(obj))
 
-    def represent(obj):
-        if isinstance(obj, np.generic):
-            return np.asscalar(obj)
-        else:
-            return "Unserializable object: {}".format(type(obj))
+def save_json(obj, path_json):
     with open(path_json, 'w+') as f:
         json.dump(obj, f, default=represent, sort_keys=True)
 
@@ -296,7 +255,7 @@ def insert_by_anchor(the_list, incl):
     ----
     Only string items and lists of str are supported.
     """
-    if not all(isinstance(i, basestring) for i in the_list):
+    if not all(isinstance(i, str) for i in the_list):
         msg = "Only string items are supported!"
         logger.error(msg); raise ValueError(msg)
     if not isinstance(incl, (list, dict)):
@@ -306,12 +265,16 @@ def insert_by_anchor(the_list, incl):
         the_list.extend(incl)
         return the_list
 
+    for v in flatten_list(list(incl.values())):
+        while v in the_list:
+            the_list.remove(v)
+
     ext = incl.pop(-1, [])
     if not isinstance(ext, list):
         ext = [ext]
     the_list.extend(ext)
     for k in list(incl.keys()):
-        if isinstance(k, basestring):
+        if isinstance(k, str):
             incl[the_list.index(k)] = incl.pop(k)
             k = the_list.index(k)
         if not isinstance(incl[k], list):

@@ -605,6 +605,7 @@ class DataSet(object):
 
     def reset_index(self):
         self._data.reset_index(drop=True, inplace=True)
+        self._data = self._data[["@1"] + self.unroll(self.variables())]
 
     # ------------------------------------------------------------------------
     # inspect
@@ -983,6 +984,11 @@ class DataSet(object):
         name = self.unroll(name)
         for n in name:
             self._add_data_column(name, replace)
+        variables = self.unroll(self.variables()) + ["@1"]
+        if any(col not in variables for col in self._data.columns):
+            for col in self._data.columns.tolist():
+                if col not in variables:
+                    self._data.drop(col, 1, inplace=True)
 
     @params(repeat=["name"])
     def categorize(self, name, categorized_name=None):
@@ -2112,7 +2118,7 @@ class DataSet(object):
             logic = ['@1']
         values = []
         for x, log in enumerate(logic, start):
-            if isinstance(log, basestring):
+            if isinstance(log, str):
                 if log not in self:
                     raise KeyError("{} is not included in Dataset".format(log))
                 val = (x, '{} not empty'.format(log), {log: not_count(0)})
@@ -2227,7 +2233,7 @@ class DataSet(object):
         # get list to align against
         if not align_against:
             align_against = self._variables_from_set("data file")
-        elif isinstance(align_against, basestring):
+        elif isinstance(align_against, str):
             align_against = self._variables_from_set(align_against)
 
         # recode suffixes and replace parent
@@ -2255,7 +2261,7 @@ class DataSet(object):
         new_vlist += miss
         return new_vlist
 
-    @params(to_list='reposition')
+    @params(to_list='new_order')
     def order(self, new_order=None, reposition=None):
         """
         Set the global order of the DataSet variables collection.
@@ -2277,15 +2283,16 @@ class DataSet(object):
             err = "Can only either apply ``new_order`` or ``reposition``"
             logger.error(err); raise ValueError(err)
         if new_order:
-            if not sorted(self.variables_from_set()) == sorted(new_order):
+            if not sorted(self.variables()) == sorted(new_order):
                 err = "'new_order' must contain all DataSet variables."
                 logger.error(err); raise ValueError(err)
             self.create_set("data file", include=new_order, overwrite=True)
         elif reposition:
-            new_order = insert_by_anchor(self.variables_from_set(), reposition)
-            new_order = uniquify_list(order)
+            new_order = insert_by_anchor(self.variables(), reposition)
+            new_order = uniquify_list(new_order)
             self.create_set("data file", include=new_order, overwrite=True)
-        self._data = self._data[self.unroll(new_order)]
+        new_order = ["@1"] + self.unroll(new_order)
+        self._data = self._data[new_order]
 
     # ------------------------------------------------------------------------
     # merging

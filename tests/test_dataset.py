@@ -224,8 +224,8 @@ class TestDataSet:
     def test_add_meta_array(self, dataset):
         name, qtype, label = 'array_test', 'delimited set', 'TEST LABEL TEXT'
         cats = ['Cat 1', 'Cat 2', 'Cat 3', 'Cat 4', 'Cat 5']
-        items1 = [(1, 'ITEM A'), (3, 'ITEM B'), (6, 'ITEM C')]
-        items2 = ['ITEM A', 'ITEM B', 'ITEM C']
+        items1 = ['ITEM A', 'ITEM B', 'ITEM C']
+        items2 = [(1, 'ITEM A'), (3, 'ITEM B'), (6, 'ITEM C')]
         for check, items in enumerate([items1, items2], start=1):
             dataset.add_meta(name, qtype, label, cats, items)
             # check values and parent
@@ -236,6 +236,7 @@ class TestDataSet:
             sources = dataset.get_sources(name)
             parent = {'masks@array_test': {'type': 'array'}}
             for source in sources:
+                print (check, source)
                 assert dataset._meta["columns"][source]["values"] == value_ref
                 assert dataset._meta["columns"][source]["parent"] == parent
             # check items
@@ -243,13 +244,13 @@ class TestDataSet:
             if check == 1:
                 assert items == [
                     ('array_test_1', 'ITEM A'),
-                    ('array_test_3', 'ITEM B'),
-                    ('array_test_6', 'ITEM C')]
+                    ('array_test_2', 'ITEM B'),
+                    ('array_test_3', 'ITEM C')]
             elif check == 2:
                 assert items == [
                     ('array_test_1', 'ITEM A'),
-                    ('array_test_2', 'ITEM B'),
-                    ('array_test_3', 'ITEM C')]
+                    ('array_test_3', 'ITEM B'),
+                    ('array_test_6', 'ITEM C')]
             # check set
             data_file = dataset.get_set("data file")
             assert 'masks@array_test' in data_file
@@ -470,6 +471,28 @@ class TestDataSet:
         assert dataset.get_rules("q6_1", "x") == expect
 
 
+    # ------------------------------------------------------------------------
+    # order
+    # ------------------------------------------------------------------------
+    def test_order(self, dataset, caplog):
+        init_order = dataset.variables()
+        rev_order = list(reversed(init_order))
+        assert dataset._data.columns.tolist()[1:] == dataset.unroll(init_order)
+        dataset.order(rev_order)
+        assert dataset._data.columns.tolist()[1:] == dataset.unroll(rev_order)
+        assert dataset.variables() == rev_order
+        dataset.order(reposition={-1: 'gender', "age": "q5"})
+        variables = dataset.variables()
+        assert variables[-1] == "gender"
+        assert variables[variables.index("age") - 1] == "q5"
+        dataset.order(init_order)
+
+        msg = "Can only either apply ``new_order`` or ``reposition``"
+        _assert_raise(
+            caplog, ValueError, msg, dataset.order, init_order, {-1: "age"})
+        msg = "'new_order' must contain all DataSet variables."
+        _assert_raise(caplog, ValueError, msg, dataset.order, init_order[:-1])
+
 
 
     # def check_freq(self, dataset, var, show='values'):
@@ -479,35 +502,6 @@ class TestDataSet:
     #     return cross(dataset._meta, dataset._data, x=x, y=y,
     #                  show=show, rules=rules)
 
-    # def test_order_full_change(self):
-    #     dataset = self._get_dataset()
-    #     variables = dataset._variables_from_set('data file')
-    #     new_order = list(sorted(variables, key=lambda v: v.lower()))
-    #     dataset.order(new_order)
-    #     new_set_order = dataset._variables_to_set_format(new_order)
-    #     data_file_items = dataset._meta['sets']['data file']['items']
-    #     df_columns = dataset._data.columns.tolist()
-    #     self.assertEqual(new_set_order, data_file_items)
-    #     self.assertEqual(dataset.unroll(new_order), df_columns)
-
-    # def test_order_repos_change(self):
-    #     dataset = self._get_dataset()
-    #     repos = [{'age': ['q8', 'q5']},
-    #              {'q6': 'q7'},
-    #              {'q5': 'weight_a'}]
-    #     dataset.order(reposition=repos)
-    #     data_file_items = dataset._meta['sets']['data file']['items']
-    #     df_columns = dataset._data.columns.tolist()
-    #     expected_items = ['record_number', 'unique_id', 'q8', 'weight_a', 'q5',
-    #                       'age', 'birth_day', 'birth_month', 'birth_year',
-    #                       'gender', 'locality', 'ethnicity', 'religion', 'q1',
-    #                       'q2', 'q2b', 'q3', 'q4', 'q7', 'q6', 'q8a', 'q9',
-    #                       'q9a', 'Wave', 'weight_b', 'start_time', 'end_time',
-    #                       'duration', 'q14_1', 'q14_2', 'q14_3', 'RecordNo']
-    #     expected_columns = dataset.unroll(expected_items)
-    #     self.assertEqual(dataset._variables_to_set_format(expected_items),
-    #                      data_file_items)
-    #     self.assertEqual(expected_columns, df_columns)
 
 
     # def test_rename_via_masks(self):
