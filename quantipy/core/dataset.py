@@ -3,16 +3,18 @@
 
 from ..__imports__ import *  # noqa
 
-# from .io import (
-#     quantipy_from_dimensions,
-#     quantipy_from_ascribe,
-#     parse_sav_file,
-#     dimensions_from_quantipy,
-#     save_sav
-# )
+from .io import (
+    quantipy_from_dimensions,
+    DimensionsWriter,
+    # quantipy_from_ascribe,
+    # parse_sav_file,
+    # dimensions_from_quantipy,
+    # save_sav
+)
 from .meta import Meta
 
 logger = get_logger(__name__)
+
 
 class DataSet(object):
     """
@@ -399,7 +401,7 @@ class DataSet(object):
         meta, data = quantipy_from_dimensions(path_mdd, path_ddf)
         dataset = cls(name, meta, data)
         dataset.path = path
-        self._verbose_io(name, path, "dimensions")
+        dataset._verbose_io(name, path, "dimensions")
         return dataset
 
     @classmethod
@@ -423,7 +425,7 @@ class DataSet(object):
         meta, data = quantipy_from_ascribe(path_xml, path_txt)
         dataset = cls(name, meta, data)
         dataset.path = path
-        self._verbose_io(name, path, "ascribe")
+        dataset._verbose_io(name, path, "ascribe")
         return dataset
 
     @classmethod
@@ -442,10 +444,10 @@ class DataSet(object):
         meta, data = parse_sav_file(path_sav)
         dataset = cls(name, meta, data)
         dataset.path = path
-        self._verbose_io(name, path, "SPSS")
+        dataset._verbose_io(name, path, "SPSS")
         return dataset
 
-    def to_quantipy(self, name=None, path=None):
+    def to_quantipy(self, name=None, path="."):
         """
         Write the data and meta components to .csv/.json files.
 
@@ -475,8 +477,7 @@ class DataSet(object):
         else:
             return copy.deepcopy(self._meta), self._data.copy()
 
-    @params(text_key='text_key')
-    def to_dimensions(self, name=None, path=None, **kwargs):
+    def to_dimensions(self, name=None, path=".", **kwargs):
         """
         Build Dimensions/SPSS Base Professional .ddf/.mdd data pairs.
 
@@ -497,13 +498,12 @@ class DataSet(object):
         """
         path = path or self.path
         name = name or self.name
-        path_mdd = os.path.join(path, u"{}.mdd".format(name))
-        path_ddf = os.path.join(path, u"{}.ddf".format(name))
         ds = self.clone()
         if not ds.dimensions_comp:
             ds.dimensionize()
-        dimensions_from_quantipy(
-            ds._meta, ds._data, path_mdd, path_ddf, text_key)
+        writer = DimensionsWriter(
+            ds._data, ds._meta, kwargs.pop("text_key", None))
+        writer.run(name, path, **kwargs)
         self._verbose_io(name, path, "dimensions", False)
 
     @params(text_key='text_key')
@@ -2000,13 +2000,12 @@ class DataSet(object):
 
         org_wname = weight_name
         if report:
-            print (engine.get_report())
-            # print
+            print(engine.get_report())
         if path_report:
             df = engine.get_report()
             full_file_path = '{} ({}).xlsx'.format(path_report, weight_name)
             df.to_excel(full_file_path)
-            print ('Weight report saved to:\n{}'.format(full_file_path))
+            print('Weight report saved to:\n{}'.format(full_file_path))
         s_name = weight_scheme.name
         s_w_name = 'weights_{}'.format(s_name)
         if inplace:
@@ -2144,7 +2143,8 @@ class DataSet(object):
             raise ValueError('Cannot remove all values from filter var.')
         self.uncode(name, {0: {name: 0}})
         self.remove_values(name, values)
-        self.recode(name, {0: {name: has_count(len(self.get_codes(name)) - 1)}})
+        self.recode(
+            name, {0: {name: has_count(len(self.get_codes(name)) - 1)}})
 
     def manifest_filter(self, name):
         """
@@ -2475,9 +2475,9 @@ class DataSet(object):
         if self.dimensions_comp:
             err = "Instance is already dimensionized."
             logger.error(err); raise ValueError(err)
-        old = self.unroll(self.variables)
+        old = self.unroll(self.variables())
         self._meta.dimensionize()
-        new = self.unroll(self.variables)
+        new = self.unroll(self.variables())
         mapper = dict(zip(old, new))
         self._data.rename(columns=mapper, inplace=True)
 
@@ -2488,9 +2488,9 @@ class DataSet(object):
         if not self.dimensions_comp:
             err = "Instance is already undimensionized."
             logger.error(err); raise ValueError(err)
-        old = self.unroll(self.variables)
+        old = self.unroll(self.variables())
         self._meta.undimensionize()
-        new = self.unroll(self.variables)
+        new = self.unroll(self.variables())
         mapper = dict(zip(old, new))
         self._data.rename(columns=mapper, inplace=True)
 
@@ -2580,7 +2580,7 @@ class DataSet(object):
     # @params(to_list='batches')
     # def populate(self, batches='all', verbose=True):
     #     """
-    #     Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions.
+    #     Create a ``qp.Stack`` based on all available ``qp.Batch`` definitions
 
     #     Parameters
     #     ----------

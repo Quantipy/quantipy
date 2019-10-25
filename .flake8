@@ -6,14 +6,6 @@ ignore =
     F405
 
 filename =
-    *audit.py
-    *cache.py
-    *chain.py
-    *chainannotations.py
-    *chainmanager.py
-    *excel.py
-    *excel_formats.py
-    *excel_formats_constants.py
-    *link.py
-    *stack.py
-    *view.py
+    *core/meta.py
+    *core/dataset.py
+    *core/io/dimensions/*.py

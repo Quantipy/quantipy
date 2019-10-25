@@ -40,6 +40,19 @@ from operator import (
     mul, truediv
 )
 
+from io import (
+    StringIO
+)
+
+from lxml import (
+    etree
+)
+
+from subprocess import (
+    check_output,
+    STDOUT,
+    CalledProcessError)
+
 # -----------------------------------------------------------------------------
 # helpers inside QP
 # -----------------------------------------------------------------------------

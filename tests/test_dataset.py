@@ -18,12 +18,16 @@ def dataset():
     return ds
 
 def _remove_files(name, suffix=[]):
+    if not isinstance(suffix, list):
+        suffix = [suffix]
     for suf in suffix:
         path = os.path.join(DATA, "{}.{}".format(name, suf))
         if os.path.exists(path):
             os.remove(path)
 
 def _assert_exists(name, suffix=[]):
+    if not isinstance(suffix, list):
+        suffix = [suffix]
     for suf in suffix:
         path = os.path.join(DATA, "{}.{}".format(name, suf))
         assert os.path.exists(path)
@@ -39,7 +43,7 @@ class TestDataSet:
     # ------------------------------------------------------------------------
     # properties
     # ------------------------------------------------------------------------
-    def test_aproperties(self, dataset):
+    def test_properties(self, dataset):
         assert set(dataset.columns) == set([
             '@1', 'RecordNo', 'Wave', 'age', 'birth_day', 'birth_month',
             'birth_year', 'duration', 'end_time', 'ethnicity', 'gender',
@@ -73,7 +77,8 @@ class TestDataSet:
         assert set(dataset.ints) == set([
             '@1', 'RecordNo', 'age', 'birth_day', 'birth_month', 'birth_year',
             'record_number', 'unique_id'])
-        assert set(dataset.floats) == set(['weight', 'weight_a', 'weight_b'])
+        assert set(dataset.floats) == set(
+            ['weight', 'weight_a', 'weight_b', "duration"])
         assert set(dataset.dates) == set(['end_time', 'start_time'])
         assert set(dataset.strings) == set(['q8a', 'q9a'])
         assert dataset.filters == []
@@ -97,9 +102,34 @@ class TestDataSet:
 
     def test_to_quantipy(self, dataset):
         _remove_files("test_ds", ["json", "csv"])
-        dataset.to_quantipy("test_ds")
+        dataset.to_quantipy("test_ds", DATA)
         _assert_exists("test_ds", ["json", "csv"])
         _remove_files("test_ds", ["json", "csv"])
+
+    def test_from_dimensions(self, dataset):
+        name = NAME
+        path = DATA
+        ds = DataSet.from_dimensions(name, path)
+        ds.undimensionize()
+        variables = [
+            v for v in dataset.variables()
+            if not (dataset.empty(v) or "visit" in v)]
+        assert set(ds.variables()) == set(variables)
+
+    def test_to_dimensions(self, dataset):
+        name = "test_ds"
+        files = [
+            ("{}_create_mdd".format(name), "mrs"),
+            ("{}_create_ddf".format(name), "dms"),
+            ("{}_paired".format(name), "csv"),
+            ("{}_datastore".format(name), "csv")]
+        for f in files:
+            _remove_files(*f)
+        path = DATA
+        dataset.to_dimensions(name, path, execute=False, clean_up=False)
+        for f in files:
+            _assert_exists(*f)
+            _remove_files(*f)
 
     def test_clone(self, dataset):
         ds = dataset.clone()
@@ -384,7 +414,6 @@ class TestDataSet:
         dataset.set_item_texts("q6", {1: "test"}, axis="x")
         assert dataset.get_text("q6_1", False, axis="x") == "new new - test"
         dataset.replace_texts({"new new": "new"})
-        print (dataset._meta["columns"]["q6_1"]["text"])
         assert dataset.get_text("q6_1", False, axis="x") == "new - test"
 
     def test_text_keys(self, dataset, caplog):

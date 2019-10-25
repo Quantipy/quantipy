@@ -3,6 +3,7 @@ from ..__imports__ import *  # noqa
 
 logger = get_logger(__name__)
 
+
 class Meta(dict):
 
     def __init__(self, json_dict={}):
@@ -236,19 +237,19 @@ class Meta(dict):
         meta = {
             "info": {
                 "text": "",
-                "dimensions_comp": self.dimensions_comp,
-                "dimensions_suffix": self.dimensions_suffix
+                "dimensions_comp": False,
+                "dimensions_suffix": "_grid"
             },
             "lib": {
-                "default text": self.text_key,
-                "valid text": self.valid_tks,
+                "default text": "en-GB",
+                "valid text": VALID_TKS,
                 "values": {}
             },
             "columns": {},
             "masks": {},
             "sets": {
                 "data file": {
-                    "text": {self.text_key: "Variable order in source file"},
+                    "text": {"en-GB": "Variable order in source file"},
                     "items": []
                 }
             },
@@ -792,7 +793,7 @@ class Meta(dict):
             types[qptype].append(var)
         max_types = max(len(values) for values in types.values())
         for k, v in types.items():
-            types[k] = _pad_list(v, max_types)
+            types[k] = self._pad_list(v, max_types)
         types = pd.DataFrame(types)
         if only_type:
             types = types[only_type]
@@ -1058,6 +1059,7 @@ class Meta(dict):
         elif isinstance(obj, tuple):
             return tuple(
                 Meta._rename_from_mapper(item, mapper) for item in obj)
+
         elif isinstance(obj, str) and not (obj == "@1" or "@" not in obj):
             new_obj = obj.split("@")
             if any(item in mapper for item in new_obj):
@@ -1065,6 +1067,8 @@ class Meta(dict):
                     if item in mapper:
                         new_obj[x] = mapper[item]
             return "@".join(new_obj)
+        elif isinstance(obj, str):
+            return mapper.get(obj, obj)
         else:
             return obj
 
@@ -1128,7 +1132,7 @@ class Meta(dict):
             parent = self.get_parent(name)
         name = self.dims_free_array_item_name(name)
         if self.dimensions_comp:
-            return "{parent}[{{name}}].{parent}{suffix}".format(
+            return "{parent}[{{{name}}}].{parent}{suffix}".format(
                 parent=parent, name=name, suffix=self.dimensions_suffix)
         else:
             return name
@@ -2049,16 +2053,17 @@ class Meta(dict):
             err = "Cannot add '{}'. Weak duplicates exist: {}"
             err = err.format(name, name, self.get_weak_dupes(name))
             logger.error(err); raise ValueError(err)
+        name = self.dims_free_array_name(name)
         variables = uniquify_list(variables)
 
         if self.is_categorical(variables[0]):
-            values = uniquify_list([
+            all_values = uniquify_list([
                 self[self._get_value_ref(var)] for var in variables])
-            if len(values) > 1:
+            if len(all_values) > 1:
                 err = "Cannot combine variables to array with different values"
                 logger.error(err); raise ValueError(err)
             else:
-                self["lib"]["values"][name] = self[self._get_value_ref(name)]
+                values = all_values[0]
             if any(self.is_delimited_set(var) for var in variables):
                 qtype = "delimited set"
             else:
@@ -2073,11 +2078,15 @@ class Meta(dict):
             text = self.get_text(var)
             texts.append(text)
             items.append(self.start_item(var, text))
-            self["columns"][name]["parent"] = parent
+            self["columns"][var]["parent"] = parent
         self["masks"][name] = self.start_mask(name, qtype, label)
         self["masks"][name]["items"] = items
+        self.create_set(name, variables)
+        idx = self.variables_from_set().index(variables[0])
+        self.extend_set(name, idx=idx)
+        self._reduce_set(variables)
         if values:
-            self._set_values(self, name, values)
+            self._set_values(name, values)
         self.set_item_texts(name, texts)
         if self.dimensions_comp:
             mapper = {}
@@ -2594,4 +2603,3 @@ class Meta(dict):
             if keep in ["both", "items"]:
                 new_list.extend(self.get_sources(v))
         return new_list
-

@@ -62,14 +62,14 @@ Event(OnJobStart)
 	dmgrGlobal.Add("vars_failed")
 	dmgrGlobal.Add("var_failed")
     dmgrGlobal.vars_failed = ""
-    
+
 End Event
 
 
 Event(OnNextCase)
 
 	const MaxValue = 2147483647
-	const MinValue = -2147483648 
+	const MinValue = -2147483648
 
 	Dim i, oA, oA_value
 	Dim columns, col, data
@@ -151,7 +151,7 @@ End Event
 
 Event (OnJobEnd)
 
-	If dmgrGlobal.vars_failed <> "" Then	
+	If dmgrGlobal.vars_failed <> "" Then
         Debug.Log("**************************************************************************************************")
         Debug.Log("Please note: ")
         Debug.Log("For one or more cases a value exceeded the limit for Dimensions variable type 'Long'.")
@@ -159,7 +159,7 @@ Event (OnJobEnd)
         Debug.Log("The variables affected are: " + dmgrGlobal.vars_failed)
         Debug.Log("If you need those variables then change DataType from 'mr.Long' to 'mr.Double' by editing 'create_mdd [].mrs' for affected variables")
         Debug.Log("")
-	End If        
+	End If
 
 End Event
 
