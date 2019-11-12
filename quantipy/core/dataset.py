@@ -800,7 +800,7 @@ class DataSet(object):
             name = '{}{}'.format(collection, '_{}'.format(key.split('.')[0])
                                  if key else '')
         ds_path = '../' if self.path == '/' else self.path
-        path = os.path.join(ds_path, ''.json([self.name, '_', name, '.json']))
+        path = os.path.join(ds_path, ''.join([self.name, '_', name, '.json']))
         with open(path, 'w') as file:
             json.dump(obj, file)
         print u'create: {}'.format(path)
