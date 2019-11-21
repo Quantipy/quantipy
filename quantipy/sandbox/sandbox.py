@@ -3038,6 +3038,7 @@ class Chain(object):
                     if grouped:
                         frames.append(self._group_views(grouped, use_grp_type))
                 else:
+                    self.grouping = False
                     agg = link[view].meta()['agg']
                     is_descriptive = agg['method'] == 'descriptives'
                     is_base = agg['name'] in ['cbase', 'rbase', 'ebase', 'cbase_gross']
