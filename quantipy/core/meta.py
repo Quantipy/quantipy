@@ -251,7 +251,8 @@ class Meta(dict):
                 "data file": {
                     "text": {"en-GB": "Variable order in source file"},
                     "items": []
-                }
+                },
+                "batches": OrderedDict()
             },
             "type": "pandas.DataFrame"
         }
@@ -414,7 +415,7 @@ class Meta(dict):
 
     @params(to_list=["categories", "items"], text_key=["text_key"])
     def add_meta(self, name, qtype, label="", categories=[], items=[],
-                 text_key=None):
+                 text_key=None, properties={}):
         """
         Add a new variable to the instance.
 
@@ -458,6 +459,11 @@ class Meta(dict):
         if err:
             logger.error(err); raise ValueError(err)
 
+        for batch in self.batches:
+            meta = Meta(self["sets"]["batches"][batch]["meta"])
+            meta.add_meta(name, qtype, label, categories, items, text_key,
+                          properties)
+
         if self.var_exists(name):
             msg = "Overwriting meta for '{}'".format(name)
             logger.info(msg)
@@ -473,6 +479,8 @@ class Meta(dict):
         self["columns"][name] = column
         if not name == "@1":
             self.extend_set(name)
+        for k, v in properties.items():
+            self.set_property(name, k, v)
 
     def _add_array(self, name, qtype, label, items, categories, text_key):
         """
@@ -530,6 +538,11 @@ class Meta(dict):
                 obj.pop(var, None)
                 for key in obj:
                     remove_loop(obj[key], var)
+
+        for b in self.batches:
+            meta = Meta(self["sets"]["batches"][b]["meta"])
+            meta.drop(name, ignore_items)
+
         if name == "@1":
             return None
         if self.is_array_item(name):
@@ -786,7 +799,7 @@ class Meta(dict):
             Axis for text-based label information.
         """
         if name:
-            return self._get_meta(var, text_key, axis)
+            return self._describe(name, text_key, axis)
         types = {qptype: [] for qptype in QP_TYPES}
         for var in self.variables():
             qptype = self.get_type(var)
@@ -816,7 +829,7 @@ class Meta(dict):
             missings = []
             if self.is_categorical(name):
                 codes = self.get_codes(name)
-                texts = self.get_value_texts(text_key, axis)
+                texts = self.get_value_texts(name, text_key, axis)
                 if self.get_missings(name):
                     for code in codes:
                         has_missing = False
@@ -830,18 +843,20 @@ class Meta(dict):
                 sources = self.get_sources(name)
                 item_t = self.get_item_texts(name)
                 max_len = max(len(obj) for obj in [codes, sources])
-                codes = self._pad_meta_list(codes, max_len)
-                texts = self._pad_meta_list(texts, max_len)
-                missings = self._pad_meta_list(missings, max_len)
-                sources = self._pad_meta_list(sources, max_len)
-                item_t = self._pad_meta_list(item_t, max_len)
+                codes = self._pad_list(codes, max_len)
+                texts = self._pad_list(texts, max_len)
+                missings = self._pad_list(missings, max_len)
+                sources = self._pad_list(sources, max_len)
+                item_t = self._pad_list(item_t, max_len)
                 elements = [items, items_texts, codes, texts, missings]
                 columns = ["items", "item texts", "codes", "texts", "missing"]
             else:
                 max_len = len(codes)
+                missings = self._pad_list(missings, max_len)
                 elements = [codes, texts, missings]
                 columns = ["codes", "texts", "missing"]
-            s = [pd.Series(el, index=range(0, idx_len)) for el in elements]
+            s = [pd.Series(el, index=range(0, max_len))
+                 for el in elements]
             df = pd.concat(s, axis=1)
             df.columns = columns
             df.columns.name = qtype
@@ -1682,7 +1697,7 @@ class Meta(dict):
         return [text for code, text in values]
 
     @params(is_var=["name"], is_cat=["name"], text_key=["text_key"],
-            axis=[("edits", "axis")], repeat=["name", "text_key", "axis"])
+            axis=[("edits", "axis")], to_list=["axis"])
     def set_value_texts(self, name, texts, text_key=None, axis=None):
         """
         Apply new value texts.
@@ -1690,7 +1705,7 @@ class Meta(dict):
         Parameters
         ----------
         name : str
-            The variable name (mask or column).
+            The variable name (mask or column). lalalala
         texts : dict
             A mapping with following structure: `{code: new text}`
         text_key : str, default None == self.text_key
@@ -1704,10 +1719,13 @@ class Meta(dict):
             err = "Cannot modify values for single array items."
             logger.error(err); raise ValueError(err)
         values = self[self._get_value_ref(name)]
+        new_values = []
         for value in values:
             code = value["value"]
-            if code in texts:
+            if code in list(texts.keys()):
                 self._update_text(texts[code], value["text"], text_key, axis)
+            new_values.append(value)
+        self._set_values(name, new_values)
 
     @params(is_var=["name"], is_cat=["name"])
     def get_codes(self, name):
@@ -2107,7 +2125,7 @@ class Meta(dict):
     # -------------------------------------------------------------------------
     @property
     def batches(self):
-        return self["sets"].get("batches", {}).keys()
+        return list(self["sets"].get("batches", {}).keys())
 
     def get_batches(self, main=True, add=True):
         """
@@ -2122,7 +2140,7 @@ class Meta(dict):
         return batches
 
     def main_batch(self, batchname):
-        return not self["sets"]["batches"][batchname]["additional"]
+        return not self["sets"]["batches"][batchname]["mains"]
 
     def adds_per_mains(self, reverse=False):
         """
@@ -2165,6 +2183,9 @@ class Meta(dict):
 
     @classmethod
     def _update_text(cls, text, text_obj, text_key, axis=None):
+        if isinstance(axis, list):
+            for ax in axis:
+                cls._update_text(text, text_obj, text_key, ax)
         if axis:
             if axis not in text_obj:
                 text_obj[axis] = {}
@@ -2477,8 +2498,11 @@ class Meta(dict):
     # -------------------------------------------------------------------------
     # repair
     # -------------------------------------------------------------------------
-    def _clean_custom_sets_and_libs(self):
-        valid_set = self.masks + ["data file", "batches"]
+    def _clean_custom_sets_and_libs(self, clean_batches=False):
+        if clean_batches:
+            valid_set = self.masks + ["data file"]
+        else:
+            valid_set = self.masks + ["data file", "batches"]
         valid_lib = ["default text", "valid text", "values"]
         for mset in self.sets:
             if mset not in valid_set:

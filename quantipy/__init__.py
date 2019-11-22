@@ -1,7 +1,7 @@
 
 from .core.dataset import DataSet
 from .core.meta import Meta
-# from .core.batch import Batch
+from .core.batch import Batch
 # from .core.link import Link
 # from .core.view import View
 # from .core.chain import Chain

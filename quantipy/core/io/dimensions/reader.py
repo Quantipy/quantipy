@@ -601,6 +601,4 @@ def quantipy_from_dimensions(path_mdd, path_ddf, fields='all', grids=None):
     for col in meta.ints:
         data[col] = data[col].replace('null', 0)
 
-    meta.to_json("test.json")
-
     return meta, data

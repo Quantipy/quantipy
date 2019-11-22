@@ -236,7 +236,6 @@ class TestDataSet:
             sources = dataset.get_sources(name)
             parent = {'masks@array_test': {'type': 'array'}}
             for source in sources:
-                print (check, source)
                 assert dataset._meta["columns"][source]["values"] == value_ref
                 assert dataset._meta["columns"][source]["parent"] == parent
             # check items
@@ -391,6 +390,18 @@ class TestDataSet:
     # ------------------------------------------------------------------------
     # texts
     # ------------------------------------------------------------------------
+    def test_texts_values(self, dataset, caplog):
+        values = ['Regularly', 'Irregularly', u'Never']
+        assert dataset.get_value_texts("q2b") == values
+        # print(help(dataset.set_value_texts))
+        dataset.set_value_texts("q2b", {1: "New label"})
+        values = ["New label", 'Irregularly', u'Never']
+        assert dataset.get_value_texts("q2b") == values
+        msg = "Cannot modify values for single array items."
+        _assert_raise(
+            caplog, ValueError, msg, dataset.set_value_texts,
+            "q5_1", {1: "New label"})
+
     def test_texts_variables_get(self, dataset):
 
         text = dataset.get_text("gender")
@@ -470,9 +481,8 @@ class TestDataSet:
                 "with_weight": "auto"}}
         assert dataset.get_rules("q6_1", "x") == expect
 
-
     # ------------------------------------------------------------------------
-    # order
+    # order/ lists
     # ------------------------------------------------------------------------
     def test_order(self, dataset, caplog):
         init_order = dataset.variables()
@@ -493,53 +503,34 @@ class TestDataSet:
         msg = "'new_order' must contain all DataSet variables."
         _assert_raise(caplog, ValueError, msg, dataset.order, init_order[:-1])
 
+    def test_unroll_rollup(self, dataset):
+        init_list = ["gender > age", "q5", "q6 > age", "q7"]
+        result_list = dataset.unroll(init_list, keep="q5", both="q6")
+        assert result_list == [
+            "gender > age", "q5", "q6 > age",
+            "q6_1 > age", "q6_2 > age", "q6_3 > age",
+            "q7_1", "q7_2", "q7_3", "q7_4", "q7_5", "q7_6"]
+
+        assert dataset.roll_up(result_list, ignore_arrays="q7") == [
+            "gender > age", "q5", "q6 > age",
+            "q7_1", "q7_2", "q7_3", "q7_4", "q7_5", "q7_6"]
 
 
-    # def check_freq(self, dataset, var, show='values'):
-    #     return freq(dataset._meta, dataset._data, var, show=show)
+    # ------------------------------------------------------------------------
+    # rename
+    # ------------------------------------------------------------------------
+    def test_rename_via_masks(self, dataset):
+        new_name = 'q5_new'
+        dataset.rename('q5', new_name)
 
-    # def check_cross(self, dataset, x, y, show='values', rules=False):
-    #     return cross(dataset._meta, dataset._data, x=x, y=y,
-    #                  show=show, rules=rules)
-
-
-
-    # def test_rename_via_masks(self):
-    #     dataset = self._get_dataset()
-    #     meta, data = dataset.split()
-    #     new_name = 'q5_new'
-    #     dataset.rename('q5', new_name)
-    #     # name properly changend?
-    #     self.assertTrue('q5' not in dataset.masks())
-    #     self.assertTrue(new_name in dataset.masks())
-    #     # item names updated?
-    #     items = meta['sets'][new_name]['items']
-    #     expected_items = ['columns@q5_new_1',
-    #                       'columns@q5_new_2',
-    #                       'columns@q5_new_3',
-    #                       'columns@q5_new_4',
-    #                       'columns@q5_new_5',
-    #                       'columns@q5_new_6']
-    #     self.assertEqual(items, expected_items)
-    #     sources = dataset.sources(new_name)
-    #     expected_sources = [i.split('@')[-1] for i in expected_items]
-    #     self.assertEqual(sources, expected_sources)
-    #     # lib reference properly updated?
-    #     lib_ref_mask = meta['masks'][new_name]['values']
-    #     lib_ref_items = meta['columns'][dataset.sources(new_name)[0]]['values']
-    #     expected_lib_ref = 'lib@values@q5_new'
-    #     self.assertEqual(lib_ref_mask, lib_ref_items)
-    #     self.assertEqual(lib_ref_items, expected_lib_ref)
-    #     # new parent entry correct?
-    #     parent_spec = meta['columns'][dataset.sources(new_name)[0]]['parent']
-    #     expected_parent_spec = {'masks@{}'.format(new_name): {'type': 'array'}}
-    #     self.assertEqual(parent_spec, expected_parent_spec)
-    #     # sets entries replaced?
-    #     self.assertTrue('masks@q5' not in meta['sets']['data file']['items'])
-    #     self.assertTrue('masks@q5_new' in meta['sets']['data file']['items'])
-    #     self.assertTrue('q5' not in meta['sets'])
-    #     self.assertTrue('q5_new' in meta['sets'])
-
+        assert "q5" not in dataset.masks
+        assert new_name in dataset.masks
+        assert "q5" not in dataset.variables()
+        assert new_name in dataset.variables()
+        sources = dataset.get_sources(new_name)
+        assert sources == ["{}_{}".format(new_name, x) for x in frange("1-6")]
+        for source in sources:
+            assert dataset.get_parent(source) == new_name
 
     # def test_transpose(self):
     #     dataset = self._get_dataset(cases=500)
@@ -615,23 +606,6 @@ class TestDataSet:
     #     self.assertEqual(column_text, expected_label)
     #     self.assertEqual(value_text, expected_value)
 
-
-
-    # def test_force_texts(self):
-    #     dataset = self._get_dataset()
-    #     dataset.set_value_texts(name='q4',
-    #                             renamed_vals={1: 'kyllae'},
-    #                             text_key='fi-FI')
-    #     dataset.force_texts(copy_to='de-DE',
-    #                         copy_from=['fi-FI','en-GB'],
-    #                         update_existing=False)
-    #     q4_de_val0 = dataset._meta['columns']['q4']['values'][0]['text']['de-DE']
-    #     q4_de_val1 = dataset._meta['columns']['q4']['values'][1]['text']['de-DE']
-    #     self.assertEqual(q4_de_val0, 'kyllae')
-    #     self.assertEqual(q4_de_val1, 'No')
-
-    #     q5_de_val0 = dataset._meta['lib']['values']['q5'][0]['text']['de-DE']
-    #     self.assertEqual(q5_de_val0, 'I would refuse if asked')
 
     # def test_validate(self):
     #     dataset = self._get_dataset()
@@ -826,77 +800,7 @@ class TestDataSet:
     #     for v in dataset.sources('q5'):
     #         self.assertEqual(dataset.values('q5_new'), dataset.values(v))
 
-    # def test_get_value_texts(self):
-    #     dataset = self._get_dataset()
-    #     values = [(1, u'Regularly'), (2, u'Irregularly'), (3, u'Never')]
-    #     self.assertEqual(values, dataset.values('q2b', 'en-GB'))
-    #     dataset._meta['columns']['q2b']['values'][0]['text']['x edits'] = {'en-GB': 'test'}
-    #     value_texts = ['test', None, None]
-    #     self.assertEqual(value_texts, dataset.value_texts('q2b', 'en-GB', 'x'))
 
-    # def test_get_item_texts(self):
-    #     dataset = self._get_dataset()
-    #     items = [(u'q6_1', u'Exercise alone'),
-    #              (u'q6_2', u'Join an exercise class'),
-    #              (u'q6_3', u'Play any kind of team sport')]
-    #     self.assertEqual(items, dataset.items('q6', 'en-GB'))
-    #     dataset._meta['masks']['q6']['items'][2]['text']['x edits'] = {'en-GB': 'test'}
-    #     item_texts = [None, None, 'test']
-    #     self.assertEqual(item_texts, dataset.item_texts('q6', 'en-GB', 'x'))
-
-    # def test_get_variable_text(self):
-    #     dataset = self._get_dataset()
-    #     text = 'How often do you take part in any of the following? - Exercise alone'
-    #     self.assertEqual(text, dataset.text('q6_1', False, 'en-GB'))
-    #     text = 'Exercise alone'
-    #     self.assertEqual(text, dataset.text('q6_1', True, 'en-GB'))
-    #     text = ''
-    #     self.assertEqual(text, dataset.text('q6_1', True, 'en-GB', 'x'))
-
-    # def test_set_value_texts(self):
-    #     dataset = self._get_dataset()
-    #     values = [{u'text': {u'en-GB': u'Strongly disagree'}, u'value': 1},
-    #               {u'text': {u'en-GB': 'test1'}, u'value': 2},
-    #               {u'text': {u'en-GB': u'Neither agree nor disagree'}, u'value': 3},
-    #               {u'text': {u'en-GB': u'Agree', 'y edits': {'en-GB': 'test2'}}, u'value': 4},
-    #               {u'text': {u'en-GB': u'Strongly agree'}, u'value': 5}]
-    #     dataset.set_value_texts('q14_1', {2: 'test1'}, 'en-GB')
-    #     dataset.set_value_texts('q14_1', {4: 'test2'}, 'en-GB', 'y')
-    #     value_obj = dataset._meta['lib']['values']['q14_1']
-    #     self.assertEqual(value_obj, values)
-    #     values = [{u'text': {u'en-GB': u'test1'}, u'value': 1},
-    #               {u'text': {u'en-GB': u'Irregularly'}, u'value': 2},
-    #               {u'text': {u'en-GB': u'Never',
-    #                          u'y edits': {'en-GB': 'test2'},
-    #                          u'x edits': {'en-GB': 'test2'}}, u'value': 3}]
-    #     dataset.set_value_texts('q2b', {1: 'test1'}, 'en-GB')
-    #     dataset.set_value_texts('q2b', {3: 'test2'}, 'en-GB', ['x', 'y'])
-    #     value_obj = dataset._meta['columns']['q2b']['values']
-    #     self.assertEqual(value_obj, values)
-
-    # def test_set_item_texts(self):
-    #     dataset = self._get_dataset()
-    #     items = [{u'en-GB': u'Exercise alone'},
-    #              {u'en-GB': u'Join an exercise class',
-    #               'sv-SE': 'test1',
-    #               'x edits': {'sv-SE': 'test', 'en-GB': 'test'}},
-    #              {u'en-GB': u'Play any kind of team sport',
-    #               'sv-SE': 'test2'}]
-    #     dataset.set_item_texts('q6', {2: 'test1', 3: 'test2'}, 'sv-SE')
-    #     dataset.set_item_texts('q6', {2: 'test'}, ['en-GB', 'sv-SE'], 'x')
-    #     item_obj = [i['text'] for i in dataset._meta['masks']['q6']['items']]
-    #     self.assertEqual(item_obj, items)
-
-    # def test_set_variable_text(self):
-    #     dataset = self._get_dataset()
-    #     text = {'en-GB': 'new text', 'sv-SE': 'new text'}
-    #     dataset.set_variable_text('q6', 'new text', ['en-GB', 'sv-SE'])
-    #     dataset.set_variable_text('q6', 'new', ['da-DK'], 'x')
-    #     text_obj = dataset._meta['masks']['q6']['text']
-    #     self.assertEqual(text_obj, text)
-    #     text = {'en-GB': 'What is your main fitness activity?',
-    #             'x edits': {'en-GB': 'edit'}, 'y edits':{'en-GB': 'edit'}}
-    #     dataset.set_variable_text('q1', 'edit', 'en-GB', ['x', 'y'])
 
     # def test_crosstab(self):
     #     x = 'q14r01c01'

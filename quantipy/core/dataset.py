@@ -955,7 +955,7 @@ class DataSet(object):
 
     @params(to_list=['categories', 'items'], repeat=["name"])
     def add_meta(self, name, qtype, label, categories=None, items=None,
-                 text_key=None, replace=True):
+                 text_key=None, replace=True, properties={}):
         """
         Create and insert a well-formed meta object.
 
@@ -980,7 +980,8 @@ class DataSet(object):
             column in the case data component will be overwritten with a
             new (empty) one.
         """
-        self._meta.add_meta(name, qtype, label, categories, items, text_key)
+        self._meta.add_meta(name, qtype, label, categories, items, text_key,
+                            properties)
         name = self.unroll(name)
         for n in name:
             self._add_data_column(name, replace)
@@ -1144,9 +1145,11 @@ class DataSet(object):
         None
             DataSet is modified inplace.
         """
+        data_drop = self.unroll(name)
+        is_array = self.is_array(name)
         self._meta.drop(name, ignore_items)
-        data_drop = [self.unroll(n) for n in names if not ignore_items]
-        data.drop(data_drop, 1, inplace=True)
+        if not is_array or not ignore_items:
+            self._data.drop(data_drop, 1, inplace=True)
 
     @params(to_list=['copy_only', 'copy_not'])
     def copy(self, name, new_name=None, copy_data=True, slicer=None,
@@ -1855,7 +1858,7 @@ class DataSet(object):
             elif not isinstance(v, (dict, tuple)):
                 err = "'{}' is not a valid qp logic.".format(v)
                 logger.error(err); raise TypeError(err)
-            index_mapper[k] = get_logic_index(series, v, data)[0]
+            index_mapper[k] = get_logic_index(series, v, self._data)[0]
         return index_mapper
 
     def _recode_from_index_mapper(self, target, mapper):
@@ -2064,10 +2067,10 @@ class DataSet(object):
         values = [(0, 'keep', None)]
         values += self._transform_filter_logics(logic, 1)
         self.add_meta(
-            name, 'delimited set', name, [(x, y) for x, y, z in values])
+            name, 'delimited set', name, [(x, y) for x, y, z in values],
+            properties={'recoded_filter': True})
         self.recode(name, {x: z for x, y, z in values[1:]})
         self.recode(name, {0: {name: has_count(len(values) - 1)}})
-        self.set_property(name, 'recoded_filter', True)
 
     @params(to_list=['logic'])
     def extend_filter_var(self, name, logic, suffix=None):
@@ -2273,11 +2276,6 @@ class DataSet(object):
         reposition : dict
             mapping of anchor and items to include. Items are added before the
             anchor.
-        regroup : bool, default False
-            Attempt to regroup non-native variables (i.e. created either
-            manually with ``add_meta()``, ``recode()``, ``derive()``, etc.
-            or automatically by manifesting ``qp.View`` objects) with their
-            originating variables.
         """
         if new_order and reposition:
             err = "Can only either apply ``new_order`` or ``reposition``"
@@ -2563,26 +2561,28 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # batch
     # ------------------------------------------------------------------------
-    # @params(repeat=["name"], to_list=['ci', 'weights', 'tests'])
-    # def add_batch(self, name, ci=['c', 'p'], weights=[], tests=[]):
-    #     return qp.Batch(self, name, ci, weights, tests)
+    @params(repeat=["name"], to_list=['ci', 'weights', 'tests'])
+    def add_batch(self, name, ci=['c', 'p'], weights=[], tests=[]):
+        from .batch import Batch
+        return Batch(self, name, ci, weights, tests)
 
-    # def get_batch(self, name=None):
-    #     """
-    #     Get existing Batch instance from DataSet meta information.
+    def get_batch(self, name=None):
+        """
+        Get existing Batch instance from DataSet meta information.
 
-    #     Parameters
-    #     ----------
-    #     name: str
-    #         Name of existing Batch instance.
-    #     """
-    #     if not name:
-    #         return [qp.Batch(self, b) for b in self.batches]
-    #     elif name in self.batches:
-    #         return qp.Batch(self, name)
-    #     else:
-    #         err = "'{}' is not a valid batch.".format(name)
-    #         logger.error(err); raise KeyError(name)
+        Parameters
+        ----------
+        name: str
+            Name of existing Batch instance.
+        """
+        from .batch import Batch
+        if not name:
+            return [Batch(self, b) for b in self.batches]
+        elif name in self.batches:
+            return Batch(self, name)
+        else:
+            err = "'{}' is not a valid batch.".format(name)
+            logger.error(err); raise KeyError(name)
 
     # @params(to_list='batches')
     # def populate(self, batches='all', verbose=True):
