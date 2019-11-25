@@ -460,9 +460,11 @@ class Meta(dict):
             logger.error(err); raise ValueError(err)
 
         for batch in self.batches:
-            meta = Meta(self["sets"]["batches"][batch]["meta"])
-            meta.add_meta(name, qtype, label, categories, items, text_key,
-                          properties)
+            b_meta = self["sets"]["batches"][batch].get("meta")
+            if b_meta:
+                meta = Meta(b_meta)
+                meta.add_meta(name, qtype, label, categories, items, text_key,
+                              properties)
 
         if self.var_exists(name):
             msg = "Overwriting meta for '{}'".format(name)
@@ -539,9 +541,11 @@ class Meta(dict):
                 for key in obj:
                     remove_loop(obj[key], var)
 
-        for b in self.batches:
-            meta = Meta(self["sets"]["batches"][b]["meta"])
-            meta.drop(name, ignore_items)
+        for batch in self.batches:
+            b_meta = self["sets"]["batches"][batch].get("meta")
+            if b_meta:
+                meta = Meta(b_meta)
+                meta.drop(name, ignore_items)
 
         if name == "@1":
             return None

@@ -34,6 +34,7 @@ def represent(obj):
     else:
         return "Unserializable object: {}".format(type(obj))
 
+
 def save_json(obj, path_json):
     with open(path_json, 'w+') as f:
         json.dump(obj, f, default=represent, sort_keys=True)

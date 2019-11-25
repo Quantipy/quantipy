@@ -39,24 +39,33 @@ class Batch(object):
         transform old batches (v0.1.1) into current form.
         """
         batch = self._batches[self.name]
-        if "_variables" in batch:
-            batch["variables"] = batch.pop("_variables")
         if "_section_starts" in batch:
             batch["sections"] = batch.pop("_section_starts")
+        if "_variables" in batch:
+            batch["variables"] = batch.pop("_variables")
+        if "additional" in batch:
+            batch["mains"] = []
+            add = batch.pop("additional")
+            if add:
+                for ba, bdef in self._batches.items():
+                    if self.name in bdef["additions"]:
+                        batch["mains"].append(ba)
+        if "filter_names" in batch:
+            batch.pop("filter_names")
+        if "forced_names" in batch:
+            batch.pop("forced_names")
         if "meta_edits" in batch:
             edits = batch.pop("meta_edits")
             values = edits.pop("lib")
             edits["lib"] = {"values": values}
             meta = Meta(edits)
-            meta.text_key = batch.pop("language")
             batch["meta"] = meta
-        if "additional" in batch:
-            add = batch.pop("additional")
-            if add:
-                batch["mains"] = []
-                for ba, bdef in self._batches.items():
-                    if self.name in bdef["additions"]:
-                        batch["mains"].append(ba)
+        if "language" in batch:
+            batch["meta"].text_key = batch.pop("language")
+        if "name" in batch:
+            self.name = batch.pop("name")
+        if "y_on_y_filter" in batch:
+            batch.pop("y_on_y_filter")
 
     def _start_batch(self):
         meta = self.dataset._meta.clone()
