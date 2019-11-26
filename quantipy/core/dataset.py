@@ -949,7 +949,7 @@ class DataSet(object):
     def _add_data_column(self, name, replace=True):
         if replace or name not in self._data.columns:
             if self.is_delimited_set(name):
-                self._data[name] = ''
+                self._data[name] = np.NaN
             else:
                 self._data[name] = np.NaN
 
@@ -1040,7 +1040,7 @@ class DataSet(object):
             code, text = value
             new_name = "{}_{}".format(name, code)
             if keep_variable_text:
-                label = '{}: {}'.format(self.text(name, text_key), text)
+                label = '{}: {}'.format(self.get_text(name, text_key), text)
             else:
                 label = text
             mapper = [
@@ -1080,14 +1080,14 @@ class DataSet(object):
         values = self.values(name)
         for _n in frange('1-{}'.format(n)):
             n_name = '{}_{}'.format(name, _n)
-            n_label = '{} ({})'.format(self.text(name), _n)
+            n_label = '{} ({})'.format(self.get_text(name), _n)
             self.add_meta(n_name, 'single', n_label, values)
             n_vector = self[name].str.split(';', n=_n, expand=True)[_n - 1]
             self[n_name] = n_vector.replace(('', None), np.NaN).astype(float)
             created.append(n_name)
         if others:
             o_name = '{}_{}'.format(name, others)
-            o_label = '{} ({})'.format(self.text(name), others)
+            o_label = '{} ({})'.format(self.get_text(name), others)
             self.add_meta(o_name, 'delimited set', o_label, values)
             o_string = self[name].str.split(';', n=n, expand=True)[n]
             self[o_name] = o_string.replace(('', None), np.NaN)
@@ -1409,15 +1409,18 @@ class DataSet(object):
                 mapped_codes[org].append(new)
 
         code_range = frange('1-{}'.format(max_code * len(items)))
-        labels = self.value_texts(name) * len(items)
-        cats = zip(code_range, labels)
+        labels = []
+        for item in items:
+            for value in self.get_value_texts(name):
+                labels.append("{}_{}".format(value, item[0]))
+        cats = list(zip(code_range, labels))
         new_sources = self.get_sources(lvlname)
         self.unbind(lvlname)
-        self.add_meta(lvlname, 'delimited set', self.text(name), cats)
+        self.add_meta(lvlname, 'delimited set', self.get_text(name), cats)
         self[lvlname] = self[new_sources].astype('str').apply(
             lambda x: ';'.join(x).replace('.0', ''), axis=1)
         self.drop(new_sources)
-        self.add_property("level", {
+        self.set_property(lvlname, "level", {
             'source': name,
             'level_codes': mapped_codes,
             'item_look': self.get_sources(name)[0]})
@@ -1508,7 +1511,7 @@ class DataSet(object):
         if not new_name:
             new_name = '{}_banded'.format(name)
         if not label:
-            label = self.text(name, False, text_key)
+            label = self.get_text(name, False, text_key)
         franges = []
         for idx, band in enumerate(bands, start=1):
             lab = None
@@ -1568,7 +1571,7 @@ class DataSet(object):
                 if isinstance(col, tuple):
                     text = col[1]
                 else:
-                    text = self.text(col)
+                    text = self.get_text(col)
                 mapper.append((x, text, {col: [1]}))
         else:
             values = self.values(columns[0])
@@ -1868,7 +1871,9 @@ class DataSet(object):
             for k, v in mapper.items():
                 df[str(k)].loc[v] = 1
             s = condense_dichotomous_set(df)
-            self._data[target] = pd.concat([self._data[target], s], axis=1)
+            self[target] = self[target].astype("str")
+            self[target] = self[target].combine(s,
+                lambda x, y: merge_delimited_sets(x, y))
         else:
             for k, v in mapper.items():
                 self._data[target].loc[v] = k
@@ -2109,11 +2114,11 @@ class DataSet(object):
         self.uncode(f_name, {0: {f_name: 0}})
         values = self._transform_filter_logics(
             logic, max(self.get_codes(f_name)) + 1)
-        self.extend_values(f_name, values)
+        self.extend_values(f_name, [(x, y) for x, y, z in values])
         self.recode(f_name, {x: z for x, y, z in values})
         self.recode(
             f_name, {0: {f_name: has_count(len(self.get_codes(f_name)) - 1)}})
-        text = '{} _ {}'.format(self.text(f_name), suffix)
+        text = '{} _ {}'.format(self.get_text(f_name), suffix)
         self.set_text(f_name, text)
 
     def _transform_filter_logics(self, logic, start):
@@ -2373,9 +2378,10 @@ class DataSet(object):
                 continue
             if col in self._data.columns:
                 if self.is_delimited_set(col):
+                    self[col] = self[col].astype("str")
                     self[col] = self[col].combine(
                         ds[col],
-                        lambda x, y: _merge_delimited_sets(x, y))
+                        lambda x, y: merge_delimited_sets(x, y))
                 else:
                     update.append(col)
             else:

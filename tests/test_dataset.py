@@ -15,6 +15,7 @@ def dataset():
     name = NAME
     path = DATA
     ds = DataSet.from_quantipy(name, path)
+    ds._meta._clean_custom_sets_and_libs(True)
     return ds
 
 def _remove_files(name, suffix=[]):

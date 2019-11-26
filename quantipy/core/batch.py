@@ -55,15 +55,21 @@ class Batch(object):
         if "forced_names" in batch:
             batch.pop("forced_names")
         if "meta_edits" in batch:
+            meta = self.dataset._meta.clone()
+            meta._clean_custom_sets_and_libs(True)
             edits = batch.pop("meta_edits")
             values = edits.pop("lib")
-            edits["lib"] = {"values": values}
-            meta = Meta(edits)
+            meta["lib"]["values"].update(values)
+            for var, v_def in edits.items():
+                if self.dataset.is_array(var):
+                    meta["masks"][var].update(v_def)
+                else:
+                    meta["columns"][var].update(v_def)
             batch["meta"] = meta
         if "language" in batch:
             batch["meta"].text_key = batch.pop("language")
         if "name" in batch:
-            self.name = batch.pop("name")
+            self._name = batch.pop("name")
         if "y_on_y_filter" in batch:
             batch.pop("y_on_y_filter")
 
@@ -99,9 +105,15 @@ class Batch(object):
             "sample_size": len(self.dataset._data.index)
         }
 
+    def _func_wrapper(self, func):
+        def wrapper(*args, **kwargs):
+            func(*args, **kwargs)
+            self._map_x_to_y_and_filter()
+        return wrapper
+
     def _inherit_meta_functions(self):
         self.meta = self._batches[self.name]["meta"]
-        self.set_hiding = self.meta.set_hiding
+        self.set_hiding = self._func_wrapper(self.meta.set_hiding)
         self.set_sorting = self.meta.set_sorting
         self.set_slicing = self.meta.set_slicing
         self.used_text_keys = self.meta.used_text_keys
@@ -192,6 +204,9 @@ class Batch(object):
         -------
         New/ copied Batch instance.
         """
+        if name in self.dataset.batches:
+            err = "'{}' is already included!".format(name)
+            logger.error(err); raise ValueError(err)
         self._batches[name] = copy.deepcopy(self._batches[self.name])
         batch_copy = Batch(self.dataset, name)
         if b_filter:
@@ -223,6 +238,9 @@ class Batch(object):
 
     @build_info.setter
     def build_info(self, info):
+        if not isinstance(info, dict):
+            err = "'build_info' must be of type 'dict'!"
+            logger.error(err); raise TypeError(err)
         self._batches[self.name]["build_info"] = info
 
     @property
@@ -281,20 +299,6 @@ class Batch(object):
         self._batches[self.name]["weights"] = w
 
     # -------------------------------------------------------------------------
-    # properties (only set by update)
-    # -------------------------------------------------------------------------
-    @property
-    def sample_size(self):
-        return self._batches[self.name]["sample_size"]
-
-    def _samplesize_from_batch_filter(self):
-        if self.filter:
-            idx = self.dataset.manifest_filter(self.filter)
-        else:
-            idx = self.dataset._data.index
-        self._batches[self.name]["sample_size"] = len(idx)
-
-    # -------------------------------------------------------------------------
     # name
     # -------------------------------------------------------------------------
     @property
@@ -312,7 +316,7 @@ class Batch(object):
         for add in self.additions:
             mains = self._batches[add]["mains"]
             mains[mains.index(self.name)] = new_name
-        batches[new_name] = batches.pop(self.name)
+        self._batches[new_name] = self._batches.pop(self.name)
         self._name = new_name
 
     # -------------------------------------------------------------------------
@@ -358,7 +362,7 @@ class Batch(object):
 
     @filter.setter
     def filter(self, filter_def):
-        if not filter:
+        if not filter_def:
             self._batches[self.name]["filter"] = None
         elif isinstance(filter_def, str):
             if self.dataset.is_filter(filter_def):
@@ -381,7 +385,7 @@ class Batch(object):
     def extended_filters_per_x(self):
         return self._batches[self.name]["extended_filters_per_x"]
 
-    def extend_filter(self, ext_filter, on=None):
+    def extend_filter(self, ext_filter, on):
         """
         Apply additonal filtering to specific x (downbreak) variables.
 
@@ -392,16 +396,23 @@ class Batch(object):
             as value. For example:
             ext_filters = {'q1': {'gender': 1}, ('q2', 'q3'): {'gender': 2}}
         """
-        not_valid = [o for o in on if o not in self.downbreaks]
-        if not_valid:
-            err = '{} not defined as xks.'.format(not_valid)
-            logger.error(err); raise ValueError(err)
-        on = self.unroll(on)
+        on = self.dataset.unroll(on)
         for x in on:
             fname = self.dataset.valid_var_name("{}_{}".format(self.filter, x))
             self.dataset.extend_filter_var(self.filter, ext_filter, x)
-            self.extended_filters_per_x.update({x: f_name})
+            self.extended_filters_per_x.update({x: fname})
         self._map_x_to_y_and_filter()
+
+    @property
+    def sample_size(self):
+        return self._batches[self.name]["sample_size"]
+
+    def _samplesize_from_batch_filter(self):
+        if self.filter:
+            idx = self.dataset.manifest_filter(self.filter)
+        else:
+            idx = self.dataset._data.index
+        self._batches[self.name]["sample_size"] = len(idx)
 
     # -------------------------------------------------------------------------
     # sigproperties
@@ -430,7 +441,7 @@ class Batch(object):
         if not self.total and levels:
             err = "Cannot add sigtests without total column."
             logger.warning(err)
-            levels = None
+            levels = []
         levels = sorted([float(level) for level in levels])
         self._batches[self.name]["sigproperties"] = {
             'siglevels': levels,
@@ -473,7 +484,7 @@ class Batch(object):
         """
         Remove section.
         """
-        for k, v in self._batches[self.name]["sections"].items():
+        for k, v in list(self._batches[self.name]["sections"].items()):
             if v == section:
                 del self._batches[self.name]["sections"][k]
 
@@ -526,7 +537,7 @@ class Batch(object):
         if not on:
             self.crossbreaks.extend(ext_xbrk)
         else:
-            on = self.unroll(on)
+            on = self.dataset.unroll(on)
             for x in on:
                 self.extended_yks_per_x.update({x: ext_xbrk})
         self._map_x_to_y_and_filter()
@@ -549,9 +560,9 @@ class Batch(object):
             crossbreak should be replaced.
         """
         new_xbrk = self.dataset.unroll(new_xbrk)
-        on = self.unroll(on)
+        on = self.dataset.unroll(on)
         for x in on:
-            self.exclusive_yks_per_x.update({x: new_yks})
+            self.exclusive_yks_per_x.update({x: new_xbrk})
         self._map_x_to_y_and_filter()
 
     @property
@@ -600,6 +611,7 @@ class Batch(object):
                 yks = insert_by_anchor(yks, self.extended_yks_per_x.get(x, []))
             if self.total and "@" not in yks:
                 yks = ["@"] + yks
+            yks = uniquify_list(yks)
             return yks
 
         x_y_map = []
@@ -611,6 +623,8 @@ class Batch(object):
                 x_f_map[x] = fname
                 if x in self.leveled:
                     level = "{}_level".format(x)
+                    if level not in self.dataset:
+                        self.dataset._level(x)
                     x_y_map.append((level, _get_yks(x)))
                     x_f_map[level] = fname
                 if x in self.transposed:

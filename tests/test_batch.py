@@ -55,10 +55,32 @@ class TestBatch:
         msg = "Batch 'name' must not contain '-'!"
         _assert_raise(caplog, ValueError, msg, dataset.add_batch, "new-batch")
         dataset.add_batch("new_batch")
-        assert dataset.batches == [BNAME, "new_batch"]
+        batches = ["old_add_batch", "old_batch", BNAME, "new_batch"]
+        assert dataset.batches == batches
         b = dataset.get_batch("new_batch")
         assert isinstance(b, Batch)
         b.remove()
+
+    def test_old_batches(self, dataset, caplog):
+        old = dataset.get_batch("old_batch")
+        add = dataset.get_batch("old_add_batch")
+        assert isinstance(old, Batch)
+        assert isinstance(add, Batch)
+        assert old.additions == ["old_add_batch"]
+        assert add.mains == ["old_batch"]
+        assert isinstance(old.meta, Meta)
+        assert isinstance(add.meta, Meta)
+        assert old.meta.get_text("gender") == "Gender"
+        assert add.meta.get_text("q6") == "fake label"
+        msg = "'{}' is already included!".format(BNAME)
+        _assert_raise(
+            caplog, ValueError, msg, old.__setattr__, "name", BNAME)
+        old.name = "old_b_update"
+        add.name = "old_add_b_update"
+        assert old.additions == ["old_add_b_update"]
+        assert add.mains == ["old_b_update"]
+        old.remove()
+        assert add.mains == []
 
     def test_combine_batches(self, batch):
         b2 = batch.clone("clone", ("male only", {"gender": 1}), True)
@@ -68,8 +90,10 @@ class TestBatch:
         assert "maleonly" in b2.meta
         assert b2.mains == [BNAME]
         assert batch.additions == ["clone"]
-        b2.remove()
+        b2.as_main()
+        assert b2.mains == []
         assert batch.additions == []
+        b2.remove()
 
     def test_downbreaks(self, batch, b_meta, caplog):
         msg = "Not found in 'Meta': 'Q1'"
@@ -85,8 +109,10 @@ class TestBatch:
         assert batch.x_y_map == b_meta["x_y_map"] == x_y_map
 
     def test_crossbreaks(self, batch, b_meta, caplog):
+        batch.downbreaks = ["q1", "q2b", "q3", "q4", "q5"]
         msg = "Not found in 'Meta': 'Q1'"
-        _assert_raise(caplog, KeyError, msg, batch.add_crossbreak, "Q1")
+        _assert_raise(
+            caplog, KeyError, msg, batch.__setattr__, "crossbreaks", "Q1")
         batch.crossbreaks = ["gender", "q2b"]
         for total, yks in zip([False, True],
                               [["gender", "q2b"], ["@", "gender", "q2b"]]):
@@ -96,3 +122,170 @@ class TestBatch:
                 (x, ["@"]) if batch.dataset.is_array(x) else (x, yks)
                 for x in batch.downbreaks]
             assert batch.x_y_map == b_meta["x_y_map"] == x_y_map
+        batch.extend_crossbreaks("age", "q1")
+        assert batch.x_y_map[0][1][-1] == "age"
+        batch.extend_crossbreaks("age")
+        for x, y in batch.x_y_map:
+            if not (batch.dataset.is_array(x) or x == "@"):
+                assert y[-1] == "age"
+        batch.replace_crossbreaks(["gender"], "q3")
+        assert batch.x_y_map[2][1] == ["@", "gender"]
+
+
+    def test_build_info(self, batch, b_meta, caplog):
+        msg = "'build_info' must be of type 'dict'!"
+        _assert_raise(
+            caplog, TypeError, msg, batch.__setattr__, "build_info", "info")
+        b_info = {"key": "value"}
+        batch.build_info = b_info
+        assert batch.build_info == b_meta["build_info"] == b_info
+
+    def test_cell_items(self, batch, b_meta, caplog):
+        msg = "'ci' cell items must be either 'c', 'p' or 'cp'."
+        _assert_raise(
+            caplog, ValueError, msg, batch.__setattr__, "cell_items", "counts")
+        ci = ["c", "cp"]
+        batch.cell_items = ci
+        assert batch.cell_items == b_meta["cell_items"] == ci
+
+    def test_text_key(self, batch, b_meta, caplog):
+        msg = "'tk' is not a valid textkey!"
+        _assert_raise(
+            caplog, ValueError, msg, batch.__setattr__, "text_key", "tk")
+        tk = "en-GB"
+        batch.text_key = tk
+        assert batch.text_key == b_meta["meta"].text_key == tk
+
+    def test_unweighted_counts(self, batch, b_meta, caplog):
+        msg = "'unweighted_counts' must be of type 'bool'!"
+        _assert_raise(
+            caplog, TypeError, msg, batch.__setattr__,
+            "unweighted_counts", "yes")
+        unwgt = True
+        batch.unweighted_counts = unwgt
+        assert batch.unweighted_counts == b_meta["unweighted_counts"] == unwgt
+
+    def test_variables(self, batch, b_meta, caplog):
+        msg = "Not found in 'Meta': 'bla'"
+        _assert_raise(
+            caplog, KeyError, msg, batch.__setattr__, "variables", "bla")
+        variables = ["q2", "q5"]
+        batch.variables = variables
+        var = ["q2", "q5", "q5_1", "q5_2", "q5_3", "q5_4", "q5_5", "q5_6"]
+        assert batch.variables == b_meta["variables"] == var
+
+    def test_weights(self, batch, b_meta, caplog):
+        msg = "['weight_a', 'new_w'] contains invalid variable name."
+        _assert_raise(
+            caplog, ValueError, msg, batch.__setattr__,
+            "weights", ['weight_a', 'new_w'])
+        batch.weights = None
+        assert batch.weights == b_meta["weights"] == [None]
+        weights = ['weight_a', 'weight_b']
+        batch.weights = weights
+        assert batch.weights == b_meta["weights"] == weights
+
+    def test_filter(self, batch, b_meta, dataset, caplog):
+        msg = "'gender' is not a valid filter variable."
+        _assert_raise(
+            caplog, ValueError, msg, batch.__setattr__, "filter", "gender")
+        msg = (
+            "'filter_def' must either be name of a filter variable or"
+            "tuple in form  of (filter_name, filter_logic).")
+        _assert_raise(
+            caplog, TypeError, msg, batch.__setattr__, "filter", {"age": 18})
+        batch.filter = None
+        assert batch.filter == b_meta["filter"] == None
+        assert batch.sample_size == dataset._data.shape[0]
+        batch.filter = ("femaleonly", {"gender": 2})
+        assert batch.filter == b_meta["filter"] == "femaleonly"
+        assert batch.sample_size == 4303
+        batch.filter = "maleonly"
+        assert batch.filter == b_meta["filter"] == "maleonly"
+        assert batch.sample_size == 3952
+        batch.extend_filter({"age": is_lt(30)}, "q1")
+        assert batch.extended_filters_per_x["q1"] == "maleonly_q1"
+        assert len(dataset.manifest_filter("maleonly_q1")) == 1402
+
+    def test_clone_filtered_batch_with_oe(self, batch, b_meta, caplog):
+        msg = "'{}' is already included!".format(BNAME)
+        _assert_raise(caplog, ValueError, msg, batch.clone, BNAME)
+        batch.set_verbatims("age")
+        oe = {
+            "title": "open ends",
+            "filter": batch.filter,
+            'columns': ["age"],
+            'break_by': [],
+            'incl_nan': False,
+            'drop_empty': True,
+            'replace': {}}
+        assert batch.verbatims == b_meta["verbatims"] == [oe]
+        new = "NEW"
+        nb = batch.clone(new, "femaleonly", False)
+        oe["filter"] = "femaleonly"
+        assert nb.verbatims == [oe]
+        assert nb.filter == "femaleonly"
+        nb.remove
+
+    def test_sigproperties(self, batch, b_meta, caplog):
+        batch.total = True
+        batch.set_sigproperties(None)
+        key = "siglevels"
+        assert batch.sigproperties[key] == b_meta["sigproperties"][key] == []
+        batch.total = False
+        caplog.clear()
+        batch.set_sigproperties("0.05")
+        msg = "Cannot add sigtests without total column."
+        assert caplog.records[-1].message == msg
+
+    def test_sections(self, batch, b_meta):
+        batch.downbreaks = ["q1", "q2", "q3", "q4", "q5"]
+        batch.set_section("q2", "all except q1")
+        assert batch.sections["all except q1"] == batch.downbreaks[1:]
+        assert b_meta["sections"]["q2"] == "all except q1"
+        for section in batch.sections.keys():
+            batch.del_section(section)
+        assert not batch.sections and not b_meta["sections"]
+
+    def test_total(self, batch, b_meta, caplog):
+        msg = "'total' must be of type 'bool'."
+        _assert_raise(caplog, TypeError, msg, batch.__setattr__, "total", "no")
+        batch.total = True
+        for x, y in batch.x_y_map:
+            if not x == "@":
+                assert y[0] == "@"
+
+    def test_leveled(self, batch, dataset, b_meta, caplog):
+        msg = "Can only level arrays!"
+        _assert_raise(
+            caplog, TypeError, msg, batch.__setattr__, "leveled", ["q1", "q6"])
+        batch.total = True
+        batch.downbreaks = ["q1", "q6"]
+        batch.crossbreaks = ["gender"]
+        batch.leveled = ["q6"]
+        assert batch.leveled == b_meta["leveled"] == ["q6"]
+        assert batch.x_y_map[2] == ("q6_level", ["@", "gender"])
+        assert "q6_level" in dataset
+        assert "q6_level" in batch.meta
+
+    def test_transposed(self, batch, b_meta, caplog):
+        msg = "Can only transpose arrays!"
+        _assert_raise(
+            caplog, TypeError, msg, batch.__setattr__, "transposed",
+            ["q1", "q6"])
+        batch.total = True
+        batch.downbreaks = ["q1", "q5"]
+        batch.crossbreaks = ["gender"]
+        batch.transposed = ["q5"]
+        assert batch.transposed == b_meta["transposed"] == ["q5"]
+        assert batch.x_y_map[2] == ("@", ["q5"])
+
+    def test_hiding(self, batch, dataset):
+        batch.total = True
+        batch.downbreaks = ["q5"]
+        batch.crossbreaks = ["gender"]
+        batch.set_hiding("q5", [1], axis="x", hide_values=False)
+        assert batch.meta.get_rules("q5")["dropx"] == {'values': ['q5_1']}
+        assert dataset.get_rules("q5").get("dropx") is None
+        for x, y in batch.x_y_map:
+            assert x not in ["q5_1"]

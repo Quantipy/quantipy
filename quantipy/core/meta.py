@@ -448,6 +448,7 @@ class Meta(dict):
         elif qtype in CATEGORICAL and not categories:
             err = "Expect categories for type '{}'".format(qtype)
         elif qtype == "delimited set" and len(categories) == 1:
+            print(categories)
             err = "Expect more than one category for delimited sets."
         elif qtype not in CATEGORICAL and categories:
             err = "None categorical type does not support categories."
@@ -540,13 +541,11 @@ class Meta(dict):
                 obj.pop(var, None)
                 for key in obj:
                     remove_loop(obj[key], var)
-
         for batch in self.batches:
             b_meta = self["sets"]["batches"][batch].get("meta")
             if b_meta:
                 meta = Meta(b_meta)
                 meta.drop(name, ignore_items)
-
         if name == "@1":
             return None
         if self.is_array_item(name):
@@ -557,12 +556,12 @@ class Meta(dict):
         if self.is_array(name):
             m_ref = "masks@{}".format(name)
             if ignore_items:
-                items = self.get_set(n)
+                items = self.get_set(name)
                 idx = data_file.index(m_ref)
                 data_file = data_file[:idx] + items + data_file[idx + 1:]
                 if self.is_categorical(name):
                     values = self["lib"]["values"][name][:]
-                for source in self.get_sources(n):
+                for source in self.get_sources(name):
                     if self.is_categorical(source):
                         self["columns"][source]["values"] = values
                     self["columns"][source]["parent"] = {}
@@ -605,6 +604,12 @@ class Meta(dict):
             err = "Cannot create '{}'. Weak duplicates exist: {}"
             err = err.format(new_name, self.get_weak_dupes(new_name))
             logger.error(err); raise ValueError(err)
+        for batch in self.batches:
+            b_meta = self["sets"]["batches"][batch].get("meta")
+            if b_meta:
+                meta = Meta(b_meta)
+                meta.copy(name, new_name, copy_only, copy_not)
+
         dims_comp = self.dimensions_comp
         if dims_comp:
             self.undimensionize()
@@ -2516,6 +2521,10 @@ class Meta(dict):
                 self["lib"].pop(mlib)
 
     def _repair_structure(self):
+        keys = ["masks", "columns", "sets", "lib", "info"]
+        for key in keys:
+            if not self.get(key):
+                self[key] = {}
         parents = {}
         for mask in self.masks:
             # verify mask name

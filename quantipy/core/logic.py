@@ -1333,11 +1333,12 @@ def get_logic_index(series, logic, data=None):
     elif isinstance(logic, (tuple, dict)):
         idx, vkey = resolve_logic(series, logic, data)
     elif isinstance(logic, str):
-        logic = {logic: 0}
+        logic = {logic: [0]}
         idx, vkey = resolve_logic(series, logic, data)
     else:
         msg = "get_logic_index() recieved a non-tuple logical chunk. {}"
         raise TypeError(msg.format(logic))
+
     vkey = 'x[{}]:y'.format(vkey)
     return idx, vkey
 

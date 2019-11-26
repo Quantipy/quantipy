@@ -48,9 +48,9 @@ def load_csv(path_csv):
 # -----------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------
-def _merge_delimited_sets(x, y):
+def merge_delimited_sets(x, y):
     codes = []
-    x = str(x) + str(y).replace("nan", "")
+    x = (str(x) + str(y)).replace("nan", "")
     for c in x.split(';'):
         if not c:
             continue
