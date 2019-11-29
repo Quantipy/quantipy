@@ -3076,7 +3076,10 @@ class Chain(object):
 
                     frame = link[view].dataframe
                     if oth_src:
-                        frame = self._reindx_source(frame, link.x, link.y == _TOTAL)
+                        if self.array_style == 1:
+                            frame = self._reindx_source(frame, link.y, link.x == _TOTAL)
+                        else:
+                            frame = self._reindx_source(frame, link.x, link.y == _TOTAL)
 
                     # RULES SECTION
                     # ========================================================
