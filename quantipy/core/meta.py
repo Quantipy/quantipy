@@ -2149,7 +2149,8 @@ class Meta(dict):
         return batches
 
     def main_batch(self, batchname):
-        return not self["sets"]["batches"][batchname]["mains"]
+        batch = self["sets"]["batches"][batchname]
+        return not batch.get("mains", batch.get("additional"))
 
     def adds_per_mains(self, reverse=False):
         """

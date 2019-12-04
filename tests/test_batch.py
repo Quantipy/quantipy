@@ -51,7 +51,7 @@ class TestBatch:
             }
             assert b_meta[key] == getattr(batch, trans.get(key, key))
 
-    def test_add_get_batch(self, dataset, caplog):
+    def test_add_get_batch(self, batch, dataset, caplog):
         msg = "Batch 'name' must not contain '-'!"
         _assert_raise(caplog, ValueError, msg, dataset.add_batch, "new-batch")
         dataset.add_batch("new_batch")
@@ -59,7 +59,10 @@ class TestBatch:
         assert dataset.batches == batches
         b = dataset.get_batch("new_batch")
         assert isinstance(b, Batch)
+        b.as_addition(BNAME)
+        assert BNAME in b.mains
         b.remove()
+        assert b.name not in batch.additions
 
     def test_old_batches(self, dataset, caplog):
         old = dataset.get_batch("old_batch")
@@ -108,6 +111,18 @@ class TestBatch:
         x_y_map = [(x, ["@"]) for x in xks]
         assert batch.x_y_map == b_meta["x_y_map"] == x_y_map
 
+    def test_hide_empty(self, batch, b_meta, dataset):
+        dataset.copy("gender", "gender_empty", False)
+        dataset.copy("q5", "q5_empty", False)
+        dataset.copy("q6", "q6_empty", False)
+        dataset["q6_empty_1"] = 1
+        xks = ["gender", "gender_empty", "q5", "q5_empty", "q6", "q6_empty"]
+        batch.downbreaks = xks
+        assert batch.downbreaks == dataset.unroll(xks, both="all")
+        batch.hide_empty()
+        assert batch.downbreaks == dataset.unroll([
+            "gender", "q5", "q6", "q6_empty", "q6_empty_1"], both="all")
+
     def test_crossbreaks(self, batch, b_meta, caplog):
         batch.downbreaks = ["q1", "q2b", "q3", "q4", "q5"]
         msg = "Not found in 'Meta': 'Q1'"
@@ -130,7 +145,6 @@ class TestBatch:
                 assert y[-1] == "age"
         batch.replace_crossbreaks(["gender"], "q3")
         assert batch.x_y_map[2][1] == ["@", "gender"]
-
 
     def test_build_info(self, batch, b_meta, caplog):
         msg = "'build_info' must be of type 'dict'!"
@@ -195,11 +209,16 @@ class TestBatch:
         _assert_raise(
             caplog, TypeError, msg, batch.__setattr__, "filter", {"age": 18})
         batch.filter = None
+        assert batch.get_codes_in_data("gender") == [1, 2]
         assert batch.filter == b_meta["filter"] == None
         assert batch.sample_size == dataset._data.shape[0]
+
         batch.filter = ("femaleonly", {"gender": 2})
         assert batch.filter == b_meta["filter"] == "femaleonly"
         assert batch.sample_size == 4303
+        assert batch.get_codes_in_data("gender") == [2]
+        assert batch.get_codes_in_data("q2b") == [1, 2, 3]
+
         batch.filter = "maleonly"
         assert batch.filter == b_meta["filter"] == "maleonly"
         assert batch.sample_size == 3952
@@ -225,7 +244,7 @@ class TestBatch:
         oe["filter"] = "femaleonly"
         assert nb.verbatims == [oe]
         assert nb.filter == "femaleonly"
-        nb.remove
+        nb.remove()
 
     def test_sigproperties(self, batch, b_meta, caplog):
         batch.total = True
@@ -289,3 +308,24 @@ class TestBatch:
         assert dataset.get_rules("q5").get("dropx") is None
         for x, y in batch.x_y_map:
             assert x not in ["q5_1"]
+
+    def test_skip_items(self, batch, b_meta, caplog):
+        msg = "Can only skip array items!"
+        _assert_raise(
+            caplog, TypeError, msg, batch.__setattr__, "skip_items",
+            ["q1", "q6"])
+        batch.downbreaks = ["q1", "q5"]
+        batch.crossbreaks = ["gender"]
+        batch.skip_items = ["q5"]
+        assert batch.skip_items == b_meta["skip_items"] == ["q5"]
+        for x, y in batch.x_y_map:
+            assert x not in batch.dataset.get_sources("q5")
+
+    def test_set_verbatims(self, batch, b_meta, caplog):
+        add = batch.clone("add", as_addition=True)
+        msg = "Cannot add verbatims to additional batches."
+        _assert_raise(
+            caplog, NotImplementedError, msg, add.set_verbatims, [])
+        msg = "duplicates '['q1']' included in oe and break_by."
+        _assert_raise(
+            caplog, ValueError, msg, batch.set_verbatims, ['q1', 'age'], "q1")

@@ -786,11 +786,12 @@ class DataSet(object):
             return False
 
     @params(is_column=["name"], is_cat=["name"])
-    def get_codes_in_data(self, name):
+    def get_codes_in_data(self, name, condition=None):
         """
         Get a list of codes that exist in data.
         """
-        s = self._data[name]
+        slicer = self.take(condition)
+        s = self[slicer, name].copy()
         if self.is_delimited_set(name):
             if not s.dropna().empty:
                 data_codes = s.str.get_dummies(';').columns.tolist()

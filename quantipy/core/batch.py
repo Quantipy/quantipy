@@ -132,24 +132,11 @@ class Batch(object):
         self.set_missings = self.meta.set_missings
         self.del_missings = self.meta.del_missings
 
-    def codes_in_data(self, name):
+    def get_codes_in_data(self, name):
         """
         Get a list of codes that exist in (batch filtered) data.
         """
-        if not self.filter:
-            return self.dataset.codes_in_data(name)
-        else:
-            slicer = self.manifest_filter(self.filter)
-            data = self.dataset[slicer, name].copy()
-            if self.dataset.is_delimited_set(name):
-                if not data.dropna().empty:
-                    data_codes = data.str.get_dummies(';').columns.tolist()
-                    data_codes = [int(c) for c in data_codes]
-                else:
-                    data_codes = []
-            else:
-                data_codes = pd.get_dummies(data).columns.tolist()
-            return data_codes
+        return self.dataset.get_codes_in_data(name, self.filter)
 
     def hide_empty(self, xks=True, summaries=True):
         """
@@ -179,8 +166,8 @@ class Batch(object):
                         self.set_hiding(
                             x, e_items, axis='x', hide_values=False)
                 if xks:
-                    for i in e_items:
-                        dbrks.remove(sources[i-1])
+                    for e_i in e_items:
+                        dbrks.remove(e_i)
             elif not self.dataset.is_array_item(x):
                 s = self.dataset[self.dataset.take(self.filter), x]
                 if s.count() == 0:
