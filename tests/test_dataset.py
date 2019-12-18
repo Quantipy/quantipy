@@ -159,7 +159,7 @@ class TestDataSet:
 
     def test_subset(self, dataset, caplog):
         ds = dataset.subset(["gender", "age", "q5"])
-        assert ds._data.shape == (8255, 8)
+        assert ds._data.shape == (8255, 9)
         assert ds.variables_from_set() == ['age', 'gender', 'q5']
 
         msg = "Must either pass 'variables' or 'from_set'!"

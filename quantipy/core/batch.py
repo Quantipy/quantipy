@@ -721,10 +721,10 @@ class Batch(object):
             logger.error(err); raise TypeError(err)
         if not replacements:
             replacements = {}
-        elif not isinstance(repl, dict):
+        elif not isinstance(replacements, dict):
             err = "'replacements' must be of type dict."
             logger.error(err); raise TypeError(err)
-        elif not all(isinstance(v, dict) for v in list(repl.values())):
+        elif not all(isinstance(v, dict) for v in list(replacements.values())):
             replacements = {self.text_key: replacements}
 
         if not filter_by:
@@ -737,7 +737,8 @@ class Batch(object):
                 logger.error(err); raise ValueError(err)
         elif isinstance(filter_by, tuple):
             fname = self.dataset.valid_var_name(filter_by[0])
-            self.dataset.add_filter_var(fname, filter_by[1])
+            if fname not in self.dataset:
+                self.dataset.add_filter_var(fname, filter_by[1])
             slicer = fname
 
         if any(title == verbatim["title"] for verbatim in self.verbatims):
@@ -763,12 +764,12 @@ class Batch(object):
             })
 
     @params(to_list="title")
-    def del_verbatims(self, title):
+    def del_verbatims(self, title=None):
         """
         Remove verbatim definitions by title.
         """
-        for idx, verbatim in enumerate(self.verbatims[:]):
-            if verbatim["title"] in title:
+        for idx, verbatim in reversed(list(enumerate(self.verbatims[:]))):
+            if not title or verbatim["title"] in title:
                 del self.verbatims[idx]
 
     # -------------------------------------------------------------------------
@@ -809,20 +810,21 @@ class Batch(object):
                 logger.error(err); raise ValueError(err)
         elif isinstance(filter_by, tuple):
             fname = self.dataset.valid_var_name(filter_by[0])
-            self.dataset.add_filter_var(fname, filter_by[1])
+            if fname not in self.dataset:
+                self.dataset.add_filter_var(fname, filter_by[1])
             self.y_filter_map[name] = fname
         if name not in self.y_on_y:
             self.y_on_y.append(name)
 
     @params(to_list="name")
-    def del_verbatims(self, name):
+    def del_y_on_y(self, name=None):
         """
         Remove verbatim definitions by name.
         """
-        for idx, y_on_y in enumerate(self.y_on_y[:]):
-            if y_on_y == name:
-                del self.y_on_y[idx]
-                del self.y_filter_map[y_on_y]
+        for idx, y_on_y in reversed(list(enumerate(self.y_on_y[:]))):
+            if not name or y_on_y == name:
+                del self._batches[self.name]["y_on_y"][idx]
+                del self._batches[self.name]["y_filter_map"][y_on_y]
 
     # -------------------------------------------------------------------------
     # to_dataset
@@ -843,7 +845,7 @@ class Batch(object):
             Set name or a list of variables to sort against.
         additions: str {'sort_within, sort_between', False}
             Add variables from additional batches.
-        apply_edits: bool
+        apply_edits: bool, default = False
             * true: Edits like hiding/slicing/... are applied as actual
                 variable adjustments.
         """
@@ -856,9 +858,9 @@ class Batch(object):
             for add in self.additions:
                 abatch = self.dataset.get_batch(add)
                 vlist += abatch._get_vlist(mode)
-        if not from_set:
-            from_set = vlist
-        vlist = self.align_order(vlist, from_set, integrate_rc, fix=misc)
+        from_set = vlist if not from_set else from_set
+        vlist = self.dataset.align_order(
+            vlist, from_set, integrate_rc, fix=misc)
         if additions == "sort_within":
             for add in self.additions:
                 abatch = self.dataset.get_batch(add)
@@ -870,35 +872,40 @@ class Batch(object):
         vlist = self.dataset.roll_up(vlist)
 
         # handle filters
-        add_f = [self._batches[add]["filter"] for add in self.additions]
-        filters = uniquify_list([self.filter] + add_f)
-        if add_f and self.dataset.compare_filter(self.filter, add_f):
-            f = "merge_filter"
-            merge_f = filters
-        else:
-            f = self.filter
-            merge_f = False
+        f = self.filter
+        merge_f = False
+        if additions:
+            add_f = [self._batches[add]["filter"] for add in self.additions]
+            filters = uniquify_list([self.filter] + add_f)
+            if None in filters:
+                f = None
+            elif add_f and not self.dataset.compare_filter(self.filter, add_f):
+                f = "merge_filter"
+                merge_f = filters
 
         # create ds
         ds = DataSet.from_components(
-            self.name, self.dataset._data, self.meta, self.text_key)
+            self.name, self.dataset._data, self.meta.clone(), self.text_key)
         if merge_f:
-            ds.merge_filter(f, filters)
+            ds.merge_filter(f, merge_f)
         if f:
-            ds.filter(self.name, {f: 0}, True)
+            ds.filter(f, True)
             if merge_f:
                 ds.drop(f)
 
-        ds.create_set(str(self.name), included=vlist, overwrite=True)
+        ds.create_set(str(self.name), include=vlist, overwrite=True)
         ds.subset(from_set=self.name, inplace=True)
         ds.order(vlist)
 
         if apply_edits:
             for var in ds.variables():
-                codes = ds.get_codes(col)
-                drops = ds.get_rules(col).pop("dropx", [])
-                slicer = ds.get_rules(col).pop("slicex", codes)
-                if all(isinstance(dr, str) for dr in drops):
+                if not ds.is_categorical(var):
+                    continue
+                codes = ds.get_codes(var)
+                rules = ds.get_rules(var)
+                drops = rules.pop("dropx", {}).get("values", [])
+                slicer = rules.pop("slicex", {}).get("values", codes)
+                if drops and all(isinstance(dr, str) for dr in drops):
                     ds.remove_items(var, [ds.get_item_no(dr) for dr in drops])
                 elif drops or not codes == slicer:
                     remove = [code for code in slicer if not code in drops]
@@ -918,7 +925,7 @@ class Batch(object):
         for key in mode:
             if key == "oe":
                 oes = []
-                for oe in var[:]:
+                for oe in self.verbatims[:]:
                     if 'f' in mode:
                         oes += oe["columns"] + [oe["filter"]]
                     else:
@@ -933,21 +940,21 @@ class Batch(object):
                     vlist.append(v)
         return vlist
 
-    def _apply_oe_replacements(self, dataset):
+    def _apply_oe_replacements(self, ds):
         numerical = ["int", "single", "is_delimited_set"]
         for oe in self.verbatims:
             if oe['replace']:
-                data = dataset._data[oe["columns"]].copy()
+                data = ds._data[oe["columns"]].copy()
                 replacements = oe['replace'].get(self.text_key, {})
                 for target, repl in replacements.items():
                     if not repl:
                         repl = np.NaN
                     data.replace(target, repl, inplace=True)
-                dataset._data[oe["columns"]] = data
+                ds._data[oe["columns"]] = data
             if not oe['incl_nan']:
                 for col in oe['columns']:
                     if not (ds.is_categorical(col) or ds.is_numeric(col)):
-                        dataset._data[col].replace(np.NaN, '', inplace=True)
+                        ds._data[col].replace(np.NaN, '', inplace=True)
 
     # -------------------------------------------------------------------------
     # Deprecations

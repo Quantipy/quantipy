@@ -24,17 +24,15 @@ def batch(dataset):
 def b_meta(batch):
     return batch.dataset._meta["sets"]["batches"][BNAME]
 
-def _assert_exists(name, suffix=[]):
-    if not isinstance(suffix, list):
-        suffix = [suffix]
-    for suf in suffix:
-        path = os.path.join(DATA, "{}.{}".format(name, suf))
-        assert os.path.exists(path)
-
 def _assert_raise(caplog, err, msg, func, *args, **kwargs):
     caplog.clear()
     with pytest.raises(err):
         func(*args, **kwargs)
+    assert caplog.records[-1].message == msg
+
+def _assert_warn(caplog, msg, func, *args, **kwargs):
+    caplog.clear()
+    func(*args, **kwargs)
     assert caplog.records[-1].message == msg
 
 
@@ -322,10 +320,127 @@ class TestBatch:
             assert x not in batch.dataset.get_sources("q5")
 
     def test_set_verbatims(self, batch, b_meta, caplog):
+        batch.del_verbatims()
         add = batch.clone("add", as_addition=True)
         msg = "Cannot add verbatims to additional batches."
         _assert_raise(
             caplog, NotImplementedError, msg, add.set_verbatims, [])
         msg = "duplicates '['q1']' included in oe and break_by."
         _assert_raise(
-            caplog, ValueError, msg, batch.set_verbatims, ['q1', 'age'], "q1")
+            caplog, ValueError, msg, batch.set_verbatims, ['q1', 'age'],
+            break_by="q1")
+        msg = "'title' must be of type string."
+        _assert_raise(
+            caplog, TypeError, msg, batch.set_verbatims, 'age',
+            title=["age"])
+        msg = "'replacements' must be of type dict."
+        _assert_raise(
+            caplog, TypeError, msg, batch.set_verbatims, 'age',
+            replacements=("__NA__", ""))
+        msg = "'q1' is not a valid filter variable."
+        _assert_raise(
+            caplog, ValueError, msg, batch.set_verbatims, 'age',
+            filter_by="q1")
+
+        batch.set_verbatims("age", title="oe1", replacements={"NA": ""},
+                            filter_by=("oe_f", {"gender": 1}))
+        batch.set_verbatims("q1", title="oe2", replacements={"NA": ""},
+                            filter_by="oe_f")
+        expect = [
+            {
+                'title': "oe1",
+                'filter': "oe_f",
+                'columns': ["age"],
+                'break_by': [],
+                'incl_nan': False,
+                'drop_empty': True,
+                'replace': {"en-GB": {"NA": ""}}
+            },
+            {
+                'title': "oe2",
+                'filter': "oe_f",
+                'columns': ["q1"],
+                'break_by': [],
+                'incl_nan': False,
+                'drop_empty': True,
+                'replace': {"en-GB": {"NA": ""}}
+            }
+        ]
+        assert batch.verbatims == b_meta["verbatims"] == expect
+        batch.set_verbatims("age", title="oe1", break_by="q1")
+        assert len(batch.verbatims) == 2
+        assert batch.verbatims[0]["break_by"] == ["q1"]
+
+    def test_y_on_y(self, batch, b_meta, caplog):
+        batch.del_y_on_y()
+        msg = "'name' attribute for add_y_on_y must be a str!"
+        _assert_raise(caplog, TypeError, msg, batch.set_y_on_y, ["BACK"])
+        msg = "'q1' is not a valid filter variable."
+        _assert_raise(caplog, ValueError, msg, batch.set_y_on_y, "BACK", "q1")
+
+        batch.set_y_on_y("BACK1")
+        batch.set_y_on_y("BACK2", ("yony_f", {"gender": 1}))
+        batch.set_y_on_y("BACK3", "yony_f")
+        expect = ["BACK1", "BACK2", "BACK3"]
+        assert batch.y_on_y == b_meta["y_on_y"] == expect
+        expect = {
+            "BACK1": batch.filter,
+            "BACK2": "yony_f",
+            "BACK3": "yony_f",
+        }
+        assert batch.y_filter_map == b_meta["y_filter_map"] == expect
+        batch.del_y_on_y()
+        assert batch.y_on_y == []
+        assert batch.y_filter_map == {}
+
+    def test_to_dataset(self, dataset):
+        b = dataset.add_batch("new_ds")
+        b.downbreaks = ["q1", "q5"]
+        b.crossbreaks = ["q2b"]
+        b.filter = ("filter_var", {"age": is_lt(30)})
+        b.set_hiding("q5", 1, axis="x", hide_values=False)
+        b.set_hiding("q1", 1, axis="x")
+        b.set_verbatims("q8a", replacements={"__NA__": ""})
+        b.weight = "weight_a"
+        b2 = dataset.add_batch("new_ds2")
+        b2.downbreaks = ["gender", "q6"]
+        b2.as_addition("new_ds")
+        ds = b.to_dataset(misc="RecordNo", additions=False, apply_edits=True)
+        expect = ['RecordNo', 'q1', 'q2b', 'q5', 'q8a', 'filter_var']
+        assert ds.variables() == expect
+        assert ds._data.shape == (2965, 11)
+        assert ds.get_sources("q5") == ["q5_2", "q5_3", "q5_4", "q5_5", "q5_6"]
+        ds = b.to_dataset(misc="RecordNo", additions="sort_within",
+                          mode=['x', 'y', 'v', 'oe', 'w'])
+        expect = [
+            'RecordNo', 'q1', 'q2b', 'q5', 'q8a', 'gender', 'q6']
+        assert ds.variables() == expect
+        assert ds._data.shape == (8255, 15)
+        b2.filter = ("filter_var2", {"gender": 1})
+        ds = b.to_dataset(misc="RecordNo", additions="sort_between")
+        expect = [
+            'RecordNo', 'gender', 'q1', 'q2b', 'q5', 'q6', 'q8a', 'filter_var',
+            'filter_var2']
+        assert ds.variables() == expect
+        assert ds._data.shape == (5515, 17)
+
+    def test_deprecation(self, dataset, caplog):
+        b = dataset.add_batch("deprecation")
+        WARN = (
+            "This method will be deprecated soon.\n"
+            "Please use property setter of '{}' instead.").format
+        _assert_warn(caplog, WARN("batch.name"), b.rename, "deprecated")
+        _assert_warn(caplog, WARN("batch.text_key"), b.set_language, "de-DE")
+        _assert_warn(caplog, WARN("batch.cell_items"), b.set_cell_items, "cp")
+        _assert_warn(caplog, WARN("batch.unweighted_counts"),
+                     b.set_unweighted_counts, True)
+        _assert_warn(caplog, WARN("batch.weights"), b.set_weights, None)
+        _assert_warn(caplog, WARN("batch.variables"), b.add_variables, ["q1"])
+        _assert_warn(caplog, WARN("batch.downbreaks"), b.add_downbreak, ["q1"])
+        _assert_warn(caplog, WARN("batch.leveled"), b.level, ["q6"])
+        _assert_warn(caplog, WARN("batch.crossbreaks"), b.add_crossbreak,
+                     ["q1"])
+        _assert_warn(caplog, WARN("batch.transposed"), b.transpose, ["q6"])
+        _assert_warn(caplog, WARN("batch.total"), b.add_total, True)
+        _assert_warn(caplog, WARN("batch.filter"), b.set_filter, None)
+        b.remove()

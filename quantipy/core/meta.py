@@ -448,7 +448,6 @@ class Meta(dict):
         elif qtype in CATEGORICAL and not categories:
             err = "Expect categories for type '{}'".format(qtype)
         elif qtype == "delimited set" and len(categories) == 1:
-            print(categories)
             err = "Expect more than one category for delimited sets."
         elif qtype not in CATEGORICAL and categories:
             err = "None categorical type does not support categories."
@@ -857,7 +856,7 @@ class Meta(dict):
                 missings = self._pad_list(missings, max_len)
                 sources = self._pad_list(sources, max_len)
                 item_t = self._pad_list(item_t, max_len)
-                elements = [items, items_texts, codes, texts, missings]
+                elements = [sources, item_t, codes, texts, missings]
                 columns = ["items", "item texts", "codes", "texts", "missing"]
             else:
                 max_len = len(codes)
@@ -2028,6 +2027,7 @@ class Meta(dict):
             item for no, item in enumerate(self["masks"][name]["items"], 1)
             if no not in remove]
         self["masks"][name]["items"] = items
+        self._reduce_set(r_items, name)
         self._reduce_set(r_items)
 
     def _merge_items(self, name, meta, overwrite):

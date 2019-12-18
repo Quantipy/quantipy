@@ -294,7 +294,7 @@ class DataSet(object):
         """
         ds = self if inplace else self.clone()
         ds._meta.subset(variables, from_set, inplace=True)
-        keep = ds.unroll(ds.variables_from_set("data file"))
+        keep = ds.unroll(ds.variables_from_set("data file")) + ["@1"]
         drop = [col for col in ds._data.columns if col not in keep]
         ds._data.drop(drop, 1, inplace=True)
         if not inplace:
@@ -1318,8 +1318,9 @@ class DataSet(object):
         """
         index_mapper = self._index_mapper(mapper, intersect)
         for code, index in index_mapper.items():
-            self[target][index] = self[target][index].apply(
-                lambda x: remove_codes(x, [code]))
+            col = self[target][index].copy()
+            col = col.apply(lambda x: remove_codes(x, [code]))
+            self._data.loc[index, target] = col
 
     def interlock(self, name, label, variables, val_text_sep='/'):
         """
@@ -2176,7 +2177,7 @@ class DataSet(object):
 
     @params(to_list="filters")
     def merge_filter(self, name, filters):
-        if not all(f in self.filters() for f in filters):
+        if not all(f in self.filters for f in filters):
             raise KeyError("Not all included names are valid filters.")
         logic = {
             'label': 'merged filter logics',
@@ -2241,9 +2242,9 @@ class DataSet(object):
         """
         # get list to align against
         if not align_against:
-            align_against = self._variables_from_set("data file")
+            align_against = self.variables_from_set("data file")
         elif isinstance(align_against, str):
-            align_against = self._variables_from_set(align_against)
+            align_against = self.variables_from_set(align_against)
 
         # recode suffixes and replace parent
         if not integrate_rc:
@@ -2541,8 +2542,8 @@ class DataSet(object):
         """
         sources = self.get_sources(name)
         self._meta.remove_items(name, remove)
-        for source in sources:
-            if source not in self:
+        for no, source in enumerate(sources, 1):
+            if no in remove:
                 self._data.drop(source, axis=1, inplace=True)
 
     @params(to_list=["new_items"])
@@ -2568,7 +2569,7 @@ class DataSet(object):
     # ------------------------------------------------------------------------
     # batch
     # ------------------------------------------------------------------------
-    @params(repeat=["name"], to_list=['ci', 'weights', 'tests'])
+    @params(to_list=['ci', 'weights', 'tests'])
     def add_batch(self, name, ci=['c', 'p'], weights=[], tests=[]):
         from .batch import Batch
         return Batch(self, name, ci, weights, tests)
