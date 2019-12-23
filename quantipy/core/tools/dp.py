@@ -30,7 +30,6 @@ def frequency(meta, data, x=None, y=None, weight=None, rules=False, **kwargs):
     f : pandas.DataFrame
         The frequency as a pandas DataFrame.
     """
-
     if x is None and y is None:
         raise ValueError("You must provide a value for either x or y.")
     elif not x is None and not y is None:

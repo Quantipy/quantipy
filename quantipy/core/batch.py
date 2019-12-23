@@ -3,7 +3,6 @@
 from ..__imports__ import *  # noqa
 
 from .dataset import DataSet
-from .meta import Meta
 
 logger = get_logger(__name__)
 
@@ -25,7 +24,7 @@ class Batch(object):
         self._name = name
         self._batches = dataset._meta["sets"]["batches"]
         if name in dataset.batches:
-            logger.info("Load batch: {}".format(name))
+            logger.debug("Load batch: {}".format(name))
             self._load_batch()
         else:
             self._start_batch()
@@ -908,7 +907,7 @@ class Batch(object):
                 if drops and all(isinstance(dr, str) for dr in drops):
                     ds.remove_items(var, [ds.get_item_no(dr) for dr in drops])
                 elif drops or not codes == slicer:
-                    remove = [code for code in slicer if not code in drops]
+                    remove = [code for code in slicer if code not in drops]
                     ds.remove_values(var, remove)
         if "oe" in mode:
             self._apply_oe_replacements(ds)
@@ -941,7 +940,6 @@ class Batch(object):
         return vlist
 
     def _apply_oe_replacements(self, ds):
-        numerical = ["int", "single", "is_delimited_set"]
         for oe in self.verbatims:
             if oe['replace']:
                 data = ds._data[oe["columns"]].copy()

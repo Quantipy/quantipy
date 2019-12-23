@@ -754,7 +754,14 @@ class Meta(dict):
     @params(to_list=["name"])
     def var_exists(self, name):
         variables = self.masks + self.columns
-        return all(n in variables for n in name)
+        for n in name:
+            if ">" in n:
+                for x in n.split(">"):
+                    if x.strip() not in variables:
+                        return False
+            elif n not in variables:
+                return False
+        return True
 
     @params(to_list=["blacklist"])
     def variables(self, setname="data file", numeric=True, string=True,
@@ -1846,6 +1853,56 @@ class Meta(dict):
         values = self[self._get_value_ref(name)]
         for value in values:
             value.pop("factor", None)
+
+    def _add_factor_meta(self, name, rescale, drop, exclude):
+        if self.is_categorical(name):
+            self.del_factors(name)
+            all_codes = self.get_codes(name)
+            if rescale:
+                fm = rescale
+                if not drop:
+                    for c in all_codes:
+                        if c not in fm:
+                            fm[c] = c
+            else:
+                fm = {c: c for c in all_codes}
+            if exclude:
+                for e in exclude:
+                    fm.pop(e, None)
+            self.set_factors(name, fm)
+
+    @params(repeat="name")
+    def _add_factor_labs(self, name, rescale, drop, exclude, factor_labels):
+        axis = ["x", "y"] if self.is_array(name) else ["x"]
+        has_factors = self.get_property(name, "factor_labels")
+        rescale = rescale or {}
+        values = self[self._get_value_ref(name)]
+        if factor_labels == '()':
+            new_lab = '{} ({})'
+            split = ('(', ')')
+        else:
+            new_lab = '{} [{}]'
+            split = ('[', ']')
+        for v in values:
+            val = v["value"]
+            if val in exclude or (drop and val not in rescale):
+                continue
+            factor = rescale.get(val, val)
+            for ax in axis:
+                ax_key = "{} axis".format(ax)
+                if ax_key not in v["text"]:
+                    v["text"][ax_key] = {}
+                for tk, text in v["text"].items():
+                    if tk in ["x edits", "y edits"]:
+                        continue
+                    etext = v["text"].get(ax_key, {}).get(tk, text)
+                    if has_factors:
+                        fac = etext.split(split[0])[-1].replace(split[1], '')
+                        if fac == str(factor):
+                            continue
+                    v["text"][ax_key][tk] = new_lab.format(etext, factor)
+        self.set_property(name, "factor_labels", True, True)
+        self._set_values(name, values)
 
     # -------------------------------------------------------------------------
     # items

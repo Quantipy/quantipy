@@ -360,7 +360,7 @@ class DataSet(object):
         return dataset
 
     @classmethod
-    def from_stack(cls, stack, fk="no_filter"):
+    def from_stack(cls, stack, dk, fk=None):
         """
         Use ``qp.Stack`` data and meta to create a ``DataSet`` instance.
 
@@ -371,10 +371,12 @@ class DataSet(object):
         fk: string
             Filter name if the stack contains more than one filters.
         """
-        name = stack.name
-        meta = stack[name].meta
-        data = stack[name][fk].data
-        return cls.from_components(name, data, meta)
+        meta = stack[dk].meta
+        if not fk:
+            data = stack[dk].data
+        else:
+            data = stack[dk][fk].data
+        return cls.from_components(dk, data, meta)
 
     @classmethod
     def from_dimensions(cls, name, path="."):
@@ -1700,6 +1702,173 @@ class DataSet(object):
         ds.to_quantipy()
         return ds
 
+    @params(to_list="name")
+    def _recode_from_net_def(self, name, net_map, expand=None, recode="auto",
+                             prefix="Net: ", mis_in_rec=False):
+        """
+        Create variables from net definitions.
+
+        Parameters
+        ----------
+        name : str
+            Variable name to use as recode source.
+        net_map : list of dicts
+            Net definitions in form of
+            ```
+            net_def = [{
+                "net_1": net_logic,  # e.g. list of codes
+                "text": {tk: net_label}
+            }, ...]
+            ```
+        expand : {'before', 'after'}, default None
+            If provided, the net codes will list the net-defining codes after
+            or before the computed net groups (i.e. "overcode" nets).
+        recode: {'extend_codes', 'drop_codes', 'collect_codes',
+                 'collect_codes@cat_name'}, default 'auto'
+            Adds variable with nets as codes to DataSet.
+            *  'extend_codes': codes are extended with nets.
+            *  'drop_codes': new variable only contains nets as codes.
+            *  'collect_codes' or 'collect_codes@cat_name': the variable
+                    contains nets and another category that summarises all
+                    codes which are not included in any net.
+                    If no cat_name is provided, 'Other' is taken as default
+        mis_in_rec: bool, default False
+            Skip or include codes that are defined as missing when recoding
+            from net definition.
+        """
+        name = self.unroll(name)
+        forced_recode = False
+        valid = ['extend_codes', 'drop_codes', 'collect_codes']
+        if recode == 'auto':
+            recode = 'collect_codes'
+            forced_recode = True
+        if not any(rec in recode for rec in valid):
+            raise ValueError("'recode' must be one of {}".format(valid))
+
+        masks = defaultdict(defaultdict)
+        for col in name:
+            new = self.valid_var_name("{}_rc".format(col))
+
+            # collect array items
+            if self.is_array_item(col):
+                parent = self.get_parent(col)
+                no = self.get_item_no(col)
+                masks[parent][no] = new
+
+            # create mapper to derive new variable
+            mapper, q_type, labels, simple_nets = self._get_net_mapper(
+                col, net_map, recode, prefix)
+            self.derive(new, q_type, self.text(var), mapper)
+
+            # meta edits for new variable
+            for tk, labs in labels.items():
+                self.set_value_texts(new, labs, tk)
+                text = self.get_text(var, tk) or self.get_text(var, None)
+                self.set_text(new, text, tk)
+
+            # properties
+            self.set_property(new, "recoded_net", var)
+            if simple_nets:
+                self.set_property(new, "simple_org_expr", simple_nets)
+                if self.is_array_item(col):
+                    masks[parent]["simple_org_expr"] = simple_nets
+
+            props = self._meta['columns'][var].get("properties", {})
+            for pname, prop in props.items():
+                if not pname == 'survey':
+                    self(new, pname, prop)
+            logger.info('Created: {}'. format(new))
+            if forced_recode:
+                logger.warning("'{}' was a forced recode.".format(new))
+
+            # order, remove codes
+            if 'collect_codes' in recode:
+                others = [{var: not_count(0)}, {new: has_count(0)}]
+                missings = self.get_missings(var)
+                if not mis_in_rec and missings:
+                    others.append({var: not_any(missings["exclude"])})
+
+                has_other_logic = self.take(intersection(others)).tolist()
+                if self.is_array_item(var) or has_other_logic:
+                    if '@' in recode:
+                        cat_name = recode.split('@')[-1]
+                    else:
+                        cat_name = 'Other'
+                    code = len(mapper) + 1
+                    self.extend_values(new, [(code, str(code))])
+                    for tk in labels.keys():
+                        self.set_value_texts(new, {code: cat_name}, tk)
+                    self.recode(new, {code: intersection(others)})
+            if recode == 'extend_codes' and expand:
+                codes = self.get_codes(var)
+                new = [c for c in self.get_codes(new) if c not in codes]
+                order = []
+                remove = []
+                for x, y, z in mapper[:]:
+                    if x not in new:
+                        order.append(x)
+                    else:
+                        vals = z.values()[0]
+                        if not isinstance(vals, list):
+                            remove.append(vals)
+                            vals = [vals]
+                        if expand == 'after':
+                            idx = order.index(
+                                codes[min([codes.index(v) for v in vals])])
+                        elif expand == 'before':
+                            idx = order.index(
+                                codes[max([codes.index(v) for v in vals])]) + 1
+                        order.insert(idx, x)
+                self.reorder_values(rew, order)
+                self.remove_values(rew, remove)
+
+        # summarize masks
+        for mask, items in masks.items():
+            simple_net = items.pop("simple_org_expr", None)
+            newm = self.valid_var_name("{}_rc".format(mask))
+            self.to_array(newm, list(sorted(list(items.items()))), '')
+            self.set_property(newm, "recoded_net", mask, True)
+            if simple_net:
+                self.set_property(newm, 'simple_org_expr', simple_net)
+            props = self._meta['masks'][mask].get("properties", {})
+            for pname, prop in props.items():
+                if not pname == 'survey':
+                    self.set_property(newm, pname, prop, True)
+            msg = "Mask {} built from recoded view variables!"
+            logger.info(msg.format(dims_name))
+
+    def _get_net_mapper(self, name, net_map, recode, prefix):
+        mapper = []
+        if recode == 'extend_codes':
+            mapper += [(x, y, {var: x}) for (x, y) in ds.values(var)]
+            max_code = max(ds.codes(var))
+        elif recode == 'drop_codes' or 'collect_codes' in recode:
+            max_code = 0
+
+        appends = []
+        labels = {}
+        simple_nets = []
+        for x, net in enumerate(net_map[:], 1):
+            labs = net.pop('text')
+            code = max_code + x
+            for tk, lab in labs.items():
+                if tk not in labels:
+                    labels[tk] = {}
+                labels[tk].update({code: '{} {}'.format(text_prefix, lab)})
+            appends.append((code, str(code), {var: net.values()[0]}))
+            if isinstance(n.values()[0], list):
+                simple_nets.append((
+                    '{} {}'.format(text_prefix, labs[self.text_key]),
+                    net.values()[0]))
+        if not len(appends) == len(simple_nets):
+            simple_nets = []
+        mapper.extend(appends)
+        if self._is_delimited_set_mapper(mapper):
+            q_type = 'delimited set'
+        else:
+            q_type = 'single'
+        return mapper, q_type, labels, simple_nets
+
     # ------------------------------------------------------------------------
     # Converting
     # ------------------------------------------------------------------------
@@ -1874,8 +2043,8 @@ class DataSet(object):
                 df[str(k)].loc[v] = 1
             s = condense_dichotomous_set(df)
             self[target] = self[target].astype("str")
-            self[target] = self[target].combine(s,
-                lambda x, y: merge_delimited_sets(x, y))
+            self[target] = self[target].combine(
+                s, lambda x, y: merge_delimited_sets(x, y))
         else:
             for k, v in mapper.items():
                 self._data[target].loc[v] = k

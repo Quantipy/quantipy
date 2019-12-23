@@ -6,6 +6,8 @@ ignore =
     F405
 
 filename =
-    *core/meta.py
+    *core/batch.py
     *core/dataset.py
     *core/io/dimensions/*.py
+    *core/meta.py
+    *core/stack.py

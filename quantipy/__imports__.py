@@ -6,10 +6,11 @@ import re
 import sys
 import copy
 # import ftfy
+# import gzip
 import json
 import math
 import time
-import pickle
+# import pickle
 import string
 import logging
 import sqlite3

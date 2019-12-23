@@ -17,6 +17,10 @@ INVALID_VARS = ["id_L1", "id_L1.1"]
 INVALID_CHARS_IN_NAMES = [' ', '~', '(', ')', '&']
 
 DEFAULT_MISSINGS = [
+    u"don'tknow",
+    u"noanswer",
+    u"skip",
+    u"don'tknow/noanswer",
     u'weißnicht',
     u'keineangabe',
     u'weißnicht/keineangabe',

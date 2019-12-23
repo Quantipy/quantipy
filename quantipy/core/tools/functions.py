@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import gzip
 import json
 import pickle
 import numpy as np
@@ -12,9 +13,23 @@ from collections import OrderedDict
 # -----------------------------------------------------------------------------
 # i/o
 # -----------------------------------------------------------------------------
-def cpickle_copy(obj):
-    copy = pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
-    return copy
+def pickle_dump(obj, path, compression="gzip"):
+    if compression == "gzip":
+        f = gzip.open(path, "wb")
+    else:
+        f = open(path, "wb")
+    pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    f.close()
+
+
+def pickle_load(path, compression="gzip"):
+    if compression == "gzip":
+        f = gzip.open(path, "rb")
+    else:
+        f = open(path, "rb")
+    obj = pickle.load(f)
+    f.close()
+    return obj
 
 
 def load_json(path_json, hook=OrderedDict):
