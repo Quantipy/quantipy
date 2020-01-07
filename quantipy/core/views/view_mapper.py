@@ -357,6 +357,7 @@ class ViewMapper(OrderedDict):
             all codes that are not transformed. Acts as a shorthand for manually
             passing any remaining codes in ``exclude``.
         """
+        print(kwargs)
         view = View(link, name, "descriptives", kwargs)
         if not view._xk['is_multi'] or view._source:
 
@@ -366,17 +367,18 @@ class ViewMapper(OrderedDict):
             if view._source:
                 q = self._swap_and_rebase(q, view._source)
             if not(q.type == 'array' and q.y == '@'):
+                if not view._stats:
+                    view.kwargs["stats"] = "mean"
                 if view._exclude:
                     q.exclude(view._exclude, axis=view.axis)
                 if view._rescale:
                     q.rescale(view._rescale, view._drop)
-                stat = view._stats or "mean"
-                q.summarize(stat=stat, margin=False, as_df=True)
+                q.summarize(stat=view._stats, margin=False, as_df=True)
                 if view._calc:
                     q.calc(view._calc, result_only=True)
-                    method_nota = 'd.' + stat + '.c:f'
+                    method_nota = 'd.' + view._stats + '.c:f'
                 else:
-                    method_nota = 'd.' + stat
+                    method_nota = 'd.' + view._stats
                 view._method = method_nota
                 view._cbases = q.cbase
                 view._rbases = q.rbase

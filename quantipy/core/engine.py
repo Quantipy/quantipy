@@ -789,7 +789,7 @@ class Quantity(object):
         """
         if not self._res_is_stat():
             values = self.result
-            if not self._has_y_margin and not self.y == '@':
+            if not self._has_y_margin and not self.yk == '@':
                 margins = False
                 values = np.concatenate([self.rbase[1:, :], values], 1)
             else:
@@ -846,10 +846,6 @@ class Quantity(object):
             expr_type = 'vectors'
         return val1, op, val2, expr_type, idx_c
 
-    @staticmethod
-    def constant(num):
-        return [num]
-
     def calc(self, expression, axis='x', result_only=False):
         """
         Compute (simple) aggregation level arithmetics.
@@ -865,13 +861,12 @@ class Quantity(object):
         is_df = self._force_to_nparray()
         has_margin = self._attach_margins()
         values = self.result
-        expr_name = expression.keys()[0]
+        expr_name, expr = list(expression.items())[0]
         if axis == 'x':
             self.calc_x = expr_name
         else:
             self.calc_y = expr_name
             values = values.T
-        expr = expression.values()[0]
         v1, op, v2, exp_type, index_codes = self._organize_expr_def(expr, axis)
         # ====================================================================
         # TODO: generalize this calculation part so that it can "parse"
@@ -1361,14 +1356,6 @@ class Quantity(object):
                     self._has_y_margin = True
         else:
             pass
-
-
-
-
-
-
-
-
 
     def _res_is_margin(self):
         return self.current_agg in ['tbase', 'cbase', 'rbase', 'ebase', 'x_sum',

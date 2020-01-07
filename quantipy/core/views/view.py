@@ -358,11 +358,11 @@ class View(object):
                 break
         symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
         cond_names = [
-            key for key in self._logic is key not in ["text", "expand"]]
+            key for log in self._logic for key in log.keys()
+            if key not in ["text", "expand"]]
         cond_map = dict(zip(cond_names, conditions))
         v1 = cond_map.get(val1, val1)
         v2 = cond_map.get(val2, val2)
-
         calc_string = "{}{}{}".format(v1, symbol_map[op], v2)
         repl = [("+{", "{"), ("}+", "}"), ("x", ""), ("[", ""), ("]", "")]
         for rep in repl:

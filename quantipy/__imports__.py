@@ -39,7 +39,7 @@ from operator import (
     eq, ne,
     gt, ge,
     add, sub,
-    mul, truediv
+    mul, truediv as div
 )
 
 from io import (
