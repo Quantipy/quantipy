@@ -2133,7 +2133,7 @@ class DataSet(object):
                 dummy_data = pd.get_dummies(self[name])
                 if self.is_single(name):
                     codes = self.get_codes(name)
-                    dummy_data = dummy_data.reindex(columns=var_codes)
+                    dummy_data = dummy_data.reindex(columns=codes)
                     dummy_data.replace(np.NaN, 0, inplace=True)
                 dummy_data.rename(
                     columns={

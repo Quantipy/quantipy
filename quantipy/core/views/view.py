@@ -1,27 +1,47 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
+from ...__imports__ import *  # noqa
 
-import copy
-import pandas as pd
-from collections import OrderedDict
-from operator import add, sub, mul, div
-
-pd.set_option('display.encoding', 'utf-8')
+logger = get_logger(__name__)
 
 
 class View(object):
-    def __init__(self, link=None, name=None, kwargs=None):
-        kwargs = None if kwargs is None else kwargs.copy()
-        self._kwargs = kwargs
-        self.name = name
-        if link is not None:
-            self._link_meta(link)
+    def __init__(self, link, name, method=None, kwargs=None):
+        self.name = name.split("|")[-1]
+        self.link = link
+        self._method = method
+        self.kwargs = kwargs if kwargs else {}
+        self.condition = kwargs.get("condition")
+        self._logic = kwargs.get("logic")
+
         self.dataframe = pd.DataFrame()
-        self._notation = None
-        self.rbases = None
-        self.cbases = None
-        self.grp_text_map = None
+        self._link_meta()
+
+        self._rbases = None
+        self._cbases = None
         self._custom_txt = ''
-        self.add_base_text = True
+
+    def __repr__(self):
+        return '{}'.format(self.dataframe)
+
+    def _link_meta(self,):
+        meta = self.link.meta
+        xk = self.link.xk
+        nested = ">" in xk
+        self._xk = {
+            "name": xk,
+            "is_multi": meta.is_delimited_set(xk),
+            "is_nested": nested,
+            "is_array": meta.is_array(xk) if not nested else False
+        }
+        yk = self.link.yk
+        nested = ">" in yk
+        self._yk = {
+            "name": yk,
+            "is_multi": meta.is_delimited_set(yk),
+            "is_nested": ">" in yk,
+            "is_array": meta.is_array(yk) if not nested else False
+        }
 
     def meta(self):
         """
@@ -34,759 +54,355 @@ class View(object):
         """
         viewmeta = {
             'agg': {
-                'is_weighted': self.is_weighted(),
-                'weights': self.get_std_params()[3],
-                'method': self._method(),
-                'name': self._shortname(),
-                'fullname': self._notation,
-                'text': self.get_std_params()[4],
+                'is_weighted': self.is_weighted,
+                'weights': self.weight,
+                'method': self.method,
+                'name': self.name,
+                'fullname': self.notation,
+                'text': self.text,
                 'grp_text_map': self.grp_text_map,
-                'is_block': self._is_block()},
-            'x': self._x,
-            'y': self._y,
+                'is_block': self.is_block},
+            'x': self._xk,
+            'y': self._yk,
             'shape': self.dataframe.shape}
-        if self.is_base():
-            viewmeta['agg']['add_base_text'] = self.add_base_text
         return viewmeta
 
-    def _link_meta(self, link):
-        metas = []
-        xname = link.x
-        yname = link.y
-        filemeta = link.get_meta()
-        masks = filemeta['masks'].keys()
-        if filemeta['columns'] is None:
-            metas = [
-                {'name': xname, 'is_multi': False, 'is_nested': False},
-                {'name': yname, 'is_multi': False, 'is_nested': False}]
+
+    # -------------------------------------------------------------------------
+    # kwargs
+    # -------------------------------------------------------------------------
+    @property
+    def notation(self):
+        return "x|{}|{}|{}|{}|{}".format(
+            self._method, self.condition, self.rel_to, self.weight, self.name)
+
+    @property
+    def method(self):
+        if callable(self._method):
+            logger.debug("Use custom method '{}'".format(self.name))
+            return self._method
+        if self._method.startswith("d."):
+            return "descriptives"
+        elif self._method.startswith("f"):
+            return "frequency"
+        elif self._method.startswith("t."):
+            return "coltests"
         else:
-            mc = ['dichotomous set', 'categorical set', 'delimited set']
-            for name in [xname, yname]:
-                if name in filemeta['columns']:
-                    dtype = filemeta['columns'][name]['type']
-                elif name in filemeta['masks']:
-                    dtype = filemeta['masks'][name]['type']
-                elif name == '@':
-                    dtype = None
-                is_multi = True if dtype in mc else False
-                is_nested = True if '>' in name else False
-                metas.append({
-                    'name': name,
-                    'is_multi': is_multi,
-                    'is_nested': is_nested,
-                    'is_array': name in masks})
-        self._x = metas[0]
-        self._y = metas[1]
+            return self._method
 
-    def _grp_text_map(self, logic, calc):
-        if logic is not None:
-            calc_only = self._kwargs.get('calc_only', False)
-            net_texts = []
-            net_names = []
-            for l in logic:
-                net_text = l.get('text', None)
-                if net_text is not None:
-                    del l['text']
-                    net_texts.append(net_text)
-                else:
-                    net_texts.append(None)
-                net_names.extend([
-                    key for key in l.keys() if not key == 'expand'])
-            grp_text_map = {name: text
-                            for name, text in zip(net_names, net_texts)}
-            if calc is not None:
-                calc_text = calc.get('text', None)
-                if calc_text is not None:
-                    del calc['text']
-                if not calc_only:
-                    grp_text_map[calc.keys()[0]] = calc_text
-                else:
-                    grp_text_map = {calc.keys()[0]: calc_text}
-        else:
-            grp_text_map = None
-        return grp_text_map
+    @property
+    def rel_to(self):
+        return self.kwargs.get("rel_to", "")
 
-    def nests(self):
-        """
-        Slice a nested ``View.dataframe`` into its innermost column sections.
-        """
-        vmeta = self.meta()
-        x_nest = vmeta['x']['is_nested']
-        y_nest = vmeta['y']['is_nested']
-        if not x_nest and not y_nest:
-            err = "Columns are not nested!"
-            raise ValueError(err)
-        if x_nest and not y_nest:
-            err = "Cannot separate index nesting!"
-            raise NotImplementedError(err)
-        df = self.dataframe
-        levels = df.columns.nlevels / 2
-        grouper = df.groupby(axis=1, level=(levels, 1))
-        view_list = []
-        for g in grouper:
-            gdf = g[1]
-            gview = copy.deepcopy(self)
-            gview.dataframe = gdf
-            view_list.append(gview)
-        return view_list
+    @property
+    def weight(self):
+        return self.kwargs.get("weights") or ""
 
-    def describe_block(self):
-        df = self.dataframe
-        logic = self._kwargs['logic']
-        global_expand = self._kwargs.get('expand', None)
-        block_ref = OrderedDict()
-        if logic is not None:
-            for item in logic:
-                if isinstance(item, dict):
-                    expand = item.get('expand', None)
-                    if expand is None:
-                        expand = global_expand
-                    if expand is None:
-                        block_ref[item.keys()[0]] = 'normal'
-                    elif expand in ['before', 'after']:
-                        for key in item.keys():
-                            if key not in ['text', 'expand', 'complete']:
-                                net = key
-                                break
-                        block_ref[net] = 'net'
-                        for expanded in item[net]:
-                            block_ref[expanded] = 'expanded'
-            for idx in df.index.levels[1]:
-                if idx not in block_ref:
-                    block_ref[idx] = 'normal'
+    @property
+    def condition(self):
+        return self.kwargs.get("condition", ":")
 
-        return block_ref
-
-    def notation(self, method, condition):
-        """
-        Generate the View's Stack key notation string.
-
-        Parameters
-        ----------
-        aggname, shortname, relation : str
-            Strings for the aggregation name, the method's shortname and the
-            relation component of the View notation.
-
-        Returns
-        -------
-        notation: str
-            The View notation.
-        """
-        notation_strct = 'x|{}|{}|{}|{}|{}'
-        axis, _, rel_to, weights, _ = self.get_std_params()
-        name = self.name
-        if rel_to is None:
-            rel_to = ''
-        if weights is None:
-            weights = ''
-        if condition is None:
+    @condition.setter
+    def condition(self, condition):
+        if not condition:
             condition = ':'
-        elif condition in ['x:', ':']:
-            condition = condition
-        else:
-            if 't.' not in method:
-                complete = self._kwargs.get('complete', False)
-                colon_form = '*:' if complete else ':'
-                if axis == 'x':
+        elif condition not in ['x:', ':']:
+            if 't.' not in self._method:
+                colon_form = '*:' if self._complete else ':'
+                if self.axis == "x":
                     condition = condition + colon_form
                 else:
                     condition = colon_form + condition
-        return notation_strct.format(method, condition, rel_to, weights, name)
+        self.kwargs["condition"] = condition
 
-    def get_std_params(self):
-        """
-        Provides the View's standard kwargs with fallbacks to default values.
+    @property
+    def axis(self):
+        return self.kwargs.get("axis", "x")
 
-        Returns
-        -------
-        std_parameters : tuple
-            A tuple of the common kwargs controlling the general View method
-            behaviour: axis, relation, rel_to, weights, text
-        """
-        return (
-            self._kwargs.get('axis', None),
-            self._kwargs.get('condition', None),
-            self._kwargs.get('rel_to', None),
-            self._kwargs.get('weights', None),
-            self._kwargs.get('text', ''))
+    @property
+    def text(self):
+        return self.kwargs.get("text", "")
 
-    def get_edit_params(self):
-        """
-        Provides the View's Link edit kwargs with fallbacks to default values.
+    # net properties
+    @property
+    def _calc(self):
+        return self.kwargs.get("calc", None)
 
-        Returns
-        -------
-        edit_params : tuple
-            A tuple of kwargs controlling the following supported Link data
-            edits: logic, calc, ...
-        """
-        logic = copy.deepcopy(self._kwargs.get('logic', None))
-        calc = copy.deepcopy(self._kwargs.get('calc', None))
-        grp_text_map_copy = self.grp_text_map
-        if all([
-            logic is not None,
-            any([
-                isinstance(logic, (dict, tuple)),
-                isinstance(logic, list) and not isinstance(logic[0], dict)])]):
-            logic = [{self.name: logic}]
-        self.grp_text_map = self._grp_text_map(logic, calc)
-        if grp_text_map_copy is not None:
-            self.grp_text_map = grp_text_map_copy
-        return (
-            logic,
-            self._kwargs.get('expand', None),
-            self._kwargs.get('complete', False),
-            calc,
-            self._kwargs.get('exclude', None),
-            self._kwargs.get('rescale', None))
+    @property
+    def _calc_only(self):
+        return self.kwargs.get("calc_only", False)
 
-    def translate_metric(self, text_key=None, set_value=False):
-        if not (self.is_stat() or self.is_base() or self.is_sum()):
-            pass
+    @property
+    def _logic(self):
+        return self.kwargs.get("logic", None)
+
+    @_logic.setter
+    def _logic(self, logic):
+        if not logic:
+            self.kwargs["logic"] = None
+        elif isinstance(logic, list) and not all(isinstance(log, dict)
+                                                 for log in logic):
+            self.kwargs["logic"] = [{self.name: logic}]
         else:
-            text = self.get_std_params()[-1]
-            if not self._custom_txt:
-                invalid = ['Total', 'Lower quartile', 'Max', 'Min', 'Mean',
-                           'Upper quartile', 'Unweighted base', 'Total Sum',
-                           'Std. err. of mean', 'Base', 'Median', 'Std. dev',
-                           'Sample variance', 'Coefficient of variance',
-                           'Gross base', 'Unweighted gross base', '']
-                if text not in invalid:
-                    self._custom_txt = text
-                    add_custom_text = True
-                else:
-                    add_custom_text = False
-            else:
-                add_custom_text = True
-            if text_key is None:
-                text_key = 'en-GB'
-            transl = self._metric_name_map().get(text_key, 'en-GB')
-            try:
-                old_val = self.dataframe.index.get_level_values(1)[0]
-                custom_txt = self._custom_txt
-                if '_gross' in self._notation and self.is_base():
-                    if not self.is_weighted():
-                        old_val = 'no_w_gross_' + old_val
-                    else:
-                        old_val = 'gross All'
-                elif self.is_base() and not self.is_weighted():
-                    old_val = 'no_w_' + old_val
-                new_val = transl[old_val]
-                if add_custom_text:
-                    new_val = new_val + ' ' + custom_txt
-                ignore = False
-            except (TypeError, KeyError):
-                if self.meta()['agg']['text']:
-                    new_val = self.meta()['agg']['text']
-                else:
-                    new_val = old_val
-                ignore = True
-            if set_value and not ignore:
-                if not text == new_val:
-                    self._kwargs['text'] = new_val
-            else:
-                return new_val
+            self.kwargs["logic"] = logic
 
-    # Currently unused
-    # Meant to be used in translate_metric with set_value='index'
-    # --> can e.g. replace the inner index value with its translation
-    def _update_mi_value(self, axis='x', new_val=None):
-        names = ['Question', 'Values']
-        q_level = self.dataframe.index.get_level_values(0)[0]
-        vals = [q_level, [new_val]]
-        self.dataframe.index = pd.MultiIndex.from_product(vals, names=names)
-        return None
+    @property
+    def _expand(self):
+        return self.kwargs.get("expand", None)
 
-    def _frequency_condition(self, logic, conditionals, expand):
-        axis = self._kwargs.get('axis', 'x')
-        if conditionals:
-            conditionals = list(reversed(conditionals))
+    @property
+    def _complete(self):
+        return self.kwargs.get("complete", False) or self._expand is not None
+
+    @property
+    def _describe_block(self):
+        block_ref = OrderedDict()
+        if self._logic and self._expand:
+            for item in self._logic:
+                if self._expand in ["before", "after"]:
+                    for key in item.keys():
+                        if key not in ["text", "expand"]:
+                            break
+                    block_ref[key] = "net"
+                    for expanded in item[key]:
+                        block_ref[expanded] = "expanded"
+            for idx in self.dataframe.index.levels[1]:
+                if idx not in block_ref:
+                    block_ref[idx] = "normal"
+        return block_ref
+
+    @property
+    def grp_text_map(self):
+        if self._calc_only:
+            calc_text = self._calc.get("text")
+            calc_key = [
+                key for key in self._calc.keys()
+                if key not in ["text", "expand"]]
+            return {calc_key: calc_text}
+        elif self._logic:
+            net_texts = []
+            net_names = []
+            for item in self._logic:
+                net_texts.append(item.get("text"))
+                net_names.extend([
+                    key for key in item.keys()
+                    if key not in ["text", "expand"]])
+            grp_text_map = dict(zip(net_names, net_texts))
+            if self._calc:
+                calc_text = self._calc.get("text")
+                calc_key = [
+                    key for key in self._calc.keys() if not key == "text"][0]
+                grp_text_map[calc_key] = calc_text
+            return grp_text_map
+        else:
+            return None
+
+    # descriptive properties
+    @property
+    def _stats(self):
+        return self.kwargs.get("stats", None)
+
+    @property
+    def _exclude(self):
+        return self.kwargs.get("exclude", None)
+
+    @property
+    def _drop(self):
+        return self.kwargs.get("drop", None)
+
+    @property
+    def _rescale(self):
+        return self.kwargs.get("rescale", None)
+
+    @property
+    def _source(self):
+        return self.kwargs.get("source", None)
+
+    # coltest properties
+    @property
+    def _metric(self):
+        return self.kwargs.get("metric", None)
+
+    @property
+    def _mimic(self):
+        return self.kwargs.get("mimic", None)
+
+    @property
+    def _level(self):
+        return self.kwargs.get("level", None)
+
+    @property
+    def _flag_bases(self):
+        return self.kwargs.get("flg_bases", None)
+
+    @property
+    def _test_total(self):
+        return self.kwargs.get("test_total", None)
+
+    # -------------------------------------------------------------------------
+    # properties
+    # -------------------------------------------------------------------------
+    @property
+    def is_weighted(self):
+        return len(self.weight) > 0
+
+    @property
+    def is_pct(self):
+        return self.method == "frequency" and len(self.rel_to) > 0
+
+    @property
+    def is_counts(self):
+        return self.method == "frequency" and len(self.rel_to) == 0
+
+    @property
+    def is_base(self):
+        return self._method == "f" and len(self.condition) == 2
+
+    @property
+    def is_sum(self):
+        return self._method.startswith("f.c") and len(self.condition) == 2
+
+    @property
+    def is_cumulative(self):
+        return self.condition == "x++:"
+
+    @property
+    def is_test(self):
+        return self.method == "coltests"
+
+    @property
+    def is_stat(self):
+        return self.method == "descriptives"
+
+    @property
+    def is_net(self):
+        return all([
+            self.method == "frequency",
+            len(self.condition) > 3,
+            not self.is_cumulative])
+
+    @property
+    def has_calc(self):
+        return self._method.startswith("f.c") and not self.is_cumulative
+
+    @property
+    def is_block(self):
+        return self.method == "frequency" and any([
+            len(self.condition.split("[")) > 2, self._expand, self._complete])
+
+    # -------------------------------------------------------------------------
+    # conditions
+    # -------------------------------------------------------------------------
+    def spec_condition(self):
+        """
+        Update the condition component based on agg details.
+        """
+        if self._logic:
+            condition = self._frequency_condition()
+        elif self._stats:
+            condition = self._descriptives_condition()
+        else:
+            condition = self.axis
+        if self._calc is not None:
+            calc_cond = self._calc_condition(condition)
+            if self._calc_only:
+                condition = calc_cond
+            else:
+                if self._logic:
+                    condition.append(calc_cond)
+                else:
+                    condition = [condition, calc_cond]
+        if isinstance(condition, list):
+            condition = ",".join(condition)
+        self.condition = condition
+
+    def _frequency_condition(self):
         logic_codes = []
-        for grp in logic:
-            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
-                codes = conditionals.pop()
-                logic_codes.append(codes)
-            else:
-                expand_cond = expand
-                if 'expand' in grp.keys():
-                    grp = copy.deepcopy(grp)
-                    expand_cond = grp['expand']
-                    del grp['expand']
-                codes = '{' + ','.join(map(str, grp.values()[0])) + '}'
-                if expand_cond is None:
-                    logic_codes.append("{}[{}]".format(axis, codes))
-                elif expand_cond == 'after':
-                    logic_codes.append("{}[{}+]".format(axis, codes))
-                else:
-                    logic_codes.append("{}[+{}]".format(axis, codes))
+        for item in self._logic:
+            codes = "{{{}}}".format(
+                ",".join([
+                    str(v) for k, val in item.items()
+                    for v in val if k not in ["text", "expand"]]))
+            if not self._expand:
+                logic_codes.append("{}[{}]".format(self.axis, codes))
+            elif self._expand == 'after':
+                logic_codes.append("{}[{}+]".format(self.axis, codes))
+            elif self._expand == 'before':
+                logic_codes.append("{}[+{}]".format(self.axis, codes))
         return logic_codes
 
-    def _descriptives_condition(self, link):
-        if self._kwargs.get('source', None):
-            return self._kwargs['source']
-        try:
-            var = link.x if not link.x == '@' else link.y
-            if var in link.get_meta()['masks'].keys():
-                values = link.get_meta()['lib']['values'][var]
-            else:
-                values = link.get_meta()['columns'][var].get('values', None)
-                if 'lib@values' in values:
-                    vals = values.split('@')[-1]
-                    values = link.get_meta()['lib']['values'][vals]
-            x_values = [int(x['value']) for x in values]
-            if self.missing():
-                x_values = [x for x in x_values if x not in self.missing()]
-            if self.rescaling():
-                x_values = [x if x not in self.rescaling()
-                            else self.rescaling()[x] for x in x_values]
-            if self.missing() or self.rescaling():
-                condition = 'x[{}]'.format(
-                    '{' + ','.join(map(str, x_values)) + '}')
-            else:
-                if self._kwargs.get('axis', 'x') == 'x':
-                    condition = 'x'
-                else:
-                    condition = 'y'
-        except (KeyError, ValueError):
-            if self.missing():
-                code_excl = ','.join([str(m) for m in self.missing()])
-                code_excl = '{' + code_excl + '}'
-                condition = 'x~{}'.format(code_excl)
-            else:
-                if self._kwargs.get('axis', 'x') == 'x':
-                    condition = 'x'
-                else:
-                    condition = 'y'
-        return condition
+    def _descriptives_condition(self):
+        if self._source:
+            return self._source
+        if not (self._exclude or self._rescale):
+            return self.axis
 
-    def _calc_condition(self, logic, conditions, calc):
-        op = calc.values()[0][1]
-        val1, val2 = calc.values()[0][0], calc.values()[0][2]
-        symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
-        calc_strct = '{}{}{}'
-        if logic:
-            cond_names = []
-            for l in logic:
-                cond_names.extend([
-                    key for key in l.keys() if key not in ['expand', 'text']])
-            name_cond_pairs = zip(cond_names, conditions)
-            cond_map = {name: cond for name, cond in name_cond_pairs}
-            v1 = cond_map[val1] if val1 in cond_map.keys() else val1[0]
-            v2 = cond_map[val2] if val2 in cond_map.keys() else val2[0]
+        var = self.link.yk if self.link.xk == "@" else self.link.yk
+        if self.link.meta.is_categorical(var):
+            codes = self.link.meta.get_codes(var)
+            if self._exclude:
+                codes = [code for code in codes if not code in self._exclude]
+            if self._rescale:
+                codes = [self._rescale.get(code, code) for code in codes]
+            return 'x[{{{}}}]'.format(','.join(map(str, codes)))
         else:
-            v1 = val1 if isinstance(val1, list) else conditions
-            v2 = val2 if isinstance(val2, list) else conditions
-        calc_string = calc_strct.format(v1, symbol_map[op], v2)
-        calc_string = calc_string.replace('+{', '{').replace('}+', '}')
-        calc_string = calc_string.replace('x', '')
-        calc_string = calc_string.replace('[', '').replace(']', '')
+            if self._exclude:
+                return 'x~{{{}}}'.format(",".join(map(str, self._exclude)))
+            else:
+                return self.axis
+
+    def _calc_condition(self, conditions):
+        for k, v in self._calc.items():
+            if k not in ["text", "calc_only"]:
+                val1, op, val2 = v
+                break
+        symbol_map = {add: '+', sub: '-', mul: '*', div: '/'}
+        cond_names = [
+            key for key in self._logic is key not in ["text", "expand"]]
+        cond_map = dict(zip(cond_names, conditions))
+        v1 = cond_map.get(val1, val1)
+        v2 = cond_map.get(val2, val2)
+
+        calc_string = "{}{}{}".format(v1, symbol_map[op], v2)
+        repl = [("+{", "{"), ("}+", "}"), ("x", ""), ("[", ""), ("]", "")]
+        for rep in repl:
+            calc_string = calc_string.replace(*rep)
         calc_string = 'x[{}]'.format(calc_string)
         return calc_string
 
-    def spec_condition(self, link, conditionals=None, expand=None):
-        """
-        Updates the View notation's condition component based on agg. details.
-
-        Parameters
-        ----------
-        link : Link
-
-        Returns
-        -------
-        relation_string : str
-            The relation part of the View name notation.
-        """
-        logic = self.get_edit_params()[0]
-        stat = self._kwargs.get('stats', 'mean')
-        # complete = self.get_std_params()[2]
-        calc = self.get_edit_params()[3]
-        if logic is not None:
-            condition = self._frequency_condition(logic, conditionals, expand)
-        elif stat is not None:
-            condition = self._descriptives_condition(link)
-        else:
-            condition = 'x' if self._kwargs.get('axis', 'x') == 'x' else 'y'
-        if calc is not None:
-            calc_cond = self._calc_condition(logic, condition, calc)
-            if not self._kwargs.get('calc_only', False):
-                if logic:
-                    condition = '{},{}'.format(','.join(condition), calc_cond)
+    # -------------------------------------------------------------------------
+    # metric
+    # -------------------------------------------------------------------------
+    def translate_metric(self):
+        if self.is_stat or self.is_base or self.is_sum:
+            add_custom_text = True
+            if not self._custom_txt:
+                invalid = [
+                    'Total', 'Lower quartile', 'Max', 'Min', 'Mean',
+                    'Upper quartile', 'Unweighted base', 'Total Sum',
+                    'Std. err. of mean', 'Base', 'Median', 'Std. dev',
+                    'Sample variance', 'Coefficient of variance',
+                    'Gross base', 'Unweighted gross base', '']
+                if self.text not in invalid:
+                    self._custom_txt = self.text
                 else:
-                    condition = '{},{}'.format(condition, calc_cond)
-            else:
-                condition = calc_cond
-        else:
-            if logic:
-                condition = ','.join(condition)
-        return condition
-
-    def missing(self):
-        """
-        Returns any excluded value codes.
-        """
-        return self._kwargs.get('exclude', None)
-
-    def rescaling(self):
-        """
-        Returns the rescaling specification of value codes.
-        """
-        return self._kwargs.get('rescale', None)
-
-    def weights(self):
-        """
-        Returns the weight variable name used in the aggregation.
-        """
-        return self._kwargs.get('weights', None)
-
-    def is_weighted(self):
-        """
-        Tests if the View is performed on weighted data.
-        """
-        notation = self._notation.split('|')
-        if len(notation[4]) > 0:
-            return True
-        else:
-            return False
-
-    def is_pct(self):
-        """
-        Tests if the View is a percentage representation of a frequency.
-        """
-        notation = self._notation.split('|')
-        if notation[1] in ['f', 'f.c:f']:
-            if len(notation[3]) > 0:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def is_base(self):
-        """
-        Tests if the View is a base size aggregation.
-        """
-        notation = self._notation.split('|')
-        if notation[1] == 'f':
-            if len(notation[2]) == 2:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def is_sum(self):
-        """
-        Tests if the View is a plain sum aggregation.
-        """
-        notation = self._notation.split('|')
-        if 'f.c' in notation[1]:
-            if len(notation[2]) == 2:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def is_net(self):
-        """
-        Tests if the View is a code group/net aggregation.
-        """
-        notation = self._notation.split('|')
-        if notation[1] in ['f', 'f.c:f']:
-            if self._has_code_expr():
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def is_counts(self):
-        """
-        Tests if the View is a count representation of a frequency.
-        """
-        notation = self._notation.split('|')
-        if notation[1] in ['f', 'f.c:f']:
-            if len(notation[3]) == 0:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def is_stat(self):
-        """
-        Tests if the View is a sample statistic.
-        """
-        if self.meta()['agg']['method'] == 'descriptives':
-            return True
-        else:
-            return False
-
-    def _is_test(self):
-        notation = self._notation.split('|')
-        if 't.' in notation[1]:
-            return True
-        else:
-            return False
-
-    def is_meanstest(self):
-        """
-        Tests if the View is a statistical test of differences in means.
-        """
-        if self._is_test():
-            teststr = self._notation.split('|')[1].split('.')
-            if teststr[1] == 'means':
-                return float(teststr[3].split('+')[0]) / 100
-            else:
-                return False
-        else:
-            return False
-
-    def is_propstest(self):
-        """
-        Tests if the View is a statistical test of differences in proportions.
-        """
-        if self._is_test():
-            teststr = self._notation.split('|')[1].split('.')
-            if teststr[1] == 'props':
-                return float(teststr[3].split('+')[0]) / 100
-            else:
-                return False
-        else:
-            return False
-
-    def has_other_source(self):
-        """
-        Tests if the View is generated with a swapped x-axis.
-        """
-        cond = self._notation.split('|')[2]
-        if not cond.startswith(('x:', 'x[', 'x~', 'x++')):
-            source = cond.replace(':', '')
-            return source
-        else:
-            return False
-
-    def has_calc(self):
-        cond1 = 'f.c' in self._notation.split('|')[1]
-        cond2 = not self.is_cumulative()
-        return cond1 and cond2
-
-    def is_cumulative(self):
-        """
-        Tests if the View is a cumulative frequency.
-        """
-        return self._notation.split('|')[2] == 'x++:'
-
-    def _is_block(self):
-        notation = self._notation.split('|')
-        if notation[1] in ['f', 'f.c:f']:
-            conditions = notation[2].split('[')
-            multiple_conditions = len(conditions) > 2
-            expand = '+{' in notation[2] or '}+' in notation[2]
-            complete = '*:' in notation[2]
-            if multiple_conditions or expand or complete:
-                return True
-            else:
-                return False
-        else:
-            False
-
-    def _has_code_expr(self):
-        notation = self._notation.split('|')
-        if len(notation[2]) > 3 and not notation[2] == 'x++:':
-            return True
-        else:
-            return False
-
-    def _shortname(self):
-        return self.name.split('|')[-1]
-
-    def _method(self):
-        method_part = self._notation.split('|')[1]
-        if 'd.' in method_part:
-            return 'descriptives'
-        elif 'f.' in method_part or method_part == 'f':
-            return 'frequency'
-        elif 't.' in method_part:
-            return 'coltests'
-        else:
-            return method_part
-
-    @staticmethod
-    def _metric_name_map():
-        mdict = {
-            # English
-            'en-GB': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Unweighted base',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Mean',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Std. dev',
-                'sem': 'Std. err. of mean',
-                'sum': 'Total Sum',
-                'lower_q': 'Lower quartile',
-                'upper_q': 'Upper quartile'},
-            # Danish
-            'da-DK': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Unweighted base',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Gennemsnit',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Std.afv',
-                'sem': 'StdErr',
-                'sum': 'Totalsum',
-                'lower_q': 'Nedre kvartil',
-                'upper_q': 'Øvre kvartil'},
-            # Swedish
-            'sv-SE': {
-                '@': 'Total',
-                'All': 'Bas',
-                'no_w_All': 'ovägd bas',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Medelvärde',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Std. av.',
-                'sem': 'StdErr',
-                'sum': 'Summa',
-                'lower_q': 'Undre kvartilen',
-                'upper_q': 'Övre kvartilen'},
-            # Norwegian
-            'nb-NO': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Unweighted base',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Gjennomsnitt',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Standardavvik',
-                'sem': 'StdErr',
-                'sum': 'Totalsum',
-                'lower_q': 'Nedre kvartil',
-                'upper_q': 'Øvre kvartil'},
-            # Finnish
-            'fi-FI': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Unweighted base',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Mean',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Std.dev.',
-                'sem': 'StdErr',
-                'sum': 'Totalsum',
-                'lower_q': 'Alakvartiili',
-                'upper_q': 'Yläkvartiili'},
-            # French
-            'fr-FR': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Base brute',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Moyenne',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Médiane',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Ecart-type',
-                'sem': 'StdErr',
-                'sum': 'Totalsum',
-                'lower_q': 'Quartile inférieur',
-                'upper_q': 'Quartile supérieur'},
-            # Italian
-            'it-IT': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Unweighted base',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Mean',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Std. dev',
-                'sem': 'Std. err. of mean',
-                'sum': 'Total Sum',
-                'lower_q': 'Lower quartile',
-                'upper_q': 'Upper quartile'},
-            # Spanish
-            'es-ES': {
-                '@': 'Total',
-                'All': 'Base',
-                'no_w_All': 'Unweighted base',
-                'gross All': 'Gross base',
-                'no_w_gross_All': 'Unweighted gross base',
-                'mean': 'Mean',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Sample variance',
-                'varcoeff': 'Coefficient of variation',
-                'stddev': 'Std. dev',
-                'sem': 'Std. err. of mean',
-                'sum': 'Total Sum',
-                'lower_q': 'Lower quartile',
-                'upper_q': 'Upper quartile'},
-            # German
-            'de-DE': {
-                '@': 'Gesamt',
-                'All': 'Basis Netto',
-                'no_w_All': 'Ungewichtete Basis Netto',
-                'gross All': 'Basis Brutto',
-                'no_w_gross_All': 'Ungewichtete Basis Brutto',
-                'mean': 'Mittelwert',
-                'min': 'Min',
-                'max': 'Max',
-                'median': 'Median',
-                'var': 'Stichprobenvarianz',
-                'varcoeff': 'Variationskoeffizient',
-                'stddev': 'StdDev',
-                'sem': 'StdErr',
-                'sum': 'Summe',
-                'lower_q': '25% Perzentil',
-                'upper_q': '75% Perzentil'}
-        }
-        for lang in mdict:
-            for key in mdict[lang]:
-                mdict[lang][key] = mdict[lang][key].decode('utf-8')
-
-        return mdict
-
-    def __repr__(self):
-        """ Message to be printed in stdout (print self)
-
-            Example: << View.View Rows: 4, Columns: 3, Has Meta:False >>
-        """
-        return '{}'.format(self.dataframe)
+                    add_custom_text = False
+            tk = self.link.meta.text_key
+            transl = METRIC_NAME_MAP.get(tk, "en-GB")
+            try:
+                old_val = self.dataframe.index.get_level_values(1)[0]
+                if self.is_base:
+                    if "_gross" in self.name:
+                        if self.is_weighted:
+                            old_val = 'gross All'
+                        else:
+                            old_val = 'no_w_gross_' + old_val
+                    if not self.is_weighted:
+                        old_val = 'no_w_' + old_val
+                new_val = transl[old_val]
+                if add_custom_text:
+                    new_val = new_val + ' ' + self._custom_txt
+                if not self.text == new_val:
+                    self.kwargs["text"] = new_val
+            except (TypeError, KeyError):
+                return self.text or old_val

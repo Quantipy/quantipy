@@ -69,6 +69,7 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
         """
         all_args = getargspec(func)[0]
         collect = is_var + ["self"]
+
         collected = _collect_args(all_args, collect, args, kwargs, False, True)
         obj = collected.pop("self")[0]
         err = "Not found in '{}': '{}'"
@@ -77,7 +78,7 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
             for var in variables:
                 for v in var.split(">"):
                     v = v.replace(" ", "")
-                    if v not in obj:
+                    if not(v in obj or v == "@"):
                         invalid.append(v)
         if invalid:
             err = err.format(obj.__class__.__name__, "', '".join(invalid))
@@ -100,7 +101,7 @@ def params(repeat=[], to_list=[], is_column=[], is_mask=[], is_var=[],
             for var in variables:
                 for v in var.split(">"):
                     v = v.replace(" ", "")
-                    if v not in columns:
+                    if not(v in columns or v == "@"):
                         invalid.append(v)
         if invalid:
             err = err.format("', '".join(invalid))

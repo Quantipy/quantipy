@@ -466,7 +466,7 @@ class Meta(dict):
                 meta.add_meta(name, qtype, label, categories, items, text_key,
                               properties)
 
-        if self.var_exists(name):
+        if self.var_exists(name) and not name == "@1":
             msg = "Overwriting meta for '{}'".format(name)
             logger.info(msg)
             self.drop(name)
@@ -693,6 +693,8 @@ class Meta(dict):
     # inspect
     # ------------------------------------------------------------------------
     def _check_type(self, name, checktype):
+        if name == "@":
+            return False
         if isinstance(name, list):
             return all(self._check_type(n, checktype) for n in name)
         if self.is_array(name):
@@ -726,10 +728,14 @@ class Meta(dict):
 
     @params(is_var=["name"])
     def is_array(self, name):
+        if name == "@":
+            return False
         return self.get_type(name) == "array"
 
     @params(is_var=["name"])
     def is_array_item(self, name):
+        if name == "@":
+            return False
         if self.is_array(name) or not self["columns"][name].get("parent"):
             return False
         else:

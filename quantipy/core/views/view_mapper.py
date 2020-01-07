@@ -1,10 +1,12 @@
-#-*- coding: utf-8 -*-
-import marshal
-import copy
-from types import FunctionType
-from collections import OrderedDict
-from itertools import product
-import quantipy as qp
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from ...__imports__ import *  # noqa
+
+from .view import View
+from ..engine import (
+    Quantity,
+    Test)
+
 
 class ViewMapper(OrderedDict):
     """
@@ -12,39 +14,22 @@ class ViewMapper(OrderedDict):
     kwargs, handling the coordination and structuring side of the aggregation
     process.
     """
-    def __init__(self, views=None, template=None):
-        super(ViewMapper, self).__init__() # Initiate the ordered dict
-
-        self.known_methods = OrderedDict()
-        self.__init_known_methods__()
-        self.__init_custom_methods__()
-
-        # Set the template into the instance if one is provided
+    def __init__(self, views=[], template=None):
+        super(ViewMapper, self).__init__()
         self.template = template
-
-        # If no view method is views the choose all known_methods
-        if views is None:
-            views = self.known_methods.keys()
-
-        # populate the view instance with the views methods from the known_methods.
-        for method in views:
-            if method in self.known_methods:
-                self[method] = self.known_methods[method]
-            else:
-                self[method] = views[method]
+        for view in views:
+            self[view] = KNOWN_METHODS.get(view, {})
 
     def __setstate__(self, view_dict):
         # Reconstruct the View object after serialization
-        for view_name in view_dict:
-            kwargs = view_dict[view_name]['kwargs']
-            method_as_bytes = view_dict[view_name]['method'] # method stored as bytes
-
-            # Set the kwargs into the deserialized view
-            self[view_name] = {'kwargs': kwargs}
-
-            # Set the method into the deserialized view
-            method_as_string = marshal.loads(method_as_bytes) # Returns method as string
-            self[view_name]['method'] = FunctionType(code=method_as_string, globals=globals(), name=view_name)
+        for view in view_dict:
+            kwargs = view_dict[view]['kwargs']
+            method_as_bytes = view_dict[view]['method']
+            method_as_string = marshal.loads(method_as_bytes)
+            self[view] = {
+                'kwargs': kwargs,
+                'method': FunctionType(
+                    code=method_as_string, globals=globals(), name=view)}
 
     def __reduce__(self):
         class_type = self.__class__
@@ -52,16 +37,18 @@ class ViewMapper(OrderedDict):
         setitem_dict = {}
 
         # Must use .keys() because the loop removes callable methods from self
-        for view_name in self.keys():
-            if callable(self[view_name]['method']):
-                view = self.pop(view_name)
+        for vk in self.keys():
+            if callable(self[vk]['method']):
+                view = self.pop(vk)
                 kwargs = view['kwargs']
                 method = view['method']
-                setitem_dict[view_name] = {'method':marshal.dumps(method.func_code), 'kwargs':kwargs}
+                setitem_dict[vk] = {
+                    'method':
+                        marshal.dumps(method.__code__), 'kwargs': kwargs}
 
         return (class_type, tuple(arguments), setitem_dict, None, None)
 
-    def make_template(self, method, iterators=None):
+    def make_template(self, method, iterators={}):
         """
         Generate a view method template that cycles through kwargs values.
 
@@ -71,20 +58,15 @@ class ViewMapper(OrderedDict):
             The baseline view method to be used.
         iterators : dict
             A dictionary mapping of view method kwargs to lists of values.
-
-        Returns
-        -------
-        None
-            Sets the template inside ViewMapper instance.
         """
-        view_method = eval('qp.QuantipyViews().' + method)
-        if iterators is not None:
-            template = {'method': view_method,
-                        'kwargs': {'iterators': {k: v for k, v in iterators.items()}}}
-        else:
-            template = {'method': view_method, 'kwargs': {}}
-        self.template = template
-        return self
+        if not (method in ["default", "frequency", "descriptives"] or
+                callable(method)):
+            raise TypeError("Given 'method' needs to be callable.")
+
+        self.template = {
+            "method": method,
+            "kwargs": {"iterators": iterators}
+        }
 
     def add_method(self, name=None, method=None, kwargs={}, template=None):
         """
@@ -101,35 +83,24 @@ class ViewMapper(OrderedDict):
         template : dict
             A ViewMapper template that contains information on view method and
             kwargs values to iterate over.
-
-        Returns
-        -------
-        None
-            Updates the ViewMapper instance with a new method definiton.
         """
-        if template is None and not self.template is None:
-            template = self.template
-
-        if not template is None:
+        template = template or self.template
+        if template:
             name = template.get('name', name)
             method = template.get('method', method)
             kwargs = dict(template.get('kwargs', {}), **kwargs)
 
         if None in [name, method]:
-            raise TypeError(
-                "You must provide a 'name' and 'method' to add_method(), \n"
-                "either directly in the method call or through a ViewMapper template. \n"
-                "You gave: \n"
-                "name: {name} \n"
-                "method: {method} \n".format(
-                    name=name,
-                    method=method
-                )
-            )
+            err = (
+                "You must provide a 'name' and 'method' to add_method()"
+                "either directly in the method call or through a ViewMapper"
+                " template.")
+            raise ValueError(err)
 
         self[name] = {'method': method, 'kwargs': kwargs}
 
-    def subset(self, views, strict_selection=True):
+    @params(to_list="views")
+    def subset(self, views, inplace=False):
         """
         Copy ViewMapper instance retaining only the View names provided.
 
@@ -144,98 +115,22 @@ class ViewMapper(OrderedDict):
         -------
         subset : ViewMapper instance
         """
-        if isinstance(views, (str, unicode)):
-            views = [views]
-        self_keys = set(self.keys())
-        requested_keys = set(views)
-        valid_keys = self_keys.intersection(requested_keys)
-        if not valid_keys:
-            raise KeyError(
-                "None of the view keys you attempted to extract using 'subset' "
-                "were found in this ViewMapper instance. "
-                "You requested: %s, found: %s" % (views, self.keys())
-            )
-        if strict_selection:
-            invalid_keys = requested_keys - self_keys
-            if invalid_keys:
-                raise KeyError(
-                    "Some of the view keys you attempted to extract using 'subset' "
-                    "were not found in this ViewMapper instance. "
-                    "You requested: %s, found: %s" % (views, self.keys())
-                )
-        subset = self.copy()
-        for view in subset.keys():
-            if not view in views:
-                del subset[view]
-        return subset
-
-    def _custom_methods(self):
-        """
-        Returns a list of methods not found in the known_methods dict.
-        """
-        return [method for method in self if method not in self.known_methods]
-
-    def _get_method_types(self, link):
-        """
-        Returns a string that is used to determine how to generate the View.
-        """
-        x = link.x if not link.x == '@' else link.y
-        y = link.y if not link.y == '@' else link.x
-
-        transpose = False
-        meta = link.get_meta()
-
-        if meta is not None:
-            if '>' in y:
-                y = y.split('>')[0]
-            if '>' in x:
-                x = x.split('>')[0]
-            # Get the type from the metadata
-            for pos in ['columns', 'masks']:
-                if x in meta[pos]:
-                    x_type = meta[pos][x]['type']
-
-                if y.replace('@','') in meta[pos]:
-                    y_type = meta[pos][y.replace('@','')]['type']
-
-            try:
-                if y_type in ["categorical set", "dichotomous set",
-                              "delimited set", "array"]:
-                    transpose = False
-            except:
-                print "Can't find a y called %s" % (link.y)
-
+        valids = [view for view in views if view in self]
+        if not valids:
+            err = "No valid view given!"
+            raise KeyError(err)
+        if inplace:
+            subset = self
         else:
-            # Infer the type from the pandas types
-            # "columns"/"masks"
-            # "type"              Pandas dtypes           Aggregation method
-            # ----------------------------------------------------------------
-            # "int"               [int64*]                .describe()
-            # "float"             [float64*]              .describe()
-            # "text"              [object]                .value_counts()
-            # "date"              [datetime64*]           qp.date.describe()
-            # "time"              [timedelta64*]          qp.time.describe()
-            data = link.get_data()
-            x_dtype = data.dtypes[x].name
-            y_dtype = data.dtypes[y].name
-            types = []
-            for index, dtype in enumerate([x_dtype, y_dtype]):
-                if 'int' in dtype:
-                    types.append('int')
-                elif 'float' in dtype:
-                    types.append('float')
-                elif 'object' in dtype:
-                    types.append('single') # 'single' uses value_counts
-                elif 'date' in dtype:
-                    types.append('date')
-                elif 'time' in dtype:
-                    types.append('time')
+            subset = self.copy()
+        keys = list(subset.keys())
+        for view in keys:
+            if view not in views:
+                del subset[view]
+        if not inplace:
+            return subset
 
-            x_type, y_type = types[0], types[1]
-
-        return (x_type, y_type, transpose)
-
-    def _apply_to(self, link, weights=None):
+    def _apply_to(self, link, weights=[]):
         """
         Loop through view methods applying them to the Link.
 
@@ -243,109 +138,374 @@ class ViewMapper(OrderedDict):
         ----------
         link : Link
         weights : Weight variable as str or list of str
-
         """
+        for view, defs in self.items():
 
-        # Keep a clean cope of the weights given in args
-        arg_weights = weights
+            method = defs["method"]
+            kwargs = copy.deepcopy(defs.get("kwargs", {}))
+            iterators = kwargs.pop('iterators', {})
 
-        for name, values in self.items():
-
-            # Take a copy of the clean arg_weights value
-            weights = copy.copy(arg_weights)
-
-            method = values['method']
-            kwargs = values.get('kwargs', '')
-
-            # Get weight instructions from both kwargs and apply_to(weights)
-            # Ensure both are end up as lists
-            # While apply_to() still has a weights arg, it will need to
-            # trump weights given in kwargs
-            if weights is None:
-                override_weights = False
-                weights = kwargs.get('weights', None)
-                if not isinstance(weights, (list, tuple)):
-                    weights = [weights]
+            # weights parameter > weights kwargs + weights iterators
+            if not weights:
+                view_weights = ensure_list(kwargs.get("weights", [None]))
+                if "weights" not in iterators:
+                    iterators['weights'] = []
+                for weight in view_weights:
+                    if weight not in iterators["weights"]:
+                        iterators["weights"].append(weight)
             else:
-                override_weights = True
-                if not isinstance(weights, (list, tuple)):
-                    weights = [weights]
+                iterators['weights'] = weights[:]
 
-            # Get rel_to from kwargs and ensure it is a list
-            rel_to = kwargs.get('rel_to', None)
-            if not isinstance(rel_to, (list, tuple)):
-                rel_to = [rel_to]
-
-            # Get iterators from kwargs, or create default if none is found
-            iterators = kwargs.get('iterators', {}).copy()
-
-            # Make sure iterators has a 'weights' key
-            # Where weights have been given via apply_to(weights), allow
-            # them to override anything that may have been picked up via
-            # an iterator object
-            if override_weights or not 'weights' in iterators:
-                iterators['weights'] = weights
-
-            # Make sure the given weights provided are in the iterator weights keys
-            # This catches when iterators are given in kwargs but additional weights
-            # have also been provided somehow (such as by using add_link(.., weights))
-            # In these situations the iterated weights should be the combination of
-            # both instructions
-            for weight in weights:
-                if not weight in iterators['weights']:
-                    iterators['weights'].append(weight)
-
-            # Make sure the given rel_tos provided are in the iterator rel_to keys
-            # This catches when iterators are given in kwargs but additional rel_tos
-            # have also been provided somehow
-            # In these situations the iterated weights should be the combination of
-            # both instructions
+            # extend iterators rel_to by kwargs rel_to
+            rel_to = ensure_list(kwargs.get('rel_to') or [""])
             if not 'rel_to' in iterators:
-                iterators['rel_to'] = rel_to
-            for rel in rel_to:
-                if not rel in iterators['rel_to']:
-                    iterators['rel_to'].append(rel_to)
+                iterators['rel_to'] = []
+            iterators['rel_to'].extend(rel_to)
+            iterators['rel_to'] = list(set([
+                rel if rel else "" for rel in iterators['rel_to']]))
 
             # Get the product of all the targeted iterators
-            view_iterations = self.__get_view_iterations__(iterators)
+            keys, items = zip(*iterators.items())
+            view_iterations = [dict(zip(keys, x)) for x in product(*items)]
 
             # Run the view method for all the requested iterations
             for view_iter in view_iterations:
                 kwargs.update(view_iter)
                 if isinstance(method, str):
-                    getattr(self, method)(link, name, kwargs)
+                    getattr(self, method)(link, view, kwargs)
                 else:
-                    method(link, name, kwargs)
+                    method(link, view, kwargs)
 
-    # Private
-    def __print_exception_message__(self,message, link, name):
-        print "Error generating View: '{name}', x: '{x}', y: '{y}'. Error : '{message}'.\n".format(name=name, x=link.x, y=link.y, message=message)
+    def default(self, link, name, kwargs):
+        """
+        Adds a file meta dependent aggregation to a Stack.
 
-    # "proxy" methods. The core class doesn't know any view methods but this method can be extended.
-    def __init_custom_methods__(self):
-        pass
-
-    def __init_known_methods__(self):
-        pass
-
-    def __get_view_iterations__(self, iterators):
-        ''' Returns a list of dicts needed for multiple-view generation
-        by a view method.
+        Checks the Link definition against the file meta and produces
+        either a numerical or categorical summary tabulation including
+        marginal the results.
 
         Parameters
         ----------
-        iterators : dict
-            Dict of lists, where the product of the lists needs to
-            be yielded one at a time using the same keys as the
-            incoming dict.
+        link : Quantipy Link object.
+        name : str
+            The shortname applied to the view.
+        kwargs : dict
+        """
+        view = View(link, name, "default", kwargs)
+        meta = link.meta
+        q = Quantity(link, weight=view.weight)
+        if not(q.type == 'array' and not q.y == '@'):
+            x_is_categorical = meta.is_categorical(link.xk)
+            x_is_numeric = meta.is_numeric(link.xk)
+            x_is_array = meta.is_array(link.xk)
+            y_is_categorical = meta.is_categorical(link.yk)
+            y_is_numeric = meta.is_numeric(link.yk)
+            if link.yk == '@':
+                if x_is_categorical or x_is_array:
+                    view_df = q.count().result
+                elif x_is_numeric:
+                    view_df = q.summarize().result
+                    view_df.drop((link.xk, 'All'), axis=0, inplace=True)
+            elif link.xk == '@':
+                if y_is_categorical:
+                    view_df = q.count().result
+                elif y_is_numeric:
+                    view_df = q.summarize().result
+                    view_df.drop((link.yk, 'All'), axis=1, inplace=True)
+            else:
+                if x_is_categorical and (y_is_categorical or y_is_numeric):
+                    view_df = q.count().result
+                elif x_is_numeric and (y_is_categorical or y_is_numeric):
+                    view_df = q.summarize().result
+                    view_df.drop((link.xk, 'All'), axis=0, inplace=True)
+                    view_df.drop((link.yk, 'All'), axis=1, inplace=True)
+            view.dataframe = view_df
+            link[view.notation] = view
 
-        meta : Quantipy meta object pared to data
+    def frequency(self, link, name, kwargs):
+        """
+        Adds count-based views on a Link defintion to the Stack object.
+
+        ``frequency`` is able to compute several aggregates that are based on
+        the count of code values in uni- or bivariate Links. This includes
+        bases / samples sizes, raw or normalized cell frequencies and code
+        summaries like simple and complex nets.
+
+        Parameters
+        ----------
+        link : Quantipy Link object.
+        name : str
+            The shortname applied to the view.
+        kwargs : dict
+        Keyword arguments (specific)
+        text : str, optional, default None
+            Sets an optional label in the meta component of the view that is
+            used when the view is passed into a Quantipy build (e.g. Excel,
+            Powerpoint).
+        logic : list of int, list of dicts or core.tools.view.logic operation
+            If a list is passed this instructs a simple net of the codes given
+            as int. Multiple nets can be generated via a list of dicts that
+            map names to lists of ints. For complex logical statements,
+            expression are parsed to identify the qualifying rows in the data.
+            For example::
+
+                # simple net
+                'logic': [1, 2, 3]
+
+                # multiple nets/code groups
+                'logic': [{'A': [1, 2]}, {'B': [3, 4]}, {'C', [5, 6]}]
+
+                # code logic
+                'logic': has_all([1, 2, 3])
+        """
+        view = View(link, name, "f", kwargs)
+        meta = link.meta
+        q = Quantity(
+            link,
+            weight=view.weight,
+            ignore_flags=view.kwargs.get("ignore_flags", False))
+        if not(q.type == 'array' and not q.y == '@'):
+            if q.leveled:
+                # leveled
+                leveled = Level(q)
+                if rel_to:
+                    leveled.percent()
+                elif kwargs.get("axis") == 'x':
+                    leveled.base()
+                else:
+                    leveled.count()
+                view.dataframe = leveled.lvldf
+            elif view._logic:
+                # nets
+                q.group(
+                    groups=view._logic,
+                    axis=view.axis,
+                    expand=view._expand,
+                    complete=view._complete)
+                q.count(axis=None, as_df=False, margin=False)
+                view.spec_condition()
+            else:
+                # others
+                q.count(
+                    axis=view.axis,
+                    raw_sum=view.kwargs.get("raw_sum", False),
+                    cum_sum=view.kwargs.get("cum_sum", False),
+                    effective=view.kwargs.get("effective", False),
+                    margin=False, as_df=False)
+            per_cell = False
+            rel_to = view.rel_to
+            if len(rel_to.split(".")) == 2:
+                rel_to, rel_to_kind = rel_to.split(".")
+                if rel_to_kind == "cells":
+                    per_cell = True
+            if rel_to:
+                if q.type == 'array':
+                    rel_to = 'y'
+                q.normalize(rel_to, per_cell=per_cell)
+            q.to_df()
+            if view._calc:
+                q.calc(view._calc, view.axis, result_only=view._calc_only)
+                view._method = "f.c:f"
+            elif name in ['counts_sum', 'c%_sum', 'counts_cumsum',
+                          'c%_cumsum']:
+                view._method = "f.c:f"
+            else:
+                view._method = "f"
+            if not q.leveled:
+                if q.type == 'array' and link.yk == "@":
+                    view.dataframe = q.result.T
+                else:
+                    view.dataframe = q.result
+            view.kwargs["exclude"] = q.miss_x
+            view.spec_condition()
+            link[view.notation] = view
+
+    def descriptives(self, link, name, kwargs):
+        """
+        Adds num. distribution statistics of a Link defintion to the Stack.
+
+        ``descriptives`` views can apply a range of summary statistics.
+        Measures include statistics of centrality, dispersion and mass.
+
+        Parameters
+        ----------
+        link : Quantipy Link object.
+        name : str
+            The shortname applied to the view.
+        kwargs : dict
+        Keyword arguments (specific)
+        text : str, optional, default None
+            Sets an optional label suffix for the meta component of the view
+            which will be appended to the statistic name and used when the
+            view is passed into a Quantipy build (e.g. Excel, Powerpoint).
+        stats : str, default 'mean'
+            The measure to compute.
+        exclude : list of int
+             Codes that will not be considered calculating the result.
+        rescale : dict
+            A mapping of {old code: new code}, e.g.::
+
+                {
+                 1: 0,
+                 2: 25,
+                 3: 50,
+                 4: 75,
+                 5: 100
+                }
+        drop : bool
+            If ``rescale`` provides a new scale defintion, ``drop`` will remove
+            all codes that are not transformed. Acts as a shorthand for manually
+            passing any remaining codes in ``exclude``.
+        """
+        view = View(link, name, "descriptives", kwargs)
+        if not view._xk['is_multi'] or view._source:
+
+            view.kwargs['calc_only'] = True
+
+            q = Quantity(link, view.weight)
+            if view._source:
+                q = self._swap_and_rebase(q, view._source)
+            if not(q.type == 'array' and q.y == '@'):
+                if view._exclude:
+                    q.exclude(view._exclude, axis=view.axis)
+                if view._rescale:
+                    q.rescale(view._rescale, view._drop)
+                stat = view._stats or "mean"
+                q.summarize(stat=stat, margin=False, as_df=True)
+                if view._calc:
+                    q.calc(view._calc, result_only=True)
+                    method_nota = 'd.' + stat + '.c:f'
+                else:
+                    method_nota = 'd.' + stat
+                view._method = method_nota
+                view._cbases = q.cbase
+                view._rbases = q.rbase
+                if q.type == 'array':
+                    view.dataframe = q.result.T
+                else:
+                    view.dataframe = q.result
+                view.kwargs["exclude"] = q.miss_x
+                view.translate_metric()
+                view.spec_condition()
+                link[view.notation] = view
+
+    @staticmethod
+    def _swap_and_rebase(quantity, variable, axis='x'):
+        rebase_on = {quantity.x: not_count(0)}
+        org_x = quantity.x
+        quantity.swap(var=variable, axis=axis, update_axis_def=False)
+        quantity.filter(rebase_on, keep_base=False, inplace=True)
+        return quantity
+
+    def coltests(self, link, name, kwargs):
+        """
+        Will test appropriate views from a Stack for stat. sig. differences.
+
+        Tests can be performed on frequency aggregations (generated by
+        ``frequency``) and means (from ``summarize``) and will compare all
+        unique column pair combinations.
+
+        Parameters
+        ----------
+        link : Quantipy Link object.
+        name : str
+            The shortname applied to the view.
+        kwargs : dict
+        Keyword arguments (specific):
+        text : str, optional, default None
+            Sets an optional label in the meta component of the view that is
+            used when the view is passed into a Quantipy build (e.g. Excel,
+            Powerpoint).
+        metric : {'props', 'means'}, default 'props'
+            Determines whether a proportion or means test algorithm is
+            performed.
+        test_total : bool, deafult False
+            If True, the each View's y-axis column will be tested against the
+            uncoditional total of its x-axis.
+        mimic : {'Dim', 'askia'}, default 'Dim'
+            It is possible to mimic the test logics used in other statistical
+            software packages by passing them as instructions. The method will
+            then choose the appropriate test parameters.
+        level: {'high', 'mid', 'low'} or float
+            Sets the level of significance to which the test is carried out.
+            Given as str the levels correspond to ``'high'`` = 0.01, ``'mid'``
+            = 0.05 and ``'low'`` = 0.1. If a float is passed the specified
+            level will be used.
+        flags : list of two int, default None
+            Base thresholds for Dimensions-like tests, e.g. [30, 100]. First
+            int is minimum base for reported results, second int controls small
+            base indication.
 
         Returns
-        ----------
-        iterations : list of dicts
-        '''
-        keys, items = zip(*iterators.items())
-        iterations = [dict(zip(keys, x)) for x in product(*items)]
+        -------
+        None
+            Adds requested View to the Stack, storing it under the full
+            view name notation key.
 
-        return iterations
+        .. note::
+
+            Mimicking the askia software (``mimic`` = ``'askia'``)
+            restricts the values to be one of ``'high'``, ``'low'``,
+            ``'mid'``. Any other value passed will make the algorithm fall
+            back to ``'low'``. Mimicking Dimensions (``mimic`` =
+            ``'Dim'``) can use either the str or float version.
+        """
+        metric = kwargs.get('metric', 'props')
+        mimic = kwargs.get('mimic', 'Dim')
+        level = kwargs.get('level', 'low')
+        flags = kwargs.get('flag_bases', None)
+        test_total = kwargs.get('test_total', False)
+
+        get = 'count' if kwargs.get("metric", "props") == 'props' else 'mean'
+        views = self._get_view_names(link, kwargs.get("weights"), get=get)
+        for vk in views:
+            dep_view = link[vk]
+            view = View(link, name, "coltests", kwargs)
+            test = Test(link, vk, view._test_total or False)
+            if view._mimic == "Dim":
+                test.set_params(level=view._level, flag_bases=view._flag_bases)
+            elif mimic == 'askia':
+                test.set_params(
+                    testtype='unpooled',
+                    level=view._level,
+                    mimic=view._mimic,
+                    use_ebase=False,
+                    ovlp_correc=False,
+                    cwi_filter=True)
+            view.dataframe = test.run()
+
+            view.condition = dep_view.condition
+            view._method = "t.{}.{}.{}{}".format(
+                view._metric,
+                view._mimic,
+                "{}:.2f".format(view.level[2:]),
+                "+@" if view._test_total else "")
+            link[view.notation] = view
+
+    @staticmethod
+    def _get_view_names(link, weight, get='count'):
+        """
+        Filter the views contained in a Stack by specific names.
+        """
+        collection = "{}_view_names".format(get)
+        key = "{}_names".format(weight or "")
+        view_name_list = link.cache.get_obj(collection, key)
+        if not view_name_list:
+            allviews = link.keys()
+            if get == 'count':
+                view_name_list = [
+                    vk for vk in link.keys()
+                    if all([
+                        link[vk].is_counts,
+                        link[vk].weight == weight,
+                        not link[vk].is_base,
+                        not link[vk].is_sum])]
+            else:
+                view_name_list = [
+                    vk for vk in link.keys()
+                    if all([
+                        link[vk]._method == "d.mean",
+                        link[vk].weight == weight
+                        ])]
+            link.cache.set_obj(collection, key, view_name_list)
+        return view_name_list

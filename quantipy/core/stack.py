@@ -5,8 +5,7 @@ from ..__imports__ import *  # noqa
 from .meta import Meta
 
 # from .chainmanager import ChainManager
-from .view_generators.view_mapper import ViewMapper
-from .view_generators.view_maps import QuantipyViews
+from .views.view_mapper import ViewMapper
 
 logger = get_logger(__name__)
 
@@ -284,10 +283,10 @@ class Stack(defaultdict):
         """
         from .dataset import DataSet
         if data_key not in self:
-            err = "'{}' is not a valid datakey."
+            err = "'{}' is not a valid datakey.".format(data_key)
             logger.error(err); raise KeyError(err)
+        vmapper = []
         if views:
-            vmapper = []
             vnames = []
             for view in views:
                 if isinstance(view, ViewMapper):
@@ -301,7 +300,7 @@ class Stack(defaultdict):
         if not filters:
             filters = [None]
         for fk in filters:
-            if fi:
+            if fk:
                 if not self[data_key].meta.is_filter(fk):
                     invalid.add(fk)
                     continue
@@ -314,7 +313,7 @@ class Stack(defaultdict):
             warn = "skipped '{}': invalid filters.".format(invalid)
             logger.warning(warn)
 
-    def __create_links(self, dk, fk, xs, ys, views, weights):
+    def __create_links(self, dk, fk, xs, ys, vmapper, weights):
         if not xs:
             xs = self[dk][fk].keys()
         xs = [x for x in xs if x == "@" or x in self[dk].meta]
@@ -333,10 +332,10 @@ class Stack(defaultdict):
                 continue
             link = self[dk][fk][xk][yk]
             if not isinstance(link, Link):
-                link = Link(self, dk, fk, xk, yk, None, False)
+                link = Link(self, dk, fk, xk, yk)
                 self[dk][fk][xk][yk] = link
-            if views is not None:
-                views._apply_to(link, weights)
+            for vm in vmapper:
+                vm._apply_to(link, weights)
 
     def describe(self, index=None, columns=None, query=None,
                  split_view_names=False):
@@ -392,7 +391,6 @@ class Stack(defaultdict):
     # -------------------------------------------------------------------------
     # frequency & crosstab
     # -------------------------------------------------------------------------
-    @params(to_list="@")
     def frequency(self, dk, fk=None, xk=None, yks=None, view='counts',
                   decimals=1, weight=None, text=False, rules=False,
                   xtotal=False):
@@ -596,7 +594,7 @@ class Stack(defaultdict):
         chainmanager.get(
             'checks', 'no_filter', x, y, c_views, folder=name, rules=False)
 
-    @modify(to_list=['on_vars', '_batches'])
+    @params(to_list=['on_vars', '_batches'])
     def add_nets(self, on_vars, net_map, expand=None, calc=None, rebase=None,
                  text_prefix='Net:', checking_cm=None, batches='all',
                  recode='auto', mis_in_rec=False):
@@ -680,7 +678,7 @@ class Stack(defaultdict):
             calc_only = False
             if calc:
                 calc = self._check_and_update_calc(calc, tks)
-                calc_only = calc.get('calc_only', False)
+                calc_only = calc.pop('calc_only', False)
 
             view = ViewMapper()
             rel_to = "y" if not rebase else "{}.base".format(rebase)
@@ -863,7 +861,7 @@ class Stack(defaultdict):
                 self._add_checking_chain(
                     dk, checking_cm, 'stat_check', check_on, ['@'], views)
 
-    @modify(to_list=['on_vars', '_batches'])
+    @params(to_list=['on_vars', '_batches'])
     def cumulative_sum(self, on_vars, _batches='all', verbose=True):
         """
         Add cumulative sum view to a specified collection of xks of the stack.
@@ -886,7 +884,7 @@ class Stack(defaultdict):
             xks = self[dk].meta.unroll(on_vars, both="all")
             self.aggregate(views, batches=batches, xks=xks)
 
-    @modify(to_list=['_batches'])
+    @params(to_list=['batches'])
     def add_tests(self, batches='all', verbose=True):
         """
         Apply coltests for selected batches.
@@ -976,27 +974,20 @@ class Link(dict):
         else:
             return val
 
-    def get_meta(self):
+    @property
+    def meta(self):
         return self.stack[self.dk].meta
 
-    def get_data(self):
+    @property
+    def data(self):
         if self.fk:
             return self.stack[self.dk][self.fk].data
         else:
             return self.stack[self.dk].data
 
-    def get_cache(self):
+    @property
+    def cache(self):
         return self.stack[self.dk].cache
-
-    def merge(self, link, views=None, overwrite=False):
-        """
-        Merge the views from link into self.
-        """
-        if views is None:
-            views = link.keys()
-        for vk in views:
-            if overwrite or vk not in self:
-                self[vk] = link.pop(vk)
 
     def _remove_nets(self, weights=[]):
         for vk in self.keys()[:]:
@@ -1019,6 +1010,15 @@ class Link(dict):
             del_mean = means and 't.means' in vk
             if del_prop or del_mean:
                 del self[vk]
+
+    @params(to_list="names")
+    def add_views(self, names, method=None, iterators={}, kwargs={}):
+        vm = ViewMapper(names)
+        if method is not None:
+            vm.make_template(method, iterators)
+            for name in names:
+                vm.add_method(name, kwargs)
+        vm._apply_to(self)
 
 
 class Cache(defaultdict):

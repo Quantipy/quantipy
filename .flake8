@@ -11,3 +11,4 @@ filename =
     *core/io/dimensions/*.py
     *core/meta.py
     *core/stack.py
+    *core/views/viewmapper.py

@@ -13,6 +13,7 @@ import time
 # import pickle
 import string
 import logging
+import marshal
 import sqlite3
 import warnings
 import numpy as np
@@ -53,6 +54,10 @@ from subprocess import (
     check_output,
     STDOUT,
     CalledProcessError)
+
+from types import (
+    FunctionType
+)
 
 # -----------------------------------------------------------------------------
 # helpers inside QP
