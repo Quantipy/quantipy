@@ -325,7 +325,7 @@ KNOWN_METHODS = {
         "method": "frequency",
         "kwargs": {
             "text": "",
-            "axis": "x",
+            "axis": None,
             "condition": "x++",
             "cum_sum": True
         }
@@ -334,7 +334,7 @@ KNOWN_METHODS = {
         "method": "frequency",
         "kwargs": {
             "text": "",
-            "axis": "x",
+            "axis": None,
             "condition": "x++",
             "rel_to": "y",
             "cum_sum": True

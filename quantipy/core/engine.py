@@ -231,8 +231,8 @@ class Quantity(object):
         else:
             y_indexers = []
             xdef_len = len(self.xdef)
-            zero_based_ys = [idx for idx in xrange(0, xdef_len)]
-            for y_no in xrange(0, len(self.ydef)):
+            zero_based_ys = [idx for idx in range(xdef_len)]
+            for y_no in range(len(self.ydef)):
                 if y_no == 0:
                     y_indexers.append(zero_based_ys)
                 else:
@@ -347,8 +347,8 @@ class Quantity(object):
 
     def _reset(self):
         for prop in self.__dict__.keys():
-            if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', '_cache',
-                        'd', 'idx_map', 'ds', 'logical_conditions']:
+            if prop in ['_uses_meta', 'base_all', '_dataidx', 'meta', 'cache',
+                        'data', 'idx_map', 'ds', 'logical_conditions']:
                 pass
             elif prop in ['_squeezed', 'switched']:
                 self.__dict__[prop] = False
@@ -419,14 +419,14 @@ class Quantity(object):
         else:
             swapped = self._copy()
         swapped._reset()
-        swapped.x, swapped.y = x, y
-        swapped.f, swapped.w = f, w
+        swapped.xk, swapped.yk = x, y
+        swapped.fk, swapped.w = f, w
         swapped.type = swapped._get_type()
         if swapped.type == 'nested':
             swapped.nest_def = Nest(swapped.y, swapped.d(), swapped.meta()).nest()
         swapped._get_matrix()
         if not update_axis_def and array_swap:
-            swapped.x = org_name
+            swapped.xk = org_name
             swapped.ydef = org_ydef
         if not inplace:
             return swapped
@@ -497,12 +497,11 @@ class Quantity(object):
             column = self.x
             logic = condition
         else:
-            column = condition.keys()[0]
-            logic = condition.values()[0]
-        idx, logical_expression = get_logic_index(self.d()[column], logic, self.d())
+            column, logic = list(condition.items())[0]
+        idx, logical_expression = get_logic_index(self.data[column], logic, self.data)
         logical_expression = logical_expression.split(':')[0]
-        if not column == self.x:
-            logical_expression = logical_expression.replace('x[', column+'[')
+        if not column == self.xk:
+            logical_expression = logical_expression.replace('x[', column + '[')
         self.logical_conditions.append(logical_expression)
         return idx
 
@@ -957,7 +956,7 @@ class Quantity(object):
         if raw_sum and cum_sum:
             msg = 'Can only apply raw sum or cumulative sum, not both.'
             raise ValueError(msg)
-        if cum_sum and axis is not None:
+        if cum_sum and axis:
             msg = "Cumulative frequencies do not support the 'axis' argument."
             raise ValueError(msg)
         if not axis:
@@ -1434,7 +1433,7 @@ class Quantity(object):
         if self._has_y_margin:
             y_grps = ['All'] + y_grps
         if self.type == 'array':
-            x_unit = y_unit = self.x
+            x_unit = y_unit = self.xk
             x_names = ['Question', 'Values']
             y_names = ['Array', 'Questions']
         else:

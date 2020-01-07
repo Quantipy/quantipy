@@ -194,7 +194,7 @@ class ViewMapper(OrderedDict):
         view = View(link, name, "default", kwargs)
         meta = link.meta
         q = Quantity(link, weight=view.weight)
-        if not(q.type == 'array' and not q.y == '@'):
+        if not(q.type == 'array' and not q.yk == '@'):
             x_is_categorical = meta.is_categorical(link.xk)
             x_is_numeric = meta.is_numeric(link.xk)
             x_is_array = meta.is_array(link.xk)
@@ -264,7 +264,7 @@ class ViewMapper(OrderedDict):
             link,
             weight=view.weight,
             ignore_flags=view.kwargs.get("ignore_flags", False))
-        if not(q.type == 'array' and not q.y == '@'):
+        if not(q.type == 'array' and not q.yk == '@'):
             if q.leveled:
                 # leveled
                 leveled = Level(q)
@@ -357,7 +357,6 @@ class ViewMapper(OrderedDict):
             all codes that are not transformed. Acts as a shorthand for manually
             passing any remaining codes in ``exclude``.
         """
-        print(kwargs)
         view = View(link, name, "descriptives", kwargs)
         if not view._xk['is_multi'] or view._source:
 
@@ -366,14 +365,16 @@ class ViewMapper(OrderedDict):
             q = Quantity(link, view.weight)
             if view._source:
                 q = self._swap_and_rebase(q, view._source)
-            if not(q.type == 'array' and q.y == '@'):
+            if not(q.type == 'array' and q.yk == '@'):
                 if not view._stats:
                     view.kwargs["stats"] = "mean"
                 if view._exclude:
                     q.exclude(view._exclude, axis=view.axis)
                 if view._rescale:
                     q.rescale(view._rescale, view._drop)
+
                 q.summarize(stat=view._stats, margin=False, as_df=True)
+
                 if view._calc:
                     q.calc(view._calc, result_only=True)
                     method_nota = 'd.' + view._stats + '.c:f'
@@ -393,10 +394,15 @@ class ViewMapper(OrderedDict):
 
     @staticmethod
     def _swap_and_rebase(quantity, variable, axis='x'):
-        rebase_on = {quantity.x: not_count(0)}
-        org_x = quantity.x
+        rebase_on = {quantity.xk: not_count(0)}
         quantity.swap(var=variable, axis=axis, update_axis_def=False)
-        quantity.filter(rebase_on, keep_base=False, inplace=True)
+        try:
+            quantity.filter(rebase_on, keep_base=False, inplace=True)
+        except KeyError:
+            warn = "Couldn't rebase 'source'-swapped array-type Quantity: {} "
+            warn += "on {}\nPlease check descriptive stats results for correct"
+            warn += " base sizes!"
+            warnings.warn(warn.format(quantity.xk, variable))
         return quantity
 
     def coltests(self, link, name, kwargs):

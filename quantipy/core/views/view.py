@@ -109,10 +109,12 @@ class View(object):
         elif condition not in ['x:', ':']:
             if 't.' not in self._method:
                 colon_form = '*:' if self._complete else ':'
-                if self.axis == "x":
-                    condition = condition + colon_form
+                if self.axis == "x" or not self.axis:
+                    if not condition.endswith(colon_form):
+                        condition = condition + colon_form
                 else:
-                    condition = colon_form + condition
+                    if not condition.startswith(colon_form):
+                        condition = colon_form + condition
         self.kwargs["condition"] = condition
 
     @property
@@ -302,7 +304,7 @@ class View(object):
         elif self._stats:
             condition = self._descriptives_condition()
         else:
-            condition = self.axis
+            condition = self.axis or self.condition
         if self._calc is not None:
             calc_cond = self._calc_condition(condition)
             if self._calc_only:

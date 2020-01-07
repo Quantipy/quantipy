@@ -2097,27 +2097,27 @@ class DataSet(object):
                 codes = sorted(uniquify_list(flatten_list(
                     [self.get_codes_in_data(source) for source in sources])))
             dummy_data = []
-            if any(self[i].dtype == 'object' for i in items):
-                for i in items:
+            if any(self[source].dtype == 'object' for source in sources):
+                for source in sources:
                     try:
-                        i_dummy = self[i].str.get_dummies(';')
+                        i_dummy = self[sourcei].str.get_dummies(';')
                         i_dummy.columns = [int(col) for col in i_dummy.columns]
                     except:  # noqa
-                        i_dummy = self._data[[i]]
+                        i_dummy = self._data[[source]]
                         i_dummy.columns = [0]
                     dummy_data.append(i_dummy.reindex(columns=codes))
             else:
-                for i in items:
+                for source in sources:
                     if codes:
                         dummy_data.append(
-                            pd.get_dummies(self[i]).reindex(columns=codes))
+                            pd.get_dummies(self[source]).reindex(columns=codes))
                     else:
-                        dummy_data.append(pd.get_dummies(self[i]))
+                        dummy_data.append(pd.get_dummies(self[source]))
             dummy_data = pd.concat(dummy_data, axis=1)
             if not partitioned:
                 return dummy_data
             else:
-                return dummy_data.values, codes, items
+                return dummy_data.values, codes, sources
         else:
             if self.is_delimited_set(name):
                 try:

@@ -239,7 +239,8 @@ class TestViewMapper:
             for yk in yks:
                 link = stack2[NAME2][None][xk][yk]
                 df = link[vk].dataframe
-                np.allclose(df.ix[:, :15].values, DESC_MEANS_BASIC[(xk, yk)])
+                assert np.allclose(df.ix[:, :15].values,
+                                   DESC_MEANS_BASIC[(xk, yk)])
 
     def test_desc_means_complex(self, stack2):
         vm = ViewMapper(["mean"])
@@ -255,5 +256,46 @@ class TestViewMapper:
                 exp = DESC_MEANS_COMPLEX[(xk, yk)]
                 link = stack2[NAME2][None][xk][yk]
                 df = link[exp["vk"]].dataframe
-                np.allclose(df.ix[:, :15].values, exp["values"])
+                assert np.allclose(np.nan_to_num(df.ix[0, :15].values),
+                                   exp["values"])
+
+    @pytest.mark.parametrize("views, xk, yk, expectations", [
+        (["counts_cumsum"], "q8", "gender", CUM_SUM_COUNTS),
+        (["c%_cumsum"], "q5", "@", CUM_SUM_CPCTS)])
+    def test_cumulative_sum_view(self, stack2, views, xk, yk, expectations):
+        vm = ViewMapper(views)
+        stack2.add_link(NAME2, x=xk, y=yk, views=vm)
+
+        link = stack2[NAME2][None][xk][yk]
+
+        for vk, values in expectations.items():
+            df = link[vk].dataframe
+            assert np.allclose(df.values, values)
+
+    def test_base_effective(self, stack2):
+        vm = ViewMapper(["ebase"])
+        xks = ["gender"]
+        yks = ["@", "q8"]
+        stack2.add_link(NAME2, x=xks, y=yks, views=vm, weights="weight_a")
+
+        vk = "x|f|x:||weight_a|ebase"
+        for xk in xks:
+            for yk in yks:
+                link = stack2[NAME2][None][xk][yk]
+                values = EFFECTIVE_BASE[(xk, yk)]
+                df = link[vk].dataframe
+                assert np.allclose(df.round(1).values.tolist(), values)
+
+    def test_desc_other_source(self, stack2):
+        vm = ViewMapper(
+            template={
+                'method': "descriptives",
+                'kwargs': {'iterators': {'stats': ['mean', 'stddev']}}})
+        vm.add_method(
+            "foreign_stats", kwargs={'source': 'weight_a', 'axis': 'x'})
+        stack2.add_link(NAME2, x="q2b", y="q2b", views=vm, weights="weight_b")
+        link = stack2[NAME2][None]["q2b"]["q2b"]
+        for vk, values in DESC_OTHER_SOURCE.items():
+            assert link[vk].dataframe.values.tolist() == values
+
 
