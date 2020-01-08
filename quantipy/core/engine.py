@@ -1601,7 +1601,9 @@ class Test(object):
         super(Test, self).__init__()
         # Infer whether a mean or proportion test is being performed
         view = link[view_name_notation]
-        if view.meta()['agg']['method'] == 'descriptives':
+        meta = view.meta()
+        agg = meta["agg"]
+        if agg['method'] == 'descriptives':
             self.metric = 'means'
         else:
             self.metric = 'proportions'
@@ -1614,37 +1616,39 @@ class Test(object):
         self.level = None
         # Calculate the required baseline measures for the test using the
         # Quantity instance
-        self.Quantity = Quantity(link, view.weights(), base_all=self.test_total)
+        self.Quantity = Quantity(link, view.weight, base_all=self.test_total)
         if self.Quantity.type == 'array':
             err = "Cannot compute significance tests on array summary!"
             raise NotImplementedError(err)
-        if view.has_other_source():
-            orgx = self.Quantity.x
-            self.Quantity.swap(var=view.has_other_source())
+        if view._source:
+            orgx = self.Quantity.xk
+            self.Quantity.swap(var=view._source)
             cond = {orgx: not_count(0)}
             self.Quantity.filter(cond, keep_base=False, inplace=True)
-        self.rebased = view._kwargs.get('rebased', False)
+        self.rebased = view.kwargs.get('rebased', False)
         self._set_baseline_aggregates(view)
         # Set information about the incoming aggregation
         # to be able to route correctly through the algorithms
         # and re-construct a Quantipy-indexed pd.DataFrame
-        self.is_weighted = view.meta()['agg']['is_weighted']
-        self.has_calc = view.has_calc()
-        self.x = view.meta()['x']['name']
+        self.is_weighted = agg['is_weighted']
+        self.has_calc = view.has_calc
+        self.x = meta['x']['name']
+        self.y = meta['y']['name']
         self.xdef = view.dataframe.index.get_level_values(1).tolist()
-        self.y = view.meta()['y']['name']
-        self.is_nested = view.meta()['y']['is_nested']
-        self.y_is_multi = view.meta()['y']['is_multi']
+        self.is_nested = meta['y']['is_nested']
+        self.y_is_multi = meta['y']['is_multi']
         # Figure out the test's pairs structure (regular vs. nested, etc.)
         self._get_testpairs_definitons(view)
         # Original pd.MultiIndex setup for both index and columns axis:
         self.multiindex = (view.dataframe.index, view.dataframe.columns)
 
     def __repr__(self):
-        return ('%s, total included: %s, test metric: %s, parameters: %s, '
-                'mimicked: %s, level: %s ')\
-                % (Test, self.test_total, self.metric, self.parameters,
-                   self.mimic, self.level)
+        txt = (
+            '{}, total included: {}, test metric: {}, parameters: {}, '
+            'mimicked: {}, level: {}')
+        return txt.format(
+            Test, self.test_total, self.metric, self.parameters, self.mimic,
+            self.level)
 
     def _get_testpairs_definitons(self, view):
         if not self.is_nested:
@@ -1674,24 +1678,28 @@ class Test(object):
         """
         Derive or recompute the basic values required by the ``Test`` instance.
         """
-        grps, exp, compl, calc, exclude, rescale = view.get_edit_params()
-        if exclude is not None:
-            self.Quantity.exclude(exclude)
-        if rescale is not None:
-            self.Quantity.rescale(rescale)
-        if self.metric == 'proportions' and self.test_total and view._has_code_expr():
-            self.Quantity.group(grps, expand=exp, complete=compl)
+        # grps, exp, compl, calc, exclude, rescale = view.get_edit_params()
+        if view._exclude:
+            self.Quantity.exclude(view._exclude)
+        if view._rescale:
+            self.Quantity.rescale(view._rescale)
+        # nets
+        net_group = all([
+            self.metric == 'proportions', self.test_total,
+            len(view.condition) > 3, not view.is_cumulative])
+        if net_group:
+            self.Quantity.group(
+                view._logic, expand=view._expand, complete=view._complete)
         if self.metric == 'means':
-            aggs = self.Quantity._dispersion(_return_mean=True,
-                                             _return_base=True)
-            self.sd, self.values, self.cbases = aggs[0], aggs[1], aggs[2]
+            self.sd, self.values, self.cbases = self.Quantity._dispersion(
+                _return_mean=True, _return_base=True)
             if not self.test_total:
                 self.sd = self.sd[:, 1:]
                 self.values = self.values[:, 1:]
                 self.cbases = self.cbases[:, 1:]
         elif self.metric == 'proportions':
             if not self.test_total or self.rebased:
-                if view.is_cumulative():
+                if view.is_cumulative:
                     agg = self.Quantity.count(
                         margin=False, as_df=False, cum_sum=False)
                     self.values = agg.result
@@ -1700,14 +1708,14 @@ class Test(object):
                     self.tbase = agg.cbase[0, 0]
                 else:
                     self.values = view.dataframe.values.copy()
-                    self.cbases = view.cbases[:, 1:]
-                    self.rbases = view.rbases[1:, :]
-                    self.tbase = view.cbases[0, 0]
+                    self.cbases = view._cbases[:, 1:]
+                    self.rbases = view._rbases[1:, :]
+                    self.tbase = view._cbases[0, 0]
             else:
                 agg = self.Quantity.count(margin=True, as_df=False)
-                if calc is not None:
-                    calc_only = view._kwargs.get('calc_only', False)
-                    self.Quantity.calc(calc, axis='x', result_only=calc_only)
+                if view._calc:
+                    self.Quantity.calc(
+                        view._calc, axis='x', result_only=view._calc_only)
                 self.values = agg.result[1:, :]
                 self.cbases = agg.cbase
                 self.rbases = agg.rbase[1:, :]
@@ -1762,6 +1770,7 @@ class Test(object):
         """
         # Check if the aggregation is non-empty
         # and that there are >1 populated columns
+        print (flag_bases)
         if not self.test_total:
             if np.nansum(self.values) == 0 or len(self.ydef) == 1:
                 self.invalid = True
@@ -1868,6 +1877,7 @@ class Test(object):
         """
         stat = self.get_statistic()
         stat = self._convert_statistic(stat)
+        print (self.comparevalue)
         if self.metric == 'means':
             diffs = pd.DataFrame(self.valdiffs, index=self.ypairs, columns=self.xdef).T
         elif self.metric == 'proportions':
@@ -1937,7 +1947,7 @@ class Test(object):
         decision rules check test-statistic against pre-defined treshholds
         while others check sig. level against p-value.
         """
-        if isinstance(level, (str, unicode)):
+        if isinstance(level, str):
             if level == 'low':
                 if self.mimic == 'Dim':
                     comparevalue = siglevel = 0.10

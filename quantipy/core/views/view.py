@@ -128,7 +128,7 @@ class View(object):
     # net properties
     @property
     def _calc(self):
-        return self.kwargs.get("calc", None)
+        return self.kwargs.get("calc", {})
 
     @property
     def _calc_only(self):
@@ -136,7 +136,7 @@ class View(object):
 
     @property
     def _logic(self):
-        return self.kwargs.get("logic", None)
+        return self.kwargs.get("logic", [])
 
     @_logic.setter
     def _logic(self, logic):
@@ -175,7 +175,7 @@ class View(object):
 
     @property
     def grp_text_map(self):
-        if self._calc_only:
+        if self._calc_only and self._logic:
             calc_text = self._calc.get("text")
             calc_key = [
                 key for key in self._calc.keys()
@@ -235,7 +235,7 @@ class View(object):
 
     @property
     def _flag_bases(self):
-        return self.kwargs.get("flg_bases", None)
+        return self.kwargs.get("flag_bases", None)
 
     @property
     def _test_total(self):
@@ -269,10 +269,6 @@ class View(object):
         return self.condition == "x++:"
 
     @property
-    def is_test(self):
-        return self.method == "coltests"
-
-    @property
     def is_stat(self):
         return self.method == "descriptives"
 
@@ -292,6 +288,24 @@ class View(object):
         return self.method == "frequency" and any([
             len(self.condition.split("[")) > 2, self._expand, self._complete])
 
+    @property
+    def is_test(self):
+        return self.method == "coltests"
+
+    @property
+    def is_meanstest(self):
+        if self.is_test and self._method.split(".")[1] == "means":
+            return float(self._method.split(".")[3].split("+")[0])/100
+        else:
+            return False
+
+    @property
+    def is_propstest(self):
+        if self.is_test and self._method.split(".")[1] == "props":
+            return float(self._method.split(".")[3].split("+")[0])/100
+        else:
+            return False
+
     # -------------------------------------------------------------------------
     # conditions
     # -------------------------------------------------------------------------
@@ -305,7 +319,7 @@ class View(object):
             condition = self._descriptives_condition()
         else:
             condition = self.axis or self.condition
-        if self._calc is not None:
+        if self._calc:
             calc_cond = self._calc_condition(condition)
             if self._calc_only:
                 condition = calc_cond
@@ -339,7 +353,7 @@ class View(object):
         if not (self._exclude or self._rescale):
             return self.axis
 
-        var = self.link.yk if self.link.xk == "@" else self.link.yk
+        var = self.link.yk if self.link.xk == "@" else self.link.xk
         if self.link.meta.is_categorical(var):
             codes = self.link.meta.get_codes(var)
             if self._exclude:

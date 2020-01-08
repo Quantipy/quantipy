@@ -2110,7 +2110,8 @@ class DataSet(object):
                 for source in sources:
                     if codes:
                         dummy_data.append(
-                            pd.get_dummies(self[source]).reindex(columns=codes))
+                            pd.get_dummies(self[source]).reindex(columns=codes)
+                        )
                     else:
                         dummy_data.append(pd.get_dummies(self[source]))
             dummy_data = pd.concat(dummy_data, axis=1)

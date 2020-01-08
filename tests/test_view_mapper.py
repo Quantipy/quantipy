@@ -218,10 +218,10 @@ class TestViewMapper:
         vm.add_method(
             "nps", "frequency",
             kwargs={
-                'rel_to': 'y',
-                'logic': [{'A': [1, 2, 3]}, {'B': [4]}, {'C': [5, 6]}],
-                'axis': 'x',
-                'calc': {'score': ('A', sub, 'C')}})
+                "rel_to": "y",
+                "logic": [{"A": [1, 2, 3]}, {"B": [4]}, {"C": [5, 6]}],
+                "axis": "x",
+                "calc": {"score": ("A", sub, "C")}})
         stack2.add_link(NAME2, x="q1", y="q9", views=vm)
 
         link = stack2[NAME2][None]["q1"]["q9"]
@@ -287,15 +287,74 @@ class TestViewMapper:
                 assert np.allclose(df.round(1).values.tolist(), values)
 
     def test_desc_other_source(self, stack2):
-        vm = ViewMapper(
+        vm1 = ViewMapper(
             template={
-                'method': "descriptives",
-                'kwargs': {'iterators': {'stats': ['mean', 'stddev']}}})
-        vm.add_method(
-            "foreign_stats", kwargs={'source': 'weight_a', 'axis': 'x'})
-        stack2.add_link(NAME2, x="q2b", y="q2b", views=vm, weights="weight_b")
+                "method": "descriptives",
+                "kwargs": {"iterators": {"stats": ["mean", "stddev"]}}})
+        vm1.add_method(
+            "foreign_stats", kwargs={"source": "weight_a", "axis": "x"})
+        vm2 = ViewMapper(
+            template={
+                "method": "coltests",
+                "kwargs": {"metric": "means", "iterators": {"level": [0.10]}}})
+        vm2.add_method("source_sig_test", kwargs={"text": "sigtest source"})
+        stack2.add_link(
+            NAME2, x="q2b", y="q2b", views=[vm1, vm2], weights="weight_b")
+
         link = stack2[NAME2][None]["q2b"]["q2b"]
         for vk, values in DESC_OTHER_SOURCE.items():
-            assert link[vk].dataframe.values.tolist() == values
+            df = link[vk].dataframe.replace(np.NaN, "NONE")
+            assert df.values.tolist() == values
 
+    @pytest.mark.parametrize((
+        "xk, yk, weight, mean_name, mean_kwargs, sig_name, sig_kwargs, "
+        "expectations"), COLTEST_MEAN_INPUT_EXPECT)
+    def test_coltests_means(self, stack2, xk, yk, weight, mean_name,
+                            mean_kwargs, sig_name, sig_kwargs, expectations):
+        vm_mean = ViewMapper()
+        vm_mean.add_method(mean_name, "descriptives", mean_kwargs)
+        vm_sig = ViewMapper()
+        vm_sig.add_method(sig_name, "coltests", sig_kwargs)
+        stack2.add_link(
+            NAME2, x=xk, y=yk, weights=weight, views=[vm_mean, vm_sig])
 
+        link = stack2[NAME2][None][xk][yk]
+        for vk, exp in expectations.items():
+            view = link[vk]
+            df = view.dataframe.replace(np.NaN, 'NONE')
+            assert df.values.tolist() == exp["values"]
+            assert view.is_meanstest == exp["level"]
+
+    @pytest.mark.parametrize((
+        "xk, yk, weight, sig_name, sig_kwargs, expectations"),
+        COLTEST_PROPS_INPUT_EXPECT)
+    def test_coltests_props(self, stack2, xk, yk, weight, sig_name, sig_kwargs,
+                            expectations):
+        vm = ViewMapper(['counts', 'cbase'])
+        vm_sig = ViewMapper()
+        vm_sig.add_method(sig_name, "coltests", sig_kwargs)
+        stack2.add_link(NAME2, x=xk, y=yk, weights=weight, views=[vm, vm_sig])
+
+        link = stack2[NAME2][None][xk][yk]
+        for vk, exp in expectations.items():
+            view = link[vk]
+            df = view.dataframe.replace(np.NaN, 'NONE')
+            assert df.values.tolist() == exp["values"]
+            assert view.is_propstest == exp["level"]
+            assert view.text == exp["text"]
+
+    def test_coltests_means_props(self, stack2):
+        vm = ViewMapper(['counts', 'mean'])
+        vm_sig = ViewMapper()
+        kwargs = {
+            'test_total': True,
+            "iterators": {'metric': ['props', 'means']}}
+        vm_sig.add_method("total_tests", "coltests", kwargs)
+        stack2.add_link(
+            NAME2, x="q7_1", y="q8", weights="weight_a", views=[vm, vm_sig])
+
+        link = stack2[NAME2][None]["q7_1"]["q8"]
+        for vk, values in COLTEST_MEANS_PROPS.items():
+            view = link[vk]
+            df = view.dataframe.replace(np.NaN, 'NONE')
+            assert df.values.tolist() == values

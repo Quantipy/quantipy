@@ -606,7 +606,7 @@ DESC_MEANS_COMPLEX = {
             42.551728834710325, 39.24544561891599, 27.051829048758677,
             33.24349179295309, 37.32054819314336, 28.864524650046256,
             35.661188879722964]],
-        "vk": "x|d.mean|x[{1,300,96,98,900}]:||weight_a|mean"
+        "vk": "x|d.mean|x[{1,300,5,6,900,8,9,10,11,12,13,14,15,16}]:||weight_a|mean"  # noqa
     }
 }
 
@@ -657,5 +657,232 @@ DESC_OTHER_SOURCE = {
     "x|d.mean|weight_a:||weight_b|foreign_stats": [[
         1.4874813073223419, 1.4484446605625558, 1.57250526358392]],
     "x|d.stddev|weight_a:||weight_b|foreign_stats": [[
-        0.922248166021751, 0.902477800807479, 0.9259579927078846]]
+        0.922248166021751, 0.902477800807479, 0.9259579927078846]],
+    "x|t.means.Dim.10|weight_a:||weight_b|source_sig_test":
+        [['NONE', 'NONE', '[2]']]
+}
+
+# -----------------------------------------------------------------------------
+# coltests means
+# -----------------------------------------------------------------------------
+MEAN_KWARGS1 = ("all", {
+    'text': '(all codes))',
+    'axis': 'x'})
+
+SIG_KWARGS1 = ("DIM_means_test", {
+    'metric': 'means',
+    'text': 'SIG (means)',
+    'iterators': {'level': [0.05]}
+})
+
+EXP_COLTEST1 = {
+    "x|t.means.Dim.05|x:||weight_a|DIM_means_test": {
+        "values": [['NONE', 'NONE', 'NONE', '[1, 2]', '[1, 2, 3]']],
+        "level": 0.05
+    }
+}
+
+MEAN_KWARGS2 = ("excl_9798", {
+    'text': '(no missings))',
+    'exclude': [97, 98],
+    'axis': 'x'})
+
+SIG_KWARGS2 = ("DIM_means_test", {
+    'metric': 'means',
+    'text': 'SIG (means)',
+    'iterators': {'level': [0.20]}
+})
+
+EXP_COLTEST2 = {
+    "x|t.means.Dim.20|x[{1,2,3,4,5}]:||weight_a|DIM_means_test": {
+        "values": [['NONE', '[1, 3]', 'NONE', 'NONE', 'NONE']],
+        "level": 0.20
+    }
+}
+
+MEAN_KWARGS3 = ("excl_9798", {
+    'text': '(no missings))',
+    'exclude': [97, 98],
+    'axis': 'x'})
+
+SIG_KWARGS3 = ("DIM_means_test", {
+    'metric': 'means',
+    'text': 'SIG (means)',
+    'iterators': {'level': ["low"]}
+})
+
+EXP_COLTEST3 = {
+    "x|t.means.Dim.10|x[{1,2,3,4,5}]:|||DIM_means_test": {
+        "values": [['[5]', '[5]', '[1, 2, 5, 6, 7, 97]', '[5]', 'NONE', '[5]',
+                    '[5]', '[5]', 'NONE']],
+        "level": 0.10
+    }
+}
+
+MEAN_KWARGS4 = ("all", {
+    'text': '(all codes))',
+    'axis': 'x'})
+
+SIG_KWARGS4 = ("askia_means_test", {
+    'metric': 'means',
+    'mimic': 'askia',
+    'text': 'SIG (means)',
+    'iterators': {'level': ["high"]}
+})
+
+EXP_COLTEST4 = {
+    "x|t.means.askia.01|x:|||askia_means_test": {
+        "values": [['NONE', '[1]', '[1]', '[1, 2, 3]', '[1, 2, 3, 4]']],
+        "level": 0.01
+    }
+}
+
+MEAN_KWARGS5 = ("excl. 6,8", {
+    'stats': "mean",
+    'exclude': [6, 8],
+    'axis': 'x'})
+
+SIG_KWARGS5 = ("total_tests", {
+    'metric': 'means',
+    'test_total': True
+})
+
+EXP_COLTEST5 = {
+    "x|t.means.Dim.10+@|x[{1,2,3,4,5,7,9}]:|||total_tests": {
+        "values": [
+            ["['@L', 98]", '[98]', '[98]', "['@L', 98]", '[98]', '[98]',
+             "['@H']"]],
+        "level": 0.1
+    }
+}
+
+MEAN_KWARGS6 = ("excl. 6,8", {
+    'stats': "mean",
+    'exclude': [6, 8],
+    'axis': 'x'})
+
+SIG_KWARGS6 = ("total_tests_flags", {
+    'metric': 'means',
+    'test_total': True,
+    'flag_bases': [30, 100]
+})
+
+EXP_COLTEST6 = {
+    "x|t.means.Dim.10+@|x[{1,2,3,4,5,7,9}]:|||total_tests_flags": {
+        "values": [["['@L']", '*', 'NONE', "['@L']", 'NONE', '*', '**']],
+        "level": 0.1
+    }
+}
+
+COLTEST_MEAN_INPUT_EXPECT = [  # noqa
+    ("q5_1", "locality", "weight_a", *MEAN_KWARGS1, *SIG_KWARGS1, EXP_COLTEST1),
+    ("q5_1", "locality", "weight_a", *MEAN_KWARGS2, *SIG_KWARGS2, EXP_COLTEST2),
+    ("q5_1", "q3", None, *MEAN_KWARGS3, *SIG_KWARGS3, EXP_COLTEST3),
+    ("q5_1", "locality", None, *MEAN_KWARGS4, *SIG_KWARGS4, EXP_COLTEST4),
+    ("q7_1", "q8", None, *MEAN_KWARGS5, *SIG_KWARGS5, EXP_COLTEST5),
+    ("q7_1", "q8", None, *MEAN_KWARGS6, *SIG_KWARGS6, EXP_COLTEST6),
+]
+
+# -----------------------------------------------------------------------------
+# coltests props
+# -----------------------------------------------------------------------------
+SIG_KWARGS7 = ("DIM_props_test", {
+    'metric': 'props',
+    'rel_to': 'y',
+    'text': 'sig without overlap',
+    'iterators': {'level': [0.20]}
+})
+
+EXP_COLTEST7 = {
+    "x|t.props.Dim.20|:|y|weight_a|DIM_props_test": {
+        "values": [
+            ['[2, 3, 4, 5]', '[4]', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', '[1, 4]', 'NONE', 'NONE', '[4]'],
+            ['[2, 5]', 'NONE', '[5]', '[2, 5]', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', '[1]', '[1]', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', '[1]', '[1]'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['[2, 3]', 'NONE', 'NONE', 'NONE', '[2, 3]'],
+            ['[3]', '[1, 3]', 'NONE', '[3]', '[3]']],
+        "level": 0.2,
+        "text": "sig without overlap"
+    }
+}
+
+SIG_KWARGS8 = ("DIM_props_test", {
+    'metric': 'props',
+    'rel_to': 'y',
+    'text': 'SIG (props)',
+    'iterators': {'level': ["mid"]}
+})
+
+EXP_COLTEST8 = {
+    "x|t.props.Dim.05|:|y||DIM_props_test": {
+        "values": [
+            ['[2, 3]', 'NONE', 'NONE', 'NONE', '[1, 2, 3, 4, 6, 7, 8, 97]',
+             'NONE', '[2, 3]', '[2, 3, 97]', 'NONE'],
+            ['[3, 97]', '[1, 3, 97]', '[97]', '[3, 97]', '[1, 2, 3, 4, 7, 97]',
+             '[1, 2, 3, 4, 7, 97]', '[1, 3, 97]', '[3, 97]', 'NONE'],
+            ['[2, 3, 4, 8, 97]', '[8, 97]', '[2, 4, 8, 97]', '[97]', '[97]',
+             '[97]', '[2, 4, 8, 97]', '[97]', 'NONE'],
+            ['[3]', '[3]', 'NONE', '[1, 2, 3, 5, 6, 7, 97]', 'NONE', 'NONE',
+             'NONE', '[1, 2, 3, 4, 5, 6, 7, 97]', '[1, 2, 3, 7]'],
+            ['[97]', '[97]', '[97]', '[97]', '[97]', '[97]', '[97]', '[97]',
+             'NONE'],
+            ['NONE', '[1, 5, 7]', '[1, 5, 7]', 'NONE', 'NONE', 'NONE', 'NONE',
+             'NONE', '[1, 2, 3, 4, 5, 6, 7, 8]'],
+            ['[5, 6]', '[1, 5, 6, 7, 8]', '[1, 2, 4, 5, 6, 7, 8]', '[6]',
+             'NONE', 'NONE', '[6]', 'NONE', '[1, 2, 3, 4, 5, 6, 7, 8]']],
+        "level": 0.05,
+        "text": "SIG (props)"
+    }
+}
+
+SIG_KWARGS9 = ("DIM_props_test", {
+    'metric': 'props',
+    'rel_to': 'y',
+    'text': 'SIG (props, strict)',
+    'iterators': {'level': [0.01]}
+})
+
+EXP_COLTEST9 = {
+    "x|t.props.Dim.01|:|y|weight_a|DIM_props_test": {
+        "values": [
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', '[1, 96]', '[96]', '[96]', 'NONE', 'NONE'],
+            ['NONE', 'NONE', '[4]', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', '[98]', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', '[3]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']],
+        "level": 0.01,
+        "text": "SIG (props, strict)"
+    }
+}
+
+COLTEST_PROPS_INPUT_EXPECT = [  # noqa
+    ("q1", "locality", "weight_a", *SIG_KWARGS7, EXP_COLTEST7),
+    ("q5_1", "q3", None, *SIG_KWARGS8, EXP_COLTEST8),
+    ("q9", "q8", "weight_a", *SIG_KWARGS9, EXP_COLTEST9),
+]
+
+COLTEST_MEANS_PROPS = {
+    "x|t.props.Dim.10+@|:||weight_a|total_tests": [
+        ['NONE', "['@L', 1, 3, 4, 5, 96]", 'NONE', '[5]', "['@H']", 'NONE',
+         'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['[4]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', '[96]', 'NONE', 'NONE'],
+        ['[5]', '[5]', 'NONE', '[5]', "['@H']", "['@L', 5]",
+         "['@L', 1, 3, 4, 5]"],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']],
+    "x|t.means.Dim.10+@|x:||weight_a|total_tests": [
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', "['@L', 2]", 'NONE']]
 }

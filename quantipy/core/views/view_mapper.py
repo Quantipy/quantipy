@@ -298,11 +298,15 @@ class ViewMapper(OrderedDict):
                 rel_to, rel_to_kind = rel_to.split(".")
                 if rel_to_kind == "cells":
                     per_cell = True
+                if name == "counts":
+                    view.kwargs["rebased"] = True
             if rel_to:
                 if q.type == 'array':
                     rel_to = 'y'
                 q.normalize(rel_to, per_cell=per_cell)
             q.to_df()
+            view._cbases = q.cbase
+            view._rbases = q.rbase
             if view._calc:
                 q.calc(view._calc, view.axis, result_only=view._calc_only)
                 view._method = "f.c:f"
@@ -458,21 +462,19 @@ class ViewMapper(OrderedDict):
             back to ``'low'``. Mimicking Dimensions (``mimic`` =
             ``'Dim'``) can use either the str or float version.
         """
-        metric = kwargs.get('metric', 'props')
-        mimic = kwargs.get('mimic', 'Dim')
-        level = kwargs.get('level', 'low')
-        flags = kwargs.get('flag_bases', None)
-        test_total = kwargs.get('test_total', False)
-
         get = 'count' if kwargs.get("metric", "props") == 'props' else 'mean'
         views = self._get_view_names(link, kwargs.get("weights"), get=get)
         for vk in views:
             dep_view = link[vk]
             view = View(link, name, "coltests", kwargs)
             test = Test(link, vk, view._test_total or False)
+            if not view._level:
+                view.kwargs["level"] = "low"
+            if not view._mimic:
+                view.kwargs["mimic"] = "Dim"
             if view._mimic == "Dim":
                 test.set_params(level=view._level, flag_bases=view._flag_bases)
-            elif mimic == 'askia':
+            elif view._mimic == 'askia':
                 test.set_params(
                     testtype='unpooled',
                     level=view._level,
@@ -480,13 +482,14 @@ class ViewMapper(OrderedDict):
                     use_ebase=False,
                     ovlp_correc=False,
                     cwi_filter=True)
+            view.kwargs["level"] = test.level
             view.dataframe = test.run()
 
             view.condition = dep_view.condition
             view._method = "t.{}.{}.{}{}".format(
                 view._metric,
                 view._mimic,
-                "{}:.2f".format(view.level[2:]),
+                "{:.2f}".format(view._level)[2:],
                 "+@" if view._test_total else "")
             link[view.notation] = view
 
@@ -495,6 +498,8 @@ class ViewMapper(OrderedDict):
         """
         Filter the views contained in a Stack by specific names.
         """
+        if not weight:
+            weight = ""
         collection = "{}_view_names".format(get)
         key = "{}_names".format(weight or "")
         view_name_list = link.cache.get_obj(collection, key)
@@ -511,6 +516,7 @@ class ViewMapper(OrderedDict):
             else:
                 view_name_list = [
                     vk for vk in link.keys()
+
                     if all([
                         link[vk]._method == "d.mean",
                         link[vk].weight == weight
