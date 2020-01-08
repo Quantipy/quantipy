@@ -339,12 +339,12 @@ class View(object):
                 ",".join([
                     str(v) for k, val in item.items()
                     for v in val if k not in ["text", "expand"]]))
-            if not self._expand:
-                logic_codes.append("{}[{}]".format(self.axis, codes))
-            elif self._expand == 'after':
+            if self._expand == 'after' or item.get("expand") == "after":
                 logic_codes.append("{}[{}+]".format(self.axis, codes))
-            elif self._expand == 'before':
+            elif self._expand == 'before' or item.get("expand") == "before":
                 logic_codes.append("{}[+{}]".format(self.axis, codes))
+            else:
+                logic_codes.append("{}[{}]".format(self.axis, codes))
         return logic_codes
 
     def _descriptives_condition(self):

@@ -46,7 +46,6 @@ def stack2(dataset2):
     return stack
 
 
-
 class TestViewMapper:
 
     def test_add_method(self):
@@ -345,16 +344,66 @@ class TestViewMapper:
 
     def test_coltests_means_props(self, stack2):
         vm = ViewMapper(['counts', 'mean'])
-        vm_sig = ViewMapper()
+        print(vm)
         kwargs = {
             'test_total': True,
             "iterators": {'metric': ['props', 'means']}}
-        vm_sig.add_method("total_tests", "coltests", kwargs)
+        vm.add_method("total_tests", "coltests", kwargs)
         stack2.add_link(
-            NAME2, x="q7_1", y="q8", weights="weight_a", views=[vm, vm_sig])
+            NAME2, x="q7_1", y="q8", weights="weight_a", views=vm)
 
         link = stack2[NAME2][None]["q7_1"]["q8"]
+        print (link.keys())
         for vk, values in COLTEST_MEANS_PROPS.items():
             view = link[vk]
             df = view.dataframe.replace(np.NaN, 'NONE')
             assert df.values.tolist() == values
+
+    def test_coltests_props_on_net(self, stack2):
+        vm = ViewMapper()
+        kwargs = {  # noqa
+            "logic": [
+                {'Z': [1, 2, 3], 'expand': 'after', 'text': {'en-GB': 'some text1'}},
+                {'A': [4, 5], 'text': {'en-GB': 'some text2'}},
+                {'F': [6, 7, 8], 'expand': 'before', 'text': {'en-GB': 'some text3'}}],
+            "axis": "x",
+            "complete": True,
+            "calc": {'my_calc': ('Z', sub, 'F')}
+        }
+        vm.add_method("blocknet", "frequency", kwargs)
+        kwargs = {
+            'test_total': True,
+            "iterators": {'metric': ['props']}}
+        vm.add_method("total_tests_blocks", "coltests", kwargs)
+        stack2.add_link(NAME2, x="q7_1", y="q8", weights="weight_a", views=vm)
+        link = stack2[NAME2][None]["q7_1"]["q8"]
+        for vk, values in COLTEST_PROP_NET1.items():
+            view = link[vk]
+            df = view.dataframe.replace(np.NaN, 'NONE')
+            assert df.values.tolist() == values
+
+    def test_coltests_props_on_net2(self, stack2):
+        stack2[NAME2].meta.reorder_values("q5", [98, 1, 2, 5, 4, 3, 97])
+        stack2[NAME2].meta.reorder_values("q8", [98, 96, 5, 1, 2, 3, 4])
+        vm = ViewMapper(["counts"])
+        kwargs = {  # noqa
+            "logic": [
+                {'Z': [98, 97], 'expand': 'after', 'text': {'en-GB': 'some text1'}},
+                {'A': [4, 1], 'expand': 'before', 'text': {'en-GB': 'some text2'}}],
+            "axis": "x",
+            "complete": True
+        }
+        vm.add_method("blocknet", "frequency", kwargs)
+        kwargs = {
+            'test_total': True,
+            "level": 0.1}
+        vm.add_method("tests", "coltests", kwargs)
+        stack2.add_link(NAME2, x="q5_1", y="q8", views=vm)
+        link = stack2[NAME2][None]["q5_1"]["q8"]
+        for vk, exp in COLTEST_PROP_NET2.items():
+            view = link[vk]
+            df = view.dataframe.replace(np.NaN, 'NONE')
+            if "values" in exp:
+                assert df.values.tolist() == exp["values"]
+            assert df.index.get_level_values(1).tolist() == exp["index"]
+            assert df.columns.get_level_values(1).tolist() == exp["columns"]

@@ -18,7 +18,7 @@ class ViewMapper(OrderedDict):
         super(ViewMapper, self).__init__()
         self.template = template
         for view in views:
-            self[view] = KNOWN_METHODS.get(view, {})
+            self[view] = copy.deepcopy(KNOWN_METHODS.get(view, {}))
 
     def __setstate__(self, view_dict):
         # Reconstruct the View object after serialization
@@ -462,7 +462,9 @@ class ViewMapper(OrderedDict):
             back to ``'low'``. Mimicking Dimensions (``mimic`` =
             ``'Dim'``) can use either the str or float version.
         """
-        get = 'count' if kwargs.get("metric", "props") == 'props' else 'mean'
+        if not kwargs.get("metric"):
+            kwargs["metric"] = "props"
+        get = 'count' if kwargs["metric"] == 'props' else 'mean'
         views = self._get_view_names(link, kwargs.get("weights"), get=get)
         for vk in views:
             dep_view = link[vk]

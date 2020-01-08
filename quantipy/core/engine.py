@@ -735,13 +735,13 @@ class Quantity(object):
         if not self._grp_type(grp_def) == 'block':
             grp_def = [{'net': grp_def, 'expand': method_expand}]
         for grp in grp_def:
-            if any(isinstance(val, (tuple, dict)) for val in grp.values()):
+            if any(isinstance(val, (tuple, dict))
+                   for key, val in grp.items()
+                   if key not in ["text", "expand"]):
                 if complete:
                     ni_err = ('Logical expr. unsupported when complete=True. '
                               'Only list-type nets/groups can be completed.')
                     raise NotImplementedError(ni_err)
-                if 'expand' in grp.keys():
-                    del grp['expand']
                 expand = None
                 logical = True
             else:
@@ -750,10 +750,13 @@ class Quantity(object):
                     expand = grp['expand']
                     if expand is None and complete:
                         expand = 'before'
-                    del grp['expand']
                 else:
                     expand = method_expand
                 logical = False
+            if 'expand' in grp.keys():
+                    del grp['expand']
+            if "text" in grp.keys():
+                del grp["text"]
             organized_def.append(
                 [list(grp.keys()), list(grp.values())[0], expand, logical])
             if expand:
@@ -1770,7 +1773,6 @@ class Test(object):
         """
         # Check if the aggregation is non-empty
         # and that there are >1 populated columns
-        print (flag_bases)
         if not self.test_total:
             if np.nansum(self.values) == 0 or len(self.ydef) == 1:
                 self.invalid = True
@@ -1877,7 +1879,6 @@ class Test(object):
         """
         stat = self.get_statistic()
         stat = self._convert_statistic(stat)
-        print (self.comparevalue)
         if self.metric == 'means':
             diffs = pd.DataFrame(self.valdiffs, index=self.ypairs, columns=self.xdef).T
         elif self.metric == 'proportions':

@@ -864,11 +864,34 @@ EXP_COLTEST9 = {
     }
 }
 
+SIG_KWARGS10 = ("askia_props_test", {
+    'metric': 'props',
+    'mimic': 'askia',
+    'rel_to': 'y',
+    'text': 'SIG (props, askia_low)',
+    'iterators': {'level': ['low']}
+})
+
+EXP_COLTEST10 = {  # noqa
+    "x|t.props.askia.10|:|y|weight_a|askia_props_test": {
+        "values":  [
+            ['[98]', '[98]', '[2, 5, 98]', '[2, 98]', '[98]', '[98]', 'NONE'],
+            ['[96, 98]', '[96, 98]', '[1, 96, 98]', '[96, 98]', '[96, 98]', 'NONE', 'NONE'],
+            ['[98]', '[98]', '[1, 2, 4, 5, 96, 98]', '[98]', '[98]', '[98]', 'NONE'],
+            ['[98]', '[98]', '[4, 5, 98]', '[98]', '[98]', '[98]', 'NONE'],
+            ['[2]', 'NONE', '[2, 4]', 'NONE', '[2]', '[2, 4]', 'NONE'],
+            ['NONE', '[1, 3, 4, 5, 96]', 'NONE', 'NONE', '[3, 4]', 'NONE', 'NONE'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', '[2, 3, 5]', '[1, 2, 3, 4, 5]']],
+        "level": 0.10,
+        "text": "SIG (props, askia_low)"
+    }
+}
+
 COLTEST_PROPS_INPUT_EXPECT = [  # noqa
     ("q1", "locality", "weight_a", *SIG_KWARGS7, EXP_COLTEST7),
     ("q5_1", "q3", None, *SIG_KWARGS8, EXP_COLTEST8),
     ("q9", "q8", "weight_a", *SIG_KWARGS9, EXP_COLTEST9),
-]
+    ("q9", "q8", "weight_a", *SIG_KWARGS10, EXP_COLTEST10),]
 
 COLTEST_MEANS_PROPS = {
     "x|t.props.Dim.10+@|:||weight_a|total_tests": [
@@ -885,4 +908,42 @@ COLTEST_MEANS_PROPS = {
         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']],
     "x|t.means.Dim.10+@|x:||weight_a|total_tests": [
         ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', "['@L', 2]", 'NONE']]
+}
+
+COLTEST_PROP_NET1 = {  # noqa
+    "x|t.props.Dim.10+@|x[{1,2,3}+],x[{4,5}],x[+{6,7,8}],x[{1,2,3}-{6,7,8}]*:||weight_a|total_tests_blocks": [
+        ["['@H']", 'NONE', '[1]', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', "['@L', 1, 3, 4, 5, 96]", 'NONE', '[5]', "['@H']", 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['[4]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['[4]', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', '[96]', 'NONE', 'NONE'],
+        ['[5]', '[5]', 'NONE', '[5]', "['@H']", "['@L', 5]", "['@L', 1, 3, 4, 5]"],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE'],
+        ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE']]
+}
+
+COLTEST_PROP_NET2 = {  # noqa
+    "x|t.props.Dim.10+@|x[{98,97}+],x[+{4,1}]*:|||tests": {
+        "values" : [
+            ['[5, 1, 2, 3, 4]', "['@H', 2]", "['@H']", "['@H']", "['@H']", "['@H']", "['@H']"],
+            ['[5, 1, 2, 3, 4]', "['@H', 2]", "['@H']", "['@H']", "['@H']", "['@H']", "['@H']"],
+            ['NONE', '[5]', "['@H']", "['@H', 5]", "['@H']", '[5]', "['@H']"],
+            ['NONE', 'NONE', "['@L']", "['@L']", "['@L', 96, 3, 4]", 'NONE', 'NONE'],
+            ['NONE', "['@H']", '[96]', '[96]', "['@H']", '[96]', '[96, 2]'],
+            ['NONE', 'NONE', 'NONE', 'NONE', 'NONE', 'NONE', '[96, 1, 3]'],
+            ['NONE', 'NONE', 'NONE', "['@H']", "['@L', 96, 5, 1, 3, 4]", '[1]', '[1]'],
+            ['NONE', "['@H']", '[1]', "['@H']", '[96, 5, 1, 3]', 'NONE', '[96, 1]'],
+            ['NONE', "['@L', 5, 4]", "['@L']", "['@L', 4]", "['@L']", "['@L']", "['@L']"]],
+        "index": ['Z', 98, 97, 2, 5, 4, 1, 'A', 3],
+        "columns": [98, 96, 5, 1, 2, 3, 4]
+    },
+    "x|f|x[{98,97}+],x[+{4,1}]*:|||blocknet": {
+        "index": ['Z', 98, 97, 2, 5, 4, 1, 'A', 3],
+        "columns": [98, 96, 5, 1, 2, 3, 4]
+    }
 }
