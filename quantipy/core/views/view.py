@@ -153,25 +153,26 @@ class View(object):
         return self.kwargs.get("expand", None)
 
     @property
-    def _complete(self):
-        return self.kwargs.get("complete", False) or self._expand is not None
+    def _expanded_net_groups(self):
+        groups = {"net": OrderedDict()}
+        normal = []
+        expanded = []
+        for idx, item in zip([self.dataframe.index.levels[1], self._logic]):
+            if any([exp in ["before", "after"]
+                    for exp in [self._expand, item.get("expand")]]):
+                for key in item.keys():
+                    if key not in ["text", "expand"]:
+                        break
+                groups["net"][key] = item[key]
+                expanded.extend(item[key])
+            else:
+                normal.append(idx)
+        groups["normal"] = [idx for idx in normal if idx not in expanded]
+        return groups
 
     @property
-    def _describe_block(self):
-        block_ref = OrderedDict()
-        if self._logic and self._expand:
-            for item in self._logic:
-                if self._expand in ["before", "after"]:
-                    for key in item.keys():
-                        if key not in ["text", "expand"]:
-                            break
-                    block_ref[key] = "net"
-                    for expanded in item[key]:
-                        block_ref[expanded] = "expanded"
-            for idx in self.dataframe.index.levels[1]:
-                if idx not in block_ref:
-                    block_ref[idx] = "normal"
-        return block_ref
+    def _complete(self):
+        return self.kwargs.get("complete", False) or self._expand is not None
 
     @property
     def grp_text_map(self):
@@ -278,6 +279,11 @@ class View(object):
             self.method == "frequency",
             len(self.condition) > 3,
             not self.is_cumulative])
+
+    @property
+    def is_expanded_net(self):
+        return self.is_net and any([
+            x in self.condition for x in ["}+]", "[+{"]])
 
     @property
     def has_calc(self):

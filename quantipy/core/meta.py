@@ -1352,7 +1352,9 @@ class Meta(dict):
     # -------------------------------------------------------------------------
     @params(is_var=["name"], axis=["axis"])
     def get_rules(self, name, axis="x"):
-        if self.is_array(name):
+        if name == "@":
+            rules = {}
+        elif self.is_array(name):
             rules = self["masks"][name].get("rules", {}).get(axis, {})
         else:
             rules = self["columns"][name].get("rules", {}).get(axis, {})
@@ -1472,7 +1474,8 @@ class Meta(dict):
         if self.is_array_item(name):
             err = "Cannot slice on single array items."
             logger.error(err); raise ValueError(err)
-        n_slice = [h for h in hide if h in codes]
+        codes = self.get_codes(name)
+        n_slice = [sl for sl in slicer if sl in codes]
         if len(n_slice) == 0:
             err = "Cannot hide all codes."
             logger.error(err); raise ValueError(err)

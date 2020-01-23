@@ -59,6 +59,9 @@ COMPATIBLE_TYPES = {
         ["date", "single", "string"]
 }
 
+STAT_VIEWS = [
+    'median', 'stddev', 'sem', 'max', 'min', 'mean', 'upper_q', 'lower_q']
+
 METRIC_NAME_MAP = {
     # English
     u"en-GB": {

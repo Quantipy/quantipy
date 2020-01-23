@@ -2,6 +2,7 @@
 from .core.dataset import DataSet
 from .core.meta import Meta
 from .core.batch import Batch
+from .core.rules import Rules
 
 # from .core.link import Link
 # from .core.view import View

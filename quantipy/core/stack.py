@@ -5,6 +5,7 @@ from ..__imports__ import *  # noqa
 from .meta import Meta
 
 # from .chainmanager import ChainManager
+from .rules import Rules
 from .views.view_mapper import ViewMapper
 
 logger = get_logger(__name__)
@@ -258,7 +259,7 @@ class Stack(defaultdict):
     # links
     # -------------------------------------------------------------------------
     @params(to_list=["filters", "x", "y", "views", "weights"])
-    def add_link(self, data_key, filters=[], x=[], y=[], views=[],
+    def add_link(self, data_key=None, filters=[], x=[], y=[], views=[],
                  weights=[]):
         """
         Add Link and View defintions to the Stack.
@@ -294,8 +295,7 @@ class Stack(defaultdict):
                 else:
                     vnames.append(view)
             if vnames:
-                vmapper.extend(QuantipyViews(views=vnames))
-
+                vmapper.append(ViewMapper(views=vnames))
         invalid = []
         if not filters:
             filters = [None]
@@ -335,6 +335,7 @@ class Stack(defaultdict):
                 link = Link(self, dk, fk, xk, yk)
                 self[dk][fk][xk][yk] = link
             for vm in vmapper:
+                print(link.xk)
                 vm._apply_to(link, weights)
 
     def describe(self, index=None, columns=None, query=None,
@@ -989,6 +990,46 @@ class Link(dict):
     def cache(self):
         return self.stack[self.dk].cache
 
+    @property
+    def wgt_vks(self):
+        return [vk for vk, view in self.items() if view.is_weighted]
+
+    @property
+    def unwgt_vks(self):
+        return [vk for vk, view in self.items() if not view.is_weighted]
+
+    def get_vks_by_name(self, name, weight=None, strict=True):
+        vks = []
+        weight = weight or ""
+        for vk, view in self.items():
+            if strict and view.name == name and view.weight == weight:
+                vks.append(vk)
+            elif name in view.name and view.weight == weight:
+                vks.append(vk)
+        return vks
+
+    def get_vks_by_method(self, method, weight=None, strict=True):
+        vks = []
+        weight = weight or ""
+        for vk, view in self.items():
+            if strict and view._method == method and view.weight == weight:
+                vks.append(vk)
+            elif view.method.startswith(method) and view.weight == weight:
+                vks.append(vk)
+        return vks
+
+    @property
+    def wgt_vks(self):
+        return [vk for vk, view in self.items() if view.is_weighted]
+
+    @property
+    def unwgt_vks(self):
+        return [vk for vk, view in self.items() if not view.is_weighted]
+
+    # @property
+    # def used_weights(self):
+    #     return list(set([view.weight for view in self.values()]))
+
     def _remove_nets(self, weights=[]):
         for vk in self.keys()[:]:
             if vk.split('|')[-1] == 'net':
@@ -1019,6 +1060,49 @@ class Link(dict):
             for name in names:
                 vm.add_method(name, kwargs)
         vm._apply_to(self)
+
+    def crosstab(self, weight=None, pct=False, text=True, decimals=1,
+                 rules=True):
+        """
+        Create a cross-tabulation of self.xk and self.yk.
+
+        Parameters
+        ----------
+        weight: str, default None
+            Name of the weight variable that should be used on the data.
+        pct: bool, default False
+            * True: Percentages are displayed
+            * False: Counts are displayed
+        text: bool, default True
+            * True: Value labels are displayed
+            * False: Value codes are displayed
+        decimals : int, default=1
+            Control the number of decimals in the returned dataframe.
+        rules: bool or list of str, default True {"x", "y"}
+            * True: all found rules are applied for self.xk and self.yk
+            * list of str: rules for given keys are applied
+        """
+        from .views.view_mapper import ViewMapper
+        if pct:
+            views = ["c%"]
+            vk = "x|f|:|y|{}|c%".format(weight or "")
+        else:
+            views = ["counts"]
+            vk = "x|f|:||{}|counts".format(weight or "")
+        vm = ViewMapper(views)
+        vm._apply_to(self, weight)
+        view = self[vk]
+
+        if rules:
+            if isinstance(rules, bool):
+                rules = ["x", "y"]
+            rules_obj = Rules(self, vk, weight, rules)
+            rules_obj.apply()
+            frame = rules_obj.df
+        else:
+            frame = view.dataframe
+        return frame
+
 
 
 class Cache(defaultdict):

@@ -139,7 +139,10 @@ class ViewMapper(OrderedDict):
         link : Link
         weights : Weight variable as str or list of str
         """
-        for view, defs in self.items():
+        print('*'*60)
+        print(self.items())
+        for view, defs in list(self.items())[:]:
+            print(view)
 
             method = defs["method"]
             kwargs = copy.deepcopy(defs.get("kwargs", {}))
@@ -175,6 +178,7 @@ class ViewMapper(OrderedDict):
                     getattr(self, method)(link, view, kwargs)
                 else:
                     method(link, view, kwargs)
+                print(link)
 
     def default(self, link, name, kwargs):
         """
@@ -361,6 +365,7 @@ class ViewMapper(OrderedDict):
             all codes that are not transformed. Acts as a shorthand for manually
             passing any remaining codes in ``exclude``.
         """
+        print('la')
         view = View(link, name, "descriptives", kwargs)
         if not view._xk['is_multi'] or view._source:
 
@@ -394,6 +399,7 @@ class ViewMapper(OrderedDict):
                 view.kwargs["exclude"] = q.miss_x
                 view.translate_metric()
                 view.spec_condition()
+                print(view.notation)
                 link[view.notation] = view
 
     @staticmethod

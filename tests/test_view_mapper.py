@@ -6,8 +6,7 @@ from quantipy import (
     ViewMapper,
     DataSet,
     Stack,
-    Link,
-    # Meta,
+    Link
 )
 from .expectations.exp_view_mapper import * ## noqa
 
