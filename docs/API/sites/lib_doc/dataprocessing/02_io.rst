@@ -113,7 +113,7 @@ standard file formats encountered in the market research industry:
 | SPSS        | .sav        | Yes         | Yes         |
 | Statistics  |             |             |             |
 +-------------+-------------+-------------+-------------+
-| SPSS        | .dff/.mdd   | Yes         | Yes         |
+| SPSS        | .ddf/.mdd   | Yes         | Yes         |
 | Dimensions  |             |             |             |
 +-------------+-------------+-------------+-------------+
 | Decipher    |tab-delimited| Yes         | No          |
