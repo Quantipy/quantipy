@@ -1,126 +1,0 @@
-warning: LF will be replaced by CRLF in .pytest_cache/v/cache/nodeids.
-The file will have its original line endings in your working directory
-[1mdiff --git a/quantipy/core/quantify/engine.py b/quantipy/core/quantify/engine.py[m
-[1mindex a2769f1e..684243f9 100644[m
-[1m--- a/quantipy/core/quantify/engine.py[m
-[1m+++ b/quantipy/core/quantify/engine.py[m
-[36m@@ -525,6 +525,10 @@[m [mclass Quantity(object):[m
-         # generate the net vectors (+ possible expanded originating codes)[m
-         for grp in grp_def:[m
-             name, group, exp, logical = grp[0], grp[1], grp[2], grp[3][m
-[32m+[m[32m            ascending = sorted(group) == group[m
-[32m+[m[32m            descending = list(reversed(sorted(group))) == group[m
-[32m+[m[32m            if not (ascending or descending) and exp:[m
-[32m+[m[32m                group = sorted(group)[m
-             one_code = len(group) == 1[m
-             if one_code and not logical:[m
-                 vec = self._slice_vec(group[0], axis=axis)[m
-[1mdiff --git a/quantipy/core/tools/dp/prep.py b/quantipy/core/tools/dp/prep.py[m
-[1mindex e867471b..71952382 100644[m
-[1m--- a/quantipy/core/tools/dp/prep.py[m
-[1m+++ b/quantipy/core/tools/dp/prep.py[m
-[36m@@ -1541,6 +1541,7 @@[m [mdef hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,[m
- [m
-             if verbose:[m
-                 print '------ updating data for known columns'[m
-[32m+[m
-             updata_left.update(updata_right[non_sets])[m
-             if merge_existing:[m
-                 for col in sets:[m
-[36m@@ -1553,6 +1554,7 @@[m [mdef hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,[m
-                         lambda x, y: _merge_delimited_sets(str(x)+str(y)))[m
-             updata_left.reset_index(inplace=True)[m
-             for col in col_updates:[m
-[32m+[m[32m                # if col != 'caseid':[m
-                 data_left[col] = updata_left[col].astype(data_left[col].dtype)[m
- [m
-         # append completely new columns[m
-[36m@@ -1579,7 +1581,6 @@[m [mdef hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,[m
-             for col_name in new_cols:[m
-                 print '..{}'.format(col_name)[m
-             print '\n'[m
-[31m-[m
-     return meta_left, data_left[m
- [m
- def vmerge(dataset_left=None, dataset_right=None, datasets=None,[m
-[1mdiff --git a/quantipy/core/view_generators/view_maps.py b/quantipy/core/view_generators/view_maps.py[m
-[1mindex b8bb3643..30e892a9 100644[m
-[1m--- a/quantipy/core/view_generators/view_maps.py[m
-[1m+++ b/quantipy/core/view_generators/view_maps.py[m
-[36m@@ -529,28 +529,28 @@[m [mclass QuantipyViews(ViewMapper):[m
-         get = 'count' if metric == 'props' else 'mean'[m
-         views = self._get_view_names(cache, stack, weights, get=get)[m
-         for in_view in views:[m
-[31m-            try:[m
-[31m-                view = View(link, name, kwargs=kwargs)[m
-[31m-                condition = in_view.split('|')[2][m
-[31m-                test = qp.Test(link, in_view, test_total)[m
-[31m-                if mimic == 'Dim':[m
-[31m-                    test.set_params(level=level, flag_bases=flags)[m
-[31m-                elif mimic == 'askia':[m
-[31m-                    test.set_params(testtype='unpooled',[m
-[31m-                                    level=level, mimic=mimic,[m
-[31m-                                    use_ebase=False,[m
-[31m-                                    ovlp_correc=False,[m
-[31m-                                    cwi_filter=True)[m
-[31m-                view_df = test.run()[m
-[31m-                notation = view.notation('t.{}.{}.{}{}'.format(metric, mimic,[m
-[31m-                                     '{:.2f}'.format(test.level)[2:],[m
-[31m-                                     '+@' if test_total else ''),[m
-[31m-                                     condition)[m
-[31m-                view.dataframe = view_df[m
-[31m-                view._notation = notation[m
-[31m-                link[notation] = view[m
-[31m-            except:[m
-[31m-                pass[m
-[32m+[m[32m            # try:[m[41m[m
-[32m+[m[32m            view = View(link, name, kwargs=kwargs)[m[41m[m
-[32m+[m[32m            condition = in_view.split('|')[2][m[41m[m
-[32m+[m[32m            test = qp.Test(link, in_view, test_total)[m[41m[m
-[32m+[m[32m            if mimic == 'Dim':[m[41m[m
-[32m+[m[32m                test.set_params(level=level, flag_bases=flags)[m[41m[m
-[32m+[m[32m            elif mimic == 'askia':[m[41m[m
-[32m+[m[32m                test.set_params(testtype='unpooled',[m[41m[m
-[32m+[m[32m                                level=level, mimic=mimic,[m[41m[m
-[32m+[m[32m                                use_ebase=False,[m[41m[m
-[32m+[m[32m                                ovlp_correc=False,[m[41m[m
-[32m+[m[32m                                cwi_filter=True)[m[41m[m
-[32m+[m[32m            view_df = test.run()[m[41m[m
-[32m+[m[32m            notation = view.notation('t.{}.{}.{}{}'.format(metric, mimic,[m[41m[m
-[32m+[m[32m                                 '{:.2f}'.format(test.level)[2:],[m[41m[m
-[32m+[m[32m                                 '+@' if test_total else ''),[m[41m[m
-[32m+[m[32m                                 condition)[m[41m[m
-[32m+[m[32m            view.dataframe = view_df[m[41m[m
-[32m+[m[32m            view._notation = notation[m[41m[m
-[32m+[m[32m            link[notation] = view[m[41m[m
-[32m+[m[32m            # except:[m[41m[m
-[32m+[m[32m            #     pass[m[41m[m
- [m
-     @staticmethod[m
-     def _swap_and_rebase(quantity, variable, axis='x'):[m
-[1mdiff --git a/quantipy/sandbox/sandbox.py b/quantipy/sandbox/sandbox.py[m
-[1mindex 2218e0aa..256fba1a 100644[m
-[1m--- a/quantipy/sandbox/sandbox.py[m
-[1m+++ b/quantipy/sandbox/sandbox.py[m
-[36m@@ -2708,7 +2708,8 @@[m [mclass Chain(object):[m
-             v for v in vpr[m
-             if not v == "__viewlike__" and ([m
-                 len(v.split('|')[2].split('['))>2 or[m
-[31m-                    '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2])][m
-[32m+[m[32m                    '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2][m
-[32m+[m[32m                     or  '}+{' in v.split('|')[2])][m
- [m
-         has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])[m
-         is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr[m
-[36m@@ -2723,7 +2724,10 @@[m [mclass Chain(object):[m
-                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])[m
-         for idx, row in enumerate(description):[m
-             if not 'is_block' in row:[m
-[31m-                idx_view_map[idx] = None[m
-[32m+[m[32m                try:[m
-[32m+[m[32m                    idx_view_map[idx] = None[m
-[32m+[m[32m                except:[m
-[32m+[m[32m                    pass[m
-         blocks_len = len(expr.split('],')) * (self.ci_count + is_tested)[m
-         if has_calc: blocks_len -= (self.ci_count + is_tested)[m
-         block_net_def = [][m
