@@ -2707,8 +2707,9 @@ class Chain(object):
         block_net_vk = [
             v for v in vpr
             if not v == "__viewlike__" and (
-                len(v.split('|')[2].split('['))>2 or
-                    '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2])]
+                len(v.split('|')[2].split('[')) > 2 or
+                    '[+{' in v.split('|')[2] or '}+]' in v.split('|')[2]
+                    or '}+{' in v.split('|')[2])]
 
         has_calc = any([v.split('|')[1].startswith('f.c') for v in block_net_vk])
         is_tested = any(v.split('|')[1].startswith('t.props') for v in vpr
@@ -2723,7 +2724,10 @@ class Chain(object):
                 idx_view_map[idx] = (idx_view_map[idx-1][0], idx_view_map[idx][1])
         for idx, row in enumerate(description):
             if not 'is_block' in row:
-                idx_view_map[idx] = None
+                try:
+                    idx_view_map[idx] = None
+                except:
+                    pass
         blocks_len = len(expr.split('],')) * (self.ci_count + is_tested)
         if has_calc: blocks_len -= (self.ci_count + is_tested)
         block_net_def = []
@@ -2807,7 +2811,7 @@ class Chain(object):
                 x_frames.append(pd.concat(y_frames, axis=concat_axis))
 
                 self.shapes.append(x_frames[-1].shape)
-                
+
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
 

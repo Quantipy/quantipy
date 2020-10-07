@@ -1287,6 +1287,7 @@ class Batch(qp.DataSet):
                 ds.drop(f)
 
         ds.create_set(str(self.name), included=vlist, overwrite=True)
+
         ds.subset(from_set=self.name, inplace=True)
         ds.order(vlist)
 
