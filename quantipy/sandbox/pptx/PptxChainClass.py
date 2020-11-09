@@ -265,6 +265,11 @@ def fill_column_values(df, icol=0):
     return dfnew
 
 
+class Net(object):
+    TOP = "topbox"
+    BOT = "bottombox"
+
+
 class PptxDataFrame(object):
     """
     Class for handling the dataframe to be charted.
@@ -395,6 +400,29 @@ class PptxDataFrame(object):
         """
         return self.get('net')
 
+    def get_net_top(self):
+        """
+        Return a copy of the PptxDataFrame only containing net with a label
+        containing string as defined in NET.TOP
+
+        Returns
+        -------
+        PptxDataFrame
+
+        """
+        return self.get('nettop')
+
+    def get_net_bot(self):
+        """
+        Return a copy of the PptxDataFrame only containing net with a label
+        containing string as defined in NET.BOT
+
+        Returns
+        -------
+        PptxDataFrame
+
+        """
+        return self.get('netbot')
 
     def get_cpct(self):
         """
@@ -496,6 +524,14 @@ class PptxDataFrame(object):
 
         return row_list
 
+    def _get_nettop_index(self):
+        net_index = self._get_nets_index()
+        return [i for i in net_index if Net.TOP.lower() in self.df.columns[i].lower()]
+
+    def _get_netbot_index(self):
+        net_index = self._get_nets_index()
+        return [i for i in net_index if Net.BOT.lower() in self.df.columns[i].lower()]
+
     def _get_means_index(self):
         """
         Return a list of index numbers from self.cell_items of type 'is_mean' and not type
@@ -540,6 +576,8 @@ class PptxDataFrame(object):
         method_map = {'c_pct': self._get_cpct_index,
                       'pct': self._get_cpct_index,
                       'net': self._get_nets_index,
+                      'nettop': self._get_nettop_index,
+                      'netbot': self._get_netbot_index,
                       'nets': self._get_nets_index,
                       'mean': self._get_means_index,
                       'means': self._get_means_index,
