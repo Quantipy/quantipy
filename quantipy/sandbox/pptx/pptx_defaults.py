@@ -212,6 +212,18 @@ default_chart_bar_stacked100['data_labels_position'] = 'center'
 # Plot properties
 # default_chart_bar_stacked100['plot_vary_by_cat'] = True
 default_chart_bar_stacked100['plot_overlap'] = 100
+# Colour settings for sequential colouring of likert scales
+default_chart_bar_stacked100['likert_colours'] = {'positive': [(0,163,160), (0,183,180), (41,205,202)],
+                                                  'negative': [(215,59,42), (235,79,62), (255,99,82)],
+                                                  'neutral': [(154,147,168)],
+                                                  'dk': [(198,193,209)],
+                                                  }
+
+default_chart_bar_stacked100['likert_series'] = {'positive': [],
+                                                  'negative': [],
+                                                  'neutral': [],
+                                                  'dk': [],
+                                                  }
 
 # ---------------------------
 # Line
