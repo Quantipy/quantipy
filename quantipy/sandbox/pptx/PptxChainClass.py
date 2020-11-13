@@ -1474,8 +1474,11 @@ class PptxChain(object):
         codes_in_nets = [re.findall('{(.*?)}', view)[i].split(',') for i, view in enumerate(net_views[1])]
         codes_in_net_bot = codes_in_nets[net_labels.index(net_bot_label)]
         codes_in_net_top = codes_in_nets[net_labels.index(net_top_label)]
-        labels_in_net_bot = [index_map[int(code)] for code in codes_in_net_bot]
-        labels_in_net_top = [index_map[int(code)] for code in codes_in_net_top]
+        try:
+            labels_in_net_bot = [index_map[int(code)] for code in codes_in_net_bot]
+            labels_in_net_top = [index_map[int(code)] for code in codes_in_net_top]
+        except KeyError:
+            return likert
         negative = [pptx_df_index.index(label) for label in labels_in_net_bot]
         positive = [pptx_df_index.index(label) for label in labels_in_net_top]
         # not accepting if the first row in the dataframe is not included in the nets

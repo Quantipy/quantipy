@@ -1042,7 +1042,7 @@ class PptxPainter(object):
 
                   # Likert scales
                   likert_colours = None,
-                  likert_series = None
+                  likert_series = None,
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1229,23 +1229,41 @@ class PptxPainter(object):
                         self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
         # ======================================== colours
-        # only supporting series
-        col_neg = likert_colours['negative']
-        col_pos = likert_colours['positive']
-        col_neu = likert_colours['neutral']
-        col_dk = likert_colours['dk']
+        try:
+            col_neg = likert_colours['negative']
+            col_pos = likert_colours['positive']
+            col_neu = likert_colours['neutral']
+            col_dk = likert_colours['dk']
+            ser_neg = likert_series['negative']
+            ser_pos = likert_series['positive']
+            ser_neu = likert_series['neutral']
+            ser_dk = likert_series['dk']
+        except (TypeError, KeyError):
+            pass
+        else:
+            valid_colours = len(ser_neg) <= len(col_neg) and \
+                            len(ser_pos) <= len(col_pos) and \
+                            len(ser_neu) <= len(col_neu) and \
+                            len(ser_dk) <= len(col_dk) and \
+                            len(ser_neg+ser_pos+ser_neu+ser_dk) == len(dataframe.columns)
 
-        ser_neg = likert_series['negative']
-        ser_pos = likert_series['positive']
-        ser_neu = likert_series['neutral']
-        ser_dk = likert_series['dk']
+            # only supporting colouring series
+            if len(dataframe.columns) > 1 and valid_colours:
+                if ser_neg[0] < ser_pos[0]:
+                    likert_series['positive'] = ser_pos[::-1]
+                else:
+                    likert_series['negative'] = ser_neg[::-1]
 
-        if len(dataframe.columns) > 1:
-            for i in range(len(dataframe.columns)):
-                ser = plot.series[i]
-                fill = ser.format.fill
-                fill.solid()
-                fill.fore_color.rgb =
+                for k, v in likert_series.items():
+                    colours = likert_colours[k]
+                    for i, ser in enumerate(v):
+
+                        colour = colours[i]
+                        ser = plot.series[ser]
+                        fill = ser.format.fill
+                        fill.solid()
+
+                        fill.fore_color.rgb = RGBColor(*colour)
 
         return chart
 
