@@ -35,7 +35,7 @@ from enumerations import (
 )
 
 from PptxDefaultsClass import PptxDefaults
-from PptxChainClass import float2String
+from PptxChainClass import float2String, auto_charttype, MAX_PIE_ELMS
 import pandas as pd
 import copy
 
@@ -184,6 +184,16 @@ class PptxPainter(object):
                     'tables': {},
                     'side_tables': {},
                     }
+
+        self._auto_pie_max_elms = MAX_PIE_ELMS
+
+    @property
+    def auto_pie_max_elms(self):
+        return self._auto_pie_max_elms
+
+    @auto_pie_max_elms.setter
+    def auto_pie_max_elms(self, max_pie_elms):
+        self._auto_pie_max_elms = max_pie_elms
 
     @staticmethod
     def get_plot_values(plot):
@@ -399,7 +409,13 @@ class PptxPainter(object):
 
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
-                    chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
+                    chart_type = pptx_chain.chart_type
+                    if chart_type == 'auto':
+                        array_style = pptx_frame.array_style
+                        chart_type = auto_charttype(pptx_frame.df,
+                                                    array_style,
+                                                    max_pie_elms=self.auto_pie_max_elms)
+                    chart_draft = self.draft_autochart(pptx_frame(), chart_type)
                     if sig_test:
                         chart_draft['sig_test_visible'] = True
                         chart_draft['sig_test_results'] = pptx_chain.sig_test
