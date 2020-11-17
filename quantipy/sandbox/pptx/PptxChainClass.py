@@ -265,6 +265,11 @@ def fill_column_values(df, icol=0):
     return dfnew
 
 
+class Net(object):
+    TOP = "topbox"
+    BOT = "bottombox"
+
+
 class PptxDataFrame(object):
     """
     Class for handling the dataframe to be charted.
@@ -395,6 +400,29 @@ class PptxDataFrame(object):
         """
         return self.get('net')
 
+    def get_net_top(self):
+        """
+        Return a copy of the PptxDataFrame only containing net with a label
+        containing string as defined in NET.TOP
+
+        Returns
+        -------
+        PptxDataFrame
+
+        """
+        return self.get('nettop')
+
+    def get_net_bot(self):
+        """
+        Return a copy of the PptxDataFrame only containing net with a label
+        containing string as defined in NET.BOT
+
+        Returns
+        -------
+        PptxDataFrame
+
+        """
+        return self.get('netbot')
 
     def get_cpct(self):
         """
@@ -496,6 +524,14 @@ class PptxDataFrame(object):
 
         return row_list
 
+    def _get_nettop_index(self):
+        net_index = self._get_nets_index()
+        return [i for i in net_index if Net.TOP.lower() in self.df.columns[i].lower()]
+
+    def _get_netbot_index(self):
+        net_index = self._get_nets_index()
+        return [i for i in net_index if Net.BOT.lower() in self.df.columns[i].lower()]
+
     def _get_means_index(self):
         """
         Return a list of index numbers from self.cell_items of type 'is_mean' and not type
@@ -540,6 +576,8 @@ class PptxDataFrame(object):
         method_map = {'c_pct': self._get_cpct_index,
                       'pct': self._get_cpct_index,
                       'net': self._get_nets_index,
+                      'nettop': self._get_nettop_index,
+                      'netbot': self._get_netbot_index,
                       'nets': self._get_nets_index,
                       'mean': self._get_means_index,
                       'means': self._get_means_index,
@@ -1401,3 +1439,61 @@ class PptxChain(object):
 
         return chart_df
 
+    def get_likert(self, pptx_df):
+        """
+        Returns a dictionary with keys 'positive', 'negative',
+        'neutral' and 'dk' with list of ints matching the
+        indexes in pptx_df.
+        To identify those categories, nets with labels matching
+        topbox/bottombox will be used. If these nets not present
+        an empty list will be returned
+        :param pptx_df: Instance of PptxDataFrame
+        :return:
+        """
+        likert = {'positive': [],
+                  'negative': [],
+                  'neutral': [],
+                  'dk': [],
+                 }
+        # support only normal grid style
+        if self.array_style <> 0:
+            return likert
+        # do we have bottombox and topbox
+        try:
+            net_top_label = self.chart_df.get(['nettop']).df.columns.tolist()[0]
+            net_bot_label = self.chart_df.get(['netbot']).df.columns.tolist()[0]
+        except IndexError:
+            return likert
+
+        pptx_df_index = pptx_df.df.columns.tolist()
+        net_labels = self.chart_df.get(['net']).df.columns.tolist()
+        index_map = dict(self.index_map)
+        chain = self._chain
+        net_names = [k for k,v in dict(index_map).items() if v in net_labels]
+        net_views = chain._view_idxs(net_names)
+        codes_in_nets = [re.findall('{(.*?)}', view)[i].split(',') for i, view in enumerate(net_views[1])]
+        codes_in_net_bot = codes_in_nets[net_labels.index(net_bot_label)]
+        codes_in_net_top = codes_in_nets[net_labels.index(net_top_label)]
+        try:
+            labels_in_net_bot = [index_map[int(code)] for code in codes_in_net_bot]
+            labels_in_net_top = [index_map[int(code)] for code in codes_in_net_top]
+        except KeyError:
+            return likert
+        negative = [pptx_df_index.index(label) for label in labels_in_net_bot]
+        positive = [pptx_df_index.index(label) for label in labels_in_net_top]
+        # not accepting if the first row in the dataframe is not included in the nets
+        if 0 not in (positive + negative):
+            return likert
+        net_indexes = sorted(positive + negative)
+        _range = set(range(net_indexes[-1] + 1))
+        neutral = list(_range.difference(net_indexes))
+        dk = list(set(range(len(pptx_df_index))).difference(net_indexes+neutral))
+        # Only allowing one code after the nets - assumed don't know
+        if len(dk) > 1:
+            return likert
+        likert['positive'] = positive
+        likert['negative'] = negative
+        likert['neutral'] = neutral
+        likert['dk'] = dk
+
+        return likert

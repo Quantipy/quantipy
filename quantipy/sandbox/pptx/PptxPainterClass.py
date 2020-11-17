@@ -18,8 +18,6 @@ try:
 except:
     from pptx.shapes import table
 
-from pptx.chart.data import ChartData
-from pptx.enum.chart import XL_CHART_TYPE
 from pptx.dml.color import RGBColor
 
 from enumerations import (
@@ -395,17 +393,14 @@ class PptxPainter(object):
                 sig_test = False
                 cell_items = slide_item.split(':')[1]
 
-                ''' 
-                Makes no sense to actually have 'test' as a cell_item.
-                Will remove it from cell_items and set flag sig_test as True
-                '''
-                cell_items = cell_items.split(',')
+                # Sig testing letters in chart labels
                 if 'test' in cell_items:
                     sig_test = True
                     pptx_chain.add_test_letter_to_column_labels()
                     pptx_chain.chart_df = pptx_chain.prepare_dataframe()
-                    cell_items.remove('test')
-                cell_items = ','.join(cell_items)
+                    _cell_items = cell_items.split(',')
+                    _cell_items.remove('test')
+                    cell_items = ','.join(_cell_items)
 
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
@@ -416,6 +411,7 @@ class PptxPainter(object):
                                                     array_style,
                                                     max_pie_elms=self.auto_pie_max_elms)
                     chart_draft = self.draft_autochart(pptx_frame(), chart_type)
+                    chart_draft['likert_series'] = pptx_chain.get_likert(pptx_frame)
                     if sig_test:
                         chart_draft['sig_test_visible'] = True
                         chart_draft['sig_test_results'] = pptx_chain.sig_test
@@ -1059,6 +1055,10 @@ class PptxPainter(object):
                   # Sig test
                   sig_test_visible = False,
                   sig_test_results = None,
+
+                  # Likert scales
+                  likert_colours = None,
+                  likert_series = None,
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1244,13 +1244,42 @@ class PptxPainter(object):
                         text =  u' ({})'.format(test_result)
                         self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
-        # # ================================ series
-        # for i, ser in enumerate(dataframe.columns):
-        #     ser = plot.series[i]
-        #     try:
-        #         ser.smooth = smooth_line
-        #     except:
-        #         pass
+        # ======================================== colours
+        try:
+            col_neg = likert_colours['negative']
+            col_pos = likert_colours['positive']
+            col_neu = likert_colours['neutral']
+            col_dk = likert_colours['dk']
+            ser_neg = likert_series['negative']
+            ser_pos = likert_series['positive']
+            ser_neu = likert_series['neutral']
+            ser_dk = likert_series['dk']
+        except (TypeError, KeyError):
+            pass
+        else:
+            valid_colours = len(ser_neg) <= len(col_neg) and \
+                            len(ser_pos) <= len(col_pos) and \
+                            len(ser_neu) <= len(col_neu) and \
+                            len(ser_dk) <= len(col_dk) and \
+                            len(ser_neg+ser_pos+ser_neu+ser_dk) == len(dataframe.columns)
+
+            # only supporting colouring series
+            if len(dataframe.columns) > 1 and valid_colours:
+                if ser_neg[0] < ser_pos[0]:
+                    likert_series['positive'] = ser_pos[::-1]
+                else:
+                    likert_series['negative'] = ser_neg[::-1]
+
+                for k, v in likert_series.items():
+                    colours = likert_colours[k]
+                    for i, ser in enumerate(v):
+
+                        colour = colours[i]
+                        ser = plot.series[ser]
+                        fill = ser.format.fill
+                        fill.solid()
+
+                        fill.fore_color.rgb = RGBColor(*colour)
 
         return chart
 
