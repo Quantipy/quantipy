@@ -30,7 +30,7 @@ from enumerations import (
 )
 
 from PptxDefaultsClass import PptxDefaults
-from PptxChainClass import float2String, auto_charttype, MAX_PIE_ELMS
+from PptxChainClass import float2string, auto_charttype, MAX_PIE_ELMS
 import pandas as pd
 import copy
 
@@ -243,7 +243,7 @@ class PptxPainter(object):
                     if number_format == '0%':
                         value = round(float(value) * 100, decimals)
 
-                        str_value = float2String(value) + '%'
+                        str_value = float2string(value) + '%'
                     else:
                         str_value = str(value)
                 else:
