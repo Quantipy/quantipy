@@ -1082,6 +1082,9 @@ class PptxPainter(object):
                   # Likert scales
                   likert_colours=None,
                   likert_series=None,
+
+                  # Reverse bar_chart dataframe
+                  reverse_dataframe=False,
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1138,12 +1141,13 @@ class PptxPainter(object):
         """
 
         # Switch rows and columns if bar chart
-        if chart_type == "bar_clustered":
-            dataframe = dataframe[::-1]
-            dataframe = dataframe[dataframe.columns[::-1]]
-        # Switch rows if bar stacked
-        if chart_type == "bar_stacked_100":
-            dataframe = dataframe[::-1]
+        if reverse_dataframe:
+            if chart_type == "bar_clustered":
+                dataframe = dataframe[::-1]
+                dataframe = dataframe[dataframe.columns[::-1]]
+            # Switch rows if bar stacked
+            if chart_type == "bar_stacked_100":
+                dataframe = dataframe[::-1]
 
         # =============================== chart data from pandas dataframe
         chart_data = chartdata_from_dataframe(dataframe, number_format=number_format, xl_number_format=number_format)
