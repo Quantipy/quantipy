@@ -68,7 +68,7 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
             columns.append('%s_%s' % (name, value))
 
         # Create a single series from the dichotomous set
-        data_ascribe[name] = condense_dichotomous_set(
+        data_ascribe[name], _ = condense_dichotomous_set(
             data_ascribe[columns],
             sniff_single=True
         )

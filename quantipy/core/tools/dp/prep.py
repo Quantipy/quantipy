@@ -890,7 +890,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = pd.DataFrame(0, index=series.index, columns=cols)
         for key, idx in index_mapper.iteritems():
             ds[str(key)].loc[idx] = 1
-        ds2 = condense_dichotomous_set(ds)
+        ds2, _ = condense_dichotomous_set(ds)
         org_name = series.name
         series = join_delimited_set_series(series, ds2, append)
         ## Remove potential duplicate values
@@ -905,7 +905,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = ds[cols]
         ds.columns = [str(i) for i in ds.columns]
         # Reconstruct the dichotomous set
-        series = condense_dichotomous_set(ds)
+        series, _ = condense_dichotomous_set(ds)
 
     elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
