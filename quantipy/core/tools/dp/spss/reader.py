@@ -62,8 +62,6 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                      ioUtf8=True, dichot=None, dates_as_strings=False,
                      text_key="main"):
 
-    if dichot is None: dichot = {'yes': 1, 'no': 0}
-
     """ see parse_sav_file doc """
     with sr.SavHeaderReader(sav_file, ioLocale=ioLocale, ioUtf8=ioUtf8) as header:
         # Metadata Attributes
@@ -188,13 +186,20 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
 
         elif metadata.multRespDefs[mrset]['setType'] == 'D':
             # Generate the delimited set from the dichotomous set
-            dls = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
+            if dichot is None:
+                dichot = {'yes': 1, 'no': 0}
+            c_val = metadata.multRespDefs[mrset].get('countedValue', None)
+            if c_val:
+                dichot['yes'] = int(c_val)
+            dls, vals = condense_dichotomous_set(
+                data[varNames], values_from_labels=True, **dichot
+            )
             # Get value object
             values = [{
                         'text': {text_key: metadata.varLabels[varName]},
-                        'value': int(v)
+                        'value': int(vals[v])
                     }
-                    for v, varName in enumerate(varNames, start=1)]
+                    for v, varName in enumerate(varNames, start=0)]
         else:
             continue
         # Insert the delimited set into data

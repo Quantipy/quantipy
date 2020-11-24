@@ -293,6 +293,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
     df = df.applymap(lambda x: x if x in [yes, no] else no)
     # Convert to delimited set
     df_str = df.astype('str')
+    values = []
     for v, col in enumerate(df_str.columns, start=1):
         if values_from_labels:
             if values_regex is None:
@@ -307,6 +308,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
                             values_regex, col))
         else:
             v = str(v)
+        values.append(v)
         # Convert to categorical set
         df_str[col].replace(
             {
@@ -351,7 +353,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         series = series.str.replace(';','').astype('float')
         return series
 
-    return series
+    return series, values
 
 def split_series(series, sep, columns=None):
     """
