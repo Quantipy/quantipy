@@ -271,8 +271,8 @@ def fill_column_values(df, icol=0):
 
 
 class Net(object):
-    TOP = "topbox"
-    BOT = "bottombox"
+    TOP = ["topbox", "(tb)"]
+    BOT = ["bottombox", "(bb)"]
 
 
 class PptxDataFrame(object):
@@ -531,11 +531,21 @@ class PptxDataFrame(object):
 
     def _get_nettop_index(self):
         net_index = self._get_nets_index()
-        return [i for i in net_index if Net.TOP.lower() in self.df.columns[i].lower()]
+        index = []
+        for nettext in Net.TOP:
+            index = [i for i in net_index if nettext.lower() in self.df.columns[i].lower()]
+            if index:
+                break
+        return index
 
     def _get_netbot_index(self):
         net_index = self._get_nets_index()
-        return [i for i in net_index if Net.BOT.lower() in self.df.columns[i].lower()]
+        index = []
+        for nettext in Net.BOT:
+            index = [i for i in net_index if nettext.lower() in self.df.columns[i].lower()]
+            if index:
+                break
+        return index
 
     def _get_means_index(self):
         """
@@ -1490,7 +1500,7 @@ class PptxChain(object):
         index_map = dict(self.index_map)
         chain = self._chain
         net_names = [k for k, v in dict(index_map).items() if v in net_labels]
-        net_views = chain._view_idxs(net_names)
+        net_views = chain._view_idxs(net_names, ci='c%')
         codes_in_nets = [re.findall('{(.*?)}', view)[i].split(',') for i, view in enumerate(net_views[1])]
         codes_in_net_bot = codes_in_nets[net_labels.index(net_bot_label)]
         codes_in_net_top = codes_in_nets[net_labels.index(net_top_label)]
