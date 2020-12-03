@@ -2,28 +2,23 @@
 
 import re
 from lxml import etree
-import warnings
 
 # Imports from Python-PPTX
 from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.util import (
-    Emu,
     Pt,
     Cm,
-    Inches)
+)
 
 try:
     from pptx import table
-except:
+except ImportError:
     from pptx.shapes import table
 
-from pptx.chart.data import ChartData
-from pptx.enum.chart import XL_CHART_TYPE
 from pptx.dml.color import RGBColor
 
 from enumerations import (
-    fill_type_dct,
     data_label_pos_dct,
     legend_pos_dct,
     tick_label_pos_dct,
@@ -35,7 +30,7 @@ from enumerations import (
 )
 
 from PptxDefaultsClass import PptxDefaults
-from PptxChainClass import float2String
+from PptxChainClass import float2string, auto_charttype, MAX_PIE_ELMS
 import pandas as pd
 import copy
 
@@ -60,14 +55,14 @@ def chartdata_from_dataframe(df, number_format="0%", xl_number_format='0.00%'):
         The ChartData instance created from the given dataframe.
     """
 
-    def get_parent(sub_categories, line, pos):
+    def get_parent(_categories, _line, pos):
         """
         Return the sub_category's parent given its lineage position.
         """
 
-        for subcat in sub_categories:
-            if subcat.label == line[pos]:
-                return subcat
+        for _cat in _categories:
+            if _cat.label == _line[pos]:
+                return _cat
 
     cd = CategoryChartData(number_format=number_format)
 
@@ -152,7 +147,7 @@ class PptxPainter(object):
 
     def __init__(self, path_to_presentation, slide_layout=None, shape_properties=None):
 
-        self.presentation  = Presentation(path_to_presentation) # TODO PptxPainter - Path checking # type: Presentation
+        self.presentation = Presentation(path_to_presentation)  # TODO PptxPainter - Path checking # type: Presentation
         if slide_layout is None:
             self.default_slide_layout = None
         else:
@@ -184,6 +179,16 @@ class PptxPainter(object):
                     'tables': {},
                     'side_tables': {},
                     }
+
+        self._auto_pie_max_elms = MAX_PIE_ELMS
+
+    @property
+    def auto_pie_max_elms(self):
+        return self._auto_pie_max_elms
+
+    @auto_pie_max_elms.setter
+    def auto_pie_max_elms(self, max_pie_elms):
+        self._auto_pie_max_elms = max_pie_elms
 
     @staticmethod
     def get_plot_values(plot):
@@ -238,7 +243,7 @@ class PptxPainter(object):
                     if number_format == '0%':
                         value = round(float(value) * 100, decimals)
 
-                        str_value = float2String(value) + '%'
+                        str_value = float2string(value) + '%'
                     else:
                         str_value = str(value)
                 else:
@@ -266,7 +271,7 @@ class PptxPainter(object):
         ----------
         plot: pptx.chart.plot._BasePlot
             An instance of a Chart object.
-        serie: int
+        series: int
             The serie where the data label should be edited
             chart.series[serie]
         point: int
@@ -326,6 +331,12 @@ class PptxPainter(object):
             A slide_items_string could look like: 'chart:pct,net'
             Separate multiple slide items with '+' eg. : 'chart:pct+side_table:net'
             One slide item type can only appear once in a slide_items_string.
+        decimal_separator : {'.', ','}
+            What to use as decimal separator when showing numbers in tables
+        pct_decimals : int
+            Number of decimals to show for percentages in tables
+        decimals : int
+            Number of decimals to show for numbers in tables
 
         Returns
         -------
@@ -344,7 +355,7 @@ class PptxPainter(object):
 
         """
 
-        valid_slide_items = ['chart','table','side_table']
+        valid_slide_items = ['chart', 'table', 'side_table']
         slide_items = re.sub(' +', '', slide_items)
         # TODO check for valid slide_items input
 
@@ -385,21 +396,25 @@ class PptxPainter(object):
                 sig_test = False
                 cell_items = slide_item.split(':')[1]
 
-                ''' 
-                Makes no sense to actually have 'test' as a cell_item.
-                Will remove it from cell_items and set flag sig_test as True
-                '''
-                cell_items = cell_items.split(',')
+                # Sig testing letters in chart labels
                 if 'test' in cell_items:
                     sig_test = True
                     pptx_chain.add_test_letter_to_column_labels()
                     pptx_chain.chart_df = pptx_chain.prepare_dataframe()
-                    cell_items.remove('test')
-                cell_items = ','.join(cell_items)
+                    _cell_items = cell_items.split(',')
+                    _cell_items.remove('test')
+                    cell_items = ','.join(_cell_items)
 
                 pptx_frame = pptx_chain.chart_df.get(cell_items)
                 if not pptx_frame().empty:
-                    chart_draft = self.draft_autochart(pptx_frame(), pptx_chain.chart_type)
+                    chart_type = pptx_chain.chart_type
+                    if chart_type == 'auto':
+                        array_style = pptx_frame.array_style
+                        chart_type = auto_charttype(pptx_frame.df,
+                                                    array_style,
+                                                    max_pie_elms=self.auto_pie_max_elms)
+                    chart_draft = self.draft_autochart(pptx_frame(), chart_type)
+                    chart_draft['likert_series'] = pptx_chain.get_likert(pptx_frame)
                     if sig_test:
                         chart_draft['sig_test_visible'] = True
                         chart_draft['sig_test_results'] = pptx_chain.sig_test
@@ -428,9 +443,9 @@ class PptxPainter(object):
         """
 
         # Find the side_table with the lowest 'left' number
-        table_max_left=12240000
-        table_width=0
-        for table, table_settings in self.slide_kwargs['side_tables'].iteritems():
+        table_max_left = 12240000
+        table_width = 0
+        for _table, table_settings in self.slide_kwargs['side_tables'].iteritems():
             if table_settings['left'] < table_max_left:
                 table_max_left = table_settings['left']
                 table_width = table_settings['width']
@@ -499,16 +514,16 @@ class PptxPainter(object):
             Removes requested keys from self.slide_kwargs
 
         """
-        if key=='all':
+        if key == 'all':
             for item in self.slide_kwargs.keys():
                 self.slide_kwargs[item].clear()
-        elif key=='charts':
+        elif key == 'charts':
             self.slide_kwargs['charts'].clear()
-        elif key=='textboxes':
+        elif key == 'textboxes':
             self.slide_kwargs['textboxs'].clear()
-        elif key=='tables':
+        elif key == 'tables':
             self.slide_kwargs['tables'].clear()
-        elif key=='side_tables':
+        elif key == 'side_tables':
             self.slide_kwargs['side_tables'].clear()
 
     def set_slide_layout(self, slide_layout):
@@ -560,12 +575,15 @@ class PptxPainter(object):
 
         Parameters
         ----------
-        settings: dict
+        settings : dict
             A dict of textbox settings, see dict default_textbox in pptx_defaults.py
-        text: basestring
+        text : str
             Text to show in textbox
-        Returns: self.textbox
+        Returns
         -------
+        dict
+            A dict of textbox settings, see dict default_textbox in pptx_defaults.py
+
         """
         if settings:
             draft = copy.deepcopy(settings)
@@ -581,13 +599,15 @@ class PptxPainter(object):
 
         Parameters
         ----------
-        text: basestring
+        text : str
             Text to show in textbox
-        Returns: dict
-            Returns settings for a textbox, which can be used for method queue_textbox
-        -------
-        """
 
+        Returns
+        -------
+        dict
+            Returns settings for a textbox, which can be used for method queue_textbox
+
+        """
         draft = copy.deepcopy(self.textbox_header)
         draft['text'] = text
 
@@ -600,13 +620,14 @@ class PptxPainter(object):
 
         Parameters
         ----------
-        text: basestring
-            Text to show in textbox
-        Returns: dict
-            Returns settings for a textbox, which can be used for method queue_textbox
-        -------
-        """
+        text : str
 
+        Returns
+        -------
+        dict
+            Returns settings for a textbox, which can be used for method queue_textbox
+
+        """
         draft = copy.deepcopy(self.textbox_footer)
         draft['text'] = text
 
@@ -614,18 +635,20 @@ class PptxPainter(object):
 
     def draft_chart(self, dataframe, settings=None):
         """
-        Sets attribute self.chart
+        Draft a chart supplying the Pandas dataframe dataframe and chart settings
 
         Parameters
         ----------
-        settings: dict
-            A dict of chart settings, see dict default_chart in pptx_defaults.py
-        dataframe: pandas.core.frame.DataFrame
+        dataframe : pandas.core.frame.DataFrame
             the pandas.dataframe to chart
-        Returns: self.chart
+        settings : dict
+            A dict of chart settings, see dict default_chart in pptx_defaults.py
+        Returns
         -------
-        """
+        dict
+            A dict of chart settings, see dict default_chart in pptx_defaults.py
 
+        """
         if settings:
             draft = copy.deepcopy(settings)
         else:
@@ -640,11 +663,15 @@ class PptxPainter(object):
 
         Parameters
         ----------
-        dataframe: pandas.core.frame.DataFrame
-        chart_type: str
+        dataframe : pandas.core.frame.DataFrame
+            the pandas.dataframe to chart
+        chart_type : str
             A string corresponding to the keys in Dict "chart_type_dct" from "enumerations.py"
-        Returns: self.chart
+        Returns
         -------
+        dict
+            A dict of chart settings, see dict default_chart in pptx_defaults.py
+
         """
         valid_chart_types = ['pie',
                              'bar_clustered',
@@ -658,8 +685,8 @@ class PptxPainter(object):
         if not isinstance(chart_type, basestring):
             raise ValueError('The chart_type argument must be a string')
         if chart_type not in valid_chart_types:
-                error_msg ='Invalid chart_type {}. Valid chart types are {}'
-                raise ValueError(error_msg.format(chart_type, valid_chart_types))
+            error_msg = 'Invalid chart_type {}. Valid chart types are {}'
+            raise ValueError(error_msg.format(chart_type, valid_chart_types))
 
         # Make draft
         if chart_type == 'pie':
@@ -686,18 +713,19 @@ class PptxPainter(object):
 
     def draft_table(self, dataframe, text=None, settings=None):
         """
-        Sets attribute self.tables
+        Draft a table
 
         Parameters
         ----------
-        settings: dict
-            A dict of chart settings, see dict default_chart in pptx_defaults.py
-        dataframe: pandas.core.frame.DataFrame
-            the pandas.dataframe to make a table of
-        Returns: self.tables
-        -------
-        """
+        dataframe : pandas.core.frame.DataFrame
+        text : str
+        settings : dict
 
+        Returns
+        -------
+        dict
+
+        """
         if settings:
             draft = copy.deepcopy(settings)
         else:
@@ -708,16 +736,17 @@ class PptxPainter(object):
 
     def draft_side_table(self, dataframe):
         """
-        Draft a table
+        Draft a side table
 
         Parameters
         ----------
-        dataframe: pandas.core.frame.DataFrame
-            the pandas.dataframe to make a table of
-        Returns: self.tables
+        dataframe : pandas.core.frame.DataFrame
+            the pandas.dataframe to show in the table
+        Returns
         -------
-        """
+        dict
 
+        """
         draft = copy.deepcopy(self.side_table)
         draft['dataframe'] = dataframe
 
@@ -811,25 +840,25 @@ class PptxPainter(object):
                 If no Slide layout is specified then self.default_slide_layout will be used
         :return:
         """
-        slide= self.add_slide(slide_layout=slide_layout)
+        slide = self.add_slide(slide_layout=slide_layout)
         kwargs = self.slide_kwargs
         for _type, draft in kwargs.iteritems():
             # Add text boxes
             if _type == 'textboxs':
                 for name, settings in draft.iteritems():
-                    textbox=self.add_textbox(slide, **settings)
+                    _textbox = self.add_textbox(slide, **settings)
             # Add charts
             if _type == 'charts':
                 for name, settings in draft.iteritems():
-                    chart=self.add_chart(slide, **settings)
+                    _chart = self.add_chart(slide, **settings)
             # Add tables
             if _type == 'tables':
                 for name, settings in draft.iteritems():
-                    table=self.add_table(slide, **settings)
+                    _table = self.add_table(slide, **settings)
             # Add side tables
             if _type == 'side_tables':
                 for name, settings in draft.iteritems():
-                    side_table=self.add_table(slide, **settings)
+                    _side_table = self.add_table(slide, **settings)
         return slide
 
     def _add(self, shape, settings, name=None):
@@ -842,10 +871,10 @@ class PptxPainter(object):
         :return:
         """
 
-        shapes='{}s'.format(shape)
+        shapes = '{}s'.format(shape)
 
         if name is None:
-            name='{}{}'.format(shape, len(self.slide_kwargs[shapes]) + 1)
+            name = '{}{}'.format(shape, len(self.slide_kwargs[shapes]) + 1)
 
         self.slide_kwargs[shapes][name] = settings.copy()
 
@@ -857,7 +886,7 @@ class PptxPainter(object):
                             margin_bottom=Cm(0.1),
                             vertical_alignment='top',
                             shading=False,
-                            shading_color=(0,0,0)):
+                            shading_color=(0, 0, 0)):
 
         cell.margin_left = margin_left
         cell.margin_right = margin_right
@@ -879,75 +908,81 @@ class PptxPainter(object):
 
                   show_side_member=True,
                   side_member_column_width=Cm(1),
-                  side_member_textframe_kwargs=None, # type: dict
-                  side_member_cell_kwargs=None, # type: dict
+                  side_member_textframe_kwargs=None,  # type: dict
+                  side_member_cell_kwargs=None,  # type: dict
 
                   show_top_member=True,
                   top_member_row_height=Cm(1),
-                  top_member_textframe_kwargs=None, # type: dict
+                  top_member_textframe_kwargs=None,  # type: dict
                   top_member_cell_kwargs=None,  # type: dict
 
                   values_row_height=Cm(1),
                   values_column_width=Cm(2),
-                  values_textframe_kwargs=None, # type: dict
+                  values_textframe_kwargs=None,  # type: dict
                   values_cell_kwargs=None,  # type: dict
                   values_prefix=None,
-                  values_prefix_columns='all', # or a list of column indexes
+                  values_prefix_columns='all',  # or a list of column indexes
                   values_suffix=None,
-                  values_suffix_columns = 'all',  # or a list of column indexes
+                  values_suffix_columns='all',  # or a list of column indexes
 
-                  top_left_corner_textframe_kwargs=None, # type: dict
+                  top_left_corner_textframe_kwargs=None,  # type: dict
                   top_left_corner_cell_kwargs=None,  # type: dict
                   ):
         # -------------------------------------------------------------------------
 
         rows = len(dataframe.index)
-        if show_top_member: rows +=1
+        if show_top_member:
+            rows += 1
         cols = len(dataframe.columns)
-        if show_side_member: cols +=1
+        if show_side_member:
+            cols += 1
 
         shapes = slide.shapes
-        table = shapes.add_table(rows, cols, left, top, width, height).table
+        _table = shapes.add_table(rows, cols, left, top, width, height).table
 
         # row specific properties
         if show_side_member:
-            table.columns[0].width = side_member_column_width
+            _table.columns[0].width = side_member_column_width
             row_labels = list(dataframe.index)
             for idx, row_label in enumerate(row_labels):
                 row_idx = idx + 1 if show_top_member else idx
-                cell = table.cell(row_idx, 0)
-                PptxPainter.set_cell_properties(cell,**side_member_cell_kwargs)
+                cell = _table.cell(row_idx, 0)
+                PptxPainter.set_cell_properties(cell, **side_member_cell_kwargs)
                 PptxPainter.add_textframe(cell, row_label, **side_member_textframe_kwargs)
 
         # col specific properties
         if show_top_member:
-            table.rows[0].height = top_member_row_height
+            _table.rows[0].height = top_member_row_height
             col_labels = list(dataframe.columns)
             for idx, col_label in enumerate(col_labels):
                 col_idx = idx + 1 if show_side_member else idx
-                cell = table.cell(0, col_idx)
-                PptxPainter.set_cell_properties(cell,**top_member_cell_kwargs)
+                cell = _table.cell(0, col_idx)
+                PptxPainter.set_cell_properties(cell, **top_member_cell_kwargs)
                 PptxPainter.add_textframe(cell, col_label, **top_member_textframe_kwargs)
 
         # add values
         df_cols_range = range(len(dataframe.columns))
-        if values_prefix_columns =='all': values_prefix_columns = df_cols_range
-        if values_suffix_columns == 'all': values_suffix_columns = df_cols_range
+        if values_prefix_columns == 'all':
+            values_prefix_columns = df_cols_range
+        if values_suffix_columns == 'all':
+            values_suffix_columns = df_cols_range
         table_values = dataframe.values
         datatypes = dataframe.dtypes.tolist()
         for i, val in enumerate(table_values):
-            row_idx = i +1 if show_top_member else i
-            table.rows[row_idx].height = values_row_height
+            row_idx = i + 1 if show_top_member else i
+            _table.rows[row_idx].height = values_row_height
             for x, subval in enumerate(val):
                 col_idx = x + 1 if show_side_member else x
-                table.columns[col_idx].width = values_column_width
-                cell = table.cell(row_idx, col_idx)
+                _table.columns[col_idx].width = values_column_width
+                cell = _table.cell(row_idx, col_idx)
                 PptxPainter.set_cell_properties(cell, **values_cell_kwargs)
-                if subval <> '':
+                if subval != '':
                     prefix = None
-                    if x in values_prefix_columns: prefix = values_prefix
+                    if x in values_prefix_columns:
+                        prefix = values_prefix
                     suffix = None
-                    if x in values_suffix_columns: suffix = values_suffix
+                    if x in values_suffix_columns:
+                        suffix = values_suffix
                     if datatypes[x].kind == 'i':
                         subval = int(subval)
                     subval = (prefix or '') + str(subval) + (suffix or '')
@@ -971,11 +1006,11 @@ class PptxPainter(object):
 
         # add question label
         if show_side_member and show_top_member:
-            cell = table.cell(0, 0)
-            PptxPainter.set_cell_properties(cell,**top_left_corner_cell_kwargs)
+            cell = _table.cell(0, 0)
+            PptxPainter.set_cell_properties(cell, **top_left_corner_cell_kwargs)
             PptxPainter.add_textframe(cell, text, **top_left_corner_textframe_kwargs)
 
-        return table
+        return _table
 
     def add_chart(self, slide,
                   dataframe=None,
@@ -1021,7 +1056,7 @@ class PptxPainter(object):
                   vaxis_font_kwargs=None,  # type: dict
 
                   # Fix yaxis (False, 'center', ?). Currently only an option for bar chart
-                  fix_yaxis = False,
+                  fix_yaxis=False,
 
                   # Datalabel properties
                   plot_has_data_labels=True,
@@ -1041,8 +1076,15 @@ class PptxPainter(object):
                   xl_number_format='0.00%',
 
                   # Sig test
-                  sig_test_visible = False,
-                  sig_test_results = None,
+                  sig_test_visible=False,
+                  sig_test_results=None,
+
+                  # Likert scales
+                  likert_colours=None,
+                  likert_series=None,
+
+                  # Reverse bar_chart dataframe
+                  reverse_dataframe=False,
                   ):
         """
         Adds a chart to the given slide and sets all properties for the chart
@@ -1099,12 +1141,13 @@ class PptxPainter(object):
         """
 
         # Switch rows and columns if bar chart
-        if chart_type == "bar_clustered":
-            dataframe = dataframe[::-1]
-            dataframe = dataframe[dataframe.columns[::-1]]
-        # Switch rows if bar stacked
-        if chart_type == "bar_stacked_100":
-            dataframe = dataframe[::-1]
+        if reverse_dataframe:
+            if chart_type == "bar_clustered":
+                dataframe = dataframe[::-1]
+                dataframe = dataframe[dataframe.columns[::-1]]
+            # Switch rows if bar stacked
+            if chart_type == "bar_stacked_100":
+                dataframe = dataframe[::-1]
 
         # =============================== chart data from pandas dataframe
         chart_data = chartdata_from_dataframe(dataframe, number_format=number_format, xl_number_format=number_format)
@@ -1207,13 +1250,16 @@ class PptxPainter(object):
                 data_labels.number_format = data_labels_num_format
             data_labels.number_format_is_linked = data_labels_num_format_is_linked
 
-            if not sig_test_results: sig_test_visible = False
-            if len(dataframe.columns) == 1: sig_test_visible = False
+            if not sig_test_results:
+                sig_test_visible = False
+            if len(dataframe.columns) == 1:
+                sig_test_visible = False
             if sig_test_visible:
                 self.show_data_labels(plot, decimals=0)
                 for serie, column in enumerate(sig_test_results[::-1]):
                     for point, test_result in enumerate(column[::-1]):
-                        if not isinstance(test_result, basestring): continue
+                        if not isinstance(test_result, basestring):
+                            continue
                         for text in ['*.',
                                      '*',
                                      '**.',
@@ -1223,18 +1269,48 @@ class PptxPainter(object):
                                      '\'@H\'.',
                                      '\'@H\'',
                                      ]:
-                            test_result = test_result.replace(text,'')
-                        if test_result == '': continue
-                        text =  u' ({})'.format(test_result)
+                            test_result = test_result.replace(text, '')
+                        if test_result == '':
+                            continue
+                        text = u' ({})'.format(test_result)
                         self.edit_datalabel(plot, serie, point, text, prepend=False, append=True)
 
-        # # ================================ series
-        # for i, ser in enumerate(dataframe.columns):
-        #     ser = plot.series[i]
-        #     try:
-        #         ser.smooth = smooth_line
-        #     except:
-        #         pass
+        # ======================================== colours
+        try:
+            col_neg = likert_colours['negative']
+            col_pos = likert_colours['positive']
+            col_neu = likert_colours['neutral']
+            col_dk = likert_colours['dk']
+            ser_neg = likert_series['negative']
+            ser_pos = likert_series['positive']
+            ser_neu = likert_series['neutral']
+            ser_dk = likert_series['dk']
+        except (TypeError, KeyError):
+            pass
+        else:
+            valid_colours = len(ser_neg) <= len(col_neg) and \
+                            len(ser_pos) <= len(col_pos) and \
+                            len(ser_neu) <= len(col_neu) and \
+                            len(ser_dk) <= len(col_dk) and \
+                            len(ser_neg+ser_pos+ser_neu+ser_dk) == len(dataframe.columns)
+
+            # only supporting colouring series
+            if len(dataframe.columns) > 1 and valid_colours:
+                if ser_neg[0] < ser_pos[0]:
+                    likert_series['positive'] = ser_pos[::-1]
+                else:
+                    likert_series['negative'] = ser_neg[::-1]
+
+                for k, v in likert_series.items():
+                    colours = likert_colours[k]
+                    for i, ser in enumerate(v):
+
+                        colour = colours[i]
+                        ser = plot.series[ser]
+                        fill = ser.format.fill
+                        fill.solid()
+
+                        fill.fore_color.rgb = RGBColor(*colour)
 
         return chart
 
@@ -1256,7 +1332,7 @@ class PptxPainter(object):
                     textbox_fill_solid=False,
                     textbox_color=(100, 0, 0),
                     textbox_color_brightness=0,
-                    textframe_kwargs=None, # type: dict
+                    textframe_kwargs=None,  # type: dict
                     ):
         """
         Adds a text box to the given slide and sets all properties for the text box
@@ -1303,21 +1379,27 @@ class PptxPainter(object):
                       margin_bottom=Cm(0.13),
                       vertical_alignment='middle',
                       horizontal_alignment='left',
-                      font_kwargs=None # type: dict
+                      font_kwargs=None  # type: dict
                       ):
         """
         Adds a textframe to the given textbox and sets all properties for the text frame
 
-        :param textbox:
-        :param text:
-        :param fit_text:
-        :param margin_left:
-        :param margin_right:
-        :param margin_top:
-        :param margin_bottom:
-        :param vertical_alignment:
-        :param horizontal_alignment:
-        :return: textframe
+        Parameters
+        ----------
+        textbox
+        text
+        fit_text
+        margin_left
+        margin_right
+        margin_top
+        margin_bottom
+        vertical_alignment
+        horizontal_alignment
+        font_kwargs
+
+        Returns
+        -------
+
         """
 
         textframe = textbox.text_frame
@@ -1338,7 +1420,7 @@ class PptxPainter(object):
         # If textbox has no attribute width we will not be able to use textframe.fit_text
         try:
             textbox.width
-        except:
+        except AttributeError:
             fit_text = False
 
         # ============================== Paragraph
@@ -1374,25 +1456,36 @@ class PptxPainter(object):
                  font_color_brightness=0,
                  font_color_theme=None):
 
-        '''
+        """
         Does all font settings on the Font object
-        :param
-        font_obj: Object, The Font Instance
-        textframe: Need a textframe object, if fit_text==True
-        fit_text: Bool - True = Scale the font size to fit the text box. Requires a textframe
-        font_name: Str
-        font_file: Str - Relative path to a font file
-        font_size: Int
-        font_italic: Bool
-        font_underline: Bool
-        font_color: Tuple of Int, (R, G, B)
-        :return: font, The Font Instance
-        '''
 
+        Parameters
+        ----------
+        font_obj : pptx.text.text.Font
+            The font instance
+        textframe : pptx.text.text.TextFrame
+            Need a textframe object, if fit_text==True
+        fit_text : bool
+            If True, Scale the font size to fit the text box. Requires a textframe
+        font_name : str
+        font_size : int
+        font_bold : bool
+        font_italic : bool
+        font_underline : bool
+        font_color : tuple of int
+        font_color_brightness :
+        font_color_theme :
+
+        Returns
+        -------
+        object
+            The font instance
+
+        """
         font = font_obj
 
         # Resize text to fit textframe
-        if not textframe == None and fit_text == True:
+        if textframe is not None and fit_text is True:
             # if font_name == "Raleway":
             #     font_file = os.path.join(thisdir, default_font_file)
             #     textframe.fit_text(font_family=font_name, max_size=font_size, bold=font_bold,
@@ -1407,7 +1500,7 @@ class PptxPainter(object):
         font.underline = font_underline
 
         # Font name/size/bold/italic if not set with textframe.fit_text
-        if fit_text == False:
+        if not fit_text:
             font.name = font_name
             font.size = Pt(font_size)
             font.bold = font_bold
@@ -1432,7 +1525,7 @@ class PptxPainter(object):
         :return: None, will edit the plotArea in place
         """
 
-        if legend=='right':
+        if legend == 'right':
             xml_string = """<c:layout xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
             <c:manualLayout>
             <c:layoutTarget val="inner"/>
@@ -1463,7 +1556,7 @@ class PptxPainter(object):
     @staticmethod
     def add_net(slide,
                 df,
-                left=Cm(27.55), top=Cm(3.69), width=Cm(1.8), # width for 1 column
+                left=Cm(27.55), top=Cm(3.69), width=Cm(1.8),  # width for 1 column
                 height=Cm(10.68),
                 margin_left=0.0,
                 margin_right=0.0,
@@ -1484,23 +1577,22 @@ class PptxPainter(object):
                 top_member_font_name='Trebuchet MS',
                 top_member_font_bold=False,
                 top_member_font_italic=False,
-                top_member_font_color=(0,0,0),
+                top_member_font_color=(0, 0, 0),
                 top_member_font_para_alignment=paragraph_alignment_pos_dct['center'],
                 top_member_vert_alignment=vertical_alignment_pos_dct['middle'],
                 top_member_shading=True,
-                top_member_shading_color=(255,255,255),
+                top_member_shading_color=(255, 255, 255),
 
                 values_font_size=8,
                 values_font_name='Trebuchet MS',
                 values_font_bold=False,
                 values_font_italic=False,
-                values_font_color=(0,0,0),
+                values_font_color=(0, 0, 0),
                 values_font_para_alignment=paragraph_alignment_pos_dct['center'],
                 values_vert_alignment=vertical_alignment_pos_dct['top'],
                 values_shading=True,
-                values_shading_shading_color=(255,255,255),
+                values_shading_shading_color=(255, 255, 255),
                 ):
-        #-------------------------------------------------------------------------
 
         rows = len(df.index)
         cols = len(df.columns)
@@ -1510,7 +1602,7 @@ class PptxPainter(object):
         if rows == 1:
             top = top + int(round(height * (0.3 / rows)) - header_row_height)
         else:
-            top = top + int(round(height* (0.45/rows)) - header_row_height)
+            top = top + int(round(height * (0.45/rows)) - header_row_height)
         plot_area = int(round(height * 0.9)) - Cm(0.4)
         value_row_height = int(round(plot_area / rows))
         height = header_row_height + rows * value_row_height
@@ -1519,36 +1611,36 @@ class PptxPainter(object):
         width = width * cols
 
         shapes = slide.shapes
-        table = shapes.add_table(rows+1, cols, left, top, width, height).table
-        table.horz_banding = True
-        #isolate seperate sections of a table
+        _table = shapes.add_table(rows + 1, cols, left, top, width, height).table
+        _table.horz_banding = True
+        # isolate seperate sections of a table
         row_labels = list(df.index)
         col_labels = list(df.columns)
         table_values = df.values
-        #question_label = df.index.get_level_values(level=0)[0]
+        # question_label = df.index.get_level_values(level=0)[0]
 
-        #table specific properties
+        # table specific properties
         for i in range(0, rows + 1):
             if i == 0:
-                table.rows[i].height = header_row_height
+                _table.rows[i].height = header_row_height
             else:
-                table.rows[i].height = value_row_height
+                _table.rows[i].height = value_row_height
 
             for x in range(0, cols):
 
-                cell = table.cell(i, x)
+                cell = _table.cell(i, x)
 
-                cell.margin_left= Cm(margin_left)
+                cell.margin_left = Cm(margin_left)
                 cell.margin_right = Cm(margin_right)
                 cell.margin_top = Cm(margin_top)
                 cell.margin_bottom = Cm(margin_bottom)
 
-        #add col labels
+        # add col labels
         for idx, col_label in enumerate(col_labels):
 
-            #table.columns[0].width = Emu(first_column_width)
+            # table.columns[0].width = Emu(first_column_width)
 
-            cell = table.cell(0, idx)
+            cell = _table.cell(0, idx)
             cell.vertical_anchor = top_member_vert_alignment
 
             if top_member_shading:
@@ -1559,7 +1651,7 @@ class PptxPainter(object):
                     cfill = cell.fill
                     cfill.solid()
                     cfill.fore_color.rgb = RGBColor(*top_member_shading_color)
-                    #cfill.fore_color.brightness = textbox_color_brightness
+                    # cfill.fore_color.brightness = textbox_color_brightness
 
             textframe = cell.text_frame
             paragraph = textframe.paragraphs[0]
@@ -1572,11 +1664,11 @@ class PptxPainter(object):
 
             cell.text = col_label
 
-        #add values
+        # add values
         for i, val in enumerate(table_values):
             for x, subval in enumerate(val):
 
-                cell = table.cell(i+1, x)
+                cell = _table.cell(i + 1, x)
                 cell.vertical_anchor = values_vert_alignment
                 cell.margin_top = Cm(0.1)
 
@@ -1597,6 +1689,5 @@ class PptxPainter(object):
                 paragraph.font.italic = values_font_italic
                 paragraph.font.color.rgb = RGBColor(*values_font_color)
                 paragraph.alignment = values_font_para_alignment
-                #paragraph.line_spacing = Pt(6)
+                # paragraph.line_spacing = Pt(6)
                 cell.text = str(subval)
-
