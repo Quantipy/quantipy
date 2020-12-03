@@ -7,7 +7,8 @@ from quantipy.core.tools.dp.prep import start_meta, condense_dichotomous_set
 import os
 
 def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None,
-                   dates_as_strings=False, text_key="main"):
+                   dates_as_strings=False, values_from_MRS_columns=True,
+                   text_key="main"):
     """ Parses a .sav file and returns a touple of Data and Meta
 
         Parameters
@@ -36,6 +37,7 @@ dates_as_strings : bool, default=False
     data = extract_sav_data(filepath, ioLocale=ioLocale, ioUtf8=ioUtf8)
     meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale,
                                   ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings,
+                                  values_from_MRS_columns=values_from_MRS_columns,
                                   text_key=text_key)
     return (meta, data)
 
@@ -60,9 +62,7 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
 
 def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                      ioUtf8=True, dichot=None, dates_as_strings=False,
-                     text_key="main"):
-
-    if dichot is None: dichot = {'yes': 1, 'no': 0}
+                     values_from_MRS_columns=True, text_key="main"):
 
     """ see parse_sav_file doc """
     with sr.SavHeaderReader(sav_file, ioLocale=ioLocale, ioUtf8=ioUtf8) as header:
@@ -188,13 +188,21 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
 
         elif metadata.multRespDefs[mrset]['setType'] == 'D':
             # Generate the delimited set from the dichotomous set
-            dls = condense_dichotomous_set(data[varNames], values_from_labels=False, **dichot)
+            if dichot is None:
+                dichot = {'yes': 1, 'no': 0}
+            c_val = metadata.multRespDefs[mrset].get('countedValue', None)
+            if c_val:
+                dichot['yes'] = int(c_val)
+            dls, vals = condense_dichotomous_set(
+                data[varNames], values_from_labels=values_from_MRS_columns,
+                **dichot
+            )
             # Get value object
             values = [{
                         'text': {text_key: metadata.varLabels[varName]},
-                        'value': int(v)
+                        'value': int(vals[v])
                     }
-                    for v, varName in enumerate(varNames, start=1)]
+                    for v, varName in enumerate(varNames, start=0)]
         else:
             continue
         # Insert the delimited set into data

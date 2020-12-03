@@ -293,6 +293,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
     df = df.applymap(lambda x: x if x in [yes, no] else no)
     # Convert to delimited set
     df_str = df.astype('str')
+    values = []
     for v, col in enumerate(df_str.columns, start=1):
         if values_from_labels:
             if values_regex is None:
@@ -307,6 +308,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
                             values_regex, col))
         else:
             v = str(v)
+        values.append(v)
         # Convert to categorical set
         df_str[col].replace(
             {
@@ -351,7 +353,7 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
         series = series.str.replace(';','').astype('float')
         return series
 
-    return series
+    return series, values
 
 def split_series(series, sep, columns=None):
     """
@@ -888,7 +890,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = pd.DataFrame(0, index=series.index, columns=cols)
         for key, idx in index_mapper.iteritems():
             ds[str(key)].loc[idx] = 1
-        ds2 = condense_dichotomous_set(ds)
+        ds2, _ = condense_dichotomous_set(ds)
         org_name = series.name
         series = join_delimited_set_series(series, ds2, append)
         ## Remove potential duplicate values
@@ -903,7 +905,7 @@ def recode_from_index_mapper(meta, series, index_mapper, append):
         ds = ds[cols]
         ds.columns = [str(i) for i in ds.columns]
         # Reconstruct the dichotomous set
-        series = condense_dichotomous_set(ds)
+        series, _ = condense_dichotomous_set(ds)
 
     elif qtype in ['single', 'int', 'float']:
         for key, idx in index_mapper.iteritems():
