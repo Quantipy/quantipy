@@ -44,6 +44,8 @@ def quantipy_from_ascribe(path_xml, path_txt, text_key='main'):
                    "and will be skipped.") % (name)
             warnings.warn(msg)
             continue
+        elif not isinstance(var['Answers']['Answer'], list):
+            var['Answers']['Answer'] = [var['Answers']['Answer']]
         coded_names.append(name)
         coded_from = var['FormTexts']['FormText']['Title']
         var_text = var['FormTexts']['FormText']['Text']
