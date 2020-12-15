@@ -193,7 +193,7 @@ class Rules(object):
                         self.x_slicer = r_slicer
                     else:
                         self.y_slicer = r_slicer
-                    return None
+                    continue
                 # get df-desc-slice to sort on
                 elif sort_on_stat:
                     f = self._get_descriptive_via_stack(col_key, sort_on)
