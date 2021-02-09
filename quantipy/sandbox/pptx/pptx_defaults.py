@@ -3,6 +3,7 @@
 from collections import OrderedDict
 
 import pandas as pd
+import copy
 
 # ----------------------------------------------------------------------------
 # Font defaults
@@ -62,7 +63,7 @@ default_textbox = OrderedDict([
     ('textbox_fill_solid', False),
     ('textbox_color', (100, 0, 0)),
     ('textbox_color_brightness', 0),
-    ('textframe_kwargs', default_textframe.copy()),
+    ('textframe_kwargs', copy.deepcopy(default_textframe)),
 ])
 
 # ---------------------------------------------------------------------------
@@ -86,17 +87,17 @@ default_table = OrderedDict([
 
     ('show_side_member', True),
     ('side_member_column_width', 2160000),  # Cm(6)
-    ('side_member_textframe_kwargs', default_textframe.copy()),
+    ('side_member_textframe_kwargs', copy.deepcopy(default_textframe)),
     ('side_member_cell_kwargs', default_cell_kwargs.copy()),
 
     ('show_top_member', True),
     ('top_member_row_height', 360000),  # Cm(1)
-    ('top_member_textframe_kwargs', default_textframe.copy()),
+    ('top_member_textframe_kwargs', copy.deepcopy(default_textframe)),
     ('top_member_cell_kwargs', default_cell_kwargs.copy()),
 
     ('values_row_height', 360000),  # Cm(1)
     ('values_column_width', 720000),  # Cm(2)
-    ('values_textframe_kwargs', default_textframe.copy()),
+    ('values_textframe_kwargs', copy.deepcopy(default_textframe)),
     ('values_cell_kwargs', default_cell_kwargs.copy()),
     ('values_prefix', None),
     ('values_prefix_columns', 'all'),
@@ -104,20 +105,20 @@ default_table = OrderedDict([
     ('values_suffix', None),
     ('values_suffix_columns', 'all'),
 
-    ('top_left_corner_textframe_kwargs', default_textframe.copy()),
+    ('top_left_corner_textframe_kwargs', copy.deepcopy(default_textframe)),
     ('top_left_corner_cell_kwargs', default_cell_kwargs.copy()),
 ])
 
-default_side_table = default_table.copy()
+default_side_table = copy.deepcopy(default_table)
 default_side_table['show_side_member'] = False
 default_side_table['values_column_width'] = 648000  # Cm(1.8)
 default_side_table['top_member_row_height'] = 612000  # Cm(1.7)
-default_side_table['values_textframe_kwargs'] = default_textframe.copy()
+default_side_table['values_textframe_kwargs'] = copy.deepcopy(default_textframe)
 default_side_table['values_textframe_kwargs']['horizontal_alignment'] = 'center'
 default_side_table['values_textframe_kwargs']['font_kwargs'] = default_font.copy()
 default_side_table['values_textframe_kwargs']['font_kwargs']['font_size'] = 8
 
-default_side_table['top_member_textframe_kwargs'] = default_textframe.copy()
+default_side_table['top_member_textframe_kwargs'] = copy.deepcopy(default_textframe)
 default_side_table['top_member_textframe_kwargs']['horizontal_alignment'] = 'center'
 default_side_table['top_member_textframe_kwargs']['font_kwargs'] = default_font.copy()
 default_side_table['top_member_textframe_kwargs']['font_kwargs']['font_size'] = 8
@@ -140,7 +141,7 @@ default_chart = OrderedDict([
     # Title
     ('has_chart_title', False),
     ('titletext', None),
-    ('textframe_kwargs', default_textframe.copy()),
+    ('textframe_kwargs', copy.deepcopy(default_textframe)),
 
     # Legend properties
     ('has_legend', False),
@@ -196,13 +197,13 @@ default_chart = OrderedDict([
 
 # --------------------------
 # Bar_Clustered
-default_chart_bar = default_chart.copy()
+default_chart_bar = copy.deepcopy(default_chart)
 # fix y axis (False, 'center'), Currently only an option for bar chart, legend is not available if used.
 default_chart_bar['fix_yaxis'] = False
 
 # --------------------------
 # Bar_Stacked_100%
-default_chart_bar_stacked100 = default_chart.copy()
+default_chart_bar_stacked100 = copy.deepcopy(default_chart)
 default_chart_bar_stacked100['chart_type'] = 'bar_stacked_100'
 # Legend properties
 default_chart_bar_stacked100['has_legend'] = True
@@ -212,10 +213,23 @@ default_chart_bar_stacked100['data_labels_position'] = 'center'
 # Plot properties
 # default_chart_bar_stacked100['plot_vary_by_cat'] = True
 default_chart_bar_stacked100['plot_overlap'] = 100
+# Colour settings for sequential colouring of likert scales
+# From darkest to lightest
+default_chart_bar_stacked100['likert_colours'] = {'positive': [(0,163,160), (0,183,180)],
+                                                  'negative': [(235,79,62), (255,99,82)],
+                                                  'neutral': [(154,147,168)],
+                                                  'dk': [(198,193,209)],
+                                                  }
+
+default_chart_bar_stacked100['likert_series'] = {'positive': [],
+                                                  'negative': [],
+                                                  'neutral': [],
+                                                  'dk': [],
+                                                  }
 
 # ---------------------------
 # Line
-default_chart_line = default_chart.copy()
+default_chart_line = copy.deepcopy(default_chart)
 default_chart_line['chart_type'] = 'line'
 # Legend properties
 default_chart_line['legend_position'] = 'bottom'
@@ -231,7 +245,7 @@ default_chart_line['smooth_line'] = False
 
 # ----------------------------
 # Column
-default_chart_column = default_chart.copy()
+default_chart_column = copy.deepcopy(default_chart)
 default_chart_column['chart_type'] = 'column_clustered'
 # Legend properties
 default_chart_column['legend_position'] = 'bottom'
@@ -244,7 +258,7 @@ default_chart_column['plot_overlap'] = -10
 
 # ---------------------------
 # Pie
-default_chart_pie = default_chart.copy()
+default_chart_pie = copy.deepcopy(default_chart)
 default_chart_pie['chart_type'] = 'pie'
 # Legend properties
 default_chart_pie['has_legend'] = True
@@ -255,12 +269,12 @@ default_chart_pie['plot_vary_by_cat'] = True
 
 # ----------------------------
 # Question_text-dict for default_slide_kwargs
-header_shape = default_textbox.copy()
+header_shape = copy.deepcopy(default_textbox)
 header_shape['left'] = 777600
 header_shape['top'] = 1026000
 header_shape['width'] = 10634400
 header_shape['height'] = 468000
-header_shape['textframe_kwargs'] = default_textframe.copy()
+header_shape['textframe_kwargs'] = copy.deepcopy(default_textframe)
 header_shape['textframe_kwargs']['font_kwargs'] = default_font.copy()
 header_shape['textframe_kwargs']['font_kwargs']['font_size']=11
 header_shape['textframe_kwargs']['font_kwargs']['font_bold']=True
@@ -268,12 +282,12 @@ header_shape['textframe_kwargs']['font_kwargs']['font_italic']=True
 
 # ----------------------------
 # Base_description-dict for default_slide_kwargs
-footer_shape = default_textbox.copy()
+footer_shape = copy.deepcopy(default_textbox)
 footer_shape['left'] = 777600
 footer_shape['top'] = 5652000
 footer_shape['width'] = 10634400
 footer_shape['height'] = 396000
-footer_shape['textframe_kwargs'] = default_textframe.copy()
+footer_shape['textframe_kwargs'] = copy.deepcopy(default_textframe)
 footer_shape['textframe_kwargs']['font_kwargs'] = default_font.copy()
 footer_shape['textframe_kwargs']['font_kwargs']['font_bold'] = True
 

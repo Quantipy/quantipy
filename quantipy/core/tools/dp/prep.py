@@ -346,12 +346,12 @@ def condense_dichotomous_set(df, values_from_labels=True, sniff_single=False,
 
     if df.dropna().size==0:
         # No responses are known, return filled with NaN
-        return series
+        return series, values
 
     if sniff_single and df.sum(axis=1).max()==1:
         # Convert to float
         series = series.str.replace(';','').astype('float')
-        return series
+        return series, values
 
     return series, values
 
