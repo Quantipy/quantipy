@@ -3818,6 +3818,7 @@ class DataSet(object):
                 droped_cases = cases_before - cases_after
                 msg = '%s duplicated case(s) dropped, %s cases remaining'
                 print msg % (droped_cases, cases_after)
+            self._data.reset_index(drop=True, inplace=True)
         return None
 
     @verify(variables={'id_key_name': 'columns', 'multiplier': 'columns'})
@@ -6685,6 +6686,8 @@ class DataSet(object):
             df = self[self.take(condition), name].copy()
         else:
             df = self._data.copy()
+        if isinstance(df, pd.Series):
+            df = pd.DataFrame(df)
         for n in name:
             empty_items = [i for i in self.unroll(n)
                 if df[i].value_counts().sum() == 0]
