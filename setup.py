@@ -4,7 +4,7 @@
 import sys
 from setuptools import setup, find_packages
 
-versions = dict(numpy='1.13.0',
+versions = dict(numpy='1.11.3',
                 scipy='0.18.1',
                 pandas='0.19.2',
                 ftfy='4.4.3')
