@@ -6686,6 +6686,8 @@ class DataSet(object):
             df = self[self.take(condition), name].copy()
         else:
             df = self._data.copy()
+        if isinstance(df, pd.Series):
+            df = pd.DataFrame(df)
         for n in name:
             empty_items = [i for i in self.unroll(n)
                 if df[i].value_counts().sum() == 0]
