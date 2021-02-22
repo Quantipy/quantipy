@@ -1,5 +1,5 @@
 scipy==0.18.1
-numpy==1.11.3
+numpy==1.13.0
 pandas==0.19.2
 ftfy==4.4.3
 xmltodict
