@@ -72,7 +72,9 @@ def meta_editor(self, dataset_func):
         for n in self.unroll(name, both='all'):
             if not self.is_array(n):
                 meta = ds_clone._meta['columns'][n]
-                text_edits = ['set_col_text_edit', 'set_val_text_edit']
+                text_edits = text_edits = [
+                    "set_value_texts", "set_variable_text",
+                    'set_col_text_edit', 'set_val_text_edit']
                 if dataset_func.func_name in text_edits and is_array_item:
                     self.meta_edits[parent] = ds_clone._meta['masks'][parent]
                     lib = ds_clone._meta['lib']['values'][parent]
