@@ -130,10 +130,11 @@ def get_savwriter_float_format(series):
             sep='.',
             columns=['int', 'dec']
         )
-        w_int = len(str(df['int'].max()))
-        w_dec = len(str(df['dec'].max()))
-        if df['dec'].max()!='0':
-            fmt = 'F%s.%s' %(
+        df = df.replace('', np.NaN).dropna()
+        w_int = df["int"].apply(lambda x: len(x)).max()
+        w_dec = df["dec"].apply(lambda x: len(x)).max()
+        if not df["dec"].astype("float").max() == 0:
+            fmt = 'F%s.%s' % (
                 w_int + w_dec,
                 w_dec
             )
