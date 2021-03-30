@@ -4,30 +4,35 @@
 import sys
 from setuptools import setup, find_packages
 
-versions = dict(numpy='1.13.0',
-                # scipy='0.19.1',
-                pandas='0.19.2',
-                ftfy='4.4.3')
+versions = dict(
+    numpy='1.13.0',
+    pandas='0.19.2',
+    ftfy='4.4.3',
+    watchdog='0.10.3'
+)
 
-precisions = dict(numpy='==',
-                  scipy='==',
-                  pandas='==',
-                  ftfy='==')
+precisions = dict(
+    numpy='==',
+    pandas='==',
+    ftfy='==',
+    watchdog='=='
+)
 
-libs = ['numpy',
-        'scipy',
-        'pandas',
-        'ftfy',
-        'xmltodict',
-        'lxml',
-        'xlsxwriter',
-        # 'pillow',
-        'prettytable',
-        'decorator',
-        'watchdog',
-        'requests',
-        'python-pptx',
-        'functools32']
+libs = [
+    'numpy',
+    'scipy',
+    'pandas',
+    'ftfy',
+    'xmltodict',
+    'lxml',
+    'xlsxwriter',
+    'prettytable',
+    'decorator',
+    'watchdog',
+    'requests',
+    'python-pptx',
+    'functools32'
+]
 
 def version_libs(libs, precisions, versions):
     return [lib + precisions[lib] + versions[lib]
@@ -39,11 +44,10 @@ if sys.platform == 'win32':
 else:
     INSTALL_REQUIRES = version_libs(libs, precisions, versions)
 
-setup(name='quantipy',
-      version='0.1.1',
-      # author='',
-      # author_email='',
-      packages=find_packages(exclude=['tests']),
-      include_package_data=True,
-      install_requires=INSTALL_REQUIRES,
-      )
+setup(
+    name='quantipy',
+    version='0.1.1',
+    packages=find_packages(exclude=['tests']),
+    include_package_data=True,
+    install_requires=INSTALL_REQUIRES,
+)
