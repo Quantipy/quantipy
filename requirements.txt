@@ -7,7 +7,7 @@ lxml
 xlsxwriter
 pillow
 prettytable
-decorator
+decorator<5.0.0
 watchdog
 requests
 python-pptx

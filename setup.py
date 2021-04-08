@@ -8,14 +8,16 @@ versions = dict(
     numpy='1.13.0',
     pandas='0.19.2',
     ftfy='4.4.3',
-    watchdog='0.10.3'
+    watchdog='0.10.3',
+    decorator='5.0.0'
 )
 
 precisions = dict(
     numpy='==',
     pandas='==',
     ftfy='==',
-    watchdog='=='
+    watchdog='==',
+    decorator='<'
 )
 
 libs = [
