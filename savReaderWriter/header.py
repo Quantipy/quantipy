@@ -461,7 +461,7 @@ class Header(Generic):
                 values = [values]
 
             # check if missing values strings values are not too long
-            strMissLabels = [len(v) for v in values if 
+            strMissLabels = [len(v) for v in values if
                              isinstance(v, (str, bytes))]
             if strMissLabels and max(strMissLabels) > 9:
                 raise ValueError("Missing value label > 9 bytes")
@@ -896,12 +896,13 @@ class Header(Generic):
 
     def _setMultRespDefs(self, multRespDefs):
         """Set 'normal' multiple response defintions.
-        This is a helper function for the multRespDefs setter function. 
+        This is a helper function for the multRespDefs setter function.
         It translates the multiple response definition, specified as a
         dictionary, into a string that the IO module can use"""
         mrespDefs = []
         for setName, rest in multRespDefs.items():
-            rest = self.encode(rest)
+            if sys.getdefaultencoding() not in ["cp1253"]:
+                rest = self.encode(rest)
             if rest["setType"] not in (b"C", b"D"):
                 continue
             rest["setName"] = self.encode(setName)
@@ -1176,11 +1177,11 @@ class Header(Generic):
         """Get/Set information that is private to the Data Entry for Windows (DEW)
         product. Returns/takes a dictionary of the form:
         dataEntryInfo = {"data": [<list_of_dew_segments>], "GUID": <guid>},
-        where GUID stands for 'globally unique identifier'. 
+        where GUID stands for 'globally unique identifier'.
         Some remarks:
         -A difference in the byte order of the host system and the foreign host
-         will result in an error. Therefore, an optional 'swapBytes' key may 
-         be specified whose value indicates whether the bytes should be swapped 
+         will result in an error. Therefore, an optional 'swapBytes' key may
+         be specified whose value indicates whether the bytes should be swapped
          (True) or not (False). Default is that the byte order of the host system
          is retained.
         -DEW information is not copied when using mode="cp" in the SavWriter
@@ -1239,7 +1240,7 @@ class Header(Generic):
         is_ascii = all(map(lambda x: ord(x) < 128, asciiGUID))
         if not isinstance(asciiGUID, str) and is_ascii:
             raise ValueError("GUID must be a string of ascii characters")
-        
+
         # I am not sure at all about the following
         swapit = info.has_key("swapBytes") and info.get("swapBytes")
         def swap(x):
