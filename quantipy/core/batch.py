@@ -1380,5 +1380,7 @@ class Batch(qp.DataSet):
                 dataset._data[oe["columns"]] = data
             if not oe['incl_nan']:
                 for col in oe['columns']:
-                    if self._get_type(col) not in numerical:
+                    if self._get_type(col) == "date":
+                        dataset._data[col].fillna('', inplace=True)
+                    elif self._get_type(col) not in numerical:
                         dataset._data[col].replace(np.NaN, '', inplace=True)
