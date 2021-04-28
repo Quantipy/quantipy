@@ -1431,7 +1431,8 @@ def get_sets_from_set(meta, set_name):
     return sets
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
-           overwrite_text=False, from_set=None, merge_existing=None, verbose=True):
+           overwrite_text=False, from_set=None, update_existing=None,
+           merge_existing=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1461,9 +1462,11 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     from_set : str, default=None
         Use a set defined in the right meta to control which columns are
         merged from the right dataset.
+    update_existing : str/ list of str, default None, {'all', [var_names]}
+        Update values for defined delimited sets if it exists in both datasets.
     merge_existing : str/ list of str, default None, {'all', [var_names]}
-        Specify if codes should be merged for delimited sets for defined
-        variables.
+        Merge values for defined delimited sets if it exists in both datasets.
+        (update_existing is prioritized)
     verbose : bool, default=True
         Echo progress feedback to the output pane.
 
@@ -1544,12 +1547,21 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             if verbose:
                 print '------ updating data for known columns'
             updata_left.update(updata_right[non_sets])
-            if merge_existing:
-                for col in sets:
-                    if not (merge_existing == 'all' or col in merge_existing):
-                        continue
-                    if verbose:
-                        print "..{}".format(col)
+
+            if not update_existing:
+                update_existing = []
+            elif update_existing == "all":
+                update_existing = sets
+            if not merge_existing:
+                merge_existing = []
+            elif merge_existing == "all":
+                merge_existing = list(set(sets) - set(update_existing))
+            for col in sets:
+                if verbose:
+                    print "..{}".format(col)
+                if col in update_existing:
+                    updata_left[col].update(updata_right[col])
+                elif col in merge_existing:
                     updata_left[col] = updata_left[col].combine(
                         updata_right[col],
                         lambda x, y: _merge_delimited_sets(str(x)+str(y)))
