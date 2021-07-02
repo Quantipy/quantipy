@@ -1549,19 +1549,24 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
             updata_left.update(updata_right[non_sets])
 
             if not update_existing:
-                update_existing = []
+                _update_existing = []
             elif update_existing == "all":
-                update_existing = sets
+                _update_existing = sets
+            else:
+                _update_existing = update_existing
             if not merge_existing:
-                merge_existing = []
+                _merge_existing = []
             elif merge_existing == "all":
-                merge_existing = list(set(sets) - set(update_existing))
+                _merge_existing = list(set(sets) - set(_update_existing))
+            else:
+                _merge_existing = merge_existing
+
             for col in sets:
                 if verbose:
                     print "..{}".format(col)
-                if col in update_existing:
+                if col in _update_existing:
                     updata_left[col].update(updata_right[col])
-                elif col in merge_existing:
+                elif col in _merge_existing:
                     updata_left[col] = updata_left[col].combine(
                         updata_right[col],
                         lambda x, y: _merge_delimited_sets(str(x)+str(y)))
