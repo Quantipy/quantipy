@@ -3479,7 +3479,7 @@ class Chain(object):
             if not text_keys:
                 text = meta['text'][text_key]
             else:
-                text = self._get_text(meta, text_keys, item_text=False)
+                text = self._get_text(meta, text_keys['y'], item_text=False)
             if sep:
                 column_mapper[column] = str_format % (column, text)
             else:
@@ -3500,7 +3500,7 @@ class Chain(object):
                         }
                     else:
                         value_mapper = {
-                            str(item['value']): self._get_text(item, text_keys, item_text=False)
+                            str(item['value']): self._get_text(item, text_keys['y'], item_text=False)
                             for item in values
                         }
                     series = self.structure[column]
@@ -3529,7 +3529,7 @@ class Chain(object):
                         }
                     else:
                         value_mapper = {
-                            item['value']: self._get_text(item, text_keys, item_text=False)
+                            item['value']: self._get_text(item, text_keys['y'], item_text=False)
                             for item in values
                         }
                     self.structure[column] = (self.structure[column]
