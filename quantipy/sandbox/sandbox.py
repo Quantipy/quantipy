@@ -3436,7 +3436,7 @@ class Chain(object):
         self._ensure_indexes()
         text_keys = self._finish_text_key(text_key, text_loc_x, text_loc_y)
         if self.structure is not None:
-            self._paint_structure(text_key, sep=sep, na_rep=na_rep)
+            self._paint_structure(text_key, sep=sep, na_rep=na_rep, text_keys=text_keys)
         else:
             self.totalize = totalize
             if transform_tests: self.transform_tests(transform_tests, display_level)
@@ -3457,11 +3457,12 @@ class Chain(object):
         self.painted = True
         return None
 
-    def _paint_structure(self, text_key=None, sep=None, na_rep=None):
+    def _paint_structure(self, text_key=None, sep=None, na_rep=None, text_keys=None):
         """ Paint the dataframe-type Chain.
         """
-        if not text_key:
+        if not text_key and not text_keys:
             text_key = self._meta['lib']['default text']
+
         str_format = '%%s%s%%s' % sep
 
         column_mapper = dict()
@@ -3475,10 +3476,14 @@ class Chain(object):
 
             meta = self._meta['columns'][column]
 
-            if sep:
-                column_mapper[column] = str_format % (column, meta['text'][text_key])
+            if not text_keys:
+                text = meta['text'][text_key]
             else:
-                column_mapper[column] = meta['text'][text_key]
+                text = self._get_text(meta, text_keys['y'], item_text=False)
+            if sep:
+                column_mapper[column] = str_format % (column, text)
+            else:
+                column_mapper[column] = text
 
             if meta.get('values'):
                 values = meta['values']
@@ -3488,10 +3493,16 @@ class Chain(object):
                     while pointers:
                         values = values[pointers.pop(0)]
                 if meta['type'] == 'delimited set':
-                    value_mapper = {
-                        str(item['value']): item['text'][text_key]
-                        for item in values
-                    }
+                    if not text_keys:
+                        value_mapper = {
+                            str(item['value']): item['text'][text_key]
+                            for item in values
+                        }
+                    else:
+                        value_mapper = {
+                            str(item['value']): self._get_text(item, text_keys['y'], item_text=False)
+                            for item in values
+                        }
                     series = self.structure[column]
                     try:
                         series = (series.str.split(';')
@@ -3511,10 +3522,16 @@ class Chain(object):
                     except AttributeError:
                         continue
                 else:
-                    value_mapper = {
-                        item['value']: item['text'][text_key]
-                        for item in values
-                    }
+                    if not text_keys:
+                        value_mapper = {
+                            item['value']: item['text'][text_key]
+                            for item in values
+                        }
+                    else:
+                        value_mapper = {
+                            item['value']: self._get_text(item, text_keys['y'], item_text=False)
+                            for item in values
+                        }
                     self.structure[column] = (self.structure[column]
                                                   .map(value_mapper.get,
                                                        na_action='ignore')
