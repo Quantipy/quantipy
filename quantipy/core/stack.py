@@ -2141,12 +2141,20 @@ class Stack(defaultdict):
                     if not tk in labels: labels[tk] = {}
                     labels[tk].update({code: '{} {}'.format(text_prefix, lab)})
                 appends.append((code, str(code), {var: n.values()[0]}))
-                if not isinstance(n.values()[0], list):
+                if not isinstance(n.values()[0], (list, int, float)):
                     s_net = False
                     simple_nets = []
-                if s_net:
+                else:
+                    if isinstance(n.values()[0], (int, float)):
+                        codes = [n.values()[0]]
+                    else:
+                        codes = n.values()[0]
+                    invalid_codes = [c for c in codes if c not in ds.codes(var)]
+                    if invalid_codes:
+                        raise ValueError("{} are no valid codes for {}".format(
+                            invalid_codes, var))
                     simple_nets.append(
-                        ('{} {}'.format(text_prefix, labs[ds.text_key]), n.values()[0]))
+                        ('{} {}'.format(text_prefix, labs[ds.text_key]), codes))
             mapper += appends
             q_type = 'delimited set' if ds._is_delimited_set_mapper(mapper) else 'single'
             return mapper, q_type, labels, simple_nets
