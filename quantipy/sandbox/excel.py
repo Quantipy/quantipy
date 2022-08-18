@@ -56,6 +56,7 @@ _SHEET_DEFAULTS = dict(alternate_bg             = True,
                        img_size                 = [130, 130],
                        img_x_offset             = 0,
                        img_y_offset             = 0,
+                       decorative               = False,
                        row_height_label         = 12.75,
                        start_column             = 0,
                        start_row                = 0,
@@ -661,6 +662,7 @@ class _Sheet(Worksheet):
                 self.image.get('img_insert_y', self.img_insert_y),
                 self.image['img_name'],
                 dict(
+                    decorative=self.image.get('decorative', self.decorative),
                     x_offset=self.image.get('img_x_offset', self.img_x_offset),
                     y_offset=self.image.get('img_y_offset', self.img_y_offset))
             )
