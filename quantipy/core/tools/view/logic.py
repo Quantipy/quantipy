@@ -31,7 +31,7 @@ def verify_logic_values(values, func_name):
     """
     if isinstance(values, (list, tuple)):
         for value in values:
-            if not isinstance(value, int):
+            if not isinstance(value, (int, long)):
                 raise TypeError(
                     "The values given to %s() are not correctly "
                     "typed. Expected list of <int>, found a %s." % (
