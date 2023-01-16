@@ -33,8 +33,8 @@ def verify_logic_values(values, func_name):
         for value in values:
             if not isinstance(value, (int, long)):
                 raise TypeError(
-                    "The values given to %s() are not correctly "
-                    "typed. Expected list of <int>, found a %s." % (
+                    "The values given to %s() are not correctly typed. "
+                    "Expected list of 'int' or 'long', found a %s." % (
                         func_name,
                         type(value)
                     )
