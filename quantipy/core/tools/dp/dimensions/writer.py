@@ -348,11 +348,7 @@ def _datastore_csv(meta, data, columns):
         elif col_type == 'int':
             datastore[col].replace(np.NaN, 'NULL', inplace=True)
             try:
-                # Note:
-                #-------------------------------------------------------------
-                # I am converting to int32 (if possible) to prevent type
-                # conflicts
-                datastore[col] = datastore[col].astype('int32')
+                datastore[col] = datastore[col].astype('int64')
             except:
                 pass
         elif col_type == 'float':
@@ -413,13 +409,13 @@ def convert_categorical(categorical):
         resp_prefix = categorical.name + 'a'
     if not cat.dtype == 'object':
         cat = cat.apply(lambda x:
-                        '{}{}'.format(resp_prefix, 
+                        '{}{}'.format(resp_prefix,
                                       int(x) if int(x) > -1 else
                                       'minus{}'.format(-1 * int(x)))
                         if not np.isnan(x) else np.NaN)
     else:
         cat = cat.apply(lambda x: str(x).split(';')[:-1])
-        cat = cat.apply(lambda x: ['{}{}'.format(resp_prefix, 
+        cat = cat.apply(lambda x: ['{}{}'.format(resp_prefix,
                                                  code.replace('-', 'minus'))
                                    for code in x])
         cat = cat.apply(lambda x: str(x).replace('[', '').replace(']', ''))
