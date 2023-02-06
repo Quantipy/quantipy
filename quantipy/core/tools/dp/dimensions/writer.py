@@ -28,6 +28,8 @@ QTYPES = {
     'boolean': 'mr.Boolean'
 }
 
+MaxIntValue = 2147483647
+MinIntValue = -2147483648
 
 def tab(tabs):
     return '' if tabs == 0 else '\t' * tabs
@@ -152,7 +154,7 @@ def create_mdd(meta, data, path_mrs, path_mdd, text_key, run):
     for name in all_items:
         if name in meta['columns']:
             if meta['columns'][name].get('parent'): continue
-            mrs_col, lang, ltype = col_to_mrs(meta, name, text_key)
+            mrs_col, lang, ltype = col_to_mrs(meta, data, name, text_key)
             variables.extend(mrs_col)
         if name in meta['masks']:
             mrs_mask, lang, ltype = mask_to_mrs(meta, name, text_key)
@@ -214,14 +216,18 @@ def get_lab_mrs(tab, element, dimlabels):
         lab_mrs.append(AddLabel(tab, element, lt, lang, text))
     return '\n'.join(lab_mrs)
 
-def col_to_mrs(meta, col, text_key):
+def col_to_mrs(meta, data, col, text_key):
     column = meta['columns'][col]
     name = column.get(col, col)
+    dimtype =  QTYPES[column['type']]
+    if column['type'] == 'int':
+        if data[col].max() > MaxIntValue or data[col].min() < MinIntValue:
+            dimtype = 'mr.Double'
     col_code = [
         section_break(20),
         comment(0, '{}'.format(name)),
         CreateVariable(0, name),
-        DataType(0, 'newVar', QTYPES[column['type']]),
+        DataType(0, 'newVar', dimtype),
     ]
     labels = DimLabels(name, text_key)
     labels.add_text(column['text'])
