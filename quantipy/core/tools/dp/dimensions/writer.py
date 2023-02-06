@@ -223,6 +223,7 @@ def col_to_mrs(meta, data, col, text_key):
     if column['type'] == 'int':
         if data[col].max() > MaxIntValue or data[col].min() < MinIntValue:
             dimtype = 'mr.Double'
+    if name == 'caseid': dimtype = 'mr.Double'
     col_code = [
         section_break(20),
         comment(0, '{}'.format(name)),
