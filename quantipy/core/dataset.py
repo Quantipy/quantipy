@@ -3580,7 +3580,8 @@ class DataSet(object):
     @verify(variables={'on': 'columns', 'left_on': 'columns'})
     def hmerge(self, dataset, on=None, left_on=None, right_on=None,
                overwrite_text=False, from_set=None, inplace=True,
-               update_existing=None, merge_existing=None, verbose=True):
+               update_existing=None, merge_existing=None, text_properties=None,
+               verbose=True):
 
         """
         Merge Quantipy datasets together using an index-wise identifer.
@@ -3614,9 +3615,15 @@ class DataSet(object):
             columns. Will return a new ``DataSet`` instance if False.
         update_existing : str/ list of str, default None, {'all', [var_names]}
             Update values for defined delimited sets if it exists in both datasets.
-        merge_existing : str/ list of str, default None, {'all', [var_names]}
-            Merge values for defined delimited sets if it exists in both datasets.
-            (update_existing is prioritized)
+        text_properties: str/ list of str, default=None, {'all', [var_names]}
+            Controls the update of the dataset_left properties with properties
+            from the dataset_right.
+            If None, properties from dataset_left will be updated by the ones
+            from the dataset_right.
+            If 'all', properties from dataset_left will be kept unchanged.
+            Otherwise, specify the list of properties which will be kept
+            unchanged in the dataset_left; all others will be updated by the
+            properties from dataset_right.
         verbose : bool, default=True
             Echo progress feedback to the output pane.
 
@@ -3641,7 +3648,8 @@ class DataSet(object):
         merged_meta, merged_data = _hmerge(
             ds_left, ds_right, on=on, left_on=left_on, right_on=right_on,
             overwrite_text=overwrite_text, from_set=from_set, verbose=verbose,
-            merge_existing=merge_existing, update_existing=update_existing)
+            merge_existing=merge_existing, update_existing=update_existing,
+            text_properties=text_properties)
         if id_backup is not None:
             merged_data[right_on] = id_backup
         if inplace:
@@ -3679,7 +3687,8 @@ class DataSet(object):
         update_meta['sets']['update'] = {'items': update_items}
         ds_right = (update_meta, data)
         merged_meta, merged_data = _hmerge(
-            ds_left, ds_right, on=on, from_set='update', verbose=False)
+            ds_left, ds_right, on=on, from_set='update',
+            text_properties=text_properties, verbose=False)
         self._meta, self._data = merged_meta, merged_data
         del self._meta['sets']['update']
         return None
@@ -3689,7 +3698,8 @@ class DataSet(object):
     def vmerge(self, dataset, on=None, left_on=None, right_on=None,
                row_id_name=None, left_id=None, right_id=None, row_ids=None,
                overwrite_text=False, from_set=None, uniquify_key=None,
-               reset_index=True, inplace=True, verbose=True):
+               reset_index=True, inplace=True, text_properties=None,
+               verbose=True):
         """
         Merge Quantipy datasets together by appending rows.
 
@@ -3740,6 +3750,18 @@ class DataSet(object):
         inplace : bool, default True
             If True, the ``DataSet`` will be modified inplace with new/updated
             rows. Will return a new ``DataSet`` instance if False.
+        merge_existing : str/ list of str, default None, {'all', [var_names]}
+            Merge values for defined delimited sets if it exists in both datasets.
+            (update_existing is prioritized)
+        text_properties: str/ list of str, default=None, {'all', [var_names]}
+            Controls the update of the dataset_left properties with properties
+            from the dataset_right.
+            If None, properties from dataset_left will be updated by the ones
+            from the dataset_right.
+            If 'all', properties from dataset_left will be kept unchanged.
+            Otherwise, specify the list of properties which will be kept
+            unchanged in the dataset_left; all others will be updated by the
+            properties from dataset_right.
         verbose : bool, default=True
             Echo progress feedback to the output pane.
 
@@ -3756,7 +3778,8 @@ class DataSet(object):
             None, None, datasets, on=on, left_on=left_on,
             right_on=right_on, row_id_name=row_id_name, left_id=left_id,
             right_id=right_id, row_ids=row_ids, overwrite_text=overwrite_text,
-            from_set=from_set, reset_index=reset_index, verbose=verbose)
+            from_set=from_set, reset_index=reset_index,
+            text_properties=text_properties, verbose=verbose)
         if inplace:
             self._data = merged_data
             self._meta = merged_meta
