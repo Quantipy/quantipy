@@ -1185,8 +1185,9 @@ def _update_mask_meta(left_meta, right_meta, masks, verbose, overwrite=False):
                 left_meta['sets'][mask]['items'].append(item['source'])
 
 
-def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
-               get_cols=False, get_updates=False, verbose=True):
+def merge_meta(meta_left, meta_right, from_set, text_properties,
+               overwrite_text=False, get_cols=False, get_updates=False,
+               verbose=True):
 
     if verbose:
         print '\n', 'Merging meta...'
@@ -1265,8 +1266,24 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
         if verbose:
             print '...', col_name
         # store properties
-        props = copy.deepcopy(
+        lprops = copy.deepcopy(
+            meta_left['columns'].get(col_name, {}).get('properties', {}))
+        rprops = copy.deepcopy(
             meta_right['columns'][col_name].get('properties', {}))
+
+        # retain named text_properties from lprops
+        if text_properties and lprops and rprops:
+            if text_properties=="all":
+                adjust_properties = lprops.keys()
+            else:
+                adjust_properties = text_properties
+            if not isinstance(adjust_properties, list):
+                adjust_properties = [adjust_properties]
+            for key in adjust_properties:
+                if key in lprops:
+                    rprops[key] = lprops[key]
+                elif key in rprops:
+                    del rprops[key]
         # emulate the right meta
         right_column = emulate_meta(
             meta_right,
@@ -1291,7 +1308,7 @@ def merge_meta(meta_left, meta_right, from_set, overwrite_text=False,
 
             meta_left['columns'][col_name] = right_column
         if 'properties' in meta_left['columns'][col_name]:
-            meta_left['columns'][col_name]['properties'].update(props)
+            meta_left['columns'][col_name]['properties'].update(rprops)
         if col_name in mask_items:
             meta_left['columns'][col_name]['values'] = mask_items[col_name]
 
@@ -1432,7 +1449,7 @@ def get_sets_from_set(meta, set_name):
 
 def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
            overwrite_text=False, from_set=None, update_existing=None,
-           merge_existing=None, verbose=True):
+           merge_existing=None, text_properties=None, verbose=True):
     """
     Merge Quantipy datasets together using an index-wise identifer.
 
@@ -1467,6 +1484,15 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
     merge_existing : str/ list of str, default None, {'all', [var_names]}
         Merge values for defined delimited sets if it exists in both datasets.
         (update_existing is prioritized)
+    text_properties: str/ list of str, default=None, {'all', [var_names]}
+            Controls the update of the dataset_left properties with properties
+            from the dataset_right.
+            If None, properties from dataset_left will be updated by the ones
+            from the dataset_right.
+            If 'all', properties from dataset_left will be kept unchanged.
+            Otherwise, specify the list of properties which will be kept
+            unchanged in the dataset_left; all others will be updated by the
+            properties from dataset_right.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
 
@@ -1519,7 +1545,8 @@ def hmerge(dataset_left, dataset_right, on=None, left_on=None, right_on=None,
 
         # Merge the right meta into the left meta
         meta_left, cols, col_updates = merge_meta(meta_left, meta_right,
-                                                  from_set, overwrite_text,
+                                                  from_set, text_properties,
+                                                  overwrite_text,
                                                   True, True, verbose)
 
         # col_updates exception when left_on==right_on
@@ -1606,7 +1633,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
            on=None, left_on=None, right_on=None,
            row_id_name=None, left_id=None, right_id=None, row_ids=None,
            overwrite_text=False, from_set=None, reset_index=True,
-           verbose=True):
+           text_properties=None, verbose=True):
     """
     Merge Quantipy datasets together by appending rows.
 
@@ -1655,6 +1682,15 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     reset_index : bool, default=True
         If True pandas.DataFrame.reindex() will be applied to the merged
         dataframe.
+    text_properties: str/ list of str, default=None, {'all', [var_names]}
+            Controls the update of the dataset_left properties with properties
+            from the dataset_right.
+            If None, properties from dataset_left will be updated by the ones
+            from the dataset_right.
+            If 'all', properties from dataset_left will be kept unchanged.
+            Otherwise, specify the list of properties which will be kept
+            unchanged in the dataset_left; all others will be updated by the
+            properties from dataset_right.
     verbose : bool, default=True
         Echo progress feedback to the output pane.
 
@@ -1696,6 +1732,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
                 row_id_name=row_id_name, left_id=left_id, right_id=right_id,
                 overwrite_text=overwrite_text, from_set=from_set,
                 reset_index=reset_index,
+                text_properties=text_properties,
                 verbose=verbose)
             dataset_left = (meta_vm, data_vm)
 
@@ -1804,6 +1841,7 @@ def vmerge(dataset_left=None, dataset_right=None, datasets=None,
     meta_left, cols, col_updates = merge_meta(
         meta_left, meta_right,
         from_set=from_set,
+        text_properties=text_properties,
         overwrite_text=overwrite_text,
         get_cols=True,
         get_updates=True,
