@@ -8,7 +8,7 @@ import os
 
 def parse_sav_file(filename, path=None, name="", ioLocale="en_US.UTF-8", ioUtf8=True, dichot=None,
                    dates_as_strings=False, values_from_MRS_columns=True,
-                   text_key="main"):
+                   text_key="main", ignore_MRSets=False):
     """ Parses a .sav file and returns a touple of Data and Meta
 
         Parameters
@@ -26,6 +26,11 @@ dates_as_strings : bool, default=False
                    Quantipy strings.
         text_key : str, default="main"
                    The text_key that all labels should be stored under.
+    ignore_MRSets: bool, default False
+                  Used for SAV software. If True, MRSets not having the
+                  following format "varname_code" will be ignored during
+                  conversion and the MRS columns will be added as single
+                  variables in the converted dataset.
 
         Returns
         -------
@@ -38,7 +43,7 @@ dates_as_strings : bool, default=False
     meta, data = extract_sav_meta(filepath, name="", data=data, ioLocale=ioLocale,
                                   ioUtf8=ioUtf8, dichot=dichot, dates_as_strings=dates_as_strings,
                                   values_from_MRS_columns=values_from_MRS_columns,
-                                  text_key=text_key)
+                                  text_key=text_key, ignore_MRSets=ignore_MRSets)
     return (meta, data)
 
 def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
@@ -62,7 +67,8 @@ def extract_sav_data(sav_file, ioLocale='en_US.UTF-8', ioUtf8=True):
 
 def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                      ioUtf8=True, dichot=None, dates_as_strings=False,
-                     values_from_MRS_columns=True, text_key="main"):
+                     values_from_MRS_columns=True, text_key="main",
+                     ignore_MRSets=False):
 
     """ see parse_sav_file doc """
     with sr.SavHeaderReader(sav_file, ioLocale=ioLocale, ioUtf8=ioUtf8) as header:
@@ -161,6 +167,7 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
         if column in metadata.varLabels:
             meta['columns'][column]['text'] = {text_key: metadata.varLabels[column]}
 
+    ignored_mrsets_list = []
     for mrset in metadata.multRespDefs:
         # meta['masks'][mrset] = {}
         # 'D' is "multiple dichotomy sets" in SPSS
@@ -197,12 +204,29 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
                 data[varNames], values_from_labels=values_from_MRS_columns,
                 **dichot
             )
-            # Get value object
-            values = [{
-                        'text': {text_key: metadata.varLabels[varName]},
-                        'value': int(vals[v])
-                    }
-                    for v, varName in enumerate(varNames, start=0)]
+            if not ignore_MRSets:
+                try:
+                    values = [{
+                                'text': {text_key: metadata.varLabels[varName]},
+                                'value': int(vals[v])
+                            }
+                            for v, varName in enumerate(varNames, start=0)]
+                except ValueError:
+                    msg = "Values for {} cannot be extracted from columns. ".format(mrset)
+                    msg += "The MRS columns do not have the expected name structure. \n\t"
+                    msg += "To skip the non-standard MRSets during the conversion "
+                    msg += "set ignore_MRSets to True."
+                    raise ValueError(msg)
+            else:
+                try:
+                    values = [{
+                                'text': {text_key: metadata.varLabels[varName]},
+                                'value': int(vals[v])
+                            }
+                            for v, varName in enumerate(varNames, start=0)]
+                except ValueError:
+                    ignored_mrsets_list.append(mrset)
+                    continue
         else:
             continue
         # Insert the delimited set into data
@@ -226,5 +250,11 @@ def extract_sav_meta(sav_file, name="", data=None, ioLocale='en_US.UTF-8',
             df_items.remove('columns@{}'.format(varName))
             del meta['columns'][varName]
 
+    if ignore_MRSets:
+        if len(ignored_mrsets_list)>0:
+            msg = "WARNING: "
+            msg += "{} MRSets were not converted to delimited sets because the "
+            msg += "columns included do not have the standard YG name format. "
+            msg += "Please review the list: \n\t {}\n\t"
+            print (msg.format(len(ignored_mrsets_list), ignored_mrsets_list))
     return meta, data
-
