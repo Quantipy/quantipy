@@ -3663,7 +3663,7 @@ class DataSet(object):
             return new_dataset
         return None
 
-    def update(self, data, on='identity'):
+    def update(self, data, on='identity', text_properties=None):
         """
         Update the ``DataSet`` with the case data entries found in ``data``.
 
@@ -3674,6 +3674,15 @@ class DataSet(object):
             case data component.
         on : str, default 'identity'
             The column to use as a join key.
+        text_properties: str/ list of str, default=None, {'all', [var_names]}
+            Controls the update of the dataset_left properties with properties
+            from the dataset_right.
+            If None, properties from dataset_left will be updated by the ones
+            from the dataset_right.
+            If 'all', properties from dataset_left will be kept unchanged.
+            Otherwise, specify the list of properties which will be kept
+            unchanged in the dataset_left; all others will be updated by the
+            properties from dataset_right.
 
         Returns
         -------
