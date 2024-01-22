@@ -2280,6 +2280,39 @@ class Test(object):
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
 
+    def sc_chi_sq(self, return_diagnostics=False, level=3.84):
+        """
+        """
+        q_unw = self.Quantity._copy()
+        q_unw.w = "@1"
+        counts = q_unw.count(margin=False, as_df=False).result
+        r_base = q_unw.rbase[1:]
+        c_base = q_unw.cbase[0][1:]
+        t_base = q_unw.rbase[0][0]
+
+        subsample_pct = counts / c_base
+        sample_pct = r_base / t_base
+        diffs_direction = np.sign(
+            subsample_pct - sample_pct.repeat(counts.shape[1], axis=1)
+            )
+
+        # Compute First addend
+        helper_term_a = (r_base * c_base) / t_base
+        addend_a = (counts - helper_term_a) ** 2 / helper_term_a
+        # Compute second addend
+        helper_term_b = (t_base - r_base) * c_base / t_base
+        addend_b = ((c_base - counts) - helper_term_b) ** 2 / helper_term_b
+        # Chi^2 is the sum of addend_a and addend_b
+        cell_chi_sq_matrix = addend_a + addend_b
+        org_chi_sq_matrix = cell_chi_sq_matrix.copy()
+
+        cell_chi_sq_matrix[cell_chi_sq_matrix < level] = np.NaN
+        result = pd.DataFrame(np.sign((cell_chi_sq_matrix * diffs_direction)))
+        result = result.replace(-1, "-")
+        result = result.replace(1, "+")
+
+        return result
+
 class Nest(object):
     """
     Description of class...

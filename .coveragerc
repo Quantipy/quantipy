@@ -1,0 +1,7 @@
+[run]
+omit =
+    .tox/*
+    setup.py
+    **/test_*
+    */tests/*
+    */savReaderWriter/*
