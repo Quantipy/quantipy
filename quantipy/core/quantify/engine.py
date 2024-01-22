@@ -2335,6 +2335,7 @@ class Test(object):
         result = pd.DataFrame(np.sign((cell_chi_sq_matrix * diffs_direction)))
         result = result.replace(-1, "-")
         result = result.replace(1, "+")
+
         if return_diagnostics:
             return result, (
                 org_chi_sq_matrix,
