@@ -2280,9 +2280,34 @@ class Test(object):
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
 
-    def sc_chi_sq(self, return_diagnostics=False, level=3.84):
+    def sc_chi_sq(self, return_diagnostics=False, level="mid"):
         """
+        Produce a Quantum-like single-classification Chi^2 Test matrix.
+
+        Parameters
+        ----------
+        return_diagnostics : bool, default False
+            If True, a second return will also provide all interim figures used
+            in the computation.
+        level : str, default "mid"
+            The level of significance. The threshold map to confidence levels
+            of the dof = 1 Chi distribution at 90%, 95% and 99%.
+
+        Returns
+        -------
+        result : pd.DataFrame
+            The main result output of flagged differences.
+        diagnostics: tuple
+            The collection of all interim figures, i.e.:
+            * chi sq cell matrix
+            * cell counts
+            * sample and subsample proportions
         """
+        valid_levels = {"low": 2.71, "mid": 3.84, "high": 6.63}
+        if not level in valid_levels.keys():
+            raise ValueError(
+                "'level' must be one of {}.".format(valid_levels.keys())
+                )
         q_unw = self.Quantity._copy()
         q_unw.w = "@1"
         counts = q_unw.count(margin=False, as_df=False).result
@@ -2306,12 +2331,18 @@ class Test(object):
         cell_chi_sq_matrix = addend_a + addend_b
         org_chi_sq_matrix = cell_chi_sq_matrix.copy()
 
-        cell_chi_sq_matrix[cell_chi_sq_matrix < level] = np.NaN
+        cell_chi_sq_matrix[cell_chi_sq_matrix < valid_levels[level]] = np.NaN
         result = pd.DataFrame(np.sign((cell_chi_sq_matrix * diffs_direction)))
         result = result.replace(-1, "-")
         result = result.replace(1, "+")
-
-        return result
+        if return_diagnostics:
+            return result, (
+                org_chi_sq_matrix,
+                counts, r_base, c_base, t_base,
+                subsample_pct, sample_pct
+                )
+        else:
+            return result
 
 class Nest(object):
     """
