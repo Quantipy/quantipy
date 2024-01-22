@@ -2280,18 +2280,18 @@ class Test(object):
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
 
-    def sc_chi_sq(self, return_diagnostics=False, level="mid"):
+    def sc_chi_sq(self, level="mid", return_diagnostics=False):
         """
         Produce a Quantum-like single-classification Chi^2 Test result.
 
         Parameters
         ----------
+        level : str, default "mid"
+            The level of significance. The thresholds map to confidence levels
+            of the dof = 1 Chi distribution at 90%, 95% and 99%.
         return_diagnostics : bool, default False
             If True, a second return will also provide all interim figures used
             in the computation.
-        level : str, default "mid"
-            The level of significance. The threshold map to confidence levels
-            of the dof = 1 Chi distribution at 90%, 95% and 99%.
 
         Returns
         -------
@@ -2303,7 +2303,11 @@ class Test(object):
             * cell counts
             * sample and subsample proportions
         """
-        valid_levels = {"low": 2.71, "mid": 3.84, "high": 6.63}
+        valid_levels = {
+            "low": 2.71, # 90%
+            "mid": 3.84, # 95%
+            "high": 6.63 # 99%
+        }
         if not level in valid_levels.keys():
             raise ValueError(
                 "'level' must be one of {}.".format(valid_levels.keys())
