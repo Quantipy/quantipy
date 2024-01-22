@@ -2282,7 +2282,7 @@ class Test(object):
 
     def sc_chi_sq(self, return_diagnostics=False, level="mid"):
         """
-        Produce a Quantum-like single-classification Chi^2 Test matrix.
+        Produce a Quantum-like single-classification Chi^2 Test result.
 
         Parameters
         ----------
