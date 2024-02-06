@@ -2312,25 +2312,29 @@ class Test(object):
             raise ValueError(
                 "'level' must be one of {}.".format(valid_levels.keys())
                 )
-        q_unw = self.Quantity._copy()
-        q_unw.w = "@1"
-        counts = q_unw.count(margin=False, as_df=False).result
-        r_base = q_unw.rbase[1:]
-        c_base = q_unw.cbase[0][1:]
-        t_base = q_unw.rbase[0][0]
 
-        subsample_pct = counts / c_base
-        sample_pct = r_base / t_base
-        diffs_direction = np.sign(
-            subsample_pct - sample_pct.repeat(counts.shape[1], axis=1)
+        q = self.Quantity._copy()
+        q._get_matrix()
+
+        counts_w =  q.count(margin=False, as_df=False).result
+        r_base_w = q.rbase[1:]
+        c_base_w = q.cbase[0][1:]
+        t_base_w = q.rbase[0][0]
+
+        subsample_pct = counts_w / c_base_w
+        sample_pct = r_base_w / t_base_w
+
+        diffs_direction = subsample_pct - sample_pct.repeat(
+            counts_w.shape[1], axis=1
             )
+        diffs_direction = np.sign(diffs_direction)
 
         # Compute First addend
-        helper_term_a = (r_base * c_base) / t_base
-        addend_a = (counts - helper_term_a) ** 2 / helper_term_a
+        helper_term_a = (r_base_w * c_base_w) / t_base_w
+        addend_a = (counts_w - helper_term_a) ** 2 / helper_term_a
         # Compute second addend
-        helper_term_b = (t_base - r_base) * c_base / t_base
-        addend_b = ((c_base - counts) - helper_term_b) ** 2 / helper_term_b
+        helper_term_b = (t_base_w - r_base_w) * c_base_w / t_base_w
+        addend_b = ((c_base_w - counts_w) - helper_term_b) ** 2 / helper_term_b
         # Chi^2 is the sum of addend_a and addend_b
         cell_chi_sq_matrix = addend_a + addend_b
         org_chi_sq_matrix = cell_chi_sq_matrix.copy()
@@ -2340,10 +2344,12 @@ class Test(object):
         result = result.replace(-1, "-")
         result = result.replace(1, "+")
 
+        result.index, result.columns = self.multiindex[0], self.multiindex[1]
+
         if return_diagnostics:
             return result, (
                 org_chi_sq_matrix,
-                counts, r_base, c_base, t_base,
+                counts_w, r_base_w, c_base_w, t_base_w,
                 subsample_pct, sample_pct
                 )
         else:
