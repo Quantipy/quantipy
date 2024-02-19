@@ -2316,7 +2316,7 @@ class Test(object):
         q = self.Quantity._copy()
         q._get_matrix()
 
-        counts_w =  q.count(margin=False, as_df=False).result
+        counts =  q.count(margin=False, as_df=False).result
         r_base = q.rbase[1:]
         c_base = q.cbase[0][1:]
         t_base = q.rbase[0][0]
