@@ -31,7 +31,7 @@ class ViewManager(object):
     def get_views(self, data_key=None, filter_key=None, weight=None,
                   freqs=True, nets=True, stats=['mean', 'stddev'],
                   sums='bottom', tests=None, cell_items='colpct',
-                  ci_order='normal', bases='auto'):
+                  ci_order='normal', bases='auto', mimic=None):
         """
         Query the ``qp.Stack`` for the desired set of ``Views``.
 
@@ -125,7 +125,7 @@ class ViewManager(object):
             data_key=data_key, filter_key=filter_key, weight=self.weighted,
             frequencies=self.basics, nets=self.nets, descriptives=self.stats,
             sums=self.sums_pos, coltests=True if self.tests else False,
-            sig_levels=self.tests if self.tests else [])
+            sig_levels=self.tests if self.tests else [], mimic=mimic)
         self._grouped_views = views['grouped_views'][cell_items]
         self.views = views['get_chain'][cell_items]
         # Defining the base view layout vs. all collected views...
@@ -348,7 +348,7 @@ class ViewManager(object):
 
     def _request_views(self, data_key=None, filter_key=None, weight=None,
                       frequencies=True, nets=True, descriptives=["mean"],
-                      sums=None, coltests=True, mimic='Dim',
+                      sums=None, coltests=True, mimic=None,
                       sig_levels=[".05"], x=None, y=None):
         """
         Get structured, request-ready views from ``self.stack``.
