@@ -536,7 +536,10 @@ class QuantipyViews(ViewMapper):
                 if mimic == 'Dim':
                     test.set_params(level=level, flag_bases=flags)
                 elif mimic == 'LINK_legacy':
-                    test.set_params(level=level, flag_bases=flags)
+                    test.set_params(level=level,
+                                    flag_bases=flags,
+                                    mimic=mimic,
+                                    ovlp_correc=False)
                 elif mimic == 'askia':
                     test.set_params(testtype='unpooled',
                                     level=level, mimic=mimic,
