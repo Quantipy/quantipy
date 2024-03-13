@@ -2280,6 +2280,81 @@ class Test(object):
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
 
+    def chi_square_sc(self, level="mid", return_diagnostics=False):
+        """
+        Produce a Quantum-like single-classification Chi^2 Test result.
+
+        Parameters
+        ----------
+        level : str, default "mid"
+            The level of significance. The thresholds map to confidence levels
+            of the dof = 1 Chi distribution at 90%, 95% and 99%.
+        return_diagnostics : bool, default False
+            If True, a second return will also provide all interim figures used
+            in the computation.
+
+        Returns
+        -------
+        result : pd.DataFrame
+            The main result output of flagged differences.
+        diagnostics: tuple
+            The collection of all interim figures, i.e.:
+            * chi sq cell matrix
+            * cell counts
+            * sample and subsample proportions
+        """
+        valid_levels = {
+            "low": 2.71, # 90%
+            "mid": 3.84, # 95%
+            "high": 6.63 # 99%
+        }
+        if not level in valid_levels.keys():
+            raise ValueError(
+                "'level' must be one of {}.".format(valid_levels.keys())
+                )
+
+        q = self.Quantity._copy()
+        q._get_matrix()
+
+        counts =  q.count(margin=False, as_df=False).result
+        r_base = q.rbase[1:]
+        c_base = q.cbase[0][1:]
+        t_base = q.rbase[0][0]
+
+        subsample_pct = counts / c_base
+        sample_pct = r_base / t_base
+
+        diffs_direction = subsample_pct - sample_pct.repeat(
+            counts.shape[1], axis=1
+            )
+        diffs_direction = np.sign(diffs_direction)
+
+        # Compute First addend
+        helper_term_a = (r_base * c_base) / t_base
+        addend_a = (counts - helper_term_a) ** 2 / helper_term_a
+        # Compute second addend
+        helper_term_b = (t_base - r_base) * c_base / t_base
+        addend_b = ((c_base - counts) - helper_term_b) ** 2 / helper_term_b
+        # Chi^2 is the sum of addend_a and addend_b
+        cell_chi_sq_matrix = addend_a + addend_b
+        org_chi_sq_matrix = cell_chi_sq_matrix.copy()
+
+        cell_chi_sq_matrix[cell_chi_sq_matrix < valid_levels[level]] = np.NaN
+        result = pd.DataFrame(np.sign((cell_chi_sq_matrix * diffs_direction)))
+        result = result.replace(-1, "-")
+        result = result.replace(1, "+")
+
+        result.index, result.columns = self.multiindex[0], self.multiindex[1]
+
+        if return_diagnostics:
+            return result, (
+                org_chi_sq_matrix,
+                counts, r_base, c_base, t_base,
+                subsample_pct, sample_pct
+                )
+        else:
+            return result
+
 class Nest(object):
     """
     Description of class...
