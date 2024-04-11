@@ -356,8 +356,17 @@ class Batch(qp.DataSet):
         ----------
         levels: float/ list of float
             Level(s) for significance calculation(s).
-        mimic/ flags/ test_total:
-            Currently not implemented.
+        flags : list of two int, default [30, 100]
+            If provided, the output dataframe will replace results that have
+            been calculated on (eff.) bases below the first int with ``'**'``
+            and mark results in columns with bases below the second int with
+            ``'*'``
+        test_total : bool, default False
+            If set to True, the test algorithms will also include an existent
+            total (@-) version of the original link and test against the
+            unconditial data distribution.
+        mimic : {'askia', 'Dim', 'LINK_legacy'} default='Dim'
+            Will instruct the mimicking of a software specific test.
 
         Returns
         -------
@@ -370,13 +379,19 @@ class Batch(qp.DataSet):
         else:
             levels = []
 
+        valid_mimics = ['Dim', 'askia', 'LINK_legacy']
+        if not mimic:
+            mimic = 'Dim'
+        else:
+            if mimic not in valid_mimics:
+                raise ValueError('Failed to mimic: "%s". Select from: %s\n'
+                                 % (mimic, valid_mimics))
+
         self.sigproperties = {'siglevels': levels,
                               'test_total': test_total,
                               'flag_bases': flags,
-                              'mimic': ['Dim']}
-        if mimic :
-            err = ("Changes to 'mimic' are currently not allowed!")
-            raise NotImplementedError(err)
+                              'mimic': [mimic]}
+
         self._update()
         return None
 

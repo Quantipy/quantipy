@@ -489,7 +489,7 @@ class QuantipyViews(ViewMapper):
         test_total : bool, deafult False
             If True, the each View's y-axis column will be tested against the
             uncoditional total of its x-axis.
-        mimic : {'Dim', 'askia'}, default 'Dim'
+        mimic : {'Dim', 'askia', 'LINK_legacy'}, default 'Dim'
             It is possible to mimic the test logics used in other statistical
             software packages by passing them as instructions. The method will
             then choose the appropriate test parameters.
@@ -535,6 +535,11 @@ class QuantipyViews(ViewMapper):
                 test = qp.Test(link, in_view, test_total)
                 if mimic == 'Dim':
                     test.set_params(level=level, flag_bases=flags)
+                elif mimic == 'LINK_legacy':
+                    test.set_params(level=level,
+                                    flag_bases=flags,
+                                    mimic=mimic,
+                                    ovlp_correc=False)
                 elif mimic == 'askia':
                     test.set_params(testtype='unpooled',
                                     level=level, mimic=mimic,

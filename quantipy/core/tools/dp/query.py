@@ -136,7 +136,7 @@ def shake_descriptives(l, descriptives):
 def request_views(stack, data_key=None, filter_key=None, weight=None,
                   frequencies=True, default=False, nets=True,
                   descriptives=["mean"], sums=None, coltests=True,
-                  mimic='Dim', sig_levels=[".05"], x=None, y=None, by_x=False):
+                  mimic=None, sig_levels=[".05"], x=None, y=None, by_x=False):
     """
     Get structured, request-ready views from the stack.
 
