@@ -258,7 +258,7 @@ class TestViewManager(unittest.TestCase):
         vm = ViewManager(stack)
         vm.get_views(cell_items='counts_colpct', freqs=True,
                      nets=False, stats=None, tests=['0.05'],
-                     weight='weight_a', bases='both')
+                     weight='weight_a', bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -272,7 +272,7 @@ class TestViewManager(unittest.TestCase):
         vm = ViewManager(stack)
         vm.get_views(cell_items='colpct', freqs=True, nets=False,
                      stats=None, tests=['0.05'], weight='weight_a',
-                     bases='both')
+                     bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -315,7 +315,7 @@ class TestViewManager(unittest.TestCase):
         vm = ViewManager(stack)
         vm.get_views(cell_items='counts_colpct', freqs=True,
                      nets=True, stats=None, tests=['0.05'],
-                     weight='weight_a', bases='both')
+                     weight='weight_a', bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -329,7 +329,7 @@ class TestViewManager(unittest.TestCase):
         vm = ViewManager(stack)
         vm.get_views(cell_items='colpct', freqs=True, nets=True,
                      stats=None, tests=['0.05'], weight='weight_a',
-                     bases='both')
+                     bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -344,7 +344,7 @@ class TestViewManager(unittest.TestCase):
         vm.get_views(cell_items='counts_colpct', freqs=True,
                      nets=False, stats=['mean', 'stddev'],
                      tests=['0.05'], weight='weight_a',
-                     bases='both')
+                     bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -358,7 +358,7 @@ class TestViewManager(unittest.TestCase):
         vm = ViewManager(stack)
         vm.get_views(cell_items='colpct', freqs=True, nets=False,
                      stats=['mean', 'stddev'], tests=['0.05'],
-                     weight='weight_a', bases='both')
+                     weight='weight_a', bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -373,7 +373,7 @@ class TestViewManager(unittest.TestCase):
         vm.get_views(cell_items='counts_colpct', freqs=True,
                      nets=True, stats=['mean', 'stddev'],
                      tests=['0.05'], weight='weight_a',
-                     bases='both')
+                     bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views
@@ -387,7 +387,7 @@ class TestViewManager(unittest.TestCase):
         vm = ViewManager(stack)
         vm.get_views(cell_items='colpct', freqs=True, nets=True,
                      stats=['mean', 'stddev'], tests=['0.05'],
-                     weight='weight_a', bases='both')
+                     weight='weight_a', bases='both', mimic='Dim')
         vm.set_bases('both', 'both', 'w', ['gross', 'base', 'effective'],
                      'before', True)
         vm_views = vm.views

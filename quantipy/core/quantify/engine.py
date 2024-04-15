@@ -1802,7 +1802,7 @@ class Test(object):
         level : str or float, default 'mid'
             The level of significance given either as per 'low' = 0.1,
             'mid' = 0.05, 'high' = 0.01 or as specific float, e.g. 0.15.
-        mimic : {'askia', 'Dim'} default='Dim'
+        mimic : {'askia', 'Dim', 'LINK_legacy'} default='Dim'
             Will instruct the mimicking of a software specific test.
         testtype : str, default 'pooled'
             Global definition of the tests.
@@ -1853,7 +1853,7 @@ class Test(object):
             self.invalid = False
             self.no_diffs = False
             self.no_pairs = False
-            valid_mimics = ['Dim', 'askia']
+            valid_mimics = ['Dim', 'askia', 'LINK_legacy']
             if mimic not in valid_mimics:
                 raise ValueError('Failed to mimic: "%s". Select from: %s\n'
                                  % (mimic, valid_mimics))
@@ -1870,6 +1870,12 @@ class Test(object):
                 self.parameters = {'testtype': 'pooled',
                                    'use_ebase': True,
                                    'ovlp_correc': True,
+                                   'cwi_filter': False,
+                                   'base_flags': flag_bases}
+            elif self.mimic == 'LINK_legacy':
+                self.parameters = {'testtype': 'pooled',
+                                   'use_ebase': True,
+                                   'ovlp_correc': False,
                                    'cwi_filter': False,
                                    'base_flags': flag_bases}
             self.level = level
@@ -1941,6 +1947,8 @@ class Test(object):
             diffs = pd.DataFrame(self.valdiffs, index=self.xdef, columns=self.ypairs)
         if self.mimic == 'Dim':
             return diffs[(diffs != 0) & (stat < self.comparevalue)]
+        elif self.mimic == 'LINK_legacy':
+            return diffs[(diffs != 0) & (stat < self.comparevalue)]
         elif self.mimic == 'askia':
             return diffs[(diffs != 0) & (stat > self.comparevalue)]
 
@@ -1989,6 +1997,12 @@ class Test(object):
             dof = ebases_pairs - self.overlap - 2
             dof[dof <= 1] = np.NaN
             return get_pval(dof, teststat)[1]
+        elif self.mimic == 'LINK_legacy':
+            ebases_pairs = [eb1 + eb2 for eb1, eb2
+                            in combinations(self.ebases[0], 2)]
+            dof = ebases_pairs - self.overlap - 2
+            dof[dof <= 1] = np.NaN
+            return get_pval(dof, teststat)[1]
         elif self.mimic == 'askia':
             return abs(teststat)
 
@@ -2007,11 +2021,15 @@ class Test(object):
             if level == 'low':
                 if self.mimic == 'Dim':
                     comparevalue = siglevel = 0.10
+                elif self.mimic == 'LINK_legacy':
+                    comparevalue = siglevel = 0.10
                 elif self.mimic == 'askia':
                     comparevalue = 1.65
                     siglevel = 0.10
             elif level == 'mid':
                 if self.mimic == 'Dim':
+                    comparevalue = siglevel = 0.05
+                elif self.mimic == 'LINK_legacy':
                     comparevalue = siglevel = 0.05
                 elif self.mimic == 'askia':
                     comparevalue = 1.96
@@ -2019,11 +2037,15 @@ class Test(object):
             elif level == 'high':
                 if self.mimic == 'Dim':
                     comparevalue = siglevel = 0.01
+                elif self.mimic == 'LINK_legacy':
+                    comparevalue = siglevel = 0.01
                 elif self.mimic == 'askia':
                     comparevalue = 2.576
                     siglevel = 0.01
         else:
             if self.mimic == 'Dim':
+                comparevalue = siglevel = level
+            elif self.mimic == 'LINK_legacy':
                 comparevalue = siglevel = level
             elif self.mimic == 'askia':
                 comparevalue = 1.65
