@@ -388,7 +388,7 @@ class Batch(qp.DataSet):
                                  % (mimic, valid_mimics))
 
         self.sigproperties = {'siglevels': levels,
-                              'test_total': test_total if not mimic == "LINK_legacy" else False,
+                              'test_total': test_total,
                               'flag_bases': flags,
                               'mimic': [mimic]}
 

@@ -1878,7 +1878,6 @@ class Test(object):
                                    'ovlp_correc': False,
                                    'cwi_filter': False,
                                    'base_flags': flag_bases}
-                self.test_total = False
             self.level = level
             self.comparevalue, self.level = self._convert_level(level)
             # Get value differences between column pairings
@@ -2213,9 +2212,15 @@ class Test(object):
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
+        except_for_link = self.mimic == "LINK_legacy"
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
-        test_columns = ['@'] + self.ydef if self.test_total else self.ydef
+        if except_for_link:
+            test_columns = self.ydef
+        else:
+            test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
+            if except_for_link and col[0] == "@" or col[1] == ["@"]:
+                continue
             if self.is_nested and not col in self._valid_pairs:
                 continue
 
@@ -2264,7 +2269,7 @@ class Test(object):
                 test.iloc[:, :] = np.NaN
         test.index, test.columns = self.multiindex[0], self.multiindex[1]
 
-        if self.mimic == "LINK_legacy":
+        if self.mimic == "LINK_legacy" and self.test_total:
             chi_sq_test_result = self.chi_square_sc(self.level)
             sign_map = {
                 "+": "'@L'",
