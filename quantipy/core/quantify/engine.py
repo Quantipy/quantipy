@@ -2219,7 +2219,7 @@ class Test(object):
         else:
             test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
-            if except_for_link and col[0] == "@" or col[1] == ["@"]:
+            if except_for_link and col[0] == "@":
                 continue
             if self.is_nested and not col in self._valid_pairs:
                 continue
