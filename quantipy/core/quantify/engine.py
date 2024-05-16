@@ -2212,14 +2212,18 @@ class Test(object):
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
-        except_for_link = self.mimic == "LINK_legacy"
+        use_quantum_chi_sq_for_link = (
+            self.mimic == "LINK_legacy" and
+            self.test_total and
+            self.metric == "proportions"
+        )
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
-        if except_for_link:
+        if use_quantum_chi_sq_for_link:
             test_columns = self.ydef
         else:
             test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
-            if except_for_link and col[0] == "@":
+            if use_quantum_chi_sq_for_link and col[0] == "@":
                 continue
             if self.is_nested and not col in self._valid_pairs:
                 continue
@@ -2269,7 +2273,7 @@ class Test(object):
                 test.iloc[:, :] = np.NaN
         test.index, test.columns = self.multiindex[0], self.multiindex[1]
 
-        if self.mimic == "LINK_legacy" and self.test_total:
+        if use_quantum_chi_sq_for_link:
             chi_sq_test_result = self.chi_square_sc(self.level)
             sign_map = {
                 "+": "'@L'",
@@ -2301,7 +2305,7 @@ class Test(object):
                                 ] = "[{}, {}".format(chisq_res, cell_result[1:])
                         elif has_chisq_res:
                             test.loc[
-                                row_indexer, col_indexer
+                            row_indexer, col_indexer
                             ] = "[{}]".format(chisq_res)
         return test
 
