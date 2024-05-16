@@ -2275,22 +2275,34 @@ class Test(object):
                 "+": "'@L'",
                 "-": "'@H'"
             }
+            agg_values_ref = pd.DataFrame(
+                self.values[:, 1:],
+                index=self.multiindex[0],
+                columns=self.multiindex[1]
+                )
             if not chi_sq_test_result.isnull().values.all():
                 use_tests_total = chi_sq_test_result.replace(sign_map)
                 for col_indexer, col_result in test.iteritems():
                     for row_indexer, cell_result in col_result.iteritems():
-
+                        if agg_values_ref.loc[row_indexer, col_indexer] == 0.0:
+                            continue
                         chisq_res = use_tests_total.loc[row_indexer, col_indexer]
                         has_col_res = isinstance(cell_result, str) and cell_result != "**"
                         has_chisq_res = isinstance(chisq_res, str) and cell_result != "**"
 
                         if has_col_res and has_chisq_res:
                             if cell_result == "*":
-                                test.loc[row_indexer, col_indexer] = "[{}]*".format(chisq_res)
+                                test.loc[
+                                    row_indexer, col_indexer
+                                ] = "[{}]*".format(chisq_res)
                             else:
-                                test.loc[row_indexer, col_indexer] = "[{}, {}".format(chisq_res, cell_result[1:])
+                                test.loc[
+                                    row_indexer, col_indexer
+                                ] = "[{}, {}".format(chisq_res, cell_result[1:])
                         elif has_chisq_res:
-                            test.loc[row_indexer, col_indexer] = "[{}]".format(chisq_res)
+                            test.loc[
+                                row_indexer, col_indexer
+                            ] = "[{}]".format(chisq_res)
         return test
 
     def _empty_output(self):
