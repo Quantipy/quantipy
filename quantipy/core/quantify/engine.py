@@ -2369,9 +2369,9 @@ class Test(object):
             * sample and subsample proportions
         """
         valid_levels = {
-            0.01: 2.71, # 90%
+            0.01: 2.71, # 99%
             0.05: 3.84, # 95%
-            0.1: 6.63 # 99%
+            0.1: 6.63 # 90%
         }
         if not level in valid_levels.keys():
             raise ValueError(
