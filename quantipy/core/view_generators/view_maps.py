@@ -525,6 +525,8 @@ class QuantipyViews(ViewMapper):
         level = kwargs.get('level', 'low')
         flags = kwargs.get('flag_bases', None)
         test_total = kwargs.get('test_total', False)
+        if mimic == "LINK_legacy": # force test total / Chi^2 for LINK
+            test_total = True
         stack = link.stack
         get = 'count' if metric == 'props' else 'mean'
         views = self._get_view_names(cache, stack, weights, get=get)

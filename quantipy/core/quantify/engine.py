@@ -2212,9 +2212,19 @@ class Test(object):
     # Output creation
     # -------------------------------------------------
     def _output(self, sigs):
+        use_quantum_chi_sq_for_link = (
+            self.mimic == "LINK_legacy" and
+            self.test_total and
+            self.metric == "proportions"
+        )
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
-        test_columns = ['@'] + self.ydef if self.test_total else self.ydef
+        if use_quantum_chi_sq_for_link:
+            test_columns = self.ydef
+        else:
+            test_columns = ['@'] + self.ydef if self.test_total else self.ydef
         for col, val in sigs.iteritems():
+            if use_quantum_chi_sq_for_link and col[0] == "@":
+                continue
             if self.is_nested and not col in self._valid_pairs:
                 continue
 
@@ -2262,6 +2272,41 @@ class Test(object):
             else:
                 test.iloc[:, :] = np.NaN
         test.index, test.columns = self.multiindex[0], self.multiindex[1]
+
+        if use_quantum_chi_sq_for_link:
+            chi_sq_test_result = self.chi_square_sc(self.level)
+            sign_map = {
+                "+": "'@L'",
+                "-": "'@H'"
+            }
+            agg_values_ref = pd.DataFrame(
+                self.values[:, 1:],
+                index=self.multiindex[0],
+                columns=self.multiindex[1]
+                )
+            if not chi_sq_test_result.isnull().values.all():
+                use_tests_total = chi_sq_test_result.replace(sign_map)
+                for col_indexer, col_result in test.iteritems():
+                    for row_indexer, cell_result in col_result.iteritems():
+                        if agg_values_ref.loc[row_indexer, col_indexer] == 0.0:
+                            continue
+                        chisq_res = use_tests_total.loc[row_indexer, col_indexer]
+                        has_col_res = isinstance(cell_result, str) and cell_result != "**"
+                        has_chisq_res = isinstance(chisq_res, str) and cell_result != "**"
+
+                        if has_col_res and has_chisq_res:
+                            if cell_result == "*":
+                                test.loc[
+                                    row_indexer, col_indexer
+                                ] = "[{}]*".format(chisq_res)
+                            else:
+                                test.loc[
+                                    row_indexer, col_indexer
+                                ] = "[{}, {}".format(chisq_res, cell_result[1:])
+                        elif has_chisq_res:
+                            test.loc[
+                            row_indexer, col_indexer
+                            ] = "[{}]".format(chisq_res)
         return test
 
     def _empty_output(self):
@@ -2301,6 +2346,79 @@ class Test(object):
                 elif flag == '*':
                     sigres[res_col] = sigres[res_col] + flag
         return sigres
+
+    def chi_square_sc(self, level=0.05, return_diagnostics=False):
+        """
+        Produce a Quantum-like single-classification Chi^2 Test result.
+        Parameters
+        ----------
+        level : float, {0.01, 0.05, 0.1}, default 0.05
+            The level of significance. The thresholds map to confidence levels
+            of the dof = 1 Chi distribution at 90%, 95% and 99%.
+        return_diagnostics : bool, default False
+            If True, a second return will also provide all interim figures used
+            in the computation.
+        Returns
+        -------
+        result : pd.DataFrame
+            The main result output of flagged differences.
+        diagnostics: tuple
+            The collection of all interim figures, i.e.:
+            * chi sq cell matrix
+            * cell counts
+            * sample and subsample proportions
+        """
+        valid_levels = {
+            0.01: 2.71, # 99%
+            0.05: 3.84, # 95%
+            0.1: 6.63 # 90%
+        }
+        if not level in valid_levels.keys():
+            raise ValueError(
+                "'level' must be one of {}.".format(valid_levels.keys())
+                )
+
+        q = self.Quantity._copy()
+        q._get_matrix()
+
+        counts =  q.count(margin=False, as_df=False).result
+        r_base = q.rbase[1:]
+        c_base = q.cbase[0][1:]
+        t_base = q.rbase[0][0]
+
+        subsample_pct = counts / c_base
+        sample_pct = r_base / t_base
+
+        diffs_direction = subsample_pct - sample_pct.repeat(
+            counts.shape[1], axis=1
+            )
+        diffs_direction = np.sign(diffs_direction)
+
+        # Compute First addend
+        helper_term_a = (r_base * c_base) / t_base
+        addend_a = (counts - helper_term_a) ** 2 / helper_term_a
+        # Compute second addend
+        helper_term_b = (t_base - r_base) * c_base / t_base
+        addend_b = ((c_base - counts) - helper_term_b) ** 2 / helper_term_b
+        # Chi^2 is the sum of addend_a and addend_b
+        cell_chi_sq_matrix = addend_a + addend_b
+        org_chi_sq_matrix = cell_chi_sq_matrix.copy()
+
+        cell_chi_sq_matrix[cell_chi_sq_matrix < valid_levels[level]] = np.NaN
+        result = pd.DataFrame(np.sign((cell_chi_sq_matrix * diffs_direction)))
+        result = result.replace(-1, "-")
+        result = result.replace(1, "+")
+
+        result.index, result.columns = self.multiindex[0], self.multiindex[1]
+
+        if return_diagnostics:
+            return result, (
+                org_chi_sq_matrix,
+                counts, r_base, c_base, t_base,
+                subsample_pct, sample_pct
+                )
+        else:
+            return result
 
 class Nest(object):
     """
