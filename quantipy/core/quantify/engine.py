@@ -2368,6 +2368,10 @@ class Test(object):
             * cell counts
             * sample and subsample proportions
         """
+        if self.metric == "means":
+            result =  pd.DataFrame([], self.multiindex[0], self.multiindex[1])
+            return result
+
         valid_levels = {
             0.01: 2.71, # 99%
             0.05: 3.84, # 95%
@@ -2378,10 +2382,19 @@ class Test(object):
                 "'level' must be one of {}.".format(valid_levels.keys())
                 )
 
-        q = self.Quantity._copy()
-        q._get_matrix()
+        q = copy.deepcopy(self.Quantity)
+        counts = q.result[1:, 1:]
 
-        counts =  q.count(margin=False, as_df=False).result
+
+        # print self.Quantity.result[1:, 1:]
+        # print '*' * 100
+        # q = self.Quantity._copy()
+        # q._get_matrix()
+        # counts =  q.count(margin=False, as_df=False).result
+        # print counts
+        # raise
+
+
         r_base = q.rbase[1:]
         c_base = q.cbase[0][1:]
         t_base = q.rbase[0][0]
