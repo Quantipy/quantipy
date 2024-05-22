@@ -2814,7 +2814,6 @@ class Chain(object):
 
             self._frame = pd.concat(self._pad(x_frames), axis=self.axis)
 
-
             if self._group_style == 'reduced' and self.array_style >- 1:
                 scan_views = [v if isinstance(v, (tuple, list)) else [v]
                               for v in self._given_views]
