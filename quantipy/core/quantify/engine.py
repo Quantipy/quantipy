@@ -2217,12 +2217,8 @@ class Test(object):
             self.test_total and
             self.metric == "proportions"
         )
-        ignore_total_on_link_means  = (
-            self.mimic == "LINK_legacy" and
-            self.metric == "means"
-        )
         res = {y: {x: [] for x in self.xdef} for y in self.ydef}
-        if use_quantum_chi_sq_for_link or ignore_total_on_link_means:
+        if use_quantum_chi_sq_for_link:
             test_columns = self.ydef
         else:
             test_columns = ['@'] + self.ydef if self.test_total else self.ydef
@@ -2373,7 +2369,7 @@ class Test(object):
             * sample and subsample proportions
         """
         if self.metric == "means":
-            result =  pd.DataFrame([], test.multiindex[0], test.multiindex[1])
+            result =  pd.DataFrame([], self.multiindex[0], self.multiindex[1])
             return result
 
         valid_levels = {
