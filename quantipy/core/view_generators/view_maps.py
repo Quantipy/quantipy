@@ -529,7 +529,7 @@ class QuantipyViews(ViewMapper):
             if metric == "props": # force test total / Chi^2 for LINK
                 test_total = True
             else:
-                test_toal = False
+                test_total = False
         stack = link.stack
         get = 'count' if metric == 'props' else 'mean'
         views = self._get_view_names(cache, stack, weights, get=get)
