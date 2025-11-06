@@ -1,0 +1,23 @@
+# Streamlit GUI Requirements
+# Install with: pip install -r requirements_streamlit.txt
+
+# Core Streamlit
+streamlit>=0.89.0
+
+# Visualization
+plotly>=4.14.0
+
+# Quantipy dependencies (if not already installed)
+numpy==1.11.3
+pandas==0.19.2
+scipy==0.18.1
+ftfy==4.4.3
+xmltodict
+lxml
+xlsxwriter
+prettytable
+decorator
+watchdog
+requests
+python-pptx
+functools32

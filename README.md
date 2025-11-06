@@ -19,6 +19,23 @@ Quantipy is an open-source data processing, analysis and reporting software proj
 ### Python 3 compatability
 Efforts are underway to port Quantipy to Python 3 in a [seperate repository](https://www.github.com/quantipy/quantipy3).
 
+## Streamlit GUI
+A user-friendly web interface for Quantipy is now available! The Streamlit GUI provides an interactive way to:
+- Load and explore datasets
+- Create batch analyses
+- View and export results
+- Generate Excel and other format exports
+
+**Quick Start:**
+```bash
+pip install -r requirements_streamlit.txt
+streamlit run streamlit_app.py
+# Or use the launcher script:
+./run_streamlit.sh
+```
+
+See [STREAMLIT_README.md](STREAMLIT_README.md) for detailed documentation.
+
 ## Docs
 [View the documentation at readthedocs.org](http://quantipy.readthedocs.io/)
 
